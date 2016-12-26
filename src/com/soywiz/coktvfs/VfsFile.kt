@@ -1,5 +1,9 @@
 package com.soywiz.coktvfs
 
+import com.soywiz.coktvfs.async.AsyncSequence
+import com.soywiz.coktvfs.async.asyncFun
+import com.soywiz.coktvfs.async.asyncGenerate
+import com.soywiz.coktvfs.stream.AsyncStream
 import java.nio.charset.Charset
 import java.util.*
 
@@ -67,5 +71,5 @@ class VfsFile(
         }
     }
 
-    override fun toString(): String = "VfsFile($vfs, $path)"
+    override fun toString(): String = "$vfs[$path]"
 }

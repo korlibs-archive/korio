@@ -1,5 +1,7 @@
-package com.soywiz.coktvfs
+package com.soywiz.coktvfs.stream
 
+import com.soywiz.coktvfs.*
+import com.soywiz.coktvfs.util.*
 import java.nio.charset.Charset
 import java.util.*
 

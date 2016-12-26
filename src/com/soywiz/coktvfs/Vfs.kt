@@ -1,7 +1,16 @@
 package com.soywiz.coktvfs
 
+import com.soywiz.coktvfs.async.AsyncSequence
+import com.soywiz.coktvfs.async.asyncFun
+import com.soywiz.coktvfs.async.asyncGenerate
+import com.soywiz.coktvfs.stream.AsyncStream
+import com.soywiz.coktvfs.stream.readBytes
+import com.soywiz.coktvfs.stream.writeBytes
+
 abstract class Vfs {
     val root by lazy { VfsFile(this, "/") }
+
+    operator fun get(path: String) = root[path]
 
     suspend open fun open(path: String): AsyncStream = throw UnsupportedOperationException()
 
@@ -14,7 +23,7 @@ abstract class Vfs {
 
     suspend fun readChunk(path: String, offset: Long, size: Int): ByteArray = asyncFun {
         val s = open(path)
-        s.setPosition(offset)
+        if (offset != 0L) s.setPosition(offset)
         s.readBytes(size)
     }
 

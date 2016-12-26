@@ -1,4 +1,4 @@
-package com.soywiz.coktvfs
+package com.soywiz.coktvfs.async
 
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.createCoroutine

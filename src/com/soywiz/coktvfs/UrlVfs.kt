@@ -1,5 +1,7 @@
 package com.soywiz.coktvfs
 
+import com.soywiz.coktvfs.async.asyncFun
+import com.soywiz.coktvfs.util.JsMethodBody
 import java.net.URL
 
 fun UrlVfs(url: URL): VfsFile {

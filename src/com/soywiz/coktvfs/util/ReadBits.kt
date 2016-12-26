@@ -1,4 +1,4 @@
-package com.soywiz.coktvfs
+package com.soywiz.coktvfs.util
 
 fun ByteArray.readS8(o: Int):Int = this[o].toInt()
 fun ByteArray.readU8(o: Int):Int = this[o].toInt() and 0xFF

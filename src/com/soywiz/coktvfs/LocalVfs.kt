@@ -1,5 +1,8 @@
 package com.soywiz.coktvfs
 
+import com.soywiz.coktvfs.async.asyncGenerate
+import com.soywiz.coktvfs.async.executeInWorker
+import com.soywiz.coktvfs.stream.AsyncStream
 import java.io.File
 import java.io.FileOutputStream
 import java.io.RandomAccessFile
