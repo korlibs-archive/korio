@@ -79,13 +79,13 @@ if (project.hasProperty('sonatypeUsername')) {
                     name "${project.name}"
                     packaging 'jar'
                     description 'Virtual File System for Kotlin Coroutines'
-                    url 'https://github.com/soywiz/ktpromise/'
+                    url 'https://github.com/soywiz/coktvfs/'
                     inceptionYear '2016'
 
                     scm {
-                        url 'scm:git@github.com:soywiz/ktpromise.git'
-                        connection 'scm:git@github.com:soywiz/ktpromise.git'
-                        developerConnection 'scm:git@github.com:soywiz/ktpromise.git'
+                        url 'scm:git@github.com:soywiz/coktvfs.git'
+                        connection 'scm:git@github.com:soywiz/coktvfs.git'
+                        developerConnection 'scm:git@github.com:soywiz/coktvfs.git'
                     }
 
                     licenses {
