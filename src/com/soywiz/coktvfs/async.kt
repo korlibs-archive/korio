@@ -2,7 +2,34 @@ package com.soywiz.coktvfs
 
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.createCoroutine
+import kotlin.coroutines.startCoroutine
 import kotlin.coroutines.suspendCoroutine
+
+fun <T> sync(block: suspend () -> T): T {
+    var result: Any? = null
+
+    block.startCoroutine(object : Continuation<T> {
+        override fun resume(value: T) = run { result = value }
+        override fun resumeWithException(exception: Throwable) = run { result = exception }
+    })
+
+    while (result == null) Thread.sleep(1L)
+    if (result is Throwable) throw result as Throwable
+    return result as T
+}
+
+inline suspend fun <T> asyncFun(routine: suspend () -> T): T = suspendCoroutine<T> { routine.startCoroutine(it) }
+
+suspend fun <T> executeInWorker(task: () -> T): T = suspendCoroutine<T> { c ->
+    Thread {
+        try {
+            val result = task()
+            c.resume(result)
+        } catch (e: Throwable) {
+            c.resumeWithException(e)
+        }
+    }.run()
+}
 
 interface AsyncGenerator<in T> {
     suspend fun yield(value: T)

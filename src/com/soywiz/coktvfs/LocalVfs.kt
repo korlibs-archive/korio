@@ -2,6 +2,7 @@ package com.soywiz.coktvfs
 
 import java.io.File
 import java.io.FileOutputStream
+import java.io.RandomAccessFile
 import java.nio.file.Files
 import java.nio.file.Paths
 
@@ -11,8 +12,18 @@ fun LocalVfs(base: File): VfsFile {
     class Impl : Vfs() {
         fun resolve(path: String) = "$baseAbsolutePath/$path"
 
-        suspend override fun readChunk(path: String, offset: Long, size: Long) = super.readChunk(path, offset, size)
-        suspend override fun writeChunk(path: String, data: ByteArray, offset: Long, resize: Boolean) = super.writeChunk(path, data, offset, resize)
+        suspend override fun open(path: String): AsyncStream {
+            val raf = RandomAccessFile(File(resolve(path)), "r")
+            return object : AsyncStream() {
+                suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker { raf.read(buffer, offset, len) }
+                suspend override fun write(buffer: ByteArray, offset: Int, len: Int) = executeInWorker { raf.write(buffer, offset, len) }
+                suspend override fun setPosition(value: Long) = executeInWorker { raf.seek(value) }
+                suspend override fun getPosition(): Long = executeInWorker { raf.filePointer }
+                suspend override fun setLength(value: Long) = executeInWorker { raf.setLength(value) }
+                suspend override fun getLength(): Long = executeInWorker { raf.length() }
+            }
+        }
+
         suspend override fun setSize(path: String, size: Long): Unit = executeInWorker {
             val file = File(resolve(path))
             FileOutputStream(file, true).channel.use { outChan ->

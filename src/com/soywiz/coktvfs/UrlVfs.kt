@@ -8,6 +8,11 @@ fun UrlVfs(url: URL): VfsFile {
     class Impl : Vfs() {
         fun resolve(path: String) = URL("$urlStr/$path")
 
+        @JsMethodBody("""
+            var path = N.istr(p0);
+            var continuation = p1;
+
+        """)
         suspend override fun readFully(path: String): ByteArray = asyncFun {
             val s = resolve(path).openStream()
             s.readBytes()

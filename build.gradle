@@ -24,6 +24,8 @@ sourceCompatibility = 1.5
 sourceSets {
     main.java.srcDirs = ['src']
     test.java.srcDirs = ['test']
+    main.resources.srcDirs = ['resources']
+    test.resources.srcDirs = ['testresources']
 }
 
 repositories {
@@ -33,8 +35,8 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-generate:0.2-beta'
-    compile 'org.jetbrains.kotlinx:kotlinx-coroutines-async:0.2-beta'
+    //compile 'org.jetbrains.kotlinx:kotlinx-coroutines-generate:0.2-beta'
+    //compile 'org.jetbrains.kotlinx:kotlinx-coroutines-async:0.2-beta'
     testCompile "junit:junit:4.11"
 }
 
