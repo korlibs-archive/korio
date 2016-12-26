@@ -37,5 +37,9 @@ class VfsTest {
                 "HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO WORLD!",
                 helloZip["hello/compressedWorld.txt"].readString()
         )
+        Assert.assertEquals(
+                "[hello, hello/compressedWorld.txt, hello/world.txt]",
+                helloZip.listRecursive().toList().map { it.name }.toString()
+        )
     }
 }

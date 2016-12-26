@@ -12,6 +12,7 @@ class VfsFile(
         path: String
 ) {
     val path: String = normalize(path)
+    val basename: String by lazy { path.substringAfterLast('/') }
 
     companion object {
         fun normalize(path: String): String {
