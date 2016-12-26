@@ -80,6 +80,8 @@ fun SyncStream.readSlice(length: Long): SyncStream {
 	return out
 }
 
+fun SyncStream.readStream(length: Long): SyncStream = readSlice(length)
+
 fun SyncStream.readStringz(len: Int, charset: Charset = Charsets.UTF_8): String {
 	val res = readBytes(len)
 	val index = res.indexOf(0.toByte())
@@ -92,6 +94,7 @@ fun SyncStream.writeString(string: String, charset: Charset = Charsets.UTF_8): U
 fun SyncStream.readBytes(len: Int): ByteArray = ByteArray(len).apply { read(this, 0, len) }
 fun SyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
 
+val SyncStream.eof: Boolean get () = this.available <= 0L
 private fun SyncStream.readTemp(count: Int): ByteArray = temp.apply { read(temp, 0, count) }
 
 fun SyncStream.readU8(): Int = readTemp(1).readU8(0)

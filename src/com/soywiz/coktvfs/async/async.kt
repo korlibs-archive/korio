@@ -1,23 +1,12 @@
 package com.soywiz.coktvfs.async
 
+import java.util.*
+import java.util.concurrent.CancellationException
 import java.util.concurrent.Executors
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.createCoroutine
 import kotlin.coroutines.startCoroutine
 import kotlin.coroutines.suspendCoroutine
-
-fun <T> sync(block: suspend () -> T): T {
-	var result: Any? = null
-
-	block.startCoroutine(object : Continuation<T> {
-		override fun resume(value: T) = run { result = value }
-		override fun resumeWithException(exception: Throwable) = run { result = exception }
-	})
-
-	while (result == null) Thread.sleep(1L)
-	if (result is Throwable) throw result as Throwable
-	return result as T
-}
 
 inline suspend fun <T> asyncFun(routine: suspend () -> T): T = suspendCoroutine<T> { routine.startCoroutine(it) }
 
@@ -33,6 +22,11 @@ suspend fun <T> executeInWorker(task: () -> T): T = suspendCoroutine<T> { c ->
 		}
 	}
 }
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
 
 interface AsyncGenerator<in T> {
 	suspend fun yield(value: T)
@@ -134,6 +128,86 @@ class AsyncGeneratorIterator<T> : AsyncIterator<T>, AsyncGenerator<T>, Continuat
 		nextStep = c
 		resumeIterator(true)
 	}
+}
+
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+///////////////////////////////////////////////////////////////////////////////////////////////////////
+
+class Signal<T> {
+	internal val handlers = arrayListOf<(T) -> Unit>()
+
+	fun add(handler: (T) -> Unit) {
+		handlers += handler
+	}
+
+	operator fun invoke(value: T) {
+		for (handler in handlers) handler.invoke(value)
+	}
+
+	operator fun invoke(value: (T) -> Unit) = add(value)
+}
+
+operator fun Signal<Unit>.invoke() = invoke(Unit)
+
+typealias CancelHandler = Signal<Unit>
+
+interface Consumer<T> {
+	suspend fun consume(): T
+	suspend fun consumeWithCancelHandler(cancel: CancelHandler): T
+}
+
+interface Producer<T> {
+	fun produce(v: T): Unit
+}
+
+class ProduceConsumer<T> : Consumer<T>, Producer<T> {
+	val items = LinkedList<T>()
+	val consumers = LinkedList<(T) -> Unit>()
+
+	override fun produce(v: T) {
+		items.addLast(v)
+		flush()
+	}
+
+	private fun flush() {
+		while (items.isNotEmpty() && consumers.isNotEmpty()) {
+			val consumer = consumers.removeFirst()
+			val item = items.removeFirst()
+			consumer(item)
+		}
+	}
+
+	suspend override fun consume(): T = suspendCoroutine { c ->
+		consumers += { c.resume(it) }
+		flush()
+	}
+
+	suspend override fun consumeWithCancelHandler(cancel: CancelHandler): T = suspendCoroutine { c ->
+		val consumer: (T) -> Unit = { c.resume(it) }
+		cancel {
+			consumers -= consumer
+			c.resumeWithException(CancellationException())
+		}
+		consumers += consumer
+		flush()
+	}
+
+}
+
+fun <T> asyncProducer(callback: suspend Producer<T>.() -> Unit): Consumer<T> {
+	val p = ProduceConsumer<T>()
+
+	callback.startCoroutine(p, completion = object : Continuation<Unit> {
+		override fun resumeWithException(exception: Throwable) {
+			exception.printStackTrace()
+		}
+
+		override fun resume(value: Unit) {
+		}
+	})
+	return p
 }
 
 ///////////////////////////////////////////////////////////////////////////////////////////////////////

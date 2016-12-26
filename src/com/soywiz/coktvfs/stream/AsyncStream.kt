@@ -15,7 +15,8 @@ open class AsyncStream {
 	internal val temp = ByteArray(16)
 }
 
-class SliceAsyncStream(val base: AsyncStream, val baseOffset: Long, val baseLength: Long) : AsyncStream() {
+class SliceAsyncStream(val base: AsyncStream, val baseOffset: Long, val baseEnd: Long) : AsyncStream() {
+	val baseLength = baseEnd - baseOffset
 	var position = 0L
 
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
@@ -48,25 +49,25 @@ class SliceAsyncStream(val base: AsyncStream, val baseOffset: Long, val baseLeng
 	}
 }
 
-suspend fun AsyncStream.slice(position: Long, length: Long): AsyncStream = asyncFun {
+fun AsyncStream.slice(start: Long, end: Long): AsyncStream {
 	// @TODO: Check bounds
-	if (this is SliceAsyncStream) {
-		SliceAsyncStream(this.base, this.baseOffset + position, length)
+	return if (this is SliceAsyncStream) {
+		SliceAsyncStream(this.base, this.baseOffset + start, this.baseOffset + end)
 	} else {
-		SliceAsyncStream(this, position, length)
+		SliceAsyncStream(this, start, end)
 	}
 }
 
-suspend fun AsyncStream.slice(): AsyncStream = asyncFun {
-	this.slice(getPosition(), getAvailable())
-}
+suspend fun AsyncStream.slice(): AsyncStream = asyncFun { this.slice(0L, this.getLength()) }
 
 suspend fun AsyncStream.readSlice(length: Long): AsyncStream = asyncFun {
 	val start = getPosition()
-	val out = this.slice(start, length)
+	val out = this.slice(start, start + length)
 	setPosition(start + length)
 	out
 }
+
+suspend fun AsyncStream.readStream(length: Long): AsyncStream = readSlice(length)
 
 suspend fun AsyncStream.getAvailable(): Long = asyncFun { getLength() - getPosition() }
 
@@ -82,10 +83,8 @@ suspend fun AsyncStream.writeString(string: String, charset: Charset = Charsets.
 suspend fun AsyncStream.readExact(buffer: ByteArray, offset: Int, len: Int) = asyncFun {
 	var remaining = len
 	var coffset = offset
-	//println("-- ($this:$len)")
 	while (remaining > 0) {
 		val read = read(buffer, coffset, remaining)
-		//println("READ: $read")
 		if (read < 0) break
 		if (read == 0) throw IllegalStateException("Not enough data")
 		coffset += read
@@ -137,6 +136,8 @@ suspend fun AsyncStream.write32_be(v: Int): Unit = asyncFun { write(temp.apply {
 suspend fun AsyncStream.write64_be(v: Long): Unit = asyncFun { write(temp.apply { write64_be(0, v) }, 0, 8) }
 suspend fun AsyncStream.writeF32_be(v: Float): Unit = asyncFun { write(temp.apply { writeF32_be(0, v) }, 0, 4) }
 suspend fun AsyncStream.writeF64_be(v: Double): Unit = asyncFun { write(temp.apply { writeF64_be(0, v) }, 0, 8) }
+
+suspend fun AsyncStream.eof(): Boolean = asyncFun { this.getAvailable() <= 0L }
 
 fun SyncStream.toAsync() = object : AsyncStream() {
 	val sync = this@toAsync

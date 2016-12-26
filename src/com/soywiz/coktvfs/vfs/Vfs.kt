@@ -12,6 +12,8 @@ abstract class Vfs {
 
     operator fun get(path: String) = root[path]
 
+    fun createNonExistsStat(path: String) = VfsStat(VfsFile(this, path), exists = false, isDirectory = false, size = 0L)
+
     suspend open fun open(path: String, mode: VfsOpenMode): AsyncStream = throw UnsupportedOperationException()
 
     suspend open fun <T> readSpecial(path: String, clazz: Class<T>, onProgress: (Long, Long) -> Unit = { _, _ -> }): T = throw UnsupportedOperationException()
