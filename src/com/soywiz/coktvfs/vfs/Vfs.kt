@@ -1,4 +1,4 @@
-package com.soywiz.coktvfs
+package com.soywiz.coktvfs.vfs
 
 import com.soywiz.coktvfs.async.AsyncSequence
 import com.soywiz.coktvfs.async.asyncFun
@@ -13,6 +13,8 @@ abstract class Vfs {
     operator fun get(path: String) = root[path]
 
     suspend open fun open(path: String, mode: VfsOpenMode): AsyncStream = throw UnsupportedOperationException()
+
+    suspend open fun <T> readSpecial(path: String, clazz: Class<T>, onProgress: (Long, Long) -> Unit = { _, _ -> }): T = throw UnsupportedOperationException()
 
     suspend open fun readFully(path: String) = asyncFun {
         val stat = stat(path)

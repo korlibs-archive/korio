@@ -1,4 +1,4 @@
-package com.soywiz.coktvfs
+package com.soywiz.coktvfs.vfs
 
 import com.soywiz.coktvfs.async.asyncFun
 import com.soywiz.coktvfs.async.asyncGenerate

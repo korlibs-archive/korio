@@ -1,4 +1,4 @@
-package com.soywiz.coktvfs
+package com.soywiz.coktvfs.vfs
 
 enum class VfsOpenMode {
 	READ,

@@ -1,4 +1,4 @@
-package com.soywiz.coktvfs
+package com.soywiz.coktvfs.vfs
 
 import com.soywiz.coktvfs.async.asyncFun
 import com.soywiz.coktvfs.util.JsMethodBody
@@ -13,7 +13,7 @@ fun UrlVfs(url: URL): VfsFile {
         @JsMethodBody("""
             var path = N.istr(p0);
             var continuation = p1;
-
+            throw "Not implemented!";
         """)
         suspend override fun readFully(path: String): ByteArray = asyncFun {
             val s = resolve(path).openStream()

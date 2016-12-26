@@ -1,4 +1,4 @@
-package com.soywiz.coktvfs
+package com.soywiz.coktvfs.vfs
 
 fun JailVfs(file: VfsFile): VfsFile {
     class Impl : Vfs.Proxy() {

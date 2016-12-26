@@ -1,11 +1,13 @@
-package com.soywiz.coktvfs
+package com.soywiz.coktvfs.vfs
 
 import com.soywiz.coktvfs.async.sync
 import com.soywiz.coktvfs.async.toList
+import com.soywiz.coktvfs.vfs.ResourcesVfs
+import com.soywiz.coktvfs.vfs.openAsZip
 import org.junit.Assert
 import org.junit.Test
 
-class VfsTest {
+class ZipVfsTest {
     @Test
     fun testZipUncompressed() = sync {
         val helloZip = ResourcesVfs()["hello.zip"].openAsZip()

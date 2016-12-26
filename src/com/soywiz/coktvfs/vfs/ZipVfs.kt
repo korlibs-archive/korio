@@ -1,4 +1,4 @@
-package com.soywiz.coktvfs
+package com.soywiz.coktvfs.vfs
 
 import com.soywiz.coktvfs.async.AsyncSequence
 import com.soywiz.coktvfs.async.asyncFun
@@ -16,13 +16,13 @@ suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
     fun String.normalizeName() = this.trim('/')
 
     class ZipEntry(
-            val path: String,
-            val compressionMethod: Int,
-            val isDirectory: Boolean,
-            val offset: Int,
-            val compressedData: AsyncStream,
-            val compressedSize: Long,
-            val uncompressedSize: Long
+	    val path: String,
+	    val compressionMethod: Int,
+	    val isDirectory: Boolean,
+	    val offset: Int,
+	    val compressedData: AsyncStream,
+	    val compressedSize: Long,
+	    val uncompressedSize: Long
     ) {
     }
 
@@ -32,7 +32,7 @@ suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
     val filesPerFolder = hashMapOf<String, HashMap<String, ZipEntry>>()
 
     data.apply {
-        if (readS32_be() != 0x504B0506) throw IllegalStateException("Not a zip file")
+        if (readS32_be() != 0x504B_0506) throw IllegalStateException("Not a zip file")
         val diskNumber = readU16_le()
         val startDiskNumber = readU16_le()
         val entriesOnDisk = readU16_le()
@@ -44,7 +44,7 @@ suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
         val ds = s.slice(directoryOffset.toLong(), directorySize.toLong()).readAvailable().open()
         ds.apply {
             for (n in 0 until entriesInDirectory) {
-                if (readS32_be() != 0x504B0102) throw IllegalStateException("Not a zip file record")
+                if (readS32_be() != 0x504B_0102) throw IllegalStateException("Not a zip file record")
                 val versionMade = readU16_le()
                 val versionExtract = readU16_le()
                 val flags = readU16_le()
@@ -91,7 +91,7 @@ suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
             val entry = files[path.normalizeName()]!!
             val base = entry.compressedData.slice()
             base.run {
-                if (readS32_be() != 0x504B0304) throw IllegalStateException("Not a zip file")
+                if (readS32_be() != 0x504B_0304) throw IllegalStateException("Not a zip file")
                 val version = readU16_le()
                 val flags = readU16_le()
                 val compressionType = readU16_le()

@@ -1,4 +1,4 @@
-package com.soywiz.coktvfs
+package com.soywiz.coktvfs.vfs
 
 import com.soywiz.coktvfs.async.AsyncSequence
 import com.soywiz.coktvfs.async.asyncFun
@@ -8,8 +8,8 @@ import java.nio.charset.Charset
 import java.util.*
 
 class VfsFile(
-        val vfs: Vfs,
-        path: String
+    val vfs: Vfs,
+    path: String
 ) {
     val path: String = normalize(path)
     val basename: String by lazy { path.substringAfterLast('/') }
@@ -22,7 +22,7 @@ class VfsFile(
             for (part in path2.split("/")) {
                 when (part) {
                     "", "." -> Unit
-                    ".." -> if (out.isNotEmpty()) out.removeLast()
+                    "" -> if (out.isNotEmpty()) out.removeLast()
                     else -> out += part
                 }
             }
@@ -35,6 +35,11 @@ class VfsFile(
     operator fun get(path: String): VfsFile = VfsFile(vfs, combine(this.path, path))
 
     suspend fun open(mode: VfsOpenMode): AsyncStream = vfs.open(path, mode)
+
+    suspend inline fun <reified T : Any> readSpecial(noinline onProgress: (Long, Long) -> Unit): T = vfs.readSpecial(path, T::class.java, onProgress)
+    suspend inline fun <reified T : Any> readSpecial(): T = vfs.readSpecial(path, T::class.java)
+
+    suspend fun <T> readSpecial(clazz: Class<T>, onProgress: (Long, Long) -> Unit = { _, _ -> }): T = vfs.readSpecial(path, clazz, onProgress)
 
     suspend fun read(): ByteArray = vfs.readFully(path)
     suspend fun write(data: ByteArray): Unit = vfs.writeFully(path, data)
