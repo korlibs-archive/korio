@@ -9,6 +9,8 @@ fun ResourcesVfs(classLoader: ClassLoader = ClassLoader.getSystemClassLoader()):
         suspend override fun readFully(path: String): ByteArray = executeInWorker {
             classLoader.getResourceAsStream(path).readBytes()
         }
+
+        override fun toString(): String = "ResourcesVfs"
     }
     return Impl().root
 }
