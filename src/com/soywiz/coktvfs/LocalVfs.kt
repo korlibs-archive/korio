@@ -20,8 +20,15 @@ fun LocalVfs(base: File): VfsFile {
 	class Impl : Vfs() {
 		fun resolve(path: String) = "$baseAbsolutePath/$path"
 
-		suspend override fun open(path: String): AsyncStream {
-			val channel = AsynchronousFileChannel.open(Paths.get(path), StandardOpenOption.READ)
+		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
+			val channel = AsynchronousFileChannel.open(Paths.get(path), when (mode) {
+				VfsOpenMode.READ -> StandardOpenOption.READ
+				VfsOpenMode.WRITE -> StandardOpenOption.WRITE
+				VfsOpenMode.APPEND -> StandardOpenOption.APPEND
+				VfsOpenMode.CREATE -> StandardOpenOption.CREATE
+				VfsOpenMode.CREATE_NEW -> StandardOpenOption.CREATE_NEW
+				VfsOpenMode.TRUNCATE_EXISTING -> StandardOpenOption.TRUNCATE_EXISTING
+			})
 
 			return object : AsyncStream() {
 				var position = 0L

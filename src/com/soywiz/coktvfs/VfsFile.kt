@@ -34,7 +34,7 @@ class VfsFile(
 
     operator fun get(path: String): VfsFile = VfsFile(vfs, combine(this.path, path))
 
-    suspend fun open(): AsyncStream = vfs.open(path)
+    suspend fun open(mode: VfsOpenMode): AsyncStream = vfs.open(path, mode)
 
     suspend fun read(): ByteArray = vfs.readFully(path)
     suspend fun write(data: ByteArray): Unit = vfs.writeFully(path, data)

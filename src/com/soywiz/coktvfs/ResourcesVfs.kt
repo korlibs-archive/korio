@@ -8,7 +8,7 @@ import com.soywiz.coktvfs.stream.toAsync
 
 fun ResourcesVfs(classLoader: ClassLoader = ClassLoader.getSystemClassLoader()): VfsFile {
     class Impl : Vfs() {
-        suspend override fun open(path: String): AsyncStream = asyncFun {
+        suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = asyncFun {
             readFully(path).open().toAsync()
         }
 

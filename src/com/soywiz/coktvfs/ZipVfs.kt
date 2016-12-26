@@ -9,7 +9,7 @@ import com.soywiz.coktvfs.util.toUInt
 import java.util.zip.Inflater
 
 suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
-    val s = zipFile.open()
+    val s = zipFile.open(VfsOpenMode.READ)
     s.setPosition(s.getLength() - 0x16)
     val data = s.readBytesExact(0x16).open()
 
@@ -87,7 +87,7 @@ suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
     }
 
     class Impl : Vfs() {
-        suspend override fun open(path: String): AsyncStream = asyncFun {
+        suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = asyncFun {
             val entry = files[path.normalizeName()]!!
             val base = entry.compressedData.slice()
             base.run {
