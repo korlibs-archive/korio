@@ -1,6 +1,6 @@
 package com.soywiz.coktvfs.vfs
 
-import com.soywiz.coktvfs.async.sync
+import com.soywiz.coktvfs.sync
 import com.soywiz.coktvfs.async.toList
 import com.soywiz.coktvfs.vfs.ResourcesVfs
 import com.soywiz.coktvfs.vfs.openAsZip
