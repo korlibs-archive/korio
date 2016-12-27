@@ -12,6 +12,10 @@ open class AsyncStream {
     suspend open fun getPosition(): Long = throw UnsupportedOperationException()
     suspend open fun setLength(value: Long): Unit = throw UnsupportedOperationException()
     suspend open fun getLength(): Long = throw UnsupportedOperationException()
+
+    suspend open fun getAvailable(): Long = asyncFun { getLength() - getPosition() }
+    suspend open fun eof(): Boolean = asyncFun { this.getAvailable() <= 0L }
+
     internal val temp = ByteArray(16)
 }
 
@@ -71,8 +75,6 @@ suspend fun AsyncStream.readSlice(length: Long): AsyncStream = asyncFun {
 
 suspend fun AsyncStream.readStream(length: Long): AsyncStream = readSlice(length)
 
-suspend fun AsyncStream.getAvailable(): Long = asyncFun { getLength() - getPosition() }
-
 suspend fun AsyncStream.readStringz(len: Int, charset: Charset = Charsets.UTF_8): String = asyncFun {
     val res = readBytes(len)
     val index = res.indexOf(0.toByte())
@@ -98,48 +100,36 @@ suspend private fun AsyncStream.readTemp(len: Int): ByteArray = asyncFun { temp.
 
 suspend fun AsyncStream.readBytes(len: Int): ByteArray = asyncFun { ByteArray(len).apply { read(this, 0, len) } }
 suspend fun AsyncStream.readBytesExact(len: Int): ByteArray = asyncFun { ByteArray(len).apply { readExact(this, 0, len) } }
-suspend fun AsyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
 
 suspend fun AsyncStream.readU8(): Int = asyncFun { readTemp(1).readU8(0) }
-
 suspend fun AsyncStream.readU16_le(): Int = asyncFun { readTemp(2).readU16_le(0) }
 suspend fun AsyncStream.readU32_le(): Long = asyncFun { readTemp(4).readU32_le(0) }
-
 suspend fun AsyncStream.readS16_le(): Int = asyncFun { readTemp(2).readS16_le(0) }
 suspend fun AsyncStream.readS32_le(): Int = asyncFun { readTemp(4).readS32_le(0) }
 suspend fun AsyncStream.readS64_le(): Long = asyncFun { readTemp(8).readS64_le(0) }
-
 suspend fun AsyncStream.readF32_le(): Float = asyncFun { readTemp(4).readF32_le(0) }
 suspend fun AsyncStream.readF64_le(): Double = asyncFun { readTemp(8).readF64_le(0) }
-
-
 suspend fun AsyncStream.readU16_be(): Int = asyncFun { readTemp(2).readU16_be(0) }
 suspend fun AsyncStream.readU32_be(): Long = asyncFun { readTemp(4).readU32_be(0) }
-
 suspend fun AsyncStream.readS16_be(): Int = asyncFun { readTemp(2).readS16_be(0) }
 suspend fun AsyncStream.readS32_be(): Int = asyncFun { readTemp(4).readS32_be(0) }
 suspend fun AsyncStream.readS64_be(): Long = asyncFun { readTemp(8).readS64_be(0) }
-
 suspend fun AsyncStream.readF32_be(): Float = asyncFun { readTemp(4).readF32_be(0) }
 suspend fun AsyncStream.readF64_be(): Double = asyncFun { readTemp(8).readF64_be(0) }
-
 suspend fun AsyncStream.readAvailable(): ByteArray = asyncFun { readBytes(getAvailable().toInt()) }
 
+suspend fun AsyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
 suspend fun AsyncStream.write8(v: Int): Unit = asyncFun { write(temp.apply { write8(0, v) }, 0, 1) }
-
 suspend fun AsyncStream.write16_le(v: Int): Unit = asyncFun { write(temp.apply { write16_le(0, v) }, 0, 2) }
 suspend fun AsyncStream.write32_le(v: Int): Unit = asyncFun { write(temp.apply { write32_le(0, v) }, 0, 4) }
 suspend fun AsyncStream.write64_le(v: Long): Unit = asyncFun { write(temp.apply { write64_le(0, v) }, 0, 8) }
 suspend fun AsyncStream.writeF32_le(v: Float): Unit = asyncFun { write(temp.apply { writeF32_le(0, v) }, 0, 4) }
 suspend fun AsyncStream.writeF64_le(v: Double): Unit = asyncFun { write(temp.apply { writeF64_le(0, v) }, 0, 8) }
-
 suspend fun AsyncStream.write16_be(v: Int): Unit = asyncFun { write(temp.apply { write16_be(0, v) }, 0, 2) }
 suspend fun AsyncStream.write32_be(v: Int): Unit = asyncFun { write(temp.apply { write32_be(0, v) }, 0, 4) }
 suspend fun AsyncStream.write64_be(v: Long): Unit = asyncFun { write(temp.apply { write64_be(0, v) }, 0, 8) }
 suspend fun AsyncStream.writeF32_be(v: Float): Unit = asyncFun { write(temp.apply { writeF32_be(0, v) }, 0, 4) }
 suspend fun AsyncStream.writeF64_be(v: Double): Unit = asyncFun { write(temp.apply { writeF64_be(0, v) }, 0, 8) }
-
-suspend fun AsyncStream.eof(): Boolean = asyncFun { this.getAvailable() <= 0L }
 
 fun SyncStream.toAsync() = object : AsyncStream() {
     val sync = this@toAsync
