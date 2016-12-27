@@ -1,15 +1,15 @@
 # korio
 
-[![Build Status](https://travis-ci.org/soywiz/coktvfs.svg?branch=master)](https://travis-ci.org/soywiz/coktvfs)
+[![Build Status](https://travis-ci.org/soywiz/korio.svg?branch=master)](https://travis-ci.org/soywiz/korio)
 
-[![Maven Version](https://img.shields.io/github/tag/soywiz/coktvfs.svg?style=flat&label=maven)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22coktvfs%22)
+[![Maven Version](https://img.shields.io/github/tag/soywiz/korio.svg?style=flat&label=maven)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22korio%22)
 
 ## Kotlin cORoutines I/O : Streams + Virtual File System Edit
 
 Use with gradle:
 
 ```
-compile "com.soywiz:coktvfs:0.1"
+compile "com.soywiz:korio:0.1.1"
 ```
 
 This is a kotlin coroutine library that provides asynchronous I/O and filesystem operations for custom and extensible
