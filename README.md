@@ -28,7 +28,7 @@ for (file in zip.listRecursively()) {
 There are several filesystems included:
 
 ```
-LocalVfs, UrlVfs, ZipVfs, Resourcesvfs
+LocalVfs, UrlVfs, ZipVfs, IsoVfs, Resourcesvfs
 ```
 
 But since it is extensible you can create custom ones (for S3, for Windows Registry, for FTP/SFTP, an ISO file...).

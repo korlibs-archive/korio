@@ -89,6 +89,19 @@ fun SyncStream.readStringz(len: Int, charset: Charset = Charsets.UTF_8): String 
 fun SyncStream.readString(len: Int, charset: Charset = Charsets.UTF_8): String = readBytes(len).toString(charset)
 fun SyncStream.writeString(string: String, charset: Charset = Charsets.UTF_8): Unit = writeBytes(string.toByteArray(charset))
 
+fun SyncStream.readExact(out: ByteArray, offset: Int, len: Int): Unit {
+    var ooffset = offset
+    var remaining = len
+    while (remaining > 0) {
+        val read = read(out, ooffset, remaining)
+        if (read <= 0) throw RuntimeException("EOF")
+        remaining -= read
+        ooffset += read
+    }
+}
+
+fun SyncStream.readBytesExact(len: Int): ByteArray = ByteArray(len).apply { readExact(this, 0, len) }
+
 fun SyncStream.readBytes(len: Int): ByteArray = ByteArray(len).apply { read(this, 0, len) }
 fun SyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
 

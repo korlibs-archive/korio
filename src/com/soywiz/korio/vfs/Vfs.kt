@@ -47,14 +47,13 @@ abstract class Vfs {
         open protected fun transformStat(stat: VfsStat): VfsStat = stat
 
         suspend override fun open(path: String, mode: VfsOpenMode) = access(path).open(mode)
+        suspend override fun <T> readSpecial(path: String, clazz: Class<T>, onProgress: (Long, Long) -> Unit): T = access(path).readSpecial(clazz, onProgress)
         suspend override fun readFully(path: String): ByteArray = access(path).read()
         suspend override fun writeFully(path: String, data: ByteArray): Unit = access(path).write(data)
         suspend override fun setSize(path: String, size: Long): Unit = access(path).setSize(size)
         suspend override fun stat(path: String): VfsStat = asyncFun { transformStat(access(path).stat()) }
         suspend override fun list(path: String) = asyncGenerate {
-            for (it in access(path).list()) {
-                yield(transformStat(it))
-            }
+            for (it in access(path).list()) yield(transformStat(it))
         }
     }
 }

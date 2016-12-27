@@ -220,15 +220,15 @@ object ISO {
     }
 
     data class IsoDate(val data: String) {
-        constructor(s: SyncStream) : this(data = s.readStringz(17))
+        constructor(s: SyncStream) : this(data = s.readString(17))
 
-        val year = data.substring(0, 4).toInt()
-        val month = data.substring(4, 6).toInt()
-        val day = data.substring(6, 8).toInt()
-        val hour = data.substring(8, 10).toInt()
-        val minute = data.substring(10, 12).toInt()
-        val second = data.substring(12, 14).toInt()
-        val hsecond = data.substring(14, 16).toInt()
+        val year = data.substring(0, 4).toIntOrNull() ?: 0
+        val month = data.substring(4, 6).toIntOrNull() ?: 0
+        val day = data.substring(6, 8).toIntOrNull() ?: 0
+        val hour = data.substring(8, 10).toIntOrNull() ?: 0
+        val minute = data.substring(10, 12).toIntOrNull() ?: 0
+        val second = data.substring(12, 14).toIntOrNull() ?: 0
+        val hsecond = data.substring(14, 16).toIntOrNull() ?: 0
         //val offset = data.substring(16).toInt()
 
         override fun toString(): String = "IsoDate(%04d-%02d-%02d %02d:%02d:%02d.%d)".format(year, month, day, hour, minute, second, hsecond)
