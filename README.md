@@ -1,10 +1,10 @@
-# coktvfs
+# korio
 
 [![Build Status](https://travis-ci.org/soywiz/coktvfs.svg?branch=master)](https://travis-ci.org/soywiz/coktvfs)
 
 [![Maven Version](https://img.shields.io/github/tag/soywiz/coktvfs.svg?style=flat&label=maven)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22coktvfs%22)
 
-## Virtual File System for Kotlin Coroutines
+## Kotlin cORoutines I/O : Streams + Virtual File System Edit
 
 Use with gradle:
 
@@ -12,7 +12,7 @@ Use with gradle:
 compile "com.soywiz:coktvfs:0.1"
 ```
 
-This is a Virtual File System that provides asynchronous I/O and filesystem operations for custom and extensible
+This is a kotlin coroutine library that provides asynchronous I/O and filesystem operations for custom and extensible
 filesystems with an homogeneous API. This repository doesn't require any special library dependency and just
 requires Kotlin 1.1-M04 or greater.
 

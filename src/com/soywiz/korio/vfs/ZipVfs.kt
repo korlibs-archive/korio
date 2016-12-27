@@ -1,11 +1,11 @@
-package com.soywiz.coktvfs.vfs
+package com.soywiz.korio.vfs
 
-import com.soywiz.coktvfs.async.AsyncSequence
-import com.soywiz.coktvfs.async.asyncFun
-import com.soywiz.coktvfs.async.asyncGenerate
-import com.soywiz.coktvfs.async.executeInWorker
-import com.soywiz.coktvfs.stream.*
-import com.soywiz.coktvfs.util.toUInt
+import com.soywiz.korio.async.AsyncSequence
+import com.soywiz.korio.async.asyncFun
+import com.soywiz.korio.async.asyncGenerate
+import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.toUInt
 import java.util.zip.Inflater
 
 suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
@@ -16,13 +16,13 @@ suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
     fun String.normalizeName() = this.trim('/')
 
     class ZipEntry(
-	    val path: String,
-	    val compressionMethod: Int,
-	    val isDirectory: Boolean,
-	    val offset: Int,
-	    val compressedData: AsyncStream,
-	    val compressedSize: Long,
-	    val uncompressedSize: Long
+            val path: String,
+            val compressionMethod: Int,
+            val isDirectory: Boolean,
+            val offset: Int,
+            val compressedData: AsyncStream,
+            val compressedSize: Long,
+            val uncompressedSize: Long
     ) {
     }
 
@@ -41,7 +41,7 @@ suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
         val directoryOffset = readS32_le()
         val commentLength = readU16_le()
 
-        val ds = s.slice(directoryOffset.toLong(), directorySize.toLong()).readAvailable().open()
+        val ds = s.sliceWithSize(directoryOffset.toLong(), directorySize.toLong()).readAvailable().open()
         ds.apply {
             for (n in 0 until entriesInDirectory) {
                 if (readS32_be() != 0x504B_0102) throw IllegalStateException("Not a zip file record")
@@ -76,7 +76,7 @@ suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
                         compressionMethod = compressionMethod,
                         isDirectory = isDirectory,
                         offset = headerOffset,
-                        compressedData = s.slice(headerOffset.toUInt(), compressedSize.toUInt()),
+                        compressedData = s.sliceWithSize(headerOffset.toUInt(), compressedSize.toUInt()),
                         compressedSize = compressedSize.toUInt(),
                         uncompressedSize = uncompressedSize.toUInt()
                 )

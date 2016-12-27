@@ -1,10 +1,10 @@
-package com.soywiz.coktvfs.vfs
+package com.soywiz.korio.vfs
 
-import com.soywiz.coktvfs.async.asyncFun
-import com.soywiz.coktvfs.async.executeInWorker
-import com.soywiz.coktvfs.stream.AsyncStream
-import com.soywiz.coktvfs.stream.open
-import com.soywiz.coktvfs.stream.toAsync
+import com.soywiz.korio.async.asyncFun
+import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.open
+import com.soywiz.korio.stream.toAsync
 
 fun ResourcesVfs(classLoader: ClassLoader = ClassLoader.getSystemClassLoader()): VfsFile {
     class Impl : Vfs() {

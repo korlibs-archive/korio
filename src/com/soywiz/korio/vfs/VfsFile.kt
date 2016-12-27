@@ -1,15 +1,15 @@
-package com.soywiz.coktvfs.vfs
+package com.soywiz.korio.vfs
 
-import com.soywiz.coktvfs.async.AsyncSequence
-import com.soywiz.coktvfs.async.asyncFun
-import com.soywiz.coktvfs.async.asyncGenerate
-import com.soywiz.coktvfs.stream.AsyncStream
+import com.soywiz.korio.async.AsyncSequence
+import com.soywiz.korio.async.asyncFun
+import com.soywiz.korio.async.asyncGenerate
+import com.soywiz.korio.stream.AsyncStream
 import java.nio.charset.Charset
 import java.util.*
 
 class VfsFile(
-    val vfs: Vfs,
-    path: String
+        val vfs: Vfs,
+        path: String
 ) {
     val path: String = normalize(path)
     val basename: String by lazy { path.substringAfterLast('/') }

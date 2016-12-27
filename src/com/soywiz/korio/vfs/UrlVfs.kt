@@ -1,7 +1,7 @@
-package com.soywiz.coktvfs.vfs
+package com.soywiz.korio.vfs
 
-import com.soywiz.coktvfs.async.asyncFun
-import com.soywiz.coktvfs.util.JsMethodBody
+import com.soywiz.korio.async.asyncFun
+import com.soywiz.korio.util.JsMethodBody
 import java.net.URL
 
 fun UrlVfs(url: URL): VfsFile {

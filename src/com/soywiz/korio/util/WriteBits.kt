@@ -1,4 +1,4 @@
-package com.soywiz.coktvfs.util
+package com.soywiz.korio.util
 
 fun ByteArray.write8(o: Int, v: Int) = run { this[o] = (v and 0xFF).toByte() }
 

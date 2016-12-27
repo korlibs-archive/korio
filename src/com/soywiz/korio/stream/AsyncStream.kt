@@ -1,70 +1,72 @@
-package com.soywiz.coktvfs.stream
+package com.soywiz.korio.stream
 
-import com.soywiz.coktvfs.async.asyncFun
-import com.soywiz.coktvfs.async.executeInWorker
-import com.soywiz.coktvfs.util.*
+import com.soywiz.korio.async.asyncFun
+import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.util.*
 import java.nio.charset.Charset
 
 open class AsyncStream {
-	suspend open fun read(buffer: ByteArray, offset: Int, len: Int): Int = throw UnsupportedOperationException()
-	suspend open fun write(buffer: ByteArray, offset: Int, len: Int): Unit = throw UnsupportedOperationException()
-	suspend open fun setPosition(value: Long): Unit = throw UnsupportedOperationException()
-	suspend open fun getPosition(): Long = throw UnsupportedOperationException()
-	suspend open fun setLength(value: Long): Unit = throw UnsupportedOperationException()
-	suspend open fun getLength(): Long = throw UnsupportedOperationException()
-	internal val temp = ByteArray(16)
+    suspend open fun read(buffer: ByteArray, offset: Int, len: Int): Int = throw UnsupportedOperationException()
+    suspend open fun write(buffer: ByteArray, offset: Int, len: Int): Unit = throw UnsupportedOperationException()
+    suspend open fun setPosition(value: Long): Unit = throw UnsupportedOperationException()
+    suspend open fun getPosition(): Long = throw UnsupportedOperationException()
+    suspend open fun setLength(value: Long): Unit = throw UnsupportedOperationException()
+    suspend open fun getLength(): Long = throw UnsupportedOperationException()
+    internal val temp = ByteArray(16)
 }
 
 class SliceAsyncStream(val base: AsyncStream, val baseOffset: Long, val baseEnd: Long) : AsyncStream() {
-	val baseLength = baseEnd - baseOffset
-	var position = 0L
+    val baseLength = baseEnd - baseOffset
+    var position = 0L
 
-	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
-		val old = base.getPosition()
-		base.setPosition(this.baseOffset + this.position)
-		val res = base.read(buffer, offset, len)
-		this.position += res
-		base.setPosition(old)
-		res
-	}
+    suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
+        val old = base.getPosition()
+        base.setPosition(this.baseOffset + this.position)
+        val res = base.read(buffer, offset, len)
+        this.position += res
+        base.setPosition(old)
+        res
+    }
 
-	suspend override fun write(buffer: ByteArray, offset: Int, len: Int) = asyncFun {
-		val old = base.getPosition()
-		base.setPosition(this.baseOffset + this.position)
-		base.write(buffer, offset, len)
-		this.position += len
-		base.setPosition(old)
-	}
+    suspend override fun write(buffer: ByteArray, offset: Int, len: Int) = asyncFun {
+        val old = base.getPosition()
+        base.setPosition(this.baseOffset + this.position)
+        base.write(buffer, offset, len)
+        this.position += len
+        base.setPosition(old)
+    }
 
-	suspend override fun setPosition(value: Long) {
-		position = value
-	}
+    suspend override fun setPosition(value: Long) {
+        position = value
+    }
 
-	suspend override fun getPosition(): Long {
-		return position
-	}
+    suspend override fun getPosition(): Long {
+        return position
+    }
 
-	suspend override fun getLength(): Long {
-		return baseLength
-	}
+    suspend override fun getLength(): Long {
+        return baseLength
+    }
 }
 
-fun AsyncStream.slice(start: Long, end: Long): AsyncStream {
-	// @TODO: Check bounds
-	return if (this is SliceAsyncStream) {
-		SliceAsyncStream(this.base, this.baseOffset + start, this.baseOffset + end)
-	} else {
-		SliceAsyncStream(this, start, end)
-	}
+fun AsyncStream.sliceWithSize(start: Long, length: Long): AsyncStream = sliceWithBounds(start, start + length)
+
+fun AsyncStream.sliceWithBounds(start: Long, end: Long): AsyncStream {
+    // @TODO: Check bounds
+    return if (this is SliceAsyncStream) {
+        SliceAsyncStream(this.base, this.baseOffset + start, this.baseOffset + end)
+    } else {
+        SliceAsyncStream(this, start, end)
+    }
 }
 
-suspend fun AsyncStream.slice(): AsyncStream = asyncFun { this.slice(0L, this.getLength()) }
+suspend fun AsyncStream.slice(): AsyncStream = asyncFun { this.sliceWithSize(0L, this.getLength()) }
 
 suspend fun AsyncStream.readSlice(length: Long): AsyncStream = asyncFun {
-	val start = getPosition()
-	val out = this.slice(start, start + length)
-	setPosition(start + length)
-	out
+    val start = getPosition()
+    val out = this.sliceWithSize(start, length)
+    setPosition(start + length)
+    out
 }
 
 suspend fun AsyncStream.readStream(length: Long): AsyncStream = readSlice(length)
@@ -72,24 +74,24 @@ suspend fun AsyncStream.readStream(length: Long): AsyncStream = readSlice(length
 suspend fun AsyncStream.getAvailable(): Long = asyncFun { getLength() - getPosition() }
 
 suspend fun AsyncStream.readStringz(len: Int, charset: Charset = Charsets.UTF_8): String = asyncFun {
-	val res = readBytes(len)
-	val index = res.indexOf(0.toByte())
-	String(res, 0, if (index < 0) len else index, charset)
+    val res = readBytes(len)
+    val index = res.indexOf(0.toByte())
+    String(res, 0, if (index < 0) len else index, charset)
 }
 
 suspend fun AsyncStream.readString(len: Int, charset: Charset = Charsets.UTF_8): String = asyncFun { readBytes(len).toString(charset) }
 suspend fun AsyncStream.writeString(string: String, charset: Charset = Charsets.UTF_8): Unit = asyncFun { writeBytes(string.toByteArray(charset)) }
 
 suspend fun AsyncStream.readExact(buffer: ByteArray, offset: Int, len: Int) = asyncFun {
-	var remaining = len
-	var coffset = offset
-	while (remaining > 0) {
-		val read = read(buffer, coffset, remaining)
-		if (read < 0) break
-		if (read == 0) throw IllegalStateException("Not enough data")
-		coffset += read
-		remaining -= read
-	}
+    var remaining = len
+    var coffset = offset
+    while (remaining > 0) {
+        val read = read(buffer, coffset, remaining)
+        if (read < 0) break
+        if (read == 0) throw IllegalStateException("Not enough data")
+        coffset += read
+        remaining -= read
+    }
 }
 
 suspend private fun AsyncStream.readTemp(len: Int): ByteArray = asyncFun { temp.apply { readExact(temp, 0, len) } }
@@ -140,11 +142,11 @@ suspend fun AsyncStream.writeF64_be(v: Double): Unit = asyncFun { write(temp.app
 suspend fun AsyncStream.eof(): Boolean = asyncFun { this.getAvailable() <= 0L }
 
 fun SyncStream.toAsync() = object : AsyncStream() {
-	val sync = this@toAsync
-	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker { sync.read(buffer, offset, len) }
-	suspend override fun write(buffer: ByteArray, offset: Int, len: Int) = executeInWorker { sync.write(buffer, offset, len) }
-	suspend override fun setPosition(value: Long) = executeInWorker { sync.position = value }
-	suspend override fun getPosition(): Long = executeInWorker { sync.position }
-	suspend override fun setLength(value: Long) = executeInWorker { sync.length = value }
-	suspend override fun getLength(): Long = executeInWorker { sync.length }
+    val sync = this@toAsync
+    suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker { sync.read(buffer, offset, len) }
+    suspend override fun write(buffer: ByteArray, offset: Int, len: Int) = executeInWorker { sync.write(buffer, offset, len) }
+    suspend override fun setPosition(value: Long) = executeInWorker { sync.position = value }
+    suspend override fun getPosition(): Long = executeInWorker { sync.position }
+    suspend override fun setLength(value: Long) = executeInWorker { sync.length = value }
+    suspend override fun getLength(): Long = executeInWorker { sync.length }
 }

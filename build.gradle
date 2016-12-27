@@ -35,8 +35,6 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    //compile 'org.jetbrains.kotlinx:kotlinx-coroutines-generate:0.2-beta'
-    //compile 'org.jetbrains.kotlinx:kotlinx-coroutines-async:0.2-beta'
     testCompile "junit:junit:4.11"
 }
 
@@ -78,14 +76,14 @@ if (project.hasProperty('sonatypeUsername')) {
                 pom.project {
                     name "${project.name}"
                     packaging 'jar'
-                    description 'Virtual File System for Kotlin Coroutines'
-                    url 'https://github.com/soywiz/coktvfs/'
+                    description 'Kotlin cORoutines I/O : Streams + Virtual File System Edit'
+                    url 'https://github.com/soywiz/korio/'
                     inceptionYear '2016'
 
                     scm {
-                        url 'scm:git@github.com:soywiz/coktvfs.git'
-                        connection 'scm:git@github.com:soywiz/coktvfs.git'
-                        developerConnection 'scm:git@github.com:soywiz/coktvfs.git'
+                        url 'scm:git@github.com:soywiz/korio.git'
+                        connection 'scm:git@github.com:soywiz/korio.git'
+                        developerConnection 'scm:git@github.com:soywiz/korio.git'
                     }
 
                     licenses {

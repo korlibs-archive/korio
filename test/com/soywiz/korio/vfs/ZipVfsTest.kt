@@ -1,9 +1,7 @@
-package com.soywiz.coktvfs.vfs
+package com.soywiz.korio.vfs
 
-import com.soywiz.coktvfs.sync
-import com.soywiz.coktvfs.async.toList
-import com.soywiz.coktvfs.vfs.ResourcesVfs
-import com.soywiz.coktvfs.vfs.openAsZip
+import com.soywiz.korio.async.toList
+import com.soywiz.korio.sync
 import org.junit.Assert
 import org.junit.Test
 

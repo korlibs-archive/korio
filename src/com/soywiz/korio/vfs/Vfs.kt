@@ -1,11 +1,11 @@
-package com.soywiz.coktvfs.vfs
+package com.soywiz.korio.vfs
 
-import com.soywiz.coktvfs.async.AsyncSequence
-import com.soywiz.coktvfs.async.asyncFun
-import com.soywiz.coktvfs.async.asyncGenerate
-import com.soywiz.coktvfs.stream.AsyncStream
-import com.soywiz.coktvfs.stream.readBytes
-import com.soywiz.coktvfs.stream.writeBytes
+import com.soywiz.korio.async.AsyncSequence
+import com.soywiz.korio.async.asyncFun
+import com.soywiz.korio.async.asyncGenerate
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.readBytes
+import com.soywiz.korio.stream.writeBytes
 
 abstract class Vfs {
     val root by lazy { VfsFile(this, "/") }
