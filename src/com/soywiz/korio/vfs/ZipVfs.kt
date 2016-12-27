@@ -6,6 +6,7 @@ import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.toUInt
+import java.io.FileNotFoundException
 import java.util.zip.Inflater
 
 suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
@@ -88,7 +89,7 @@ suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
 
     class Impl : Vfs() {
         suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = asyncFun {
-            val entry = files[path.normalizeName()]!!
+            val entry = files[path.normalizeName()] ?: throw FileNotFoundException(path)
             val base = entry.compressedData.slice()
             base.run {
                 if (readS32_be() != 0x504B_0304) throw IllegalStateException("Not a zip file")

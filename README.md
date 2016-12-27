@@ -9,7 +9,7 @@
 Use with gradle:
 
 ```
-compile "com.soywiz:korio:0.1.1"
+compile "com.soywiz:korio:0.1.2"
 ```
 
 This is a kotlin coroutine library that provides asynchronous nonblocking I/O and virtual filesystem operations
@@ -49,11 +49,13 @@ are using a VfsFile class that represents a file inside a Vfs.
 As an example, in a suspend block, you can do the following:
 
 ```kotlin
-val zip = ResourcesVfs()["hello.zip"].openAsZip()
-for (file in zip.listRecursively()) {
+val zip = ResourcesVfs()["hello.zip"].openAsZip() // Non blocking opening zip file
+for (file in zip.listRecursively()) { // Lazy non blocking recursive file listing
     println(file.name)
 }
 ```
+
+### Jails
 
 In order to increase security, Vfs engine provides a JailVfs that allows you to sandbox VFS operations inside an
 specific folder. So you can do the following:
@@ -63,13 +65,31 @@ val base = LocalVfs(File("/path/to/sandbox/folder")).jail()
 base["../../../etc/passwd"].readString() // this won't work
 ```
 
+### Mounts
+
+Korio includes a MountableVfs that allows you to mount other filesystems like this:
+
+```
+val resources = ResourcesVfs()
+val root = MountableVfs({
+	mount("/zip", resources["hello.zip"].openAsZip())
+	mount("/iso", resources["isotest.iso"].openAsIso())
+})
+Assert.assertEquals("ZIP!", root["/zip/hello/world.txt"].readString())
+Assert.assertEquals("ISO!", root["/iso/hello/world.txt"].readString())
+```
+
+### Included Vfs
+
 There are several filesystems included and you can find examples of usage in the test folder:
 
 ```kotlin
-LocalVfs, UrlVfs, ZipVfs, IsoVfs, ResourcesVfs, JailVfs
+LocalVfs, UrlVfs, ZipVfs, IsoVfs, ResourcesVfs, JailVfs, MountableVfs
 ```
 
-The VfsFile API:
+### API
+
+To understand which kind of operations can be performed, this is the VfsFile API:
 
 ```kotlin
 class VfsFile {
@@ -95,4 +115,8 @@ class VfsFile {
 }
 ```
 
-But since it is extensible you can create custom ones (for S3, for Windows Registry, for FTP/SFTP, an ISO file...).
+You can create custom virtual file systems and combine them (for S3, for Windows Registry, for FTP/SFTP, an ISO file...)
+or whatever you need.
+
+Also, since you are using a single interface (VfsFile), you can create generic code that will work for files, for network,
+for redis...
