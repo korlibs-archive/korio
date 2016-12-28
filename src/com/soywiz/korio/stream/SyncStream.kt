@@ -1,6 +1,5 @@
 package com.soywiz.korio.stream
 
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.util.*
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -40,7 +39,8 @@ class SliceSyncStream(internal val base: SyncStream, internal val baseOffset: Lo
 	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		return base.keepPosition {
 			base.position = this.baseOffset + position
-			val res = base.read(buffer, offset, len)
+			val rlen = Math.min(available, len.toLong()).toInt()
+			val res = if (rlen > 0) base.read(buffer, offset, rlen) else 0
 			position += res
 			res
 		}
@@ -263,3 +263,5 @@ fun SyncStream.skipToAlign(alignment: Int) {
 		readU8()
 	}
 }
+
+fun SyncStream.truncate() = run { length = position }

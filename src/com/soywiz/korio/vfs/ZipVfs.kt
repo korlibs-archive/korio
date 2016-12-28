@@ -25,7 +25,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 		val time: DosFileDateTime,
 		val offset: Int,
 		val inode: Long,
-		val compressedData: AsyncStream,
+		val headerEntry: AsyncStream,
 		val compressedSize: Long,
 		val uncompressedSize: Long
 	)
@@ -89,7 +89,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 					time = DosFileDateTime(fileTime, fileDate),
 					inode = n.toLong(),
 					offset = headerOffset,
-					compressedData = s.sliceWithSize(headerOffset.toUInt(), compressedSize.toUInt()),
+					headerEntry = s.sliceWithStart(headerOffset.toUInt()),
 					compressedSize = compressedSize.toUInt(),
 					uncompressedSize = uncompressedSize.toUInt()
 				)
@@ -104,7 +104,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 
 		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = asyncFun {
 			val entry = files[path.normalizeName()] ?: throw FileNotFoundException(path)
-			val base = entry.compressedData.slice()
+			val base = entry.headerEntry.slice()
 			base.run {
 				if (readS32_be() != 0x504B_0304) throw IllegalStateException("Not a zip file")
 				val version = readU16_le()

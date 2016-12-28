@@ -4,7 +4,7 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.copyTo
+import com.soywiz.korio.stream.truncate
 import com.soywiz.korio.stream.writeStream
 import java.nio.charset.Charset
 
@@ -25,7 +25,7 @@ class VfsFile(
 	suspend operator fun set(path: String, content: VfsFile): Unit = this[path].writeFile(content)
 
 	suspend fun writeStream(src: AsyncStream): Unit = asyncFun {
-		val dst = this.open(VfsOpenMode.CREATE)
+		val dst = this.open(VfsOpenMode.CREATE_OR_TRUNCATE)
 		try {
 			dst.writeStream(src)
 		} finally {

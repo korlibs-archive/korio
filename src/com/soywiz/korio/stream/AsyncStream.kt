@@ -31,7 +31,8 @@ class SliceAsyncStream(internal val base: AsyncStream, internal val baseOffset: 
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
 		val old = base.getPosition()
 		base.setPosition(this.baseOffset + this.position)
-		val res = base.read(buffer, offset, len)
+		val rlen = Math.min(getAvailable(), len.toLong()).toInt()
+		val res = if (rlen > 0) base.read(buffer, offset, rlen) else 0
 		this.position += res
 		base.setPosition(old)
 		res
@@ -186,14 +187,24 @@ suspend fun AsyncStream.write64_be(v: Long): Unit = asyncFun { write(temp.apply 
 suspend fun AsyncStream.writeF32_be(v: Float): Unit = asyncFun { write(temp.apply { writeF32_be(0, v) }, 0, 4) }
 suspend fun AsyncStream.writeF64_be(v: Double): Unit = asyncFun { write(temp.apply { writeF64_be(0, v) }, 0, 8) }
 
-fun SyncStream.toAsync() = object : AsyncStream() {
-	val sync = this@toAsync
+fun SyncStream.toAsyncInWorker() = object : AsyncStream() {
+	val sync = this@toAsyncInWorker
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker { sync.read(buffer, offset, len) }
 	suspend override fun write(buffer: ByteArray, offset: Int, len: Int) = executeInWorker { sync.write(buffer, offset, len) }
 	suspend override fun setPosition(value: Long) = executeInWorker { sync.position = value }
 	suspend override fun getPosition(): Long = executeInWorker { sync.position }
 	suspend override fun setLength(value: Long) = executeInWorker { sync.length = value }
 	suspend override fun getLength(): Long = executeInWorker { sync.length }
+}
+
+fun SyncStream.toAsync() = object : AsyncStream() {
+	val sync = this@toAsync
+	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = sync.read(buffer, offset, len)
+	suspend override fun write(buffer: ByteArray, offset: Int, len: Int) = sync.write(buffer, offset, len)
+	suspend override fun setPosition(value: Long) = run { sync.position = value }
+	suspend override fun getPosition(): Long = sync.position
+	suspend override fun setLength(value: Long) = run { sync.length = value }
+	suspend override fun getLength(): Long = sync.length
 }
 
 suspend fun AsyncStream.writeStream(source: AsyncStream): Unit = source.copyTo(this)
@@ -228,3 +239,5 @@ suspend fun AsyncStream.skipToAlign(alignment: Int) = asyncFun {
 		readU8()
 	}
 }
+
+suspend fun AsyncStream.truncate() = asyncFun { setLength(getPosition()) }
