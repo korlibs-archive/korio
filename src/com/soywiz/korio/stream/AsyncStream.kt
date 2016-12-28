@@ -173,6 +173,7 @@ suspend fun AsyncStream.readDoubleArray_le(count: Int): DoubleArray = asyncFun {
 suspend fun AsyncStream.readDoubleArray_be(count: Int): DoubleArray = asyncFun { readBytes(count * 8).readDoubleArray_be(0, count) }
 
 suspend fun AsyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
+suspend fun AsyncStream.writeBytes(data: ByteArraySlice): Unit = write(data.data, data.position, data.length)
 suspend fun AsyncStream.write8(v: Int): Unit = asyncFun { write(temp.apply { write8(0, v) }, 0, 1) }
 suspend fun AsyncStream.write16_le(v: Int): Unit = asyncFun { write(temp.apply { write16_le(0, v) }, 0, 2) }
 suspend fun AsyncStream.write24_le(v: Int): Unit = asyncFun { write(temp.apply { write24_le(0, v) }, 0, 3) }

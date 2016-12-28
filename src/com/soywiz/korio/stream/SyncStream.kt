@@ -165,6 +165,7 @@ fun SyncStream.writeStringz(str: String, len: Int, charset: Charset = Charsets.U
 
 fun SyncStream.readBytes(len: Int): ByteArray = ByteArray(len).apply { read(this, 0, len) }
 fun SyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
+fun SyncStream.writeBytes(data: ByteArraySlice): Unit = write(data.data, data.position, data.length)
 
 val SyncStream.eof: Boolean get () = this.available <= 0L
 private fun SyncStream.readTemp(count: Int): ByteArray = temp.apply { read(temp, 0, count) }
