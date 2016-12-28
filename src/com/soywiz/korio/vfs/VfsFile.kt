@@ -133,6 +133,20 @@ class VfsFile(
 
 	suspend fun execToString(vararg cmdAndArgs: String, charset: Charset = Charsets.UTF_8): String = execToString(cmdAndArgs.toList(), charset = charset)
 
+	suspend fun passthru(cmdAndArgs: List<String>, charset: Charset = Charsets.UTF_8): Int = asyncFun {
+		exec(cmdAndArgs.toList(), object : VfsProcessHandler() {
+			suspend override fun onOut(data: ByteArray) {
+				System.out.print(data.toString(charset))
+			}
+
+			suspend override fun onErr(data: ByteArray) {
+				System.err.print(data.toString(charset))
+			}
+		})
+	}
+
+	suspend fun passthru(vararg cmdAndArgs: String, charset: Charset = Charsets.UTF_8): Int = passthru(cmdAndArgs.toList(), charset)
+
 	override fun toString(): String = "$vfs[$path]"
 
 	val absolutePath: String = vfs.absolutePath + File.separator + path
