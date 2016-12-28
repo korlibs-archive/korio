@@ -6,7 +6,6 @@ import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.copyTo
 import java.nio.charset.Charset
-import java.util.*
 
 class VfsFile(
 	val vfs: Vfs,
@@ -76,11 +75,15 @@ class VfsFile(
 
 	fun jail(): VfsFile = JailVfs(this)
 
+	suspend fun delete() = vfs.delete(path)
+
 	suspend fun mkdir() = vfs.mkdir(path)
 	suspend fun mkdirs() = asyncFun {
 		// @TODO: Create tree up to this
 		mkdir()
 	}
+
+	suspend fun renameTo(dstPath: String) = vfs.rename(this.path, dstPath)
 
 	suspend fun list(): AsyncSequence<VfsFile> = vfs.list(path)
 

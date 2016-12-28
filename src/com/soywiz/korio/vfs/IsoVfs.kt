@@ -26,7 +26,7 @@ object ISO {
             val vfs = this
             val isoFile = iso
 
-            fun getVfsStat(file: IsoFile): VfsStat = VfsStat(VfsFile(this, file.fullname), exists = true, isDirectory = file.isDirectory, size = file.size)
+            fun getVfsStat(file: IsoFile): VfsStat = createExistsStat(file.fullname, isDirectory = file.isDirectory, size = file.size)
 
             suspend override fun stat(path: String): VfsStat = asyncFun {
                 try {

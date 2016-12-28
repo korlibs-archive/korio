@@ -134,10 +134,14 @@ class VfsFile {
     suspend fun stat(): VfsStat
     suspend fun size(): Long
     suspend fun exists(): Boolean
+    suspend fun delete(): Boolean
+    suspend fun mkdir(): Boolean
+    suspend fun mkdirs(): Boolean
+    suspend fun renameTo(path: String): Boolean
     suspend fun setSize(size: Long): Unit
-    fun jail(): VfsFile = JailVfs(this)
     suspend fun list(): AsyncSequence<VfsStat>
     suspend fun listRecursive(): AsyncSequence<VfsStat>
+    fun jail(): VfsFile = JailVfs(this)
 }
 ```
 

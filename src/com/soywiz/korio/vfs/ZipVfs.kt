@@ -5,8 +5,10 @@ import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.getBits
 import com.soywiz.korio.util.toUInt
 import java.io.FileNotFoundException
+import java.util.*
 import java.util.zip.Inflater
 
 suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
@@ -20,14 +22,22 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 		val path: String,
 		val compressionMethod: Int,
 		val isDirectory: Boolean,
+		val time: DosFileDateTime,
 		val offset: Int,
+		val inode: Long,
 		val compressedData: AsyncStream,
 		val compressedSize: Long,
 		val uncompressedSize: Long
-	) {
-	}
+	)
 
-	fun ZipEntry?.toStat(file: VfsFile): VfsStat = VfsStat(file, this != null, this?.isDirectory ?: false, this?.uncompressedSize ?: 0L)
+	fun ZipEntry?.toStat(file: VfsFile): VfsStat {
+		val vfs = file.vfs
+		return if (this != null) {
+			vfs.createExistsStat(file.path, isDirectory = isDirectory, size = uncompressedSize, inode = inode, createTime = this.time.timestamp)
+		} else {
+			vfs.createNonExistsStat(file.path)
+		}
+	}
 
 	val files = hashMapOf<String, ZipEntry>()
 	val filesPerFolder = hashMapOf<String, HashMap<String, ZipEntry>>()
@@ -76,6 +86,8 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 					path = name,
 					compressionMethod = compressionMethod,
 					isDirectory = isDirectory,
+					time = DosFileDateTime(fileTime, fileDate),
+					inode = n.toLong(),
 					offset = headerOffset,
 					compressedData = s.sliceWithSize(headerOffset.toUInt(), compressedSize.toUInt()),
 					compressedSize = compressedSize.toUInt(),
@@ -134,6 +146,17 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 	}
 
 	Impl().root
+}
+
+private class DosFileDateTime(var time: Int, var date: Int) {
+	val seconds: Int get() = 2 * date.getBits(0, 5)
+	val minutes: Int get() = 2 * date.getBits(5, 6)
+	val hours: Int get() = 2 * date.getBits(11, 5)
+	val day: Int get() = date.getBits(0, 5)
+	val month: Int get() = date.getBits(5, 4)
+	val year: Int get() = 1980 + date.getBits(9, 7)
+	val javaDate: Date by lazy { Date(year - 1900, month - 1, day, hours, minutes, seconds) }
+	val timestamp: Long get() = javaDate.time
 }
 
 suspend fun VfsFile.openAsZip() = asyncFun { ZipVfs(this.open(VfsOpenMode.READ), this) }

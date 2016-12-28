@@ -10,10 +10,20 @@ open class NodeVfs : Vfs() {
 	open class Node(
 		val name: String,
 		val isDirectory: Boolean = false,
-		var parent: Node? = null
+		parent: Node? = null
 	) {
+		var parent: Node? = null
+			get() = field
+			set(value) {
+				if (field != null) {
+					field!!.children.remove(this.name)
+				}
+				field = value
+				field?.children?.set(name, this)
+			}
+
 		init {
-			parent?.children?.set(name, this)
+			this.parent = parent
 		}
 
 		var data: Any? = null
@@ -41,8 +51,13 @@ open class NodeVfs : Vfs() {
 			return node
 		}
 
-		fun mkdir(name: String) {
-			createChild(name, isDirectory = true)
+		fun mkdir(name: String): Boolean {
+			if (child(name) != null) {
+				return false
+			} else {
+				createChild(name, isDirectory = true)
+				return true
+			}
 		}
 	}
 
@@ -76,8 +91,21 @@ open class NodeVfs : Vfs() {
 		}
 	}
 
-	suspend override fun mkdir(path: String) {
+	suspend override fun delete(path: String): Boolean {
+		return super.delete(path)
+	}
+
+	suspend override fun mkdir(path: String): Boolean {
 		val pathInfo = PathInfo(path)
-		rootNode.access(pathInfo.folder).mkdir(pathInfo.basename)
+		return rootNode.access(pathInfo.folder).mkdir(pathInfo.basename)
+	}
+
+	suspend override fun rename(src: String, dst: String): Boolean {
+		if (src == dst) return false
+		val dstInfo = PathInfo(dst)
+		val srcNode = rootNode.access(src)
+		val dstFolder = rootNode.access(dstInfo.folder)
+		srcNode.parent = dstFolder
+		return true
 	}
 }
