@@ -10,3 +10,6 @@ cache:
   directories:
     - $HOME/.gradle/caches/
     - $HOME/.gradle/wrapper/
+
+script:
+  - gradle -s -i check install
