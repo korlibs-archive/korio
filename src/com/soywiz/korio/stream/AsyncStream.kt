@@ -191,6 +191,7 @@ fun SyncStream.toAsync() = object : AsyncStream() {
 	suspend override fun getLength(): Long = executeInWorker { sync.length }
 }
 
+suspend fun AsyncStream.writeStream(source: AsyncStream): Unit = source.copyTo(this)
 
 suspend fun AsyncStream.copyTo(target: AsyncStream): Unit = asyncFun {
 	val chunk = ByteArray(1024)

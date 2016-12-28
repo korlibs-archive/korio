@@ -3,6 +3,7 @@ package com.soywiz.korio.stream
 import com.soywiz.korio.util.*
 import java.io.ByteArrayOutputStream
 import java.io.File
+import java.io.InputStream
 import java.io.RandomAccessFile
 import java.nio.charset.Charset
 import java.util.*
@@ -225,11 +226,22 @@ fun SyncStream.writeF64_be(v: Double): Unit = write(temp.apply { writeF64_be(0, 
 fun ByteArray.openSync(mode: String = "r"): MemorySyncStream = MemorySyncStream(this)
 fun File.openSync(mode: String = "r"): FileSyncStream = FileSyncStream(this, mode)
 
+fun SyncStream.writeStream(source: SyncStream): Unit = source.copyTo(this)
+
 fun SyncStream.copyTo(target: SyncStream): Unit {
 	val chunk = ByteArray(1024)
 	while (true) {
 		val count = this.read(chunk)
 		if (count <= 0) break
 		this.write(chunk, 0, count)
+	}
+}
+
+fun SyncStream.toInputStream(): InputStream {
+	val ss = this
+	return object : InputStream() {
+		override fun read(): Int = if (ss.eof) -1 else ss.readU8()
+		override fun read(b: ByteArray, off: Int, len: Int): Int = ss.read(b, off, len)
+		override fun available(): Int = ss.available.toInt()
 	}
 }

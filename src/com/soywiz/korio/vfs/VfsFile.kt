@@ -58,6 +58,9 @@ class VfsFile(
 		}
 	}
 
+	val parent: VfsFile by lazy { VfsFile(vfs, path.substringBeforeLast('/', "")) }
+	val root: VfsFile get() = vfs.root
+
 	suspend fun open(mode: VfsOpenMode): AsyncStream = vfs.open(path, mode)
 
 	suspend inline fun <reified T : Any> readSpecial(noinline onProgress: (Long, Long) -> Unit): T = vfs.readSpecial(path, T::class.java, onProgress)
@@ -87,6 +90,12 @@ class VfsFile(
 	suspend fun setSize(size: Long): Unit = vfs.setSize(path, size)
 
 	fun jail(): VfsFile = JailVfs(this)
+
+	suspend fun mkdir() = vfs.mkdir(path)
+	suspend fun mkdirs() = asyncFun {
+		// @TODO: Create tree up to this
+		mkdir()
+	}
 
 	suspend fun list(): AsyncSequence<VfsStat> = vfs.list(path)
 

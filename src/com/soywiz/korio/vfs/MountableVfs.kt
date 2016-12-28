@@ -15,7 +15,7 @@ suspend inline fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile
 
 		override fun mount(folder: String, file: VfsFile) = this.apply { mounts[VfsFile.normalize(folder)] = file }
 
-		override fun access(path: String): VfsFile {
+		override suspend fun access(path: String): VfsFile {
 			val rpath = VfsFile.normalize(path)
 			for ((base, file) in mounts) {
 				//println("$base/$file")
@@ -26,7 +26,7 @@ suspend inline fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile
 			throw FileNotFoundException(path)
 		}
 
-		override fun transformStat(stat: VfsStat): VfsStat {
+		override suspend fun transformStat(stat: VfsStat): VfsStat {
 			return super.transformStat(stat)
 		}
 	}

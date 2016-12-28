@@ -1,10 +1,19 @@
 package com.soywiz.korio.vfs
 
-enum class VfsOpenMode {
-    READ,
-    WRITE,
-    APPEND,
-    TRUNCATE_EXISTING,
-    CREATE,
-    CREATE_NEW,
+enum class VfsOpenMode(val str: String) {
+    READ("r"),
+    WRITE("w"),
+    APPEND("a+"),
+    TRUNCATE_EXISTING("t"),
+    CREATE("c"),
+    CREATE_NEW("cn");
+
+    companion object {
+        fun fromString(str: String): VfsOpenMode {
+            if ('r' in str) {
+                return READ
+            }
+            TODO()
+        }
+    }
 }
