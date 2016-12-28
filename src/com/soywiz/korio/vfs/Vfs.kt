@@ -44,7 +44,7 @@ abstract class Vfs {
 	}
 
 	suspend fun writeChunk(path: String, data: ByteArray, offset: Long, resize: Boolean): Unit = asyncFun {
-		val s = open(path, VfsOpenMode.WRITE)
+		val s = open(path, VfsOpenMode.CREATE)
 		s.setPosition(offset)
 		s.writeBytes(data)
 		if (resize) s.setLength(s.getPosition())

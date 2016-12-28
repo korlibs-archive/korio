@@ -21,6 +21,9 @@ class VfsFile(
 	suspend operator fun set(path: String, content: String) = asyncFun { this[path].writeString(content) }
 	suspend operator fun set(path: String, content: ByteArray) = asyncFun { this[path].write(content) }
 	suspend operator fun set(path: String, content: AsyncStream) = asyncFun { this[path].writeStream(content) }
+	suspend operator fun set(path: String, content: VfsFile) = asyncFun {
+		content.copyTo(this[path])
+	}
 
 	suspend fun writeStream(src: AsyncStream) = asyncFun {
 		val dst = this.open(VfsOpenMode.CREATE)

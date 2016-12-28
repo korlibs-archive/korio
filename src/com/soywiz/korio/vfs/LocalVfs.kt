@@ -16,6 +16,8 @@ import kotlin.coroutines.suspendCoroutine
 
 fun LocalVfs(base: String): VfsFile = LocalVfs(File(base))
 
+fun TempVfs() = LocalVfs(System.getProperty("java.io.tmpdir"))
+
 fun LocalVfs(base: File): VfsFile {
 	val baseAbsolutePath = base.absolutePath
 
@@ -25,13 +27,13 @@ fun LocalVfs(base: File): VfsFile {
 		fun resolveFile(path: String) = File(resolve(path))
 
 		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
-			val channel = AsynchronousFileChannel.open(resolvePath(path), when (mode) {
-				VfsOpenMode.READ -> StandardOpenOption.READ
-				VfsOpenMode.WRITE -> StandardOpenOption.WRITE
-				VfsOpenMode.APPEND -> StandardOpenOption.APPEND
-				VfsOpenMode.CREATE -> StandardOpenOption.CREATE
-				VfsOpenMode.CREATE_NEW -> StandardOpenOption.CREATE_NEW
-				VfsOpenMode.TRUNCATE_EXISTING -> StandardOpenOption.TRUNCATE_EXISTING
+			val channel = AsynchronousFileChannel.open(resolvePath(path), *when (mode) {
+				VfsOpenMode.READ -> arrayOf(StandardOpenOption.READ)
+				VfsOpenMode.WRITE -> arrayOf(StandardOpenOption.READ, StandardOpenOption.WRITE)
+				VfsOpenMode.APPEND -> arrayOf(StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.APPEND)
+				VfsOpenMode.CREATE -> arrayOf(StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE)
+				VfsOpenMode.CREATE_NEW -> arrayOf(StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE_NEW)
+				VfsOpenMode.TRUNCATE_EXISTING -> arrayOf(StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.TRUNCATE_EXISTING)
 			})
 
 			return object : AsyncStream() {
