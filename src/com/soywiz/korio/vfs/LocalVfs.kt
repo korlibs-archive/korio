@@ -80,12 +80,13 @@ fun LocalVfs(base: File): VfsFile {
             asyncGenerate {
                 for (path in Files.newDirectoryStream(Paths.get(resolve(path)))) {
                     val file = path.toFile()
-                    yield(VfsStat(
-                            file = VfsFile(this@Impl, file.absolutePath.substring(baseAbsolutePath.length + 1)),
-                            exists = file.exists(),
-                            isDirectory = file.isDirectory,
-                            size = file.length()
-                    ))
+                    yield(VfsFile(this@Impl, file.absolutePath.substring(baseAbsolutePath.length + 1)))
+                    //yield(VfsStat(
+                    //        file = VfsFile(this@Impl, file.absolutePath.substring(baseAbsolutePath.length + 1)),
+                    //        exists = file.exists(),
+                    //        isDirectory = file.isDirectory,
+                    //        size = file.length()
+                    //))
                 }
             }
         }

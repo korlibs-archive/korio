@@ -13,6 +13,7 @@ class VfsFile(
 	path: String
 ) {
 	val path: String = normalize(path)
+	val fullname: String get() = path
 	val basename: String by lazy { path.substringAfterLast('/') }
 	val nameWithoutExtension: String by lazy { path.substringBeforeLast('.', path) }
 	val extension: String by lazy { basename.substringAfterLast('.') }
@@ -88,6 +89,8 @@ class VfsFile(
 		}
 	}
 
+	suspend fun isDirectory(): Boolean = asyncFun { stat().isDirectory }
+
 	suspend fun setSize(size: Long): Unit = vfs.setSize(path, size)
 
 	fun jail(): VfsFile = JailVfs(this)
@@ -98,13 +101,13 @@ class VfsFile(
 		mkdir()
 	}
 
-	suspend fun list(): AsyncSequence<VfsStat> = vfs.list(path)
+	suspend fun list(): AsyncSequence<VfsFile> = vfs.list(path)
 
-	suspend fun listRecursive(): AsyncSequence<VfsStat> = asyncGenerate {
+	suspend fun listRecursive(): AsyncSequence<VfsFile> = asyncGenerate {
 		for (file in list()) {
 			yield(file)
-			if (file.isDirectory) {
-				for (file in file.file.listRecursive()) {
+			if (file.isDirectory()) {
+				for (file in file.listRecursive()) {
 					yield(file)
 				}
 			}

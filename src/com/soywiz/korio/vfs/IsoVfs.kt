@@ -23,6 +23,7 @@ object ISO {
     suspend fun openVfs(s: AsyncStream) = asyncFun {
         val iso = read(s)
         (object : Vfs() {
+            val vfs = this
             val isoFile = iso
 
             fun getVfsStat(file: IsoFile): VfsStat = VfsStat(VfsFile(this, file.fullname), exists = true, isDirectory = file.isDirectory, size = file.size)
@@ -42,7 +43,8 @@ object ISO {
             suspend override fun list(path: String) = asyncGenerate {
                 val file = isoFile[path]
                 for (c in file.children) {
-                    yield(getVfsStat(c))
+                    //yield(getVfsStat(c))
+                    yield(vfs[c.fullname])
                 }
             }
         }).root

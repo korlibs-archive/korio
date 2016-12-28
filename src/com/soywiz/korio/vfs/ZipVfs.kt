@@ -88,6 +88,8 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 	}
 
 	class Impl : Vfs() {
+		val vfs = this
+
 		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = asyncFun {
 			val entry = files[path.normalizeName()] ?: throw FileNotFoundException(path)
 			val base = entry.compressedData.slice()
@@ -121,9 +123,10 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 			return files[path.normalizeName()].toStat(this@Impl[path])
 		}
 
-		suspend override fun list(path: String): AsyncSequence<VfsStat> = asyncGenerate {
+		suspend override fun list(path: String): AsyncSequence<VfsFile> = asyncGenerate {
 			for ((name, entry) in filesPerFolder[path.normalizeName()]!!) {
-				yield(entry.toStat(this@Impl[entry.path]))
+				//yield(entry.toStat(this@Impl[entry.path]))
+				yield(vfs[entry.path])
 			}
 		}
 

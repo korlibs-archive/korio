@@ -11,7 +11,7 @@ class IsoVfsTest {
 		val isotestIso = ResourcesVfs()["isotest.iso"].openAsIso()
 		Assert.assertEquals(
 			listOf("HELLO", "HELLO/WORLD.TXT"),
-			isotestIso.listRecursive().toList().map { it.name }
+			isotestIso.listRecursive().toList().map { it.fullname }
 		)
 
 		// Case insensitive!

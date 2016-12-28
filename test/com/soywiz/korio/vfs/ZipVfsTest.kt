@@ -12,12 +12,12 @@ class ZipVfsTest {
 
 		Assert.assertEquals(
 			"[VfsStat(file=ZipVfs(ResourcesVfs[hello.zip])[hello], exists=true, isDirectory=true, size=0)]",
-			helloZip.list().toList().toString()
+			helloZip.list().toList().map { it.stat() }.toString()
 		)
 
 		Assert.assertEquals(
 			"[VfsStat(file=ZipVfs(ResourcesVfs[hello.zip])[hello/world.txt], exists=true, isDirectory=false, size=12)]",
-			helloZip["hello"].list().toList().toString()
+			helloZip["hello"].list().toList().map { it.stat() }.toString()
 		)
 
 		Assert.assertEquals(
@@ -39,7 +39,7 @@ class ZipVfsTest {
 		)
 		Assert.assertEquals(
 			"[hello, hello/compressedWorld.txt, hello/world.txt]",
-			helloZip.listRecursive().toList().map { it.name }.toString()
+			helloZip.listRecursive().toList().map { it.fullname }.toString()
 		)
 	}
 }

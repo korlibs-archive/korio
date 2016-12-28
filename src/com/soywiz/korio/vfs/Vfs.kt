@@ -43,7 +43,7 @@ abstract class Vfs {
 
 	suspend open fun setSize(path: String, size: Long): Unit = throw UnsupportedOperationException()
 	suspend open fun stat(path: String): VfsStat = throw UnsupportedOperationException()
-	suspend open fun list(path: String): AsyncSequence<VfsStat> = throw UnsupportedOperationException()
+	suspend open fun list(path: String): AsyncSequence<VfsFile> = throw UnsupportedOperationException()
 	suspend open fun mkdir(path: String): Unit = throw UnsupportedOperationException()
 
 	abstract class Proxy : Vfs() {
@@ -57,7 +57,7 @@ abstract class Vfs {
 		suspend override fun setSize(path: String, size: Long): Unit = asyncFun { access(path).setSize(size) }
 		suspend override fun stat(path: String): VfsStat = asyncFun { transformStat(access(path).stat()) }
 		suspend override fun list(path: String) = asyncGenerate {
-			for (it in access(path).list()) yield(transformStat(it))
+			for (it in access(path).list()) yield(access("$path/${it.basename}"))
 		}
 
 		suspend override fun mkdir(path: String) = asyncFun {
