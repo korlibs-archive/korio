@@ -24,9 +24,9 @@ open class AsyncStream : AsyncCloseable {
 	internal val temp = ByteArray(16)
 }
 
-class SliceAsyncStream(val base: AsyncStream, val baseOffset: Long, val baseEnd: Long) : AsyncStream() {
-	val baseLength = baseEnd - baseOffset
-	var position = 0L
+class SliceAsyncStream(internal val base: AsyncStream, internal val baseOffset: Long, internal val baseEnd: Long) : AsyncStream() {
+	internal val baseLength = baseEnd - baseOffset
+	internal var position = 0L
 
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
 		val old = base.getPosition()
@@ -58,14 +58,14 @@ class SliceAsyncStream(val base: AsyncStream, val baseOffset: Long, val baseEnd:
 	}
 }
 
-suspend fun AsyncStream.sliceWithStart(start: Long): SliceAsyncStream = asyncFun { sliceWithBounds(start, this.getLength()) }
+suspend fun AsyncStream.sliceWithStart(start: Long): AsyncStream = asyncFun { sliceWithBounds(start, this.getLength()) }
 
-fun AsyncStream.sliceWithSize(start: Long, length: Long): SliceAsyncStream = sliceWithBounds(start, start + length)
+fun AsyncStream.sliceWithSize(start: Long, length: Long): AsyncStream = sliceWithBounds(start, start + length)
 
-fun AsyncStream.slice(range: IntRange): SliceAsyncStream = sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1))
-fun AsyncStream.slice(range: LongRange): SliceAsyncStream = sliceWithBounds(range.start, (range.endInclusive + 1))
+fun AsyncStream.slice(range: IntRange): AsyncStream = sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1))
+fun AsyncStream.slice(range: LongRange): AsyncStream = sliceWithBounds(range.start, (range.endInclusive + 1))
 
-fun AsyncStream.sliceWithBounds(start: Long, end: Long): SliceAsyncStream {
+fun AsyncStream.sliceWithBounds(start: Long, end: Long): AsyncStream {
 	// @TODO: Check bounds
 	return if (this is SliceAsyncStream) {
 		SliceAsyncStream(this.base, this.baseOffset + start, this.baseOffset + end)
@@ -74,17 +74,17 @@ fun AsyncStream.sliceWithBounds(start: Long, end: Long): SliceAsyncStream {
 	}
 }
 
-suspend fun AsyncStream.slice(): SliceAsyncStream = asyncFun { this.sliceWithSize(0L, this.getLength()) }
+suspend fun AsyncStream.slice(): AsyncStream = asyncFun { this.sliceWithSize(0L, this.getLength()) }
 
-suspend fun AsyncStream.readSlice(length: Long): SliceAsyncStream = asyncFun {
+suspend fun AsyncStream.readSlice(length: Long): AsyncStream = asyncFun {
 	val start = getPosition()
 	val out = this.sliceWithSize(start, length)
 	setPosition(start + length)
 	out
 }
 
-suspend fun AsyncStream.readStream(length: Int): SliceAsyncStream = readSlice(length.toLong())
-suspend fun AsyncStream.readStream(length: Long): SliceAsyncStream = readSlice(length)
+suspend fun AsyncStream.readStream(length: Int): AsyncStream = readSlice(length.toLong())
+suspend fun AsyncStream.readStream(length: Long): AsyncStream = readSlice(length)
 
 suspend fun AsyncStream.readStringz(charset: Charset = Charsets.UTF_8): String = asyncFun {
 	val buf = ByteArrayOutputStream()
@@ -215,4 +215,10 @@ suspend fun AsyncStream.copyTo(target: AsyncStream): Unit = asyncFun {
 		this.write(chunk, 0, count)
 	}
 	Unit
+}
+
+suspend fun AsyncStream.writeToAlign(alignment: Int, value: Int = 0) = asyncFun {
+	while ((getPosition() % alignment) != 0L) {
+		write8(value)
+	}
 }

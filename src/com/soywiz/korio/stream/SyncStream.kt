@@ -30,8 +30,9 @@ inline fun <T> SyncStream.keepPosition(callback: () -> T): T {
 	}
 }
 
-class SliceSyncStream(val base: SyncStream, val baseOffset: Long, val baseEnd: Long) : SyncStream() {
-	val baseLength: Long = baseEnd - baseOffset
+class SliceSyncStream(internal val base: SyncStream, internal val baseOffset: Long, internal val baseEnd: Long) : SyncStream() {
+	internal val baseLength: Long = baseEnd - baseOffset
+
 	override var position: Long = 0L
 	override var length: Long = baseLength
 
@@ -100,22 +101,22 @@ class MemorySyncStream(var data: ByteArray = ByteArray(0)) : SyncStream() {
 	fun toByteArray(): ByteArray = Arrays.copyOf(data, length.toInt())
 }
 
-fun SyncStream.sliceWithStart(start: Long): SliceSyncStream = sliceWithBounds(start, this.length)
+fun SyncStream.sliceWithStart(start: Long): SyncStream = sliceWithBounds(start, this.length)
 
 fun SyncStream.slice(): SyncStream = SliceSyncStream(this, 0L, length)
 
-fun SyncStream.slice(range: IntRange): SliceSyncStream = sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1))
-fun SyncStream.slice(range: LongRange): SliceSyncStream = sliceWithBounds(range.start, (range.endInclusive + 1))
+fun SyncStream.slice(range: IntRange): SyncStream = sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1))
+fun SyncStream.slice(range: LongRange): SyncStream = sliceWithBounds(range.start, (range.endInclusive + 1))
 
-fun SyncStream.sliceWithBounds(start: Long, end: Long): SliceSyncStream = SliceSyncStream(this, start, end)
-fun SyncStream.sliceWithSize(position: Long, length: Long): SliceSyncStream = sliceWithBounds(position, position + length)
+fun SyncStream.sliceWithBounds(start: Long, end: Long): SyncStream = SliceSyncStream(this, start, end)
+fun SyncStream.sliceWithSize(position: Long, length: Long): SyncStream = sliceWithBounds(position, position + length)
 
-fun SyncStream.readSlice(length: Long): SliceSyncStream = sliceWithSize(position, length).apply {
+fun SyncStream.readSlice(length: Long): SyncStream = sliceWithSize(position, length).apply {
 	this@readSlice.position += length
 }
 
-fun SyncStream.readStream(length: Int): SliceSyncStream = readSlice(length.toLong())
-fun SyncStream.readStream(length: Long): SliceSyncStream = readSlice(length)
+fun SyncStream.readStream(length: Int): SyncStream = readSlice(length.toLong())
+fun SyncStream.readStream(length: Long): SyncStream = readSlice(length)
 
 fun SyncStream.readStringz(charset: Charset = Charsets.UTF_8): String {
 	val buf = ByteArrayOutputStream()
@@ -247,5 +248,11 @@ fun SyncStream.toInputStream(): InputStream {
 		override fun read(): Int = if (ss.eof) -1 else ss.readU8()
 		override fun read(b: ByteArray, off: Int, len: Int): Int = ss.read(b, off, len)
 		override fun available(): Int = ss.available.toInt()
+	}
+}
+
+fun SyncStream.writeToAlign(alignment: Int, value: Int = 0) {
+	while ((position % alignment) != 0L) {
+		write8(value)
 	}
 }
