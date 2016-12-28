@@ -11,13 +11,7 @@ import java.util.*
 class VfsFile(
 	val vfs: Vfs,
 	path: String
-) {
-	val path: String = normalize(path)
-	val fullname: String get() = path
-	val basename: String by lazy { path.substringAfterLast('/') }
-	val nameWithoutExtension: String by lazy { path.substringBeforeLast('.', path) }
-	val extension: String by lazy { basename.substringAfterLast('.') }
-
+) : VfsNamed(VfsFile.normalize(path)) {
 	companion object {
 		fun normalize(path: String): String {
 			var path2 = path
