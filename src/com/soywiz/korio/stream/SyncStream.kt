@@ -82,10 +82,12 @@ class FileSyncStream(val file: File, val mode: String = "r") : SyncStream() {
 
 class MemorySyncStream(var data: ByteArray = ByteArray(0)) : SyncStream() {
 	override var position: Long = 0L
-	override var length: Long
-		get() = data.size.toLong()
+	override var length: Long = data.size.toLong()
 		set(value) {
-			if (value != data.size.toLong()) data = Arrays.copyOf(data, value.toInt())
+			if (value > data.size.toLong()) {
+				data = Arrays.copyOf(data, Math.max(value.toInt(), (data.size + 7) * 2))
+			}
+			field = value
 		}
 
 	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
