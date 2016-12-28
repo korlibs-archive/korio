@@ -164,6 +164,7 @@ private fun SyncStream.readTemp(count: Int): ByteArray = temp.apply { read(temp,
 fun SyncStream.readU8(): Int = readTemp(1).readU8(0)
 
 fun SyncStream.readU16_le(): Int = readTemp(2).readU16_le(0)
+fun SyncStream.readU24_le(): Int = readTemp(3).readU24_le(0)
 fun SyncStream.readU32_le(): Long = readTemp(4).readU32_le(0)
 
 fun SyncStream.readS16_le(): Int = readTemp(2).readS16_le(0)
@@ -174,6 +175,7 @@ fun SyncStream.readF32_le(): Float = readTemp(4).readF32_le(0)
 fun SyncStream.readF64_le(): Double = readTemp(8).readF64_le(0)
 
 fun SyncStream.readU16_be(): Int = readTemp(2).readU16_be(0)
+fun SyncStream.readU24_be(): Int = readTemp(3).readU24_be(0)
 fun SyncStream.readU32_be(): Long = readTemp(4).readU32_be(0)
 
 fun SyncStream.readS16_be(): Int = readTemp(2).readS16_be(0)
@@ -210,6 +212,7 @@ fun SyncStream.readLongArray_be(count: Int): LongArray = readTypedArray(count, 8
 fun SyncStream.write8(v: Int): Unit = write(temp.apply { write8(0, v) }, 0, 1)
 
 fun SyncStream.write16_le(v: Int): Unit = write(temp.apply { write16_le(0, v) }, 0, 2)
+fun SyncStream.write24_le(v: Int): Unit = write(temp.apply { write24_le(0, v) }, 0, 3)
 fun SyncStream.write32_le(v: Int): Unit = write(temp.apply { write32_le(0, v) }, 0, 4)
 fun SyncStream.write32_le(v: Long): Unit = write(temp.apply { write32_le(0, v) }, 0, 4)
 fun SyncStream.write64_le(v: Long): Unit = write(temp.apply { write64_le(0, v) }, 0, 8)
@@ -217,6 +220,7 @@ fun SyncStream.writeF32_le(v: Float): Unit = write(temp.apply { writeF32_le(0, v
 fun SyncStream.writeF64_le(v: Double): Unit = write(temp.apply { writeF64_le(0, v) }, 0, 8)
 
 fun SyncStream.write16_be(v: Int): Unit = write(temp.apply { write16_be(0, v) }, 0, 2)
+fun SyncStream.write24_be(v: Int): Unit = write(temp.apply { write24_be(0, v) }, 0, 3)
 fun SyncStream.write32_be(v: Int): Unit = write(temp.apply { write32_be(0, v) }, 0, 4)
 fun SyncStream.write32_be(v: Long): Unit = write(temp.apply { write32_be(0, v) }, 0, 4)
 fun SyncStream.write64_be(v: Long): Unit = write(temp.apply { write64_be(0, v) }, 0, 8)

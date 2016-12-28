@@ -14,6 +14,7 @@ class VfsFile(
 ) {
 	val path: String = normalize(path)
 	val basename: String by lazy { path.substringAfterLast('/') }
+	val nameWithoutExtension: String by lazy { path.substringBeforeLast('.', path) }
 	val extension: String by lazy { basename.substringAfterLast('.') }
 
 	companion object {

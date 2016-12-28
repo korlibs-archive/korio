@@ -3,6 +3,8 @@ package com.soywiz.korio.stream
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.util.*
+import com.soywiz.korio.vfs.VfsFile
+import com.soywiz.korio.vfs.VfsOpenMode
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 
@@ -129,6 +131,7 @@ suspend fun AsyncStream.readBytesExact(len: Int): ByteArray = asyncFun { ByteArr
 
 suspend fun AsyncStream.readU8(): Int = asyncFun { readTemp(1).readU8(0) }
 suspend fun AsyncStream.readU16_le(): Int = asyncFun { readTemp(2).readU16_le(0) }
+suspend fun AsyncStream.readU24_le(): Int = asyncFun { readTemp(3).readU24_le(0) }
 suspend fun AsyncStream.readU32_le(): Long = asyncFun { readTemp(4).readU32_le(0) }
 suspend fun AsyncStream.readS16_le(): Int = asyncFun { readTemp(2).readS16_le(0) }
 suspend fun AsyncStream.readS32_le(): Int = asyncFun { readTemp(4).readS32_le(0) }
@@ -136,6 +139,7 @@ suspend fun AsyncStream.readS64_le(): Long = asyncFun { readTemp(8).readS64_le(0
 suspend fun AsyncStream.readF32_le(): Float = asyncFun { readTemp(4).readF32_le(0) }
 suspend fun AsyncStream.readF64_le(): Double = asyncFun { readTemp(8).readF64_le(0) }
 suspend fun AsyncStream.readU16_be(): Int = asyncFun { readTemp(2).readU16_be(0) }
+suspend fun AsyncStream.readU24_be(): Int = asyncFun { readTemp(3).readU24_be(0) }
 suspend fun AsyncStream.readU32_be(): Long = asyncFun { readTemp(4).readU32_be(0) }
 suspend fun AsyncStream.readS16_be(): Int = asyncFun { readTemp(2).readS16_be(0) }
 suspend fun AsyncStream.readS32_be(): Int = asyncFun { readTemp(4).readS32_be(0) }
@@ -169,12 +173,14 @@ suspend fun AsyncStream.readLongArray_be(count: Int): LongArray = readTypedArray
 suspend fun AsyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
 suspend fun AsyncStream.write8(v: Int): Unit = asyncFun { write(temp.apply { write8(0, v) }, 0, 1) }
 suspend fun AsyncStream.write16_le(v: Int): Unit = asyncFun { write(temp.apply { write16_le(0, v) }, 0, 2) }
+suspend fun AsyncStream.write24_le(v: Int): Unit = asyncFun { write(temp.apply { write24_le(0, v) }, 0, 3) }
 suspend fun AsyncStream.write32_le(v: Int): Unit = asyncFun { write(temp.apply { write32_le(0, v) }, 0, 4) }
 suspend fun AsyncStream.write32_le(v: Long): Unit = asyncFun { write(temp.apply { write32_le(0, v) }, 0, 4) }
 suspend fun AsyncStream.write64_le(v: Long): Unit = asyncFun { write(temp.apply { write64_le(0, v) }, 0, 8) }
 suspend fun AsyncStream.writeF32_le(v: Float): Unit = asyncFun { write(temp.apply { writeF32_le(0, v) }, 0, 4) }
 suspend fun AsyncStream.writeF64_le(v: Double): Unit = asyncFun { write(temp.apply { writeF64_le(0, v) }, 0, 8) }
 suspend fun AsyncStream.write16_be(v: Int): Unit = asyncFun { write(temp.apply { write16_be(0, v) }, 0, 2) }
+suspend fun AsyncStream.write24_be(v: Int): Unit = asyncFun { write(temp.apply { write24_be(0, v) }, 0, 3) }
 suspend fun AsyncStream.write32_be(v: Int): Unit = asyncFun { write(temp.apply { write32_be(0, v) }, 0, 4) }
 suspend fun AsyncStream.write32_be(v: Long): Unit = asyncFun { write(temp.apply { write32_be(0, v) }, 0, 4) }
 suspend fun AsyncStream.write64_be(v: Long): Unit = asyncFun { write(temp.apply { write64_be(0, v) }, 0, 8) }
@@ -192,6 +198,15 @@ fun SyncStream.toAsync() = object : AsyncStream() {
 }
 
 suspend fun AsyncStream.writeStream(source: AsyncStream): Unit = source.copyTo(this)
+
+suspend fun AsyncStream.writeFile(source: VfsFile): Unit = asyncFun {
+	val s = source.open(VfsOpenMode.READ)
+	try {
+		writeStream(s)
+	} finally {
+		s.close()
+	}
+}
 
 suspend fun AsyncStream.copyTo(target: AsyncStream): Unit = asyncFun {
 	val chunk = ByteArray(1024)
