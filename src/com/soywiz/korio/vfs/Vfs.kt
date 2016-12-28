@@ -12,7 +12,10 @@ abstract class Vfs {
 
 	operator fun get(path: String) = root[path]
 
-	fun createNonExistsStat(path: String) = VfsStat(VfsFile(this, path), exists = false, isDirectory = false, size = 0L)
+	fun file(path: String) = root[path]
+
+	fun createExistsStat(path: String, isDirectory: Boolean, size: Long) = VfsStat(file(path), exists = true, isDirectory = isDirectory, size = size)
+	fun createNonExistsStat(path: String) = VfsStat(file(path), exists = false, isDirectory = false, size = 0L)
 
 	suspend open fun open(path: String, mode: VfsOpenMode): AsyncStream = throw UnsupportedOperationException()
 

@@ -133,6 +133,7 @@ if (project.hasProperty('BINTRAY_USER')) {
         user = BINTRAY_USER
         key = BINTRAY_KEY
         publications = ['MyPublication']
+        publish = true
         override = true
 
         pkg {
