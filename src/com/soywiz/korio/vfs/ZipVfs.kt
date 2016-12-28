@@ -33,7 +33,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 	fun ZipEntry?.toStat(file: VfsFile): VfsStat {
 		val vfs = file.vfs
 		return if (this != null) {
-			vfs.createExistsStat(file.path, isDirectory = isDirectory, size = uncompressedSize, inode = inode, createTime = this.time.timestamp)
+			vfs.createExistsStat(file.path, isDirectory = isDirectory, size = uncompressedSize, inode = inode, createTime = this.time.utcTimestamp)
 		} else {
 			vfs.createNonExistsStat(file.path)
 		}
@@ -155,8 +155,8 @@ private class DosFileDateTime(var time: Int, var date: Int) {
 	val day: Int get() = date.getBits(0, 5)
 	val month: Int get() = date.getBits(5, 4)
 	val year: Int get() = 1980 + date.getBits(9, 7)
-	val javaDate: Date by lazy { Date(year - 1900, month - 1, day, hours, minutes, seconds) }
-	val timestamp: Long get() = javaDate.time
+	val utcTimestamp: Long by lazy { Date.UTC(year - 1900, month - 1, day, hours, minutes, seconds) }
+	val javaDate: Date by lazy { Date(utcTimestamp) }
 }
 
 suspend fun VfsFile.openAsZip() = asyncFun { ZipVfs(this.open(VfsOpenMode.READ), this) }
