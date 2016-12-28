@@ -149,26 +149,25 @@ suspend fun AsyncStream.readF64_be(): Double = asyncFun { readTemp(8).readF64_be
 suspend fun AsyncStream.readAvailable(): ByteArray = asyncFun { readBytes(getAvailable().toInt()) }
 suspend fun AsyncStream.readAll(): ByteArray = asyncFun { readBytes(getAvailable().toInt()) }
 
-private suspend inline fun <T> AsyncStream.readTypedArray(count: Int, elementSize: Int, crossinline gen: () -> T, crossinline read: ByteArray.(array: T, n: Int) -> Unit): T = asyncFun {
-	val temp = readBytes(count * elementSize)
-	val array = gen()
-	for (n in 0 until count) read(temp, array, n)
-	array
-}
-
 suspend fun AsyncStream.readUByteArray(count: Int): UByteArray = asyncFun { UByteArray(readBytes(count)) }
 
-suspend fun AsyncStream.readShortArray_le(count: Int): ShortArray = readTypedArray(count, 2, { ShortArray(count) }, { array, n -> array[n] = readS16_le(n * 2).toShort() })
-suspend fun AsyncStream.readShortArray_be(count: Int): ShortArray = readTypedArray(count, 2, { ShortArray(count) }, { array, n -> array[n] = readS16_be(n * 2).toShort() })
+suspend fun AsyncStream.readShortArray_le(count: Int): ShortArray = asyncFun { readBytes(count * 2).readShortArray_le(0, count) }
+suspend fun AsyncStream.readShortArray_be(count: Int): ShortArray = asyncFun { readBytes(count * 2).readShortArray_be(0, count) }
 
-suspend fun AsyncStream.readCharArray_le(count: Int): CharArray = readTypedArray(count, 2, { CharArray(count) }, { array, n -> array[n] = readU16_le(n * 2).toChar() })
-suspend fun AsyncStream.readCharArray_be(count: Int): CharArray = readTypedArray(count, 2, { CharArray(count) }, { array, n -> array[n] = readU16_be(n * 2).toChar() })
+suspend fun AsyncStream.readCharArray_le(count: Int): CharArray = asyncFun { readBytes(count * 2).readCharArray_le(0, count) }
+suspend fun AsyncStream.readCharArray_be(count: Int): CharArray = asyncFun { readBytes(count * 2).readCharArray_be(0, count) }
 
-suspend fun AsyncStream.readIntArray_le(count: Int): IntArray = readTypedArray(count, 4, { IntArray(count) }, { array, n -> array[n] = readS32_le(n * 4) })
-suspend fun AsyncStream.readIntArray_be(count: Int): IntArray = readTypedArray(count, 4, { IntArray(count) }, { array, n -> array[n] = readS32_be(n * 4) })
+suspend fun AsyncStream.readIntArray_le(count: Int): IntArray = asyncFun { readBytes(count * 4).readIntArray_le(0, count) }
+suspend fun AsyncStream.readIntArray_be(count: Int): IntArray = asyncFun { readBytes(count * 4).readIntArray_be(0, count) }
 
-suspend fun AsyncStream.readLongArray_le(count: Int): LongArray = readTypedArray(count, 8, { LongArray(count) }, { array, n -> array[n] = readS64_le(n * 8) })
-suspend fun AsyncStream.readLongArray_be(count: Int): LongArray = readTypedArray(count, 8, { LongArray(count) }, { array, n -> array[n] = readS64_be(n * 8) })
+suspend fun AsyncStream.readLongArray_le(count: Int): LongArray = asyncFun { readBytes(count * 8).readLongArray_le(0, count) }
+suspend fun AsyncStream.readLongArray_be(count: Int): LongArray = asyncFun { readBytes(count * 8).readLongArray_le(0, count) }
+
+suspend fun AsyncStream.readFloatArray_le(count: Int): FloatArray = asyncFun { readBytes(count * 4).readFloatArray_le(0, count) }
+suspend fun AsyncStream.readFloatArray_be(count: Int): FloatArray = asyncFun { readBytes(count * 4).readFloatArray_be(0, count) }
+
+suspend fun AsyncStream.readDoubleArray_le(count: Int): DoubleArray = asyncFun { readBytes(count * 8).readDoubleArray_le(0, count) }
+suspend fun AsyncStream.readDoubleArray_be(count: Int): DoubleArray = asyncFun { readBytes(count * 8).readDoubleArray_be(0, count) }
 
 suspend fun AsyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
 suspend fun AsyncStream.write8(v: Int): Unit = asyncFun { write(temp.apply { write8(0, v) }, 0, 1) }

@@ -188,26 +188,25 @@ fun SyncStream.readF64_be(): Double = readTemp(8).readF64_be(0)
 fun SyncStream.readAvailable(): ByteArray = readBytes(available.toInt())
 fun SyncStream.readAll(): ByteArray = readBytes(available.toInt())
 
-private inline fun <T> SyncStream.readTypedArray(count: Int, elementSize: Int, crossinline gen: () -> T, crossinline read: ByteArray.(array: T, n: Int) -> Unit): T {
-	val temp = readBytes(count * elementSize)
-	val array = gen()
-	for (n in 0 until count) read(temp, array, n)
-	return array
-}
-
 fun SyncStream.readUByteArray(count: Int): UByteArray = UByteArray(readBytes(count))
 
-fun SyncStream.readShortArray_le(count: Int): ShortArray = readTypedArray(count, 2, { ShortArray(count) }, { array, n -> array[n] = readS16_le(n * 2).toShort() })
-fun SyncStream.readShortArray_be(count: Int): ShortArray = readTypedArray(count, 2, { ShortArray(count) }, { array, n -> array[n] = readS16_be(n * 2).toShort() })
+fun SyncStream.readShortArray_le(count: Int): ShortArray = readBytes(count * 2).readShortArray_le(0, count)
+fun SyncStream.readShortArray_be(count: Int): ShortArray = readBytes(count * 2).readShortArray_be(0, count)
 
-fun SyncStream.readCharArray_le(count: Int): CharArray = readTypedArray(count, 2, { CharArray(count) }, { array, n -> array[n] = readU16_le(n * 2).toChar() })
-fun SyncStream.readCharArray_be(count: Int): CharArray = readTypedArray(count, 2, { CharArray(count) }, { array, n -> array[n] = readU16_be(n * 2).toChar() })
+fun SyncStream.readCharArray_le(count: Int): CharArray = readBytes(count * 2).readCharArray_le(0, count)
+fun SyncStream.readCharArray_be(count: Int): CharArray = readBytes(count * 2).readCharArray_be(0, count)
 
-fun SyncStream.readIntArray_le(count: Int): IntArray = readTypedArray(count, 4, { IntArray(count) }, { array, n -> array[n] = readS32_le(n * 4) })
-fun SyncStream.readIntArray_be(count: Int): IntArray = readTypedArray(count, 4, { IntArray(count) }, { array, n -> array[n] = readS32_be(n * 4) })
+fun SyncStream.readIntArray_le(count: Int): IntArray = readBytes(count * 4).readIntArray_le(0, count)
+fun SyncStream.readIntArray_be(count: Int): IntArray = readBytes(count * 4).readIntArray_be(0, count)
 
-fun SyncStream.readLongArray_le(count: Int): LongArray = readTypedArray(count, 8, { LongArray(count) }, { array, n -> array[n] = readS64_le(n * 8) })
-fun SyncStream.readLongArray_be(count: Int): LongArray = readTypedArray(count, 8, { LongArray(count) }, { array, n -> array[n] = readS64_be(n * 8) })
+fun SyncStream.readLongArray_le(count: Int): LongArray = readBytes(count * 8).readLongArray_le(0, count)
+fun SyncStream.readLongArray_be(count: Int): LongArray = readBytes(count * 8).readLongArray_be(0, count)
+
+fun SyncStream.readFloatArray_le(count: Int): FloatArray = readBytes(count * 4).readFloatArray_le(0, count)
+fun SyncStream.readFloatArray_be(count: Int): FloatArray = readBytes(count * 4).readFloatArray_be(0, count)
+
+fun SyncStream.readDoubleArray_le(count: Int): DoubleArray = readBytes(count * 8).readDoubleArray_le(0, count)
+fun SyncStream.readDoubleArray_be(count: Int): DoubleArray = readBytes(count * 8).readDoubleArray_be(0, count)
 
 fun SyncStream.write8(v: Int): Unit = write(temp.apply { write8(0, v) }, 0, 1)
 

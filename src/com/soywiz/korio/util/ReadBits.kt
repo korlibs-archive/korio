@@ -22,3 +22,27 @@ fun ByteArray.readS64_be(o: Int): Long = (readU32_le(o + 0) shl 32) or (readU32_
 
 fun ByteArray.readF32_be(o: Int): Float = java.lang.Float.intBitsToFloat(readS32_be(o))
 fun ByteArray.readF64_be(o: Int): Double = java.lang.Double.longBitsToDouble(readS64_be(o))
+
+private inline fun <T> ByteArray.readTypedArray(o: Int, count: Int, elementSize: Int, crossinline gen: () -> T, crossinline read: ByteArray.(array: T, n: Int, pos: Int) -> Unit): T {
+	val array = gen()
+	var pos = o
+	for (n in 0 until count) {
+		read(this, array, n, pos)
+		pos += elementSize
+	}
+	return array
+}
+
+fun ByteArray.readShortArray_le(o: Int, count: Int): ShortArray = this.readTypedArray(o, count, 2, { ShortArray(count) }, { array, n, pos -> array[n] = readS16_le(pos).toShort() })
+fun ByteArray.readCharArray_le(o: Int, count: Int): CharArray = this.readTypedArray(o, count, 2, { kotlin.CharArray(count) }, { array, n, pos -> array[n] = readS16_le(pos).toChar() })
+fun ByteArray.readIntArray_le(o: Int, count: Int): IntArray = this.readTypedArray(o, count, 4, { IntArray(count) }, { array, n, pos -> array[n] = readS32_le(pos) })
+fun ByteArray.readLongArray_le(o: Int, count: Int): LongArray = this.readTypedArray(o, count, 8, { LongArray(count) }, { array, n, pos -> array[n] = readS64_le(pos) })
+fun ByteArray.readFloatArray_le(o: Int, count: Int): FloatArray = this.readTypedArray(o, count, 4, { FloatArray(count) }, { array, n, pos -> array[n] = readF32_le(pos) })
+fun ByteArray.readDoubleArray_le(o: Int, count: Int): DoubleArray = this.readTypedArray(o, count, 8, { DoubleArray(count) }, { array, n, pos -> array[n] = readF64_le(pos) })
+
+fun ByteArray.readShortArray_be(o: Int, count: Int): ShortArray = this.readTypedArray(o, count, 2, { ShortArray(count) }, { array, n, pos -> array[n] = readS16_be(pos).toShort() })
+fun ByteArray.readCharArray_be(o: Int, count: Int): CharArray = this.readTypedArray(o, count, 2, { kotlin.CharArray(count) }, { array, n, pos -> array[n] = readS16_be(pos).toChar() })
+fun ByteArray.readIntArray_be(o: Int, count: Int): IntArray = this.readTypedArray(o, count, 4, { IntArray(count) }, { array, n, pos -> array[n] = readS32_be(pos) })
+fun ByteArray.readLongArray_be(o: Int, count: Int): LongArray = this.readTypedArray(o, count, 8, { LongArray(count) }, { array, n, pos -> array[n] = readS64_be(pos) })
+fun ByteArray.readFloatArray_be(o: Int, count: Int): FloatArray = this.readTypedArray(o, count, 4, { FloatArray(count) }, { array, n, pos -> array[n] = readF32_be(pos) })
+fun ByteArray.readDoubleArray_be(o: Int, count: Int): DoubleArray = this.readTypedArray(o, count, 8, { DoubleArray(count) }, { array, n, pos -> array[n] = readF64_be(pos) })
