@@ -99,15 +99,22 @@ class MemorySyncStream(var data: ByteArray = ByteArray(0)) : SyncStream() {
 	fun toByteArray(): ByteArray = Arrays.copyOf(data, length.toInt())
 }
 
-fun SyncStream.slice(): SyncStream = SliceSyncStream(this, 0L, length)
-fun SyncStream.sliceWithBounds(start: Long, end: Long): SyncStream = SliceSyncStream(this, start, end)
-fun SyncStream.sliceWithSize(position: Long, length: Long): SyncStream = sliceWithBounds(position, position + length)
+fun SyncStream.sliceWithStart(start: Long): SliceSyncStream = sliceWithBounds(start, this.length)
 
-fun SyncStream.readSlice(length: Long): SyncStream = sliceWithSize(position, length).apply {
+fun SyncStream.slice(): SyncStream = SliceSyncStream(this, 0L, length)
+
+fun SyncStream.slice(range: IntRange): SliceSyncStream = sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1))
+fun SyncStream.slice(range: LongRange): SliceSyncStream = sliceWithBounds(range.start, (range.endInclusive + 1))
+
+fun SyncStream.sliceWithBounds(start: Long, end: Long): SliceSyncStream = SliceSyncStream(this, start, end)
+fun SyncStream.sliceWithSize(position: Long, length: Long): SliceSyncStream = sliceWithBounds(position, position + length)
+
+fun SyncStream.readSlice(length: Long): SliceSyncStream = sliceWithSize(position, length).apply {
 	this@readSlice.position += length
 }
 
-fun SyncStream.readStream(length: Long): SyncStream = readSlice(length)
+fun SyncStream.readStream(length: Int): SliceSyncStream = readSlice(length.toLong())
+fun SyncStream.readStream(length: Long): SliceSyncStream = readSlice(length)
 
 fun SyncStream.readStringz(charset: Charset = Charsets.UTF_8): String {
 	val buf = ByteArrayOutputStream()
@@ -143,6 +150,9 @@ fun SyncStream.read(data: ByteArray): Int = read(data, 0, data.size)
 fun SyncStream.read(data: UByteArray): Int = read(data.data, 0, data.size)
 
 fun SyncStream.readBytesExact(len: Int): ByteArray = ByteArray(len).apply { readExact(this, 0, len) }
+
+fun SyncStream.writeStringz(str: String, charset: Charset = Charsets.UTF_8) = this.writeBytes(str.toBytez(charset))
+fun SyncStream.writeStringz(str: String, len: Int, charset: Charset = Charsets.UTF_8) = this.writeBytes(str.toBytez(len, charset))
 
 fun SyncStream.readBytes(len: Int): ByteArray = ByteArray(len).apply { read(this, 0, len) }
 fun SyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
@@ -200,12 +210,14 @@ fun SyncStream.write8(v: Int): Unit = write(temp.apply { write8(0, v) }, 0, 1)
 
 fun SyncStream.write16_le(v: Int): Unit = write(temp.apply { write16_le(0, v) }, 0, 2)
 fun SyncStream.write32_le(v: Int): Unit = write(temp.apply { write32_le(0, v) }, 0, 4)
+fun SyncStream.write32_le(v: Long): Unit = write(temp.apply { write32_le(0, v) }, 0, 4)
 fun SyncStream.write64_le(v: Long): Unit = write(temp.apply { write64_le(0, v) }, 0, 8)
 fun SyncStream.writeF32_le(v: Float): Unit = write(temp.apply { writeF32_le(0, v) }, 0, 4)
 fun SyncStream.writeF64_le(v: Double): Unit = write(temp.apply { writeF64_le(0, v) }, 0, 8)
 
 fun SyncStream.write16_be(v: Int): Unit = write(temp.apply { write16_be(0, v) }, 0, 2)
 fun SyncStream.write32_be(v: Int): Unit = write(temp.apply { write32_be(0, v) }, 0, 4)
+fun SyncStream.write32_be(v: Long): Unit = write(temp.apply { write32_be(0, v) }, 0, 4)
 fun SyncStream.write64_be(v: Long): Unit = write(temp.apply { write64_be(0, v) }, 0, 8)
 fun SyncStream.writeF32_be(v: Float): Unit = write(temp.apply { writeF32_be(0, v) }, 0, 4)
 fun SyncStream.writeF64_be(v: Double): Unit = write(temp.apply { writeF64_be(0, v) }, 0, 8)

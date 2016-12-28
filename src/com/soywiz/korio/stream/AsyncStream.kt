@@ -54,9 +54,14 @@ class SliceAsyncStream(val base: AsyncStream, val baseOffset: Long, val baseEnd:
 	}
 }
 
-fun AsyncStream.sliceWithSize(start: Long, length: Long): AsyncStream = sliceWithBounds(start, start + length)
+suspend fun AsyncStream.sliceWithStart(start: Long): SliceAsyncStream = asyncFun { sliceWithBounds(start, this.getLength()) }
 
-fun AsyncStream.sliceWithBounds(start: Long, end: Long): AsyncStream {
+fun AsyncStream.sliceWithSize(start: Long, length: Long): SliceAsyncStream = sliceWithBounds(start, start + length)
+
+fun AsyncStream.slice(range: IntRange): SliceAsyncStream = sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1))
+fun AsyncStream.slice(range: LongRange): SliceAsyncStream = sliceWithBounds(range.start, (range.endInclusive + 1))
+
+fun AsyncStream.sliceWithBounds(start: Long, end: Long): SliceAsyncStream {
 	// @TODO: Check bounds
 	return if (this is SliceAsyncStream) {
 		SliceAsyncStream(this.base, this.baseOffset + start, this.baseOffset + end)
@@ -65,16 +70,17 @@ fun AsyncStream.sliceWithBounds(start: Long, end: Long): AsyncStream {
 	}
 }
 
-suspend fun AsyncStream.slice(): AsyncStream = asyncFun { this.sliceWithSize(0L, this.getLength()) }
+suspend fun AsyncStream.slice(): SliceAsyncStream = asyncFun { this.sliceWithSize(0L, this.getLength()) }
 
-suspend fun AsyncStream.readSlice(length: Long): AsyncStream = asyncFun {
+suspend fun AsyncStream.readSlice(length: Long): SliceAsyncStream = asyncFun {
 	val start = getPosition()
 	val out = this.sliceWithSize(start, length)
 	setPosition(start + length)
 	out
 }
 
-suspend fun AsyncStream.readStream(length: Long): AsyncStream = readSlice(length)
+suspend fun AsyncStream.readStream(length: Int): SliceAsyncStream = readSlice(length.toLong())
+suspend fun AsyncStream.readStream(length: Long): SliceAsyncStream = readSlice(length)
 
 suspend fun AsyncStream.readStringz(charset: Charset = Charsets.UTF_8): String = asyncFun {
 	val buf = ByteArrayOutputStream()
@@ -93,6 +99,10 @@ suspend fun AsyncStream.readStringz(len: Int, charset: Charset = Charsets.UTF_8)
 }
 
 suspend fun AsyncStream.readString(len: Int, charset: Charset = Charsets.UTF_8): String = asyncFun { readBytes(len).toString(charset) }
+
+suspend fun AsyncStream.writeStringz(str: String, charset: Charset = Charsets.UTF_8) = this.writeBytes(str.toBytez(charset))
+suspend fun AsyncStream.writeStringz(str: String, len: Int, charset: Charset = Charsets.UTF_8) = this.writeBytes(str.toBytez(len, charset))
+
 suspend fun AsyncStream.writeString(string: String, charset: Charset = Charsets.UTF_8): Unit = asyncFun { writeBytes(string.toByteArray(charset)) }
 
 suspend fun AsyncStream.readExact(buffer: ByteArray, offset: Int, len: Int) = asyncFun {
@@ -158,11 +168,13 @@ suspend fun AsyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.
 suspend fun AsyncStream.write8(v: Int): Unit = asyncFun { write(temp.apply { write8(0, v) }, 0, 1) }
 suspend fun AsyncStream.write16_le(v: Int): Unit = asyncFun { write(temp.apply { write16_le(0, v) }, 0, 2) }
 suspend fun AsyncStream.write32_le(v: Int): Unit = asyncFun { write(temp.apply { write32_le(0, v) }, 0, 4) }
+suspend fun AsyncStream.write32_le(v: Long): Unit = asyncFun { write(temp.apply { write32_le(0, v) }, 0, 4) }
 suspend fun AsyncStream.write64_le(v: Long): Unit = asyncFun { write(temp.apply { write64_le(0, v) }, 0, 8) }
 suspend fun AsyncStream.writeF32_le(v: Float): Unit = asyncFun { write(temp.apply { writeF32_le(0, v) }, 0, 4) }
 suspend fun AsyncStream.writeF64_le(v: Double): Unit = asyncFun { write(temp.apply { writeF64_le(0, v) }, 0, 8) }
 suspend fun AsyncStream.write16_be(v: Int): Unit = asyncFun { write(temp.apply { write16_be(0, v) }, 0, 2) }
 suspend fun AsyncStream.write32_be(v: Int): Unit = asyncFun { write(temp.apply { write32_be(0, v) }, 0, 4) }
+suspend fun AsyncStream.write32_be(v: Long): Unit = asyncFun { write(temp.apply { write32_be(0, v) }, 0, 4) }
 suspend fun AsyncStream.write64_be(v: Long): Unit = asyncFun { write(temp.apply { write64_be(0, v) }, 0, 8) }
 suspend fun AsyncStream.writeF32_be(v: Float): Unit = asyncFun { write(temp.apply { writeF32_be(0, v) }, 0, 4) }
 suspend fun AsyncStream.writeF64_be(v: Double): Unit = asyncFun { write(temp.apply { writeF64_be(0, v) }, 0, 8) }

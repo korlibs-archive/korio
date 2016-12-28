@@ -8,6 +8,11 @@ suspend fun IsoVfs(file: VfsFile): VfsFile = asyncFun {
     ISO.openVfs(file.open(VfsOpenMode.READ))
 }
 
+suspend fun IsoVfs(s: AsyncStream): VfsFile = asyncFun {
+    ISO.openVfs(s)
+}
+
+suspend fun AsyncStream.openAsIso() = IsoVfs(this)
 suspend fun VfsFile.openAsIso() = IsoVfs(this)
 
 object ISO {
