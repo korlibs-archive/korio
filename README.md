@@ -8,8 +8,15 @@
 
 Use with gradle:
 
+I'm uploading it to bintray and maven central:
+
+For bintray:
 ```
-compile "com.soywiz:korio:0.1.2"
+maven { url "https://dl.bintray.com/soywiz/soywiz-maven" }
+```
+
+```
+compile "com.soywiz:korio:$korioVersion"
 ```
 
 This is a kotlin coroutine library that provides asynchronous nonblocking I/O and virtual filesystem operations

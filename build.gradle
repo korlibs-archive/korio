@@ -4,7 +4,7 @@ version "$korioVersion"
 buildscript {
     repositories {
         mavenLocal()
-        maven { url "http://dl.bintray.com/kotlin/kotlin-eap-1.1" }
+        maven { url "https://dl.bintray.com/kotlin/kotlin-eap-1.1" }
         jcenter()
         mavenCentral()
     }
@@ -34,7 +34,7 @@ sourceSets {
 }
 
 repositories {
-    maven { url "http://dl.bintray.com/kotlin/kotlin-eap-1.1" }
+    maven { url "https://dl.bintray.com/kotlin/kotlin-eap-1.1" }
     mavenCentral()
 }
 
@@ -136,8 +136,8 @@ if (project.hasProperty('BINTRAY_USER')) {
         override = true
 
         pkg {
-            repo = 'korio'
-            name = 'korio'
+            repo = "soywiz-maven"
+            name = project.name
             userOrg = 'soywiz'
             licenses = ['Apache-2.0']
             vcsUrl = 'https://github.com/soywiz/korio.git'
