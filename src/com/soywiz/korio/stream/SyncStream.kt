@@ -1,5 +1,6 @@
 package com.soywiz.korio.stream
 
+import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.util.*
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -254,5 +255,11 @@ fun SyncStream.toInputStream(): InputStream {
 fun SyncStream.writeToAlign(alignment: Int, value: Int = 0) {
 	while ((position % alignment) != 0L) {
 		write8(value)
+	}
+}
+
+fun SyncStream.skipToAlign(alignment: Int) {
+	while ((position % alignment) != 0L) {
+		readU8()
 	}
 }

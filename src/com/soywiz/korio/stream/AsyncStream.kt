@@ -222,3 +222,9 @@ suspend fun AsyncStream.writeToAlign(alignment: Int, value: Int = 0) = asyncFun 
 		write8(value)
 	}
 }
+
+suspend fun AsyncStream.skipToAlign(alignment: Int) = asyncFun {
+	while ((getPosition() % alignment) != 0L) {
+		readU8()
+	}
+}
