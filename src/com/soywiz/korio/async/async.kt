@@ -1,12 +1,10 @@
 package com.soywiz.korio.async
 
+import java.lang.reflect.Method
 import java.util.*
 import java.util.concurrent.CancellationException
 import java.util.concurrent.Executors
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.createCoroutine
-import kotlin.coroutines.startCoroutine
-import kotlin.coroutines.suspendCoroutine
+import kotlin.coroutines.*
 
 inline suspend fun <T> asyncFun(routine: suspend () -> T): T = suspendCoroutine<T> { routine.startCoroutine(it) }
 
@@ -265,3 +263,58 @@ inline suspend fun <T, TR> AsyncSequence<T>.fold(initial: TR, crossinline folder
 }
 
 suspend fun AsyncSequence<Int>.sum(): Int = this.fold(0) { a, b -> a + b }
+
+
+// Useful for invoking methods with suspend
+class ContinuationWait<T> {
+	var completed = false
+	var c_value: T? = null
+	var c_exception: Throwable? = null
+	var attachedContinuation: Continuation<T>? = null
+
+	val continuation = object : Continuation<T> {
+		override fun resume(value: T) {
+			completed = true
+			c_value = value
+			attachedContinuation?.resume(value)
+		}
+
+		override fun resumeWithException(exception: Throwable) {
+			completed = true
+			c_exception = exception
+			attachedContinuation?.resumeWithException(exception)
+		}
+
+	}
+
+	suspend fun await(): T = suspendCoroutine { c ->
+		if (completed) {
+			if (c_exception != null) {
+				c.resumeWithException(c_exception as Throwable)
+			} else {
+				c.resume(c_value as T)
+			}
+		} else {
+			attachedContinuation = c
+		}
+	}
+}
+
+suspend fun Method.invokeSuspend(obj: Any?, args: List<Any?>): Any? = asyncFun {
+	val method = this
+
+	val lastParam = method.parameters.lastOrNull()
+	val margs = ArrayList(args)
+	var cont: ContinuationWait<*>? = null
+
+	if (lastParam != null && lastParam.type.isAssignableFrom(Continuation::class.java)) {
+		cont = ContinuationWait<Any>()
+		margs += cont.continuation
+	}
+	val result = method.invoke(obj, *margs.toTypedArray())
+	if (result == CoroutineIntrinsics.SUSPENDED) {
+		cont?.await()
+	} else {
+		result
+	}
+}
