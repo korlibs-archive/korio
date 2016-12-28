@@ -45,7 +45,7 @@ object ISO {
 
     class IsoReader(val s: AsyncStream) {
         fun getSector(sector: Int, size: Int): AsyncStream = s.sliceWithSize(sector.toLong() * SECTOR_SIZE, size.toLong())
-        suspend fun getSectorMemory(sector: Int, size: Int) = asyncFun { getSector(sector, size).readAvailable().open() }
+        suspend fun getSectorMemory(sector: Int, size: Int) = asyncFun { getSector(sector, size).readAvailable().openSync() }
 
         suspend fun read(): IsoFile = asyncFun {
             val primary = PrimaryVolumeDescriptor(getSectorMemory(0x10, SECTOR_SIZE.toInt()))

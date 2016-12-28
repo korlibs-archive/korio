@@ -12,7 +12,7 @@ import java.util.zip.Inflater
 suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
     val s = zipFile.open(VfsOpenMode.READ)
     s.setPosition(s.getLength() - 0x16)
-    val data = s.readBytesExact(0x16).open()
+    val data = s.readBytesExact(0x16).openSync()
 
     fun String.normalizeName() = this.trim('/')
 
@@ -42,7 +42,7 @@ suspend fun ZipVfs(zipFile: VfsFile) = asyncFun {
         val directoryOffset = readS32_le()
         val commentLength = readU16_le()
 
-        val ds = s.sliceWithSize(directoryOffset.toLong(), directorySize.toLong()).readAvailable().open()
+        val ds = s.sliceWithSize(directoryOffset.toLong(), directorySize.toLong()).readAvailable().openSync()
         ds.apply {
             for (n in 0 until entriesInDirectory) {
                 if (readS32_be() != 0x504B_0102) throw IllegalStateException("Not a zip file record")
