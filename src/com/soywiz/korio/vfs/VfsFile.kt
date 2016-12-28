@@ -131,6 +131,8 @@ class VfsFile(
 		out.toByteArray().toString(charset)
 	}
 
+	suspend fun execToString(vararg cmdAndArgs: String, charset: Charset = Charsets.UTF_8): String = execToString(cmdAndArgs.toList(), charset = charset)
+
 	override fun toString(): String = "$vfs[$path]"
 
 	val absolutePath: String = vfs.absolutePath + File.separator + path
