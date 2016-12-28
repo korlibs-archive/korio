@@ -10,7 +10,8 @@ class LocalVfsTest {
 		val temp = TempVfs()
 		val content = "HELLO WORLD!"
 		temp["korio.temp"].writeString(content)
-		Assert.assertEquals(content, temp["korio.temp"].readString())
+		temp["korio.temp2"].writeFile(temp["korio.temp"])
+		Assert.assertEquals(content, temp["korio.temp2"].readString())
 		Unit
 	}
 }

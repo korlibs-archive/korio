@@ -5,6 +5,7 @@ import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.copyTo
+import com.soywiz.korio.stream.writeStream
 import java.nio.charset.Charset
 
 class VfsFile(
@@ -18,23 +19,23 @@ class VfsFile(
 
 	operator fun get(path: String): VfsFile = VfsFile(vfs, combine(this.path, path))
 
-	suspend operator fun set(path: String, content: String) = asyncFun { this[path].writeString(content) }
-	suspend operator fun set(path: String, content: ByteArray) = asyncFun { this[path].write(content) }
-	suspend operator fun set(path: String, content: AsyncStream) = asyncFun { this[path].writeStream(content) }
-	suspend operator fun set(path: String, content: VfsFile) = asyncFun {
-		content.copyTo(this[path])
-	}
+	suspend operator fun set(path: String, content: String): Unit = this[path].writeString(content)
+	suspend operator fun set(path: String, content: ByteArray): Unit = this[path].write(content)
+	suspend operator fun set(path: String, content: AsyncStream): Unit = this[path].writeStream(content)
+	suspend operator fun set(path: String, content: VfsFile): Unit = this[path].writeFile(content)
 
-	suspend fun writeStream(src: AsyncStream) = asyncFun {
+	suspend fun writeStream(src: AsyncStream): Unit = asyncFun {
 		val dst = this.open(VfsOpenMode.CREATE)
 		try {
-			src.copyTo(dst)
+			dst.writeStream(src)
 		} finally {
 			dst.close()
 		}
 	}
 
-	suspend fun copyTo(target: VfsFile) = asyncFun {
+	suspend fun writeFile(file: VfsFile): Unit = file.copyTo(this)
+
+	suspend fun copyTo(target: VfsFile): Unit = asyncFun {
 		val src = this.open(VfsOpenMode.READ)
 		try {
 			target.writeStream(src)

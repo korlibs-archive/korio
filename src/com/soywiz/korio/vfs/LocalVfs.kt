@@ -60,6 +60,10 @@ fun LocalVfs(base: File): VfsFile {
 				}
 
 				suspend override fun getLength(): Long = channel.size()
+
+				suspend override fun close() {
+					channel.close()
+				}
 			}
 		}
 

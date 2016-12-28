@@ -212,7 +212,7 @@ suspend fun AsyncStream.copyTo(target: AsyncStream): Unit = asyncFun {
 	while (true) {
 		val count = this.read(chunk)
 		if (count <= 0) break
-		this.write(chunk, 0, count)
+		target.write(chunk, 0, count)
 	}
 	Unit
 }
