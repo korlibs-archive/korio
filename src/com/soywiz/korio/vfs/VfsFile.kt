@@ -4,6 +4,7 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.stream.*
+import java.io.File
 import java.nio.charset.Charset
 
 class VfsFile(
@@ -105,4 +106,6 @@ class VfsFile(
 	}
 
 	override fun toString(): String = "$vfs[$path]"
+
+	val absolutePath: String = vfs.absolutePath + File.separator + path
 }

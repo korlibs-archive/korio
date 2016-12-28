@@ -101,6 +101,7 @@ class MemorySyncStream(var data: ByteArray = ByteArray(0)) : SyncStream() {
 		this.position += len
 	}
 
+	fun toByteArraySlice() = ByteArraySlice(data, 0, length.toInt())
 	fun toByteArray(): ByteArray = Arrays.copyOf(data, length.toInt())
 	override fun toString(): String = "MemorySyncStream(${data.size})"
 }

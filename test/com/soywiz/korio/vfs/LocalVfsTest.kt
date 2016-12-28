@@ -4,6 +4,7 @@ import com.soywiz.korio.async.sync
 import com.soywiz.korio.stream.slice
 import org.junit.Assert
 import org.junit.Test
+import java.io.File
 
 class LocalVfsTest {
 	@Test
@@ -20,6 +21,7 @@ class LocalVfsTest {
 		Assert.assertEquals(true, temp["korio.temp2"].delete())
 		Assert.assertEquals(true, temp["korio.temp3"].delete())
 		Assert.assertEquals(false, temp["korio.temp3"].delete())
+		Assert.assertEquals(File(System.getProperty("java.io.tmpdir"), "korio.temp3").absolutePath, temp["korio.temp3"].absolutePath)
 		Unit
 	}
 }

@@ -8,6 +8,7 @@ import com.soywiz.korio.stream.readBytes
 import com.soywiz.korio.stream.writeBytes
 
 abstract class Vfs {
+	open val absolutePath: String = ""
 	val root by lazy { VfsFile(this, "/") }
 
 	operator fun get(path: String) = root[path]
