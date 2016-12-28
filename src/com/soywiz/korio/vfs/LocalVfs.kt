@@ -104,3 +104,5 @@ inline suspend fun <T> completionHandler(crossinline callback: (CompletionHandle
         }
     })
 }
+
+suspend fun File.open(mode: VfsOpenMode) = LocalVfs(this).open(mode)

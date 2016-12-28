@@ -1,103 +1,130 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.util.*
+import java.io.File
+import java.io.RandomAccessFile
 import java.nio.charset.Charset
 import java.util.*
 
 open class SyncStream {
-    open fun read(buffer: ByteArray, offset: Int, len: Int): Int = throw UnsupportedOperationException()
-    open fun write(buffer: ByteArray, offset: Int, len: Int): Unit = throw UnsupportedOperationException()
-    open var position: Long
-        set(value) = throw UnsupportedOperationException()
-        get() = run { throw UnsupportedOperationException() }
-    open var length: Long
-        set(value) = throw UnsupportedOperationException()
-        get() = run { throw UnsupportedOperationException() }
-    val available: Long get() = length - position
-    internal val temp = ByteArray(16)
+	open fun read(buffer: ByteArray, offset: Int, len: Int): Int = throw UnsupportedOperationException()
+	open fun write(buffer: ByteArray, offset: Int, len: Int): Unit = throw UnsupportedOperationException()
+	open var position: Long
+		set(value) = throw UnsupportedOperationException()
+		get() = run { throw UnsupportedOperationException() }
+	open var length: Long
+		set(value) = throw UnsupportedOperationException()
+		get() = run { throw UnsupportedOperationException() }
+	val available: Long get() = length - position
+	internal val temp = ByteArray(16)
 }
 
 inline fun <T> SyncStream.keepPosition(callback: () -> T): T {
-    val old = this.position
-    try {
-        return callback()
-    } finally {
-        this.position = old
-    }
+	val old = this.position
+	try {
+		return callback()
+	} finally {
+		this.position = old
+	}
 }
 
 class SliceSyncStream(val base: SyncStream, val baseOffset: Long, val baseEnd: Long) : SyncStream() {
-    val baseLength: Long = baseEnd - baseOffset
-    override var position: Long = 0L
-    override var length: Long = baseLength
+	val baseLength: Long = baseEnd - baseOffset
+	override var position: Long = 0L
+	override var length: Long = baseLength
 
-    override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-        return base.keepPosition {
-            base.position = this.baseOffset + position
-            val res = base.read(buffer, offset, len)
-            position += res
-            res
-        }
-    }
+	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+		return base.keepPosition {
+			base.position = this.baseOffset + position
+			val res = base.read(buffer, offset, len)
+			position += res
+			res
+		}
+	}
 
-    override fun write(buffer: ByteArray, offset: Int, len: Int) {
-        return base.keepPosition {
-            base.position = this.baseOffset + position
-            base.write(buffer, offset, len)
-            position += len
-        }
-    }
+	override fun write(buffer: ByteArray, offset: Int, len: Int) {
+		return base.keepPosition {
+			base.position = this.baseOffset + position
+			base.write(buffer, offset, len)
+			position += len
+		}
+	}
+}
+
+class FileSyncStream(val file: File, val mode: String = "r") : SyncStream() {
+	val ra = RandomAccessFile(file, mode)
+
+	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+		return ra.read(buffer, offset, len)
+	}
+
+	override fun write(buffer: ByteArray, offset: Int, len: Int) {
+		ra.write(buffer, offset, len)
+	}
+
+	override var position: Long
+		get() = ra.filePointer
+		set(value) {
+			ra.seek(value)
+		}
+	override var length: Long
+		get() = ra.length()
+		set(value) {
+			ra.setLength(value)
+		}
 }
 
 class MemorySyncStream(var data: ByteArray = ByteArray(0)) : SyncStream() {
-    override var position: Long = 0L
-    override var length: Long
-        get() = data.size.toLong()
-        set(value) {
-            if (value != data.size.toLong()) data = Arrays.copyOf(data, value.toInt())
-        }
+	override var position: Long = 0L
+	override var length: Long
+		get() = data.size.toLong()
+		set(value) {
+			if (value != data.size.toLong()) data = Arrays.copyOf(data, value.toInt())
+		}
 
-    override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-        val read = Math.min(len, available.toInt())
-        System.arraycopy(this.data, this.position.toInt(), buffer, offset, read)
-        this.position += read
-        return read
-    }
+	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+		val read = Math.min(len, available.toInt())
+		System.arraycopy(this.data, this.position.toInt(), buffer, offset, read)
+		this.position += read
+		return read
+	}
 
-    override fun write(buffer: ByteArray, offset: Int, len: Int) {
-        this.length = Math.max(this.position + len, this.length)
-        System.arraycopy(buffer, offset, this.data, this.position.toInt(), len)
-        this.position += len
-    }
+	override fun write(buffer: ByteArray, offset: Int, len: Int) {
+		this.length = Math.max(this.position + len, this.length)
+		System.arraycopy(buffer, offset, this.data, this.position.toInt(), len)
+		this.position += len
+	}
+
+	fun toByteArray(): ByteArray = Arrays.copyOf(data, length.toInt())
 }
 
 fun SyncStream.sliceWithBounds(start: Long, end: Long): SyncStream = SliceSyncStream(this, start, end)
 fun SyncStream.sliceWithSize(position: Long, length: Long): SyncStream = sliceWithBounds(position, position + length)
 
 fun SyncStream.readSlice(length: Long): SyncStream = sliceWithSize(position, length).apply {
-    this@readSlice.position += length
+	this@readSlice.position += length
 }
 
 fun SyncStream.readStream(length: Long): SyncStream = readSlice(length)
 
 fun SyncStream.readStringz(len: Int, charset: Charset = Charsets.UTF_8): String {
-    val res = readBytes(len)
-    val index = res.indexOf(0.toByte())
-    return String(res, 0, if (index < 0) len else index, charset)
+	val res = readBytes(len)
+	val index = res.indexOf(0.toByte())
+	return String(res, 0, if (index < 0) len else index, charset)
 }
 
 fun SyncStream.readString(len: Int, charset: Charset = Charsets.UTF_8): String = readBytes(len).toString(charset)
 fun SyncStream.writeString(string: String, charset: Charset = Charsets.UTF_8): Unit = writeBytes(string.toByteArray(charset))
 
 fun SyncStream.readExact(out: ByteArray, offset: Int, len: Int): Unit {
-    var ooffset = offset
-    var remaining = len
-    while (remaining > 0) {
-        val read = read(out, ooffset, remaining)
-        if (read <= 0) throw RuntimeException("EOF")
-        remaining -= read
-        ooffset += read
-    }
+	var ooffset = offset
+	var remaining = len
+	while (remaining > 0) {
+		val read = read(out, ooffset, remaining)
+		if (read <= 0) throw RuntimeException("EOF")
+		remaining -= read
+		ooffset += read
+	}
 }
 
 fun SyncStream.readBytesExact(len: Int): ByteArray = ByteArray(len).apply { readExact(this, 0, len) }
@@ -146,4 +173,5 @@ fun SyncStream.write64_be(v: Long): Unit = write(temp.apply { write64_be(0, v) }
 fun SyncStream.writeF32_be(v: Float): Unit = write(temp.apply { writeF32_be(0, v) }, 0, 4)
 fun SyncStream.writeF64_be(v: Double): Unit = write(temp.apply { writeF64_be(0, v) }, 0, 8)
 
-fun ByteArray.open(): SyncStream = MemorySyncStream(this)
+fun ByteArray.open(): MemorySyncStream = MemorySyncStream(this)
+fun File.openSync(mode: String): FileSyncStream = FileSyncStream(this, mode)
