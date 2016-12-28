@@ -224,3 +224,12 @@ fun SyncStream.writeF64_be(v: Double): Unit = write(temp.apply { writeF64_be(0, 
 
 fun ByteArray.openSync(mode: String = "r"): MemorySyncStream = MemorySyncStream(this)
 fun File.openSync(mode: String = "r"): FileSyncStream = FileSyncStream(this, mode)
+
+fun SyncStream.copyTo(target: SyncStream): Unit {
+	val chunk = ByteArray(1024)
+	while (true) {
+		val count = this.read(chunk)
+		if (count <= 0) break
+		this.write(chunk, 0, count)
+	}
+}

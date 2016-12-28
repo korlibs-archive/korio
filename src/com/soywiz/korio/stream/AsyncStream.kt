@@ -6,7 +6,7 @@ import com.soywiz.korio.util.*
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 
-open class AsyncStream {
+open class AsyncStream : AsyncCloseable {
 	suspend open fun read(buffer: ByteArray, offset: Int, len: Int): Int = throw UnsupportedOperationException()
 	suspend open fun write(buffer: ByteArray, offset: Int, len: Int): Unit = throw UnsupportedOperationException()
 	suspend open fun setPosition(value: Long): Unit = throw UnsupportedOperationException()
@@ -16,6 +16,8 @@ open class AsyncStream {
 
 	suspend open fun getAvailable(): Long = asyncFun { getLength() - getPosition() }
 	suspend open fun eof(): Boolean = asyncFun { this.getAvailable() <= 0L }
+
+	override suspend open fun close(): Unit = Unit
 
 	internal val temp = ByteArray(16)
 }
@@ -187,4 +189,15 @@ fun SyncStream.toAsync() = object : AsyncStream() {
 	suspend override fun getPosition(): Long = executeInWorker { sync.position }
 	suspend override fun setLength(value: Long) = executeInWorker { sync.length = value }
 	suspend override fun getLength(): Long = executeInWorker { sync.length }
+}
+
+
+suspend fun AsyncStream.copyTo(target: AsyncStream): Unit = asyncFun {
+	val chunk = ByteArray(1024)
+	while (true) {
+		val count = this.read(chunk)
+		if (count <= 0) break
+		this.write(chunk, 0, count)
+	}
+	Unit
 }

@@ -14,6 +14,8 @@ import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import kotlin.coroutines.suspendCoroutine
 
+fun LocalVfs(base: String): VfsFile = LocalVfs(File(base))
+
 fun LocalVfs(base: File): VfsFile {
     val baseAbsolutePath = base.absolutePath
 
