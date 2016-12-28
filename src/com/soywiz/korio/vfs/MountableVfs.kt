@@ -25,10 +25,6 @@ suspend inline fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile
 			}
 			throw FileNotFoundException(path)
 		}
-
-		override suspend fun transformStat(stat: VfsStat): VfsStat {
-			return super.transformStat(stat)
-		}
 	}
 	callback.startCoroutine(mount, object : Continuation<Unit> {
 		override fun resume(value: Unit) = c.resume(mount.root)

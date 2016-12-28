@@ -13,21 +13,8 @@ class VfsFile(
 	path: String
 ) : VfsNamed(VfsFile.normalize(path)) {
 	companion object {
-		fun normalize(path: String): String {
-			var path2 = path
-			while (path2.startsWith("/")) path2 = path2.substring(1)
-			val out = LinkedList<String>()
-			for (part in path2.split("/")) {
-				when (part) {
-					"", "." -> Unit
-					"" -> if (out.isNotEmpty()) out.removeLast()
-					else -> out += part
-				}
-			}
-			return out.joinToString("/")
-		}
-
-		fun combine(base: String, access: String): String = normalize(base + "/" + access)
+		fun normalize(path: String): String = VfsUtil.normalize(path)
+		fun combine(base: String, access: String): String = VfsUtil.combine(base, access)
 	}
 
 	operator fun get(path: String): VfsFile = VfsFile(vfs, combine(this.path, path))
@@ -57,7 +44,7 @@ class VfsFile(
 	val parent: VfsFile by lazy { VfsFile(vfs, path.substringBeforeLast('/', "")) }
 	val root: VfsFile get() = vfs.root
 
-	suspend fun open(mode: VfsOpenMode): AsyncStream = vfs.open(path, mode)
+	suspend fun open(mode: VfsOpenMode = VfsOpenMode.READ): AsyncStream = vfs.open(path, mode)
 
 	suspend inline fun <reified T : Any> readSpecial(noinline onProgress: (Long, Long) -> Unit): T = vfs.readSpecial(path, T::class.java, onProgress)
 	suspend inline fun <reified T : Any> readSpecial(): T = vfs.readSpecial(path, T::class.java)
@@ -100,7 +87,8 @@ class VfsFile(
 	suspend fun listRecursive(): AsyncSequence<VfsFile> = asyncGenerate {
 		for (file in list()) {
 			yield(file)
-			if (file.isDirectory()) {
+			val stat = file.stat()
+			if (stat.isDirectory) {
 				for (file in file.listRecursive()) {
 					yield(file)
 				}

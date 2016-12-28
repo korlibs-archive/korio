@@ -228,6 +228,7 @@ fun SyncStream.writeF32_be(v: Float): Unit = write(temp.apply { writeF32_be(0, v
 fun SyncStream.writeF64_be(v: Double): Unit = write(temp.apply { writeF64_be(0, v) }, 0, 8)
 
 fun ByteArray.openSync(mode: String = "r"): MemorySyncStream = MemorySyncStream(this)
+fun ByteArray.openAsync(mode: String = "r") = openSync(mode).toAsync()
 fun File.openSync(mode: String = "r"): FileSyncStream = FileSyncStream(this, mode)
 
 fun SyncStream.writeStream(source: SyncStream): Unit = source.copyTo(this)

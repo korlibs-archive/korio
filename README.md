@@ -86,12 +86,31 @@ Assert.assertEquals("ZIP!", root["/zip/hello/world.txt"].readString())
 Assert.assertEquals("ISO!", root["/iso/hello/world.txt"].readString())
 ```
 
+### InMemory Vfs
+
+Korio includes an inmemory vfs to create volatile vfs:
+
+```
+val mem = MemoryVfs(mapOf(
+    "hello/secret.txt" to "SECRET!".toByteArray().openAsync(),
+    "hello/world/test.txt" to "HELLO WORLD!".toByteArray().openAsync()
+))
+```
+
+### NodeVfs
+
+Korio includes an open base NodeVfs to support node based vfs.
+
+### PathInfo
+
+Korio includes a PathInfo utility integrated with VfsFile in order to obtain path information (folder, basename, extension...)
+
 ### Included Vfs
 
 There are several filesystems included and you can find examples of usage in the test folder:
 
 ```kotlin
-LocalVfs, UrlVfs, ZipVfs, IsoVfs, ResourcesVfs, JailVfs, MountableVfs
+LocalVfs, UrlVfs, ZipVfs, IsoVfs, ResourcesVfs, JailVfs, MountableVfs, MemoryVfs
 ```
 
 ### API

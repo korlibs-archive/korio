@@ -41,21 +41,25 @@ abstract class Vfs {
 		if (resize) s.setLength(s.getPosition())
 	}
 
-	suspend open fun setSize(path: String, size: Long): Unit = throw UnsupportedOperationException()
+	suspend open fun setSize(path: String, size: Long): Unit = asyncFun {
+		open(path, mode = VfsOpenMode.WRITE).setLength(size)
+	}
 	suspend open fun stat(path: String): VfsStat = throw UnsupportedOperationException()
 	suspend open fun list(path: String): AsyncSequence<VfsFile> = throw UnsupportedOperationException()
 	suspend open fun mkdir(path: String): Unit = throw UnsupportedOperationException()
 
 	abstract class Proxy : Vfs() {
 		abstract suspend protected fun access(path: String): VfsFile
-		open suspend protected fun transformStat(stat: VfsStat): VfsStat = stat
 
 		suspend override fun open(path: String, mode: VfsOpenMode) = asyncFun { access(path).open(mode) }
 		suspend override fun <T> readSpecial(path: String, clazz: Class<T>, onProgress: (Long, Long) -> Unit): T = asyncFun { access(path).readSpecial(clazz, onProgress) }
 		suspend override fun readFully(path: String): ByteArray = asyncFun { access(path).read() }
 		suspend override fun writeFully(path: String, data: ByteArray): Unit = asyncFun { access(path).write(data) }
 		suspend override fun setSize(path: String, size: Long): Unit = asyncFun { access(path).setSize(size) }
-		suspend override fun stat(path: String): VfsStat = asyncFun { transformStat(access(path).stat()) }
+		suspend override fun stat(path: String): VfsStat = asyncFun {
+			val stat = access(path).stat()
+			VfsStat(file = file(path), exists = stat.exists, isDirectory = stat.isDirectory, size = stat.size)
+		}
 		suspend override fun list(path: String) = asyncGenerate {
 			for (it in access(path).list()) yield(access("$path/${it.basename}"))
 		}
