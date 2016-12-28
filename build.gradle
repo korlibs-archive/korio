@@ -145,3 +145,6 @@ if (project.hasProperty('BINTRAY_USER')) {
         }
     }
 }
+
+task deploy(dependsOn: ['install', 'bintrayUpload', 'uploadArchives']) {
+}
