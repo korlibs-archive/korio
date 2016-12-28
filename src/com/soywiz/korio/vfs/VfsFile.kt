@@ -3,7 +3,11 @@ package com.soywiz.korio.vfs
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
-import com.soywiz.korio.stream.*
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.SyncStream
+import com.soywiz.korio.stream.openSync
+import com.soywiz.korio.stream.writeStream
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.charset.Charset
 
@@ -45,6 +49,9 @@ class VfsFile(
 
 	val parent: VfsFile by lazy { VfsFile(vfs, path.substringBeforeLast('/', "")) }
 	val root: VfsFile get() = vfs.root
+
+	fun withExtension(name: String): VfsFile = VfsFile(vfs, fullnameWithoutExtension + if (name.isNotEmpty()) ".$name" else "")
+	fun appendExtension(name: String): VfsFile = VfsFile(vfs, fullname + ".$name")
 
 	suspend fun open(mode: VfsOpenMode = VfsOpenMode.READ): AsyncStream = vfs.open(path, mode)
 
@@ -103,6 +110,25 @@ class VfsFile(
 				}
 			}
 		}
+	}
+
+	suspend fun exec(cmdAndArgs: List<String>, handler: VfsProcessHandler = VfsProcessHandler()): Int = vfs.exec(path, cmdAndArgs, handler)
+	suspend fun execToString(cmdAndArgs: List<String>, charset: Charset = Charsets.UTF_8): String = asyncFun {
+		val out = ByteArrayOutputStream()
+
+		val result = exec(cmdAndArgs, object : VfsProcessHandler() {
+			suspend override fun onOut(data: ByteArray) {
+				out.write(data)
+			}
+
+			suspend override fun onErr(data: ByteArray) {
+				out.write(data)
+			}
+		})
+
+		if (result != 0) throw VfsProcessException("Process not returned 0, but $result")
+
+		out.toByteArray().toString(charset)
 	}
 
 	override fun toString(): String = "$vfs[$path]"

@@ -22,6 +22,8 @@ class LocalVfsTest {
 		Assert.assertEquals(true, temp["korio.temp3"].delete())
 		Assert.assertEquals(false, temp["korio.temp3"].delete())
 		Assert.assertEquals(File(System.getProperty("java.io.tmpdir"), "korio.temp3").absolutePath, temp["korio.temp3"].absolutePath)
+		Assert.assertEquals("1", temp.execToString(listOf("echo", "1")).trim())
+		//Assert.assertEquals("1", temp.execToString(listOf("pwd")).trim())
 		Unit
 	}
 }

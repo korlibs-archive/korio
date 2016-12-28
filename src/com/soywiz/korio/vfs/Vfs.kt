@@ -18,7 +18,7 @@ abstract class Vfs {
 	fun createExistsStat(
 		path: String, isDirectory: Boolean, size: Long, device: Long = -1, inode: Long = -1, mode: Int = 511,
 		owner: String = "nobody", group: String = "nobody", createTime: Long = 0L, modifiedTime: Long = createTime, lastAccessTime: Long = modifiedTime,
-	    extraInfo: Any? = null
+		extraInfo: Any? = null
 	) = VfsStat(
 		file = file(path), exists = true, isDirectory = isDirectory, size = size, device = device, inode = inode, mode = mode,
 		owner = owner, group = group, createTime = createTime, modifiedTime = modifiedTime, lastAccessTime = lastAccessTime,
@@ -26,6 +26,8 @@ abstract class Vfs {
 	)
 
 	fun createNonExistsStat(path: String, extraInfo: Any? = null) = VfsStat(file(path), exists = false, isDirectory = false, size = 0L, device = -1L, inode = -1L, mode = 511, owner = "nobody", group = "nobody", createTime = 0L, modifiedTime = 0L, lastAccessTime = 0L, extraInfo = extraInfo)
+
+	suspend open fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler = VfsProcessHandler()): Int = throw UnsupportedOperationException()
 
 	suspend open fun open(path: String, mode: VfsOpenMode): AsyncStream = throw UnsupportedOperationException()
 
@@ -63,6 +65,8 @@ abstract class Vfs {
 
 	abstract class Proxy : Vfs() {
 		abstract suspend protected fun access(path: String): VfsFile
+
+		suspend override fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler): Int = asyncFun { access(path).exec(cmdAndArgs, handler) }
 
 		suspend override fun open(path: String, mode: VfsOpenMode) = asyncFun { access(path).open(mode) }
 		suspend override fun <T> readSpecial(path: String, clazz: Class<T>, onProgress: (Long, Long) -> Unit): T = asyncFun { access(path).readSpecial(clazz, onProgress) }

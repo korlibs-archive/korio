@@ -4,8 +4,7 @@ import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.stream.AsyncStream
-import java.io.File
-import java.io.FileOutputStream
+import java.io.*
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import java.nio.channels.CompletionHandler
@@ -27,6 +26,47 @@ fun LocalVfs(base: File): VfsFile {
 		fun resolve(path: String) = "$baseAbsolutePath/$path"
 		fun resolvePath(path: String) = Paths.get(resolve(path))
 		fun resolveFile(path: String) = File(resolve(path))
+
+		suspend override fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler): Int = executeInWorker {
+			val p = Runtime.getRuntime().exec(cmdAndArgs.toTypedArray(), arrayOf<String>(), resolveFile(path))
+			var closing = false
+			while (true) {
+				val o = p.inputStream.readAvailableChunk(readRest = closing)
+				val e = p.errorStream.readAvailableChunk(readRest = closing)
+				if (o.isNotEmpty()) handler.onOut(o)
+				if (e.isNotEmpty()) handler.onErr(e)
+				if (closing) break
+				if (o.isEmpty() && e.isEmpty() && !p.isAlive) {
+					closing = true
+					continue
+				}
+				Thread.sleep(1L)
+			}
+			p.waitFor()
+			//handler.onCompleted(p.exitValue())
+			p.exitValue()
+
+		}
+
+		private fun InputStream.readAvailableChunk(readRest: Boolean): ByteArray {
+			val out = ByteArrayOutputStream()
+			while (if (readRest) true else available() > 0) {
+				val c = this.read()
+				if (c < 0) break
+				out.write(c)
+			}
+			return out.toByteArray()
+		}
+
+		private fun InputStreamReader.readAvailableChunk(i: InputStream, readRest: Boolean): String {
+			val out = java.lang.StringBuilder()
+			while (if (readRest) true else i.available() > 0) {
+				val c = this.read()
+				if (c < 0) break
+				out.append(c.toChar())
+			}
+			return out.toString()
+		}
 
 		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
 			val channel = AsynchronousFileChannel.open(resolvePath(path), *when (mode) {
@@ -74,6 +114,7 @@ fun LocalVfs(base: File): VfsFile {
 			FileOutputStream(file, true).channel.use { outChan ->
 				outChan.truncate(size)
 			}
+			Unit
 		}
 
 		suspend override fun stat(path: String): VfsStat = executeInWorker {
