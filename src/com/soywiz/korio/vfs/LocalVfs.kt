@@ -13,17 +13,19 @@ import java.nio.file.Paths
 import java.nio.file.StandardOpenOption
 import kotlin.coroutines.suspendCoroutine
 
-fun LocalVfs(base: String): VfsFile = LocalVfs(File(base))
+fun LocalVfs(base: String): VfsFile = LocalVfs()[File(base).absolutePath]
 
 fun TempVfs() = LocalVfs(System.getProperty("java.io.tmpdir"))
 
-fun LocalVfs(base: File): VfsFile {
-	val baseAbsolutePath = base.absolutePath
+fun LocalVfs(base: File): VfsFile = LocalVfs()[base.absolutePath]
+
+fun LocalVfs(): VfsFile {
+	val baseAbsolutePath = ""
 
 	class Impl : Vfs() {
 		override val absolutePath: String = baseAbsolutePath
 
-		fun resolve(path: String) = "$baseAbsolutePath/$path"
+		fun resolve(path: String) = "$baseAbsolutePath/$path".trim('/')
 		fun resolvePath(path: String) = Paths.get(resolve(path))
 		fun resolveFile(path: String) = File(resolve(path))
 
@@ -153,7 +155,7 @@ fun LocalVfs(base: File): VfsFile {
 			resolveFile(src).renameTo(resolveFile(dst))
 		}
 
-		override fun toString(): String = "LocalVfs(${base.absolutePath})"
+		override fun toString(): String = "LocalVfs"
 	}
 	return Impl().root
 }

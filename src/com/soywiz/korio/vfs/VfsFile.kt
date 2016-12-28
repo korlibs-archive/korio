@@ -47,7 +47,7 @@ class VfsFile(
 		}
 	}
 
-	val parent: VfsFile by lazy { VfsFile(vfs, path.substringBeforeLast('/', "")) }
+	val parent: VfsFile by lazy { VfsFile(vfs, pathInfo.folder) }
 	val root: VfsFile get() = vfs.root
 
 	fun withExtension(name: String): VfsFile = VfsFile(vfs, fullnameWithoutExtension + if (name.isNotEmpty()) ".$name" else "")
@@ -95,6 +95,8 @@ class VfsFile(
 		// @TODO: Create tree up to this
 		mkdir()
 	}
+
+	suspend fun ensureParents() = asyncFun { parent.mkdirs(); this@VfsFile }
 
 	suspend fun renameTo(dstPath: String) = vfs.rename(this.path, dstPath)
 
@@ -149,5 +151,5 @@ class VfsFile(
 
 	override fun toString(): String = "$vfs[$path]"
 
-	val absolutePath: String = vfs.absolutePath + File.separator + path
+	val absolutePath: String = (vfs.absolutePath + File.separatorChar + path).trim(File.separatorChar).replace('/', File.separatorChar)
 }

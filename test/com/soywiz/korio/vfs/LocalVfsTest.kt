@@ -7,9 +7,10 @@ import org.junit.Test
 import java.io.File
 
 class LocalVfsTest {
+	val temp = TempVfs()
+
 	@Test
 	fun name() = sync {
-		val temp = TempVfs()
 		val content = "HELLO WORLD!"
 		temp["korio.temp"].writeString(content)
 		temp["korio.temp2"].writeFile(temp["korio.temp"])
@@ -24,6 +25,14 @@ class LocalVfsTest {
 		Assert.assertEquals(File(System.getProperty("java.io.tmpdir"), "korio.temp3").absolutePath, temp["korio.temp3"].absolutePath)
 		Assert.assertEquals("1", temp.execToString(listOf("echo", "1")).trim())
 		//Assert.assertEquals("1", temp.execToString(listOf("pwd")).trim())
+		Unit
+	}
+
+	@Test
+	fun ensureParent(): Unit = sync {
+		temp["korio.temp.folder/test.txt"].ensureParents().writeString("HELLO")
+		temp["korio.temp.folder/test.txt"].delete()
+		temp["korio.temp.folder"].delete()
 		Unit
 	}
 }
