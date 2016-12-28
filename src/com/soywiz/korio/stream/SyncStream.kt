@@ -1,6 +1,7 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.util.*
+import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.RandomAccessFile
 import java.nio.charset.Charset
@@ -108,6 +109,16 @@ fun SyncStream.readSlice(length: Long): SyncStream = sliceWithSize(position, len
 
 fun SyncStream.readStream(length: Long): SyncStream = readSlice(length)
 
+fun SyncStream.readStringz(charset: Charset = Charsets.UTF_8): String {
+	val buf = ByteArrayOutputStream()
+	while (!eof) {
+		val b = readU8()
+		if (b == 0) break
+		buf.write(b.toInt())
+	}
+	return buf.toByteArray().toString(charset)
+}
+
 fun SyncStream.readStringz(len: Int, charset: Charset = Charsets.UTF_8): String {
 	val res = readBytes(len)
 	val index = res.indexOf(0.toByte())
@@ -127,6 +138,9 @@ fun SyncStream.readExact(out: ByteArray, offset: Int, len: Int): Unit {
 		ooffset += read
 	}
 }
+
+fun SyncStream.read(data: ByteArray): Int = read(data, 0, data.size)
+fun SyncStream.read(data: UByteArray): Int = read(data.data, 0, data.size)
 
 fun SyncStream.readBytesExact(len: Int): ByteArray = ByteArray(len).apply { readExact(this, 0, len) }
 
@@ -196,5 +210,5 @@ fun SyncStream.write64_be(v: Long): Unit = write(temp.apply { write64_be(0, v) }
 fun SyncStream.writeF32_be(v: Float): Unit = write(temp.apply { writeF32_be(0, v) }, 0, 4)
 fun SyncStream.writeF64_be(v: Double): Unit = write(temp.apply { writeF64_be(0, v) }, 0, 8)
 
-fun ByteArray.openSync(): MemorySyncStream = MemorySyncStream(this)
+fun ByteArray.openSync(mode: String = "r"): MemorySyncStream = MemorySyncStream(this)
 fun File.openSync(mode: String = "r"): FileSyncStream = FileSyncStream(this, mode)

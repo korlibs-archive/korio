@@ -1,6 +1,6 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.sync
+import com.soywiz.korio.async.sync
 import org.junit.Assert
 import org.junit.Test
 
