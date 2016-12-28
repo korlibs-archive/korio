@@ -3,9 +3,7 @@ package com.soywiz.korio.vfs
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
-import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.truncate
-import com.soywiz.korio.stream.writeStream
+import com.soywiz.korio.stream.*
 import java.nio.charset.Charset
 
 class VfsFile(
@@ -55,6 +53,9 @@ class VfsFile(
 	suspend fun <T> readSpecial(clazz: Class<T>, onProgress: (Long, Long) -> Unit = { _, _ -> }): T = vfs.readSpecial(path, clazz, onProgress)
 
 	suspend fun read(): ByteArray = vfs.readFully(path)
+
+	suspend fun readAsSyncStream(): SyncStream = asyncFun { read().openSync() }
+
 	suspend fun write(data: ByteArray): Unit = vfs.writeFully(path, data)
 
 	suspend fun readString(charset: Charset = Charsets.UTF_8): String = asyncFun { vfs.readFully(path).toString(charset) }

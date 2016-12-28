@@ -57,6 +57,8 @@ class SliceAsyncStream(internal val base: AsyncStream, internal val baseOffset: 
 	suspend override fun getLength(): Long {
 		return baseLength
 	}
+
+	override fun toString(): String = "SliceAsyncStream($base, $baseOffset, $baseEnd)"
 }
 
 suspend fun AsyncStream.sliceWithStart(start: Long): AsyncStream = asyncFun { sliceWithBounds(start, this.getLength()) }

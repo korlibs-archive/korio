@@ -53,6 +53,8 @@ class SliceSyncStream(internal val base: SyncStream, internal val baseOffset: Lo
 			position += len
 		}
 	}
+
+	override fun toString(): String = "SliceSyncStream($base, $baseOffset, $baseEnd)"
 }
 
 class FileSyncStream(val file: File, val mode: String = "r") : SyncStream() {
@@ -100,6 +102,7 @@ class MemorySyncStream(var data: ByteArray = ByteArray(0)) : SyncStream() {
 	}
 
 	fun toByteArray(): ByteArray = Arrays.copyOf(data, length.toInt())
+	override fun toString(): String = "MemorySyncStream(${data.size})"
 }
 
 fun SyncStream.sliceWithStart(start: Long): SyncStream = sliceWithBounds(start, this.length)
