@@ -235,11 +235,11 @@ fun File.openSync(mode: String = "r"): FileSyncStream = FileSyncStream(this, mod
 fun SyncStream.writeStream(source: SyncStream): Unit = source.copyTo(this)
 
 fun SyncStream.copyTo(target: SyncStream): Unit {
-	val chunk = ByteArray(1024)
+	val chunk = BYTES_TEMP
 	while (true) {
 		val count = this.read(chunk)
 		if (count <= 0) break
-		this.write(chunk, 0, count)
+		target.write(chunk, 0, count)
 	}
 }
 

@@ -208,7 +208,7 @@ suspend fun AsyncStream.writeFile(source: VfsFile): Unit = asyncFun {
 }
 
 suspend fun AsyncStream.copyTo(target: AsyncStream): Unit = asyncFun {
-	val chunk = ByteArray(1024)
+	val chunk = BYTES_TEMP
 	while (true) {
 		val count = this.read(chunk)
 		if (count <= 0) break
