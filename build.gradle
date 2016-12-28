@@ -112,6 +112,17 @@ if (project.hasProperty('sonatypeUsername')) {
     }
 }
 
+publishing {
+    publications {
+        MyPublication(MavenPublication) {
+            from components.java
+            groupId project.group
+            artifactId project.name
+            version "$project.version"
+        }
+    }
+}
+
 // gradle bintrayUpload
 if (project.hasProperty('BINTRAY_USER')) {
     bintray {
