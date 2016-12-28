@@ -21,9 +21,11 @@ fun LocalVfs(base: File): VfsFile {
 
 	class Impl : Vfs() {
 		fun resolve(path: String) = "$baseAbsolutePath/$path"
+		fun resolvePath(path: String) = Paths.get(resolve(path))
+		fun resolveFile(path: String) = File(resolve(path))
 
 		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
-			val channel = AsynchronousFileChannel.open(Paths.get(path), when (mode) {
+			val channel = AsynchronousFileChannel.open(resolvePath(path), when (mode) {
 				VfsOpenMode.READ -> StandardOpenOption.READ
 				VfsOpenMode.WRITE -> StandardOpenOption.WRITE
 				VfsOpenMode.APPEND -> StandardOpenOption.APPEND
@@ -60,14 +62,14 @@ fun LocalVfs(base: File): VfsFile {
 		}
 
 		suspend override fun setSize(path: String, size: Long): Unit = executeInWorker {
-			val file = File(resolve(path))
+			val file = resolveFile(path)
 			FileOutputStream(file, true).channel.use { outChan ->
 				outChan.truncate(size)
 			}
 		}
 
 		suspend override fun stat(path: String): VfsStat = executeInWorker {
-			val file = File(resolve(path))
+			val file = resolveFile(path)
 			val fullpath = "$path/${file.name}"
 			if (file.exists()) {
 				createExistsStat(
@@ -83,29 +85,23 @@ fun LocalVfs(base: File): VfsFile {
 
 		suspend override fun list(path: String) = executeInWorker {
 			asyncGenerate {
-				for (path in Files.newDirectoryStream(Paths.get(resolve(path)))) {
+				for (path in Files.newDirectoryStream(resolvePath(path))) {
 					val file = path.toFile()
 					yield(VfsFile(this@Impl, file.absolutePath.substring(baseAbsolutePath.length + 1)))
-					//yield(VfsStat(
-					//        file = VfsFile(this@Impl, file.absolutePath.substring(baseAbsolutePath.length + 1)),
-					//        exists = file.exists(),
-					//        isDirectory = file.isDirectory,
-					//        size = file.length()
-					//))
 				}
 			}
 		}
 
 		suspend override fun mkdir(path: String): Boolean = executeInWorker {
-			File(path).mkdir()
+			resolveFile(path).mkdir()
 		}
 
 		suspend override fun delete(path: String): Boolean = executeInWorker {
-			File(path).delete()
+			resolveFile(path).delete()
 		}
 
 		suspend override fun rename(src: String, dst: String): Boolean = executeInWorker {
-			File(src).renameTo(File(dst))
+			resolveFile(src).renameTo(resolveFile(dst))
 		}
 
 		override fun toString(): String = "LocalVfs(${base.absolutePath})"
