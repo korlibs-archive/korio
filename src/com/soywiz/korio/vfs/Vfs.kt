@@ -32,6 +32,7 @@ abstract class Vfs {
 	suspend open fun open(path: String, mode: VfsOpenMode): AsyncStream = throw UnsupportedOperationException()
 
 	suspend open fun <T> readSpecial(path: String, clazz: Class<T>, onProgress: (Long, Long) -> Unit = { _, _ -> }): T = throw UnsupportedOperationException()
+	suspend open fun writeSpecial(path: String, value: Any, onProgress: (Long, Long) -> Unit = { _, _ -> }): Unit = throw UnsupportedOperationException()
 
 	suspend open fun readFully(path: String) = asyncFun {
 		val stat = stat(path)
@@ -70,6 +71,8 @@ abstract class Vfs {
 
 		suspend override fun open(path: String, mode: VfsOpenMode) = asyncFun { access(path).open(mode) }
 		suspend override fun <T> readSpecial(path: String, clazz: Class<T>, onProgress: (Long, Long) -> Unit): T = asyncFun { access(path).readSpecial(clazz, onProgress) }
+		suspend override fun writeSpecial(path: String, value: Any, onProgress: (Long, Long) -> Unit) = asyncFun { access(path).writeSpecial(value, onProgress) }
+
 		suspend override fun readFully(path: String): ByteArray = asyncFun { access(path).read() }
 		suspend override fun writeFully(path: String, data: ByteArray): Unit = asyncFun { access(path).write(data) }
 		suspend override fun setSize(path: String, size: Long): Unit = asyncFun { access(path).setSize(size) }
@@ -86,5 +89,10 @@ abstract class Vfs {
 			if (srcFile.vfs != dstFile.vfs) throw IllegalArgumentException("Can't rename between filesystems. Use copyTo instead, and remove later.")
 			srcFile.renameTo(dstFile.path)
 		}
+	}
+
+	open class Decorator(val parent: VfsFile) : Vfs.Proxy() {
+		val parentVfs = parent.vfs
+		override suspend fun access(path: String): VfsFile = parentVfs[path]
 	}
 }

@@ -122,25 +122,57 @@ class VfsFile {
     val vfs: Vfs
     val path: String
     val basename: String
+    val pathInfo: PathInfo
+
+    // Accessing parent
+    val parent: VfsFile
+
+    // Accessing descendants, and ascendants using relative paths
     operator fun get(path: String): VfsFile
+
+    // Opening file as AsyncStream
     suspend fun open(mode: VfsOpenMode): AsyncStream
+
+    // Special reading/writing for filesystems supporting it (reading for example Bitmaps, Textures, Sounds using browser for example)
     suspend inline fun <reified T : Any> readSpecial(): T
+    suspend inline fun <reified T : Any> readSpecial(noinline onProgress: (Long, Long) -> Unit): T
+    suspend fun writeSpecial(value: Any, onProgress: (Long, Long) -> Unit = { _, _ -> }): Unit
+
+    // Convenience methods for fully reading/writing files
     suspend fun read(): ByteArray
-    suspend fun write(data: ByteArray): Unit
     suspend fun readString(charset: Charset = Charsets.UTF_8): String
-    suspend fun writeString(data: String, charset: Charset = Charsets.UTF_8): Unit
     suspend fun readChunk(offset: Long, size: Int): ByteArray
+	suspend fun readAsSyncStream(): SyncStream
+    suspend fun write(data: ByteArray): Unit
+    suspend fun writeString(data: String, charset: Charset = Charsets.UTF_8): Unit
     suspend fun writeChunk(data: ByteArray, offset: Long, resize: Boolean = false): Unit
+
+    // Stat + convenience methods
     suspend fun stat(): VfsStat
     suspend fun size(): Long
     suspend fun exists(): Boolean
+
+    // Modification operations
     suspend fun delete(): Boolean
     suspend fun mkdir(): Boolean
     suspend fun mkdirs(): Boolean
     suspend fun renameTo(path: String): Boolean
     suspend fun setSize(size: Long): Unit
-    suspend fun list(): AsyncSequence<VfsStat>
-    suspend fun listRecursive(): AsyncSequence<VfsStat>
+
+    // Directory listing
+    suspend fun list(): AsyncSequence<VfsFile>
+    suspend fun listRecursive(): AsyncSequence<VfsFile>
+
+    // Executing in this folder/filesystem. You can implement RPC here. Implemented in default korio for LocalVfs.
+	suspend fun exec(cmdAndArgs: List<String>, handler: VfsProcessHandler = VfsProcessHandler()): Int
+
+	// Convenience execution methods
+	suspend fun execToString(cmdAndArgs: List<String>, charset: Charset = Charsets.UTF_8): String
+	suspend fun execToString(vararg cmdAndArgs: String, charset: Charset = Charsets.UTF_8): String
+	suspend fun passthru(cmdAndArgs: List<String>, charset: Charset = Charsets.UTF_8): Int
+	suspend fun passthru(vararg cmdAndArgs: String, charset: Charset = Charsets.UTF_8): Int
+
+    // Jail this file so generated VfsFile can't access ancestors
     fun jail(): VfsFile = JailVfs(this)
 }
 ```

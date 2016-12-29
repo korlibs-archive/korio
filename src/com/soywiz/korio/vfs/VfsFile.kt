@@ -7,9 +7,7 @@ import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.SyncStream
 import com.soywiz.korio.stream.openSync
 import com.soywiz.korio.stream.writeStream
-import com.soywiz.korio.util.OS
 import java.io.ByteArrayOutputStream
-import java.io.File
 import java.nio.charset.Charset
 
 class VfsFile(
@@ -58,8 +56,9 @@ class VfsFile(
 
 	suspend inline fun <reified T : Any> readSpecial(noinline onProgress: (Long, Long) -> Unit): T = vfs.readSpecial(path, T::class.java, onProgress)
 	suspend inline fun <reified T : Any> readSpecial(): T = vfs.readSpecial(path, T::class.java)
-
 	suspend fun <T> readSpecial(clazz: Class<T>, onProgress: (Long, Long) -> Unit = { _, _ -> }): T = vfs.readSpecial(path, clazz, onProgress)
+
+	suspend fun writeSpecial(value: Any, onProgress: (Long, Long) -> Unit = { _, _ -> }): Unit = vfs.writeSpecial(path, value, onProgress)
 
 	suspend fun read(): ByteArray = vfs.readFully(path)
 
