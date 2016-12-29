@@ -167,11 +167,13 @@ fun SyncStream.readBytes(len: Int): ByteArray {
 	val bytes = ByteArray(len)
 	return Arrays.copyOf(bytes, read(bytes, 0, len))
 }
+
 fun SyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
 fun SyncStream.writeBytes(data: ByteArraySlice): Unit = write(data.data, data.position, data.length)
 
 val SyncStream.eof: Boolean get () = this.available <= 0L
 private fun SyncStream.readTempExact(count: Int): ByteArray = temp.apply { readExact(temp, 0, count) }
+private fun SyncStream.readTemp(count: Int): ByteArray = temp.apply { read(temp, 0, count) }
 
 fun SyncStream.readU8(): Int = readTempExact(1).readU8(0)
 
@@ -263,15 +265,15 @@ fun SyncStream.toInputStream(): InputStream {
 }
 
 fun SyncStream.writeToAlign(alignment: Int, value: Int = 0) {
-	while ((position % alignment) != 0L) {
-		write8(value)
-	}
+	val nextPosition = position.nextAlignedTo(alignment.toLong())
+	val data = ByteArray((nextPosition - position).toInt())
+	Arrays.fill(data, value.toByte())
+	writeBytes(data)
 }
 
 fun SyncStream.skipToAlign(alignment: Int) {
-	while ((position % alignment) != 0L) {
-		readU8()
-	}
+	val nextPosition = position.nextAlignedTo(alignment.toLong())
+	readBytes((nextPosition - position).toInt())
 }
 
 fun SyncStream.truncate() = run { length = position }

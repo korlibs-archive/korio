@@ -273,15 +273,15 @@ suspend fun AsyncStream.copyTo(target: AsyncStream): Unit = asyncFun {
 }
 
 suspend fun AsyncStream.writeToAlign(alignment: Int, value: Int = 0) = asyncFun {
-	while ((getPosition() % alignment) != 0L) {
-		write8(value)
-	}
+	val nextPosition = getPosition().nextAlignedTo(alignment.toLong())
+	val data = ByteArray((nextPosition - getPosition()).toInt())
+	Arrays.fill(data, value.toByte())
+	writeBytes(data)
 }
 
 suspend fun AsyncStream.skipToAlign(alignment: Int) = asyncFun {
-	while ((getPosition() % alignment) != 0L) {
-		readU8()
-	}
+	val nextPosition = getPosition().nextAlignedTo(alignment.toLong())
+	readBytes((nextPosition - getPosition()).toInt())
 }
 
 suspend fun AsyncStream.truncate() = asyncFun { setLength(getPosition()) }
