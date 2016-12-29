@@ -1,4 +1,5 @@
 import com.soywiz.korio.async.EventLoop
+import com.soywiz.korio.async.async
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.async.spawn
 import com.soywiz.korio.net.AsyncServer
