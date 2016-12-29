@@ -8,6 +8,42 @@ import com.soywiz.korio.vfs.VfsOpenMode
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 
+// Rethink this!
+open class AsyncStreamBase : AsyncCloseable {
+	suspend open fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = throw UnsupportedOperationException()
+	suspend open fun write(position: Long, buffer: ByteArray, offset: Int, len: Int): Unit = throw UnsupportedOperationException()
+
+	suspend open fun setLength(value: Long): Unit = throw UnsupportedOperationException()
+	suspend open fun getLength(): Long = throw UnsupportedOperationException()
+
+	override suspend open fun close(): Unit = Unit
+}
+
+fun AsyncStreamBase.toAsyncStream(): AsyncStream {
+	val base = this
+
+	return object : AsyncStream() {
+		var position = 0L
+
+		suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
+			val read = base.read(position, buffer, offset, len)
+			position += read
+			read
+		}
+
+		suspend override fun write(buffer: ByteArray, offset: Int, len: Int) = asyncFun {
+			base.write(position, buffer, offset, len)
+			position += len
+		}
+
+		suspend override fun setPosition(value: Long) = run { position = value }
+		suspend override fun getPosition(): Long = position
+		suspend override fun setLength(value: Long) = base.setLength(value)
+		suspend override fun getLength(): Long = base.getLength()
+		suspend override fun close() = base.close()
+	}
+}
+
 open class AsyncStream : AsyncCloseable {
 	suspend open fun read(buffer: ByteArray, offset: Int, len: Int): Int = throw UnsupportedOperationException()
 	suspend open fun write(buffer: ByteArray, offset: Int, len: Int): Unit = throw UnsupportedOperationException()
