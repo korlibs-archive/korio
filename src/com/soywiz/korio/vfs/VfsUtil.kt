@@ -24,7 +24,7 @@ object VfsUtil {
 	fun combine(base: String, access: String): String = normalize(base + "/" + access)
 
 	fun normalizeAbsolute(path: String): String {
-		val res = path.trim(File.separatorChar).replace('/', File.separatorChar)
+		val res = path.replace('/', File.separatorChar).trim(File.separatorChar)
 		return if (OS.isUnix) "/$res" else res
 	}
 }
