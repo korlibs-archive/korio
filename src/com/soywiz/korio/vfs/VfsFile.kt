@@ -152,12 +152,5 @@ class VfsFile(
 
 	override fun toString(): String = "$vfs[$path]"
 
-	val absolutePath: String by lazy {
-		val res = (vfs.absolutePath + File.separatorChar + path).trim(File.separatorChar).replace('/', File.separatorChar)
-		if (OS.isUnix) {
-			"/$res"
-		} else {
-			res
-		}
-	}
+	val absolutePath: String by lazy { VfsUtil.normalizeAbsolute("${vfs.absolutePath}/$path") }
 }

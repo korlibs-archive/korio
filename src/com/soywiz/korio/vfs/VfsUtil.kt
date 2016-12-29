@@ -1,5 +1,7 @@
 package com.soywiz.korio.vfs
 
+import com.soywiz.korio.util.OS
+import java.io.File
 import java.util.*
 
 object VfsUtil {
@@ -20,4 +22,9 @@ object VfsUtil {
 	}
 
 	fun combine(base: String, access: String): String = normalize(base + "/" + access)
+
+	fun normalizeAbsolute(path: String): String {
+		val res = path.trim(File.separatorChar).replace('/', File.separatorChar)
+		return if (OS.isUnix) "/$res" else res
+	}
 }

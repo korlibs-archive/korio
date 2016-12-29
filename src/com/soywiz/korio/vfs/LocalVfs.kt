@@ -25,7 +25,7 @@ fun LocalVfs(): VfsFile {
 	class Impl : Vfs() {
 		override val absolutePath: String = baseAbsolutePath
 
-		fun resolve(path: String) = "$baseAbsolutePath/$path".trim('/')
+		fun resolve(path: String) = VfsUtil.normalizeAbsolute("$baseAbsolutePath/$path")
 		fun resolvePath(path: String) = Paths.get(resolve(path))
 		fun resolveFile(path: String) = File(resolve(path))
 
