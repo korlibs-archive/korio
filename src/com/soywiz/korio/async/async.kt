@@ -17,6 +17,99 @@ suspend fun <T> executeInWorker(task: suspend () -> T): T = suspendCoroutine<T> 
 	}
 }
 
+typealias ResolvedHandler<T> = (T) -> Unit
+typealias RejectedHandler = (Throwable) -> Unit
+
+class Promise<T : Any?> {
+	class Deferred<T : Any?> {
+		val promise = Promise<T>()
+		fun resolve(value: T): Unit = run { promise.complete(value, null) }
+		fun reject(error: Throwable): Unit = run { promise.complete(null, error) }
+		fun toContinuation(): Continuation<T> {
+			val deferred = this
+			return object : Continuation<T> {
+				override fun resume(value: T) = deferred.resolve(value)
+				override fun resumeWithException(exception: Throwable) = deferred.reject(exception)
+			}
+		}
+	}
+
+	companion object {
+		fun <T> resolved(value: T) = Promise<T>().complete(value, null)
+		fun <T> rejected(error: Throwable) = Promise<T>().complete(null, error)
+	}
+
+	private var value: T? = null
+	private var error: Throwable? = null
+	private var done: Boolean = false
+	private val resolvedHandlers = LinkedList<ResolvedHandler<T>>()
+	private val rejectedHandlers = LinkedList<RejectedHandler>()
+	private val cancelHandlers = LinkedList<RejectedHandler>()
+
+	private fun flush() {
+		if (!done) return
+		if (error != null) {
+			while (rejectedHandlers.isNotEmpty()) {
+				val handler = rejectedHandlers.removeFirst()
+				handler(error ?: RuntimeException())
+			}
+		} else {
+			while (resolvedHandlers.isNotEmpty()) {
+				val handler = resolvedHandlers.removeFirst()
+				handler(value!!)
+			}
+		}
+	}
+
+	internal fun complete(value: T?, error: Throwable?): Promise<T> {
+		if (!this.done) {
+			if (value == null && error == null) {
+				throw RuntimeException("Invalid completion!")
+			}
+
+			this.value = value
+			this.error = error
+			this.done = true
+
+			if (error != null && this.rejectedHandlers.isEmpty()) {
+				error.printStackTrace()
+			}
+
+			flush()
+		}
+		return this
+	}
+
+	fun then(resolved: ResolvedHandler<T>) {
+		resolvedHandlers += resolved
+		flush()
+	}
+
+	fun then(resolved: ResolvedHandler<T>, rejected: RejectedHandler) {
+		resolvedHandlers += resolved
+		rejectedHandlers += rejected
+		flush()
+	}
+
+	fun then(c: Continuation<T>) {
+		this.then(
+			resolved = { c.resume(it) },
+			rejected = { c.resumeWithException(it) }
+		)
+	}
+
+	suspend fun await(): T = suspendCoroutine(this::then)
+}
+
+
+suspend fun <T> spawnInWorker(task: suspend () -> T): Promise<T> {
+	val deferred = Promise.Deferred<T>()
+	workerLazyPool.execute {
+		task.startCoroutine(deferred.toContinuation())
+	}
+	return deferred.promise
+}
+
 // Wait for a suspension block for testing purposes
 fun <T> sync(block: suspend () -> T): T {
 	var result: Any? = null

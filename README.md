@@ -1,30 +1,27 @@
-# korio
+## Korio: Kotlin cORoutines I/O : Streams + Async TCP Client/Server + Virtual File System
 
 [![Build Status](https://travis-ci.org/soywiz/korio.svg?branch=master)](https://travis-ci.org/soywiz/korio)
-
 [![Maven Version](https://img.shields.io/github/tag/soywiz/korio.svg?style=flat&label=maven)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22korio%22)
 
-## Kotlin cORoutines I/O : Streams + Virtual File System
-
-Use with gradle:
-
-I'm uploading it to bintray and maven central:
-
-For bintray:
-```
-maven { url "https://dl.bintray.com/soywiz/soywiz-maven" }
-```
+Use with gradle (uploaded to maven central):
 
 ```
 compile "com.soywiz:korio:$korioVersion"
 ```
+
+I'm also uploading it to a personal bintray repository:
+
+```
+maven { url "https://dl.bintray.com/soywiz/soywiz-maven" }
+```
+
 
 This is a kotlin coroutine library that provides asynchronous nonblocking I/O and virtual filesystem operations
 for custom and extensible filesystems with an homogeneous API. This repository doesn't require any special library
 dependency and just requires Kotlin 1.1-M04 or greater.
 
 This library is specially useful for webserver where asynchronous is the way to go. And completely asynchronous or
-single threaded targets like javascript or as3, with kotlin-js or jtransc.
+single threaded targets like javascript or as3, with kotlin-js or JTransc.
 
 ### Streams
 
@@ -46,6 +43,10 @@ readStringz, readString, readExact, readBytes, readBytesExact
 readU8, readU16_le, readU32_le, readS16_le, readS32_le, readS64_le, readF32_le, readF64_le, readU16_be, readU32_be, readS16_be, readS32_be, readS64_be, readF32_be, readF64_be, readAvailable
 writeBytes, write8, write16_le, write32_le, write64_le, writeF32_le, writeF64_le, write16_be, write32_be, write64_be, writeF32_be, writeF64_be
 ```
+
+### AsyncClient + AsyncServer
+
+Korio includes a TCP client (implementing AsyncStream) and a TCP server with a lazy asynchronous connection iterator.
 
 ### VFS
 

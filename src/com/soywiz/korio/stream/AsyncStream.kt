@@ -7,6 +7,7 @@ import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.VfsOpenMode
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
+import java.util.*
 
 // Rethink this!
 open class AsyncStreamBase : AsyncCloseable {
@@ -160,53 +161,57 @@ suspend fun AsyncStream.readExact(buffer: ByteArray, offset: Int, len: Int) = as
 	}
 }
 
-suspend private fun AsyncStream.readTemp(len: Int): ByteArray = asyncFun { temp.apply { readExact(temp, 0, len) } }
+suspend private fun AsyncStream.readTempExact(len: Int): ByteArray = asyncFun { temp.apply { readExact(temp, 0, len) } }
 
 suspend fun AsyncStream.read(data: ByteArray): Int = read(data, 0, data.size)
 suspend fun AsyncStream.read(data: UByteArray): Int = read(data.data, 0, data.size)
 
-suspend fun AsyncStream.readBytes(len: Int): ByteArray = asyncFun { ByteArray(len).apply { read(this, 0, len) } }
+suspend fun AsyncStream.readBytes(len: Int): ByteArray = asyncFun {
+	val ba = ByteArray(len)
+	Arrays.copyOf(ba, read(ba, 0, len))
+}
+
 suspend fun AsyncStream.readBytesExact(len: Int): ByteArray = asyncFun { ByteArray(len).apply { readExact(this, 0, len) } }
 
-suspend fun AsyncStream.readU8(): Int = asyncFun { readTemp(1).readU8(0) }
-suspend fun AsyncStream.readU16_le(): Int = asyncFun { readTemp(2).readU16_le(0) }
-suspend fun AsyncStream.readU24_le(): Int = asyncFun { readTemp(3).readU24_le(0) }
-suspend fun AsyncStream.readU32_le(): Long = asyncFun { readTemp(4).readU32_le(0) }
-suspend fun AsyncStream.readS16_le(): Int = asyncFun { readTemp(2).readS16_le(0) }
-suspend fun AsyncStream.readS32_le(): Int = asyncFun { readTemp(4).readS32_le(0) }
-suspend fun AsyncStream.readS64_le(): Long = asyncFun { readTemp(8).readS64_le(0) }
-suspend fun AsyncStream.readF32_le(): Float = asyncFun { readTemp(4).readF32_le(0) }
-suspend fun AsyncStream.readF64_le(): Double = asyncFun { readTemp(8).readF64_le(0) }
-suspend fun AsyncStream.readU16_be(): Int = asyncFun { readTemp(2).readU16_be(0) }
-suspend fun AsyncStream.readU24_be(): Int = asyncFun { readTemp(3).readU24_be(0) }
-suspend fun AsyncStream.readU32_be(): Long = asyncFun { readTemp(4).readU32_be(0) }
-suspend fun AsyncStream.readS16_be(): Int = asyncFun { readTemp(2).readS16_be(0) }
-suspend fun AsyncStream.readS32_be(): Int = asyncFun { readTemp(4).readS32_be(0) }
-suspend fun AsyncStream.readS64_be(): Long = asyncFun { readTemp(8).readS64_be(0) }
-suspend fun AsyncStream.readF32_be(): Float = asyncFun { readTemp(4).readF32_be(0) }
-suspend fun AsyncStream.readF64_be(): Double = asyncFun { readTemp(8).readF64_be(0) }
+suspend fun AsyncStream.readU8(): Int = asyncFun { readTempExact(1).readU8(0) }
+suspend fun AsyncStream.readU16_le(): Int = asyncFun { readTempExact(2).readU16_le(0) }
+suspend fun AsyncStream.readU24_le(): Int = asyncFun { readTempExact(3).readU24_le(0) }
+suspend fun AsyncStream.readU32_le(): Long = asyncFun { readTempExact(4).readU32_le(0) }
+suspend fun AsyncStream.readS16_le(): Int = asyncFun { readTempExact(2).readS16_le(0) }
+suspend fun AsyncStream.readS32_le(): Int = asyncFun { readTempExact(4).readS32_le(0) }
+suspend fun AsyncStream.readS64_le(): Long = asyncFun { readTempExact(8).readS64_le(0) }
+suspend fun AsyncStream.readF32_le(): Float = asyncFun { readTempExact(4).readF32_le(0) }
+suspend fun AsyncStream.readF64_le(): Double = asyncFun { readTempExact(8).readF64_le(0) }
+suspend fun AsyncStream.readU16_be(): Int = asyncFun { readTempExact(2).readU16_be(0) }
+suspend fun AsyncStream.readU24_be(): Int = asyncFun { readTempExact(3).readU24_be(0) }
+suspend fun AsyncStream.readU32_be(): Long = asyncFun { readTempExact(4).readU32_be(0) }
+suspend fun AsyncStream.readS16_be(): Int = asyncFun { readTempExact(2).readS16_be(0) }
+suspend fun AsyncStream.readS32_be(): Int = asyncFun { readTempExact(4).readS32_be(0) }
+suspend fun AsyncStream.readS64_be(): Long = asyncFun { readTempExact(8).readS64_be(0) }
+suspend fun AsyncStream.readF32_be(): Float = asyncFun { readTempExact(4).readF32_be(0) }
+suspend fun AsyncStream.readF64_be(): Double = asyncFun { readTempExact(8).readF64_be(0) }
 suspend fun AsyncStream.readAvailable(): ByteArray = asyncFun { readBytes(getAvailable().toInt()) }
 suspend fun AsyncStream.readAll(): ByteArray = asyncFun { readBytes(getAvailable().toInt()) }
 
-suspend fun AsyncStream.readUByteArray(count: Int): UByteArray = asyncFun { UByteArray(readBytes(count)) }
+suspend fun AsyncStream.readUByteArray(count: Int): UByteArray = asyncFun { UByteArray(readBytesExact(count)) }
 
-suspend fun AsyncStream.readShortArray_le(count: Int): ShortArray = asyncFun { readBytes(count * 2).readShortArray_le(0, count) }
-suspend fun AsyncStream.readShortArray_be(count: Int): ShortArray = asyncFun { readBytes(count * 2).readShortArray_be(0, count) }
+suspend fun AsyncStream.readShortArray_le(count: Int): ShortArray = asyncFun { readBytesExact(count * 2).readShortArray_le(0, count) }
+suspend fun AsyncStream.readShortArray_be(count: Int): ShortArray = asyncFun { readBytesExact(count * 2).readShortArray_be(0, count) }
 
-suspend fun AsyncStream.readCharArray_le(count: Int): CharArray = asyncFun { readBytes(count * 2).readCharArray_le(0, count) }
-suspend fun AsyncStream.readCharArray_be(count: Int): CharArray = asyncFun { readBytes(count * 2).readCharArray_be(0, count) }
+suspend fun AsyncStream.readCharArray_le(count: Int): CharArray = asyncFun { readBytesExact(count * 2).readCharArray_le(0, count) }
+suspend fun AsyncStream.readCharArray_be(count: Int): CharArray = asyncFun { readBytesExact(count * 2).readCharArray_be(0, count) }
 
-suspend fun AsyncStream.readIntArray_le(count: Int): IntArray = asyncFun { readBytes(count * 4).readIntArray_le(0, count) }
-suspend fun AsyncStream.readIntArray_be(count: Int): IntArray = asyncFun { readBytes(count * 4).readIntArray_be(0, count) }
+suspend fun AsyncStream.readIntArray_le(count: Int): IntArray = asyncFun { readBytesExact(count * 4).readIntArray_le(0, count) }
+suspend fun AsyncStream.readIntArray_be(count: Int): IntArray = asyncFun { readBytesExact(count * 4).readIntArray_be(0, count) }
 
-suspend fun AsyncStream.readLongArray_le(count: Int): LongArray = asyncFun { readBytes(count * 8).readLongArray_le(0, count) }
-suspend fun AsyncStream.readLongArray_be(count: Int): LongArray = asyncFun { readBytes(count * 8).readLongArray_le(0, count) }
+suspend fun AsyncStream.readLongArray_le(count: Int): LongArray = asyncFun { readBytesExact(count * 8).readLongArray_le(0, count) }
+suspend fun AsyncStream.readLongArray_be(count: Int): LongArray = asyncFun { readBytesExact(count * 8).readLongArray_le(0, count) }
 
-suspend fun AsyncStream.readFloatArray_le(count: Int): FloatArray = asyncFun { readBytes(count * 4).readFloatArray_le(0, count) }
-suspend fun AsyncStream.readFloatArray_be(count: Int): FloatArray = asyncFun { readBytes(count * 4).readFloatArray_be(0, count) }
+suspend fun AsyncStream.readFloatArray_le(count: Int): FloatArray = asyncFun { readBytesExact(count * 4).readFloatArray_le(0, count) }
+suspend fun AsyncStream.readFloatArray_be(count: Int): FloatArray = asyncFun { readBytesExact(count * 4).readFloatArray_be(0, count) }
 
-suspend fun AsyncStream.readDoubleArray_le(count: Int): DoubleArray = asyncFun { readBytes(count * 8).readDoubleArray_le(0, count) }
-suspend fun AsyncStream.readDoubleArray_be(count: Int): DoubleArray = asyncFun { readBytes(count * 8).readDoubleArray_be(0, count) }
+suspend fun AsyncStream.readDoubleArray_le(count: Int): DoubleArray = asyncFun { readBytesExact(count * 8).readDoubleArray_le(0, count) }
+suspend fun AsyncStream.readDoubleArray_be(count: Int): DoubleArray = asyncFun { readBytesExact(count * 8).readDoubleArray_be(0, count) }
 
 suspend fun AsyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
 suspend fun AsyncStream.writeBytes(data: ByteArraySlice): Unit = write(data.data, data.position, data.length)
