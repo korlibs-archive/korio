@@ -4,6 +4,7 @@ import java.lang.reflect.Method
 import java.util.*
 import java.util.concurrent.CancellationException
 import java.util.concurrent.Executors
+import java.util.concurrent.locks.ReentrantLock
 import kotlin.coroutines.*
 
 inline suspend fun <T> asyncFun(routine: suspend () -> T): T = suspendCoroutine<T> { routine.startCoroutine(it) }
@@ -266,36 +267,59 @@ suspend fun AsyncSequence<Int>.sum(): Int = this.fold(0) { a, b -> a + b }
 
 
 // Useful for invoking methods with suspend
+
+// https://github.com/kotlin-es/coroutine-examples/pull/2
 class ContinuationWait<T> {
+	val lock = ReentrantLock()
 	var completed = false
 	var c_value: T? = null
 	var c_exception: Throwable? = null
 	var attachedContinuation: Continuation<T>? = null
 
+	inline fun <R> locked(block: () -> R): R {
+		lock.lock()
+		return try {
+			block()
+		} finally {
+			lock.unlock()
+		}
+	}
+
 	val continuation = object : Continuation<T> {
 		override fun resume(value: T) {
-			completed = true
-			c_value = value
-			attachedContinuation?.resume(value)
+			locked {
+				completed = true
+				c_value = value
+				attachedContinuation
+			}?.resume(value)
 		}
 
 		override fun resumeWithException(exception: Throwable) {
-			completed = true
-			c_exception = exception
-			attachedContinuation?.resumeWithException(exception)
+			locked {
+				completed = true
+				c_exception = exception
+				attachedContinuation
+			}?.resumeWithException(exception)
 		}
 
 	}
 
 	suspend fun await(): T = suspendCoroutine { c ->
-		if (completed) {
-			if (c_exception != null) {
-				c.resumeWithException(c_exception as Throwable)
+		var was_completed = false
+		var was_c_value: T? = null
+		var was_c_exception: Throwable? = null
+		locked {
+			was_completed = completed
+			was_c_value = c_value
+			was_c_exception = c_exception
+			if (!was_completed) attachedContinuation = c
+		}
+		if (was_completed) {
+			if (was_c_exception != null) {
+				c.resumeWithException(was_c_exception as Throwable)
 			} else {
-				c.resume(c_value as T)
+				c.resume(was_c_value as T)
 			}
-		} else {
-			attachedContinuation = c
 		}
 	}
 }
@@ -304,7 +328,7 @@ suspend fun Method.invokeSuspend(obj: Any?, args: List<Any?>): Any? = asyncFun {
 	val method = this
 
 	val lastParam = method.parameters.lastOrNull()
-	val margs = ArrayList(args)
+	val margs = java.util.ArrayList(args)
 	var cont: ContinuationWait<*>? = null
 
 	if (lastParam != null && lastParam.type.isAssignableFrom(Continuation::class.java)) {

@@ -7,6 +7,7 @@ import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.SyncStream
 import com.soywiz.korio.stream.openSync
 import com.soywiz.korio.stream.writeStream
+import com.soywiz.korio.util.OS
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.nio.charset.Charset
@@ -151,5 +152,12 @@ class VfsFile(
 
 	override fun toString(): String = "$vfs[$path]"
 
-	val absolutePath: String = (vfs.absolutePath + File.separatorChar + path).trim(File.separatorChar).replace('/', File.separatorChar)
+	val absolutePath: String by lazy {
+		val res = (vfs.absolutePath + File.separatorChar + path).trim(File.separatorChar).replace('/', File.separatorChar)
+		if (OS.isUnix) {
+			"/$res"
+		} else {
+			res
+		}
+	}
 }
