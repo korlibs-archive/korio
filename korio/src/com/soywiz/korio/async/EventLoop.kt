@@ -1,5 +1,7 @@
 package com.soywiz.korio.async
 
+import com.soywiz.korio.util.JsMethodBody
+import com.soywiz.korio.util.OS
 import java.io.Closeable
 import java.util.concurrent.ConcurrentLinkedDeque
 import kotlin.coroutines.Continuation
@@ -38,41 +40,44 @@ open class EventLoop {
 			}
 		})
 
-		while (handlers.isNotEmpty() || timerHandlers.isNotEmpty() || Thread.activeCount() > 1) {
-			step()
-			Thread.sleep(1L)
-		}
-	}
-
-	fun mainLoop() {
-		mainLoopInternal()
-	}
-
-	protected open fun mainLoopInternal() {
-
-	}
-
-	open fun step() {
-		while (handlers.isNotEmpty()) {
-			val handler = handlers.removeFirst()
-			handler?.invoke()
-		}
-		val now = System.currentTimeMillis()
-		while (timerHandlers.isNotEmpty()) {
-			val handler = timerHandlers.removeFirst()
-			if (now >= handler.time) {
-				handler.handler()
-			} else {
-				timerHandlersBack.add(handler)
+		if (!OS.isJs) {
+			while (handlers.isNotEmpty() || timerHandlers.isNotEmpty() || Thread.activeCount() > 1) {
+				step()
+				Thread.sleep(1L)
 			}
 		}
-		val temp = timerHandlersBack
-		timerHandlersBack = timerHandlers
-		timerHandlers = temp
+	}
+
+	@Volatile private var insideStep = false
+
+	open fun step() {
+		if (insideStep) return
+		insideStep = true
+		try {
+			while (handlers.isNotEmpty()) {
+				val handler = handlers.removeFirst()
+				handler?.invoke()
+			}
+			val now = System.currentTimeMillis()
+			while (timerHandlers.isNotEmpty()) {
+				val handler = timerHandlers.removeFirst()
+				if (now >= handler.time) {
+					handler.handler()
+				} else {
+					timerHandlersBack.add(handler)
+				}
+			}
+			val temp = timerHandlersBack
+			timerHandlersBack = timerHandlers
+			timerHandlers = temp
+		} finally {
+			insideStep = false
+		}
 	}
 
 	open fun queue(handler: () -> Unit) {
 		handlers += handler
+		step()
 	}
 
 	fun setImmediate(handler: () -> Unit) = queue(handler)

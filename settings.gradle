@@ -1,2 +1,2 @@
-rootProject.name = 'korio'
-
+rootProject.name = 'korio-root'
+include('korio', 'korio-jtransc-example')
