@@ -1,4 +1,5 @@
 import com.soywiz.korio.async.EventLoop
+import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.async.spawn
 import com.soywiz.korio.net.AsyncServer
 import com.soywiz.korio.stream.writeString
@@ -7,6 +8,10 @@ fun main(args: Array<String>) = EventLoop.main {
 	val server = AsyncServer(7778)
 
 	println("Listening at ${server.port}")
+
+	executeInWorker {
+		println("HELLO!")
+	}
 
 	spawn {
 		for (client in server.listen()) {

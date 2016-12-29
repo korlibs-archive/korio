@@ -1,5 +1,6 @@
 package com.soywiz.korio.async
 
+import com.soywiz.korio.util.OS
 import java.util.concurrent.Executors
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.startCoroutine
@@ -17,16 +18,20 @@ suspend fun <T> executeInWorker(task: suspend () -> T): T = suspendCoroutine<T> 
 
 // Wait for a suspension block for testing purposes
 fun <T> sync(block: suspend () -> T): T {
-	var result: Any? = null
+	if (OS.isJs) {
+		throw UnsupportedOperationException("sync block is not supported on javascript target")
+	} else {
+		var result: Any? = null
 
-	block.startCoroutine(object : Continuation<T> {
-		override fun resume(value: T) = run { result = value }
-		override fun resumeWithException(exception: Throwable) = run { result = exception }
-	})
+		block.startCoroutine(object : Continuation<T> {
+			override fun resume(value: T) = run { result = value }
+			override fun resumeWithException(exception: Throwable) = run { result = exception }
+		})
 
-	while (result == null) Thread.sleep(1L)
-	if (result is Throwable) throw result as Throwable
-	return result as T
+		while (result == null) Thread.sleep(1L)
+		if (result is Throwable) throw result as Throwable
+		return result as T
+	}
 }
 
 suspend fun <T> spawn(task: suspend () -> T): Promise<T> {
