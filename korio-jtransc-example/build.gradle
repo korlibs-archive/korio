@@ -44,6 +44,6 @@ dependencies {
 }
 
 jtransc {
-    minimizeNames = false
+    minimizeNames = true
     treeshaking = true
 }

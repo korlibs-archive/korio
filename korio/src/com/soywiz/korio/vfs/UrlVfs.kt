@@ -20,6 +20,7 @@ internal class UrlVfsImpl(val urlStr: String) : Vfs() {
 		s.readBytes()
 	}
 
+	@Suppress("unused")
 	private suspend fun readFullyJs(path: String): ByteArray = asyncFun {
 		if (OS.isNodejs) {
 			readURLNodeJs(resolve(path).toString())
@@ -95,5 +96,6 @@ internal class UrlVfsImpl(val urlStr: String) : Vfs() {
     """)
 	external private suspend fun readURLBrowser(url: String, start: Double, end: Double): ByteArray
 
+	@Suppress("unused")
 	private fun getSuspended() = CoroutineIntrinsics.SUSPENDED
 }

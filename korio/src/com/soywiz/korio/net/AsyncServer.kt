@@ -1,7 +1,9 @@
 package com.soywiz.korio.net
 
 import com.soywiz.korio.async.AsyncSequence
+import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
+import com.soywiz.korio.async.sleep
 import java.net.InetSocketAddress
 import java.net.SocketAddress
 import java.nio.channels.AsynchronousServerSocketChannel
@@ -9,8 +11,19 @@ import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.CompletionHandler
 import kotlin.coroutines.suspendCoroutine
 
-class AsyncServer(val local: SocketAddress, val backlog: Int = 128) {
-	constructor(port: Int, host: String = "127.0.0.1") : this(InetSocketAddress(host, port))
+class AsyncServer private constructor(val local: SocketAddress, val backlog: Int = 128) {
+	private constructor(port: Int, host: String = "127.0.0.1") : this(InetSocketAddress(host, port))
+
+	companion object {
+		operator suspend fun invoke(port: Int, host: String = "127.0.0.1") = asyncFun {
+			val server = AsyncServer(port, host)
+			for (n in 0 until 100) {
+				if (server.ssc.isOpen) break
+				sleep(50)
+			}
+			server
+		}
+	}
 
 	val ssc = AsynchronousServerSocketChannel.open()
 
