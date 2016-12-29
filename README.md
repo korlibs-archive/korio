@@ -49,9 +49,9 @@ writeBytes, write8, write16_le, write32_le, write64_le, writeF32_le, writeF64_le
 
 ### VFS
 
-Korio provides an asynchronous VirtualFileSystem extensible engine.
-There is a Vfs class and a Vfs.Proxy class that provides you a base for your VFS. But at the application level, you
-are using a VfsFile class that represents a file inside a Vfs.
+Korio provides an asynchronous Virtual File System extensible engine.
+There is a Vfs class and a Vfs.Proxy class that provides you a base for your VFS.
+But when using it you are using a VfsFile class that represents a node (file or folder) inside a Vfs.
 
 As an example, in a suspend block, you can do the following:
 
@@ -68,8 +68,8 @@ In order to increase security, Vfs engine provides a JailVfs that allows you to 
 specific folder. So you can do the following:
 
 ```kotlin
-val base = LocalVfs(File("/path/to/sandbox/folder")).jail()
-base["../../../etc/passwd"].readString() // this won't work
+val jail = LocalVfs(File("/path/to/sandbox/folder")).jail()
+jail["../../../etc/passwd"].readString() // this won't work
 ```
 
 ### Mounts
@@ -78,15 +78,17 @@ Korio includes a MountableVfs that allows you to mount other filesystems like th
 
 ```
 val resources = ResourcesVfs()
-val root = MountableVfs({
+val root = MountableVfs {
 	mount("/zip", resources["hello.zip"].openAsZip())
 	mount("/iso", resources["isotest.iso"].openAsIso())
-})
+}
 Assert.assertEquals("ZIP!", root["/zip/hello/world.txt"].readString())
 Assert.assertEquals("ISO!", root["/iso/hello/world.txt"].readString())
+
+(root.vfs as Mountable).unmount("/zip")
 ```
 
-### InMemory Vfs
+### Memory Vfs
 
 Korio includes an inmemory vfs to create volatile vfs:
 
@@ -99,11 +101,24 @@ val mem = MemoryVfs(mapOf(
 
 ### NodeVfs
 
-Korio includes an open base NodeVfs to support node based vfs.
+Korio includes an open base NodeVfs to support node based vfs like in-memory vfs.
 
 ### PathInfo
 
 Korio includes a PathInfo utility integrated with VfsFile in order to obtain path information (folder, basename, extension...)
+
+### Execution
+
+Korio includes includes a mechanism to execute commands inside a VfsFile. This allow you execute asynchronously commands
+in your local file system, but also allows to implement RPC mechanisms, that will work seamlessly. You can implement here
+ssh or ftp commands as an example.
+
+### Special I/O
+
+You can implement and decorate other VFS for reading/writing special kind of files. For example. A browser allows you to
+download+decode images directly korio provides a `readSpecial` that will allow you to download an image and for example
+generate a Bitmap32. You can create an extension method like this: `suspend fun VfsFile.readBitmap32() = readSpecial<Bitmap32>()`
+to make your life easier. You can see an example at `test/com/soywiz/korio/vfs/ReadSpecialTest.kt`.
 
 ### Included Vfs
 
@@ -111,6 +126,11 @@ There are several filesystems included and you can find examples of usage in the
 
 ```kotlin
 LocalVfs, UrlVfs, ZipVfs, IsoVfs, ResourcesVfs, JailVfs, MountableVfs, MemoryVfs
+```
+
+For Vfs implementations:
+```kotlin
+Vfs, Vfs.Proxy, Vfs.Decorate, NodeVfs
 ```
 
 ### API
@@ -163,7 +183,7 @@ class VfsFile {
     suspend fun list(): AsyncSequence<VfsFile>
     suspend fun listRecursive(): AsyncSequence<VfsFile>
 
-    // Executing in this folder/filesystem. You can implement RPC here. Implemented in default korio for LocalVfs.
+    // Executing in this folder/filesystem. You can implement RPC here or ftp/sftp commands. Implemented in default korio for LocalVfs.
 	suspend fun exec(cmdAndArgs: List<String>, handler: VfsProcessHandler = VfsProcessHandler()): Int
 
 	// Convenience execution methods
@@ -175,7 +195,35 @@ class VfsFile {
     // Jail this file so generated VfsFile can't access ancestors
     fun jail(): VfsFile = JailVfs(this)
 }
+
+data class VfsStat {
+	val file: VfsFile
+	val exists: Boolean
+	val isDirectory: Boolean
+	val size: Long
+	val device: Long
+	val inode: Long
+	val mode: Int
+	val owner: String
+	val group: String
+	val createTime: Long
+	val modifiedTime: Long
+	val lastAccessTime: Long
+	val extraInfo: Any?
+	val createDate: LocalDateTime
+	val modifiedDate: LocalDateTime
+	val lastAccessDate: LocalDateTime
+}
+
+class PathInfo(val fullpath: String) {
+	val folder: String
+	val basename: String
+	val pathWithoutExtension: String
+	val basenameWithoutExtension: String
+	val extension: String
+}
 ```
+
 
 You can create custom virtual file systems and combine them (for S3, for Windows Registry, for FTP/SFTP, an ISO file...)
 or whatever you need.

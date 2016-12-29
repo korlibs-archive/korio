@@ -2,6 +2,7 @@ package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.sync
 import com.soywiz.korio.async.toList
+import com.soywiz.korio.expectException
 import com.soywiz.korio.stream.openAsync
 import org.junit.Assert
 import org.junit.Test
@@ -30,19 +31,6 @@ class JailVfsTest {
 
 		expectException<FileNotFoundException> {
 			worldFolderJail["../secret.txt"].readString()
-		}
-	}
-
-	inline fun <reified T : Throwable> expectException(callback: () -> Unit) {
-		try {
-			callback()
-			Assert.fail()
-		} catch (t: Throwable) {
-			if (t is T) {
-				Assert.assertTrue(true)
-			} else {
-				throw t
-			}
 		}
 	}
 }

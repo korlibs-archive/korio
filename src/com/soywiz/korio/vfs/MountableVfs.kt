@@ -14,6 +14,7 @@ suspend inline fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile
 		})
 
 		override fun mount(folder: String, file: VfsFile) = this.apply { mounts[VfsFile.normalize(folder)] = file }
+		override fun unmount(folder: String): Mountable = this.apply { mounts.remove(VfsFile.normalize(folder)) }
 
 		override suspend fun access(path: String): VfsFile {
 			val rpath = VfsFile.normalize(path)
@@ -40,5 +41,6 @@ suspend inline fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile
 
 interface Mountable {
 	fun mount(folder: String, file: VfsFile): Mountable
+	fun unmount(folder: String): Mountable
 }
 

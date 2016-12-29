@@ -25,12 +25,14 @@ class ReadSpecialTest {
 		}
 	}, this.path)
 
+	suspend fun VfsFile.readCharArray2() = readSpecial<CharArray2>()
+
 	@Test
 	fun testReadSpecial() = sync {
 		val temp = TempVfs().decorateWithCharArrayReading()
 		val f2 = temp["korio.chararray2"]
 		f2.writeString("123456789")
-		val c2 = f2.readSpecial<CharArray2>()
+		val c2 = f2.readCharArray2()
 		Assert.assertEquals('1', c2[0, 0])
 		Assert.assertEquals('5', c2[1, 1])
 		Assert.assertEquals('9', c2[2, 2])
