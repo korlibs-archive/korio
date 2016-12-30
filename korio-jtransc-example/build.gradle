@@ -12,7 +12,7 @@ buildscript {
 }
 
 plugins {
-    id "com.jtransc" version "0.5.2"
+    id "com.jtransc" version "0.5.3"
 }
 
 apply plugin: 'java'

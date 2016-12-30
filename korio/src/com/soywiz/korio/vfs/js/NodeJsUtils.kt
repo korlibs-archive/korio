@@ -100,25 +100,6 @@ object NodeJsUtils {
 	external suspend fun read(handle: Any, position: Double, length: Double): ByteArray
 
 	@JTranscMethodBody(target = "js", value = """
-		// https://nodejs.org/api/fs.html#fs_class_fs_stats
-        var fd = p0, continuation = p1;
-
-        var fs = require('fs');
-		fs.fstat(fd, function(err, stat) {
-			if (err) {
-				continuation['{% METHOD kotlin.coroutines.Continuation:resumeWithException %}'](N.createRuntimeException('Error ' + err + ' opening' + path));
-			} else {
-				var out = {% CONSTRUCTOR com.soywiz.korio.vfs.js.JsStat:(D)V %}(+stat.size);
-				out['{% FIELD com.soywiz.korio.vfs.js.JsStat:isDirectory %}'] = stat.isDirectory();
-				continuation['{% METHOD kotlin.coroutines.Continuation:resume %}'](out);
-			}
-		});
-
-		return this['{% METHOD #CLASS:getSuspended %}']();
-    """)
-	external suspend fun fsStat(handle: Any): JsStat
-
-	@JTranscMethodBody(target = "js", value = """
         var fd = p0, continuation = p2;
         var fs = require('fs');
 		fs.close(fd, mode, function(err, fd) {

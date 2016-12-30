@@ -32,8 +32,8 @@ private fun _LocalVfs(): Vfs = LocalVfsNio()
 @Suppress("unused")
 private class LocalVfsJs : Vfs() {
 	suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = asyncFun {
+		val stat = NodeJsUtils.fstat(path)
 		val handle = NodeJsUtils.open(path, "r")
-		val stat = NodeJsUtils.fsStat(handle)
 
 		object : AsyncStreamBase() {
 			suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
