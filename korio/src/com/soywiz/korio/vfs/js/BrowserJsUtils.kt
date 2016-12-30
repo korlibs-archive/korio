@@ -49,6 +49,14 @@ object BrowserJsUtils {
     """)
 	external suspend fun stat(url: String): JsStat
 
+	@JTranscMethodBody(target = "js", value = """
+		var baseHref = document.location.href.replace(/\/[^\/]*$/, '');
+		var bases = document.getElementsByTagName('base');
+		if (bases.length > 0) baseHref = bases[0].href;
+		return N.str(baseHref);
+	""")
+	external fun getBaseUrl(): String
+
 	@Suppress("unused")
 	private fun getSuspended() = CoroutineIntrinsics.SUSPENDED
 }

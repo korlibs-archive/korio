@@ -57,13 +57,7 @@ class VfsFile(
 
 	suspend fun stat(): VfsStat = vfs.stat(path)
 	suspend fun size(): Long = asyncFun { vfs.stat(path).size }
-	suspend fun exists(): Boolean = asyncFun {
-		try {
-			vfs.stat(path).exists
-		} catch (e: Throwable) {
-			false
-		}
-	}
+	suspend fun exists(): Boolean = asyncFun { try { vfs.stat(path).exists } catch (e: Throwable) { false } }
 
 	suspend fun isDirectory(): Boolean = asyncFun { stat().isDirectory }
 

@@ -4,6 +4,9 @@ import com.jtransc.annotation.JTranscMethodBody
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
+import com.soywiz.korio.util.OS
+import com.soywiz.korio.vfs.js.BrowserJsUtils
+import com.soywiz.korio.vfs.js.NodeJsUtils
 import java.io.File
 import java.net.URLClassLoader
 
@@ -19,7 +22,7 @@ private fun ResourcesVfsGen(classLoader: URLClassLoader): Vfs {
 @Suppress("unused")
 object ResourcesVfsGenJs {
 	@JvmStatic fun gen(): Vfs {
-		return EmbededResourceListing(LocalVfs())
+		return EmbededResourceListing(if (OS.isNodejs) JailedLocalVfs(NodeJsUtils.getCWD()) else UrlVfs(BrowserJsUtils.getBaseUrl()))
 	}
 }
 
@@ -61,7 +64,7 @@ private class EmbededResourceListing(parent: VfsFile) : Vfs.Decorator(parent) {
 		}
 	}
 
-	override fun toString(): String = "ResourcesVfs"
+	override fun toString(): String = "ResourcesVfs[$parent]"
 }
 
 private class ResourcesVfsJvm(val classLoader: URLClassLoader, private val merged: MergedVfs = MergedVfs()) : Vfs.Decorator(merged.root) {

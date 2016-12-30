@@ -19,17 +19,17 @@ class ZipVfsTest {
 		val helloZip = ResourcesVfs["hello.zip"].openAsZip()
 
 		Assert.assertEquals(
-			"[VfsStat(file=ZipVfs(ResourcesVfs[hello.zip])[hello], exists=true, isDirectory=true, size=0, device=-1, inode=0, mode=511, owner=nobody, group=nobody, createTime=1482776692000, modifiedTime=1482776692000, lastAccessTime=1482776692000, extraInfo=null)]",
+			"[VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello], exists=true, isDirectory=true, size=0, device=-1, inode=0, mode=511, owner=nobody, group=nobody, createTime=1482776692000, modifiedTime=1482776692000, lastAccessTime=1482776692000, extraInfo=null)]",
 			helloZip.list().toList().map { it.stat() }.toString()
 		)
 
 		Assert.assertEquals(
-			"[VfsStat(file=ZipVfs(ResourcesVfs[hello.zip])[hello/world.txt], exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=1482776692000, modifiedTime=1482776692000, lastAccessTime=1482776692000, extraInfo=null)]",
+			"[VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello/world.txt], exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=1482776692000, modifiedTime=1482776692000, lastAccessTime=1482776692000, extraInfo=null)]",
 			helloZip["hello"].list().toList().map { it.stat() }.toString()
 		)
 
 		Assert.assertEquals(
-			"VfsStat(file=ZipVfs(ResourcesVfs[hello.zip])[hello/world.txt], exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=1482776692000, modifiedTime=1482776692000, lastAccessTime=1482776692000, extraInfo=null)",
+			"VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello/world.txt], exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=1482776692000, modifiedTime=1482776692000, lastAccessTime=1482776692000, extraInfo=null)",
 			helloZip["hello/world.txt"].stat().toString()
 		)
 		Assert.assertEquals(
@@ -51,7 +51,7 @@ class ZipVfsTest {
 			helloZip["hello/compressedWorld.txt"].readString()
 		)
 		Assert.assertEquals(
-			"[hello, hello/compressedWorld.txt, hello/world.txt]",
+			"[/hello, /hello/compressedWorld.txt, /hello/world.txt]",
 			helloZip.listRecursive().toList().map { it.fullname }.toString()
 		)
 	}

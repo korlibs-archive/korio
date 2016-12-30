@@ -17,7 +17,7 @@ class JailVfsTest {
 		))
 
 		Assert.assertEquals(
-			"[hello, hello/secret.txt, hello/world, hello/world/test.txt]",
+			"[/hello, /hello/secret.txt, /hello/world, /hello/world/test.txt]",
 			mem.listRecursive().toList().map { it.fullname }.toString()
 		)
 

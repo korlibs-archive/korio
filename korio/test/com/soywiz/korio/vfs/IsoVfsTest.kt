@@ -10,7 +10,7 @@ class IsoVfsTest {
 	fun testIso() = sync {
 		val isotestIso = ResourcesVfs["isotest.iso"].openAsIso()
 		Assert.assertEquals(
-			listOf("HELLO", "HELLO/WORLD.TXT"),
+			listOf("/HELLO", "/HELLO/WORLD.TXT"),
 			isotestIso.listRecursive().toList().map { it.fullname }
 		)
 

@@ -19,7 +19,7 @@ fun main(args: Array<String>) = EventLoop.main {
 
 	val file = url["hello.txt"]
 
-	spawn {
+	val process = spawn {
 		file.openUse {
 			while (!eof()) {
 				val c = readU8()
@@ -39,6 +39,11 @@ fun main(args: Array<String>) = EventLoop.main {
 	}
 
 	println("" + iso["hello/world.txt"] + " : " + iso["hello/world.txt"].readString())
+
+	process.await()
+
+	println(ResourcesVfs)
+	println("From resources:" + ResourcesVfs["hello.txt"].readString())
 
 	//val server = AsyncServer(7778)
 	//

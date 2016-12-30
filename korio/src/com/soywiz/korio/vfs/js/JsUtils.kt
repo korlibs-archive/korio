@@ -15,7 +15,7 @@ object JsUtils {
 
 	suspend fun stat(url: String): JsStat = asyncFun {
 		if (OS.isNodejs) {
-			NodeJsUtils.stat(url)
+			NodeJsUtils.httpStat(url)
 		} else {
 			BrowserJsUtils.stat(url)
 		}

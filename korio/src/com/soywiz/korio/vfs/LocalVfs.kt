@@ -5,6 +5,9 @@ import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.AsyncStreamBase
+import com.soywiz.korio.stream.toAsyncStream
+import com.soywiz.korio.vfs.js.NodeJsUtils
 import java.io.*
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
@@ -18,6 +21,7 @@ fun LocalVfs(base: String): VfsFile = LocalVfs()[base]
 fun TempVfs() = LocalVfs()[System.getProperty("java.io.tmpdir")]
 fun LocalVfs(base: File): VfsFile = LocalVfs()[base.absolutePath]
 fun JailedLocalVfs(base: File): VfsFile = LocalVfs()[base.absolutePath].jail()
+fun JailedLocalVfs(base: String): VfsFile = LocalVfs()[base].jail()
 suspend fun File.open(mode: VfsOpenMode) = LocalVfs(this).open(mode)
 
 fun LocalVfs(): VfsFile = _LocalVfs().root
@@ -27,6 +31,31 @@ private fun _LocalVfs(): Vfs = LocalVfsNio()
 
 @Suppress("unused")
 private class LocalVfsJs : Vfs() {
+	suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = asyncFun {
+		val handle = NodeJsUtils.open(path, "r")
+		val stat = NodeJsUtils.fsStat(handle)
+
+		object : AsyncStreamBase() {
+			suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
+				val data = NodeJsUtils.read(handle, position.toDouble(), len.toDouble())
+				System.arraycopy(data, 0, buffer, offset, data.size)
+				data.size
+			}
+
+			suspend override fun getLength(): Long = stat.size.toLong()
+			suspend override fun close(): Unit = NodeJsUtils.close(handle)
+		}.toAsyncStream()
+	}
+
+	suspend override fun stat(path: String): VfsStat = asyncFun {
+		try {
+			val stat = NodeJsUtils.fstat(path)
+			createExistsStat(path, isDirectory = stat.isDirectory, size = stat.size.toLong())
+		} catch (t: Throwable) {
+			createNonExistsStat(path)
+		}
+	}
+
 	override fun toString(): String = "LocalVfs"
 }
 
