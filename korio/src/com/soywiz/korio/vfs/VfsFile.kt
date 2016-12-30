@@ -13,13 +13,9 @@ import java.nio.charset.Charset
 class VfsFile(
 	val vfs: Vfs,
 	path: String
-) : VfsNamed(VfsFile.normalize(path)) {
-	companion object {
-		fun normalize(path: String): String = VfsUtil.normalize(path)
-		fun combine(base: String, access: String): String = VfsUtil.combine(base, access)
-	}
-
-	operator fun get(path: String): VfsFile = VfsFile(vfs, combine(this.path, path))
+//) : VfsNamed(VfsFile.normalize(path)) {
+) : VfsNamed(path) {
+	operator fun get(path: String): VfsFile = VfsFile(vfs, VfsUtil.combine(this.path, path))
 
 	suspend operator fun set(path: String, content: String): Unit = this[path].writeString(content)
 	suspend operator fun set(path: String, content: ByteArray): Unit = this[path].write(content)

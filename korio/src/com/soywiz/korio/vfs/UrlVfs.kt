@@ -1,101 +1,84 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.asyncFun
+import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.AsyncStreamBase
+import com.soywiz.korio.stream.toAsyncStream
 import com.soywiz.korio.util.JsMethodBody
 import com.soywiz.korio.util.OS
+import com.soywiz.korio.vfs.js.BrowserJsUtils
+import com.soywiz.korio.vfs.js.NodeJsUtils
+import java.net.HttpURLConnection
 import java.net.URL
-import kotlin.coroutines.CoroutineIntrinsics
 
-fun UrlVfs(url: String): VfsFile = UrlVfsImpl(url).root
-fun UrlVfs(url: URL): VfsFile = UrlVfsImpl(url.toString()).root
 
-internal class UrlVfsImpl(val urlStr: String) : Vfs() {
+fun UrlVfs(url: String): VfsFile = _UrlVfs(url).root
+fun UrlVfs(url: URL): VfsFile = _UrlVfs(url.toString()).root
+
+@JsMethodBody("return {% CONSTRUCTOR com.soywiz.korio.vfs.UrlVfsJs:(Ljava/lang/String;)V %}(p0);")
+private fun _UrlVfs(url: String): Vfs = UrlVfsJvm(url)
+
+@Suppress("unused")
+internal class UrlVfsJs(val urlStr: String) : Vfs() {
+	fun resolve(path: String) = "$urlStr/$path".trim('/')
+
+	suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = asyncFun {
+		val info = stat(path)
+		val url = resolve(path)
+
+		object : AsyncStreamBase() {
+			suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
+				val res = BrowserJsUtils.readRangeBytes(url, position.toDouble(), (position + len).toDouble())
+				System.arraycopy(res, 0, buffer, offset, res.size)
+				res.size
+			}
+
+			suspend override fun getLength(): Long = info.size
+		}.toAsyncStream()
+	}
+
+	suspend override fun readFully(path: String): ByteArray = asyncFun {
+		if (OS.isNodejs) {
+			NodeJsUtils.readURLNodeJs(resolve(path))
+		} else {
+			BrowserJsUtils.readBytes(resolve(path))
+		}
+	}
+
+	suspend override fun stat(path: String): VfsStat = asyncFun {
+		if (OS.isNodejs) {
+			TODO("stat on nodejs")
+		} else {
+			try {
+				val info = BrowserJsUtils.statURLBrowser(resolve(path).toString())
+				createExistsStat(path, isDirectory = false, size = info.size.toLong())
+			} catch (e: Throwable) {
+				createNonExistsStat(path)
+			}
+		}
+	}
+}
+
+internal class UrlVfsJvm(val urlStr: String) : Vfs() {
 	fun resolve(path: String) = URL("$urlStr/$path".trim('/'))
 
-	@JsMethodBody("""
-		return this['{% METHOD #CLASS:readFullyJs %}'](p0, p1);
-	""")
-	suspend override fun readFully(path: String): ByteArray = asyncFun {
+	suspend override fun readFully(path: String): ByteArray = executeInWorker {
 		val s = resolve(path).openStream()
 		s.readBytes()
 	}
 
-	@Suppress("unused")
-	private suspend fun readFullyJs(path: String): ByteArray = asyncFun {
-		if (OS.isNodejs) {
-			readURLNodeJs(resolve(path).toString())
-		} else {
-			readURLBrowser(resolve(path).toString(), -1.0, -1.0)
+	suspend override fun stat(path: String): VfsStat = executeInWorker {
+		val s = resolve(path)
+		try {
+			HttpURLConnection.setFollowRedirects(false)
+			val con = (s.openConnection() as HttpURLConnection).apply {
+				requestMethod = "HEAD"
+			}
+			if (con.responseCode != HttpURLConnection.HTTP_OK) throw RuntimeException("Http error")
+			createExistsStat(path, isDirectory = true, size = con.getHeaderField("Content-Length").toLongOrNull() ?: 0L)
+		} catch (e: Exception) {
+			createNonExistsStat(path)
 		}
 	}
-
-	@JsMethodBody("""
-        var path = N.istr(p0);
-        var continuation = p1;
-
-        var http = require('http');
-        var url = require('url');
-		var info = url.parse(path);
-		//console.log(info);
-        http.get({
-            host: info.hostname,
-            port: info.port,
-            path: info.path,
-            agent: false,
-			encoding: null
-        }, function (res) {
-			var body = [];
-			res.on('data', function(d) { body.push(d); });
-			res.on('end', function() {
-				var res = Buffer.concat(body);
-				var u8array = new Uint8Array(res);
-				var out = new JA_B(res.length);
-				out.setArraySlice(0, u8array);
-				continuation['{% METHOD kotlin.coroutines.Continuation:resume %}'](out);
-			});
-        });
-
-		return this['{% METHOD #CLASS:getSuspended %}']();
-    """)
-	external private suspend fun readURLNodeJs(url: String): ByteArray
-
-	@JsMethodBody("""
-        var path = N.istr(p0);
-		var start = p1;
-		var end = p2;
-        var continuation = p3;
-
-		//console.log('readURLBrowser:' + path + ',' + start + '-' + end);
-		//console.log(continuation);
-		//console.log('JsHtmlDownloader.downloadFileRange:' + path + ',' + start + '-' + end);
-
-		var xhr = new XMLHttpRequest();
-		xhr.open('GET', path, true);
-		xhr.responseType = 'arraybuffer';
-
-		xhr.onload = function(e) {
-			var u8array = new Uint8Array(this.response);
-			var out = new JA_B(u8array.length);
-			out.setArraySlice(0, u8array);
-			continuation['{% METHOD kotlin.coroutines.Continuation:resume %}'](out);
-		};
-
-		xhr.onreadystatechange = function() {
-			//console.log(xhr.readyState);
-			//console.log(xhr.status);
-		};
-
-		xhr.onerror = function(e) {
-			continuation['{% METHOD kotlin.coroutines.Continuation:resumeWithException %}'](N.createRuntimeException('Error ' + xhr.status + " opening " + path));
-		};
-
-		if (start >= 0 && end >= 0) xhr.setRequestHeader('Range', 'bytes=' + start + '-' + end);
-		xhr.send();
-
-		return this['{% METHOD #CLASS:getSuspended %}']();
-    """)
-	external private suspend fun readURLBrowser(url: String, start: Double, end: Double): ByteArray
-
-	@Suppress("unused")
-	private fun getSuspended() = CoroutineIntrinsics.SUSPENDED
 }

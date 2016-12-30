@@ -2,17 +2,26 @@ package com.soywiz.korio.async
 
 import com.soywiz.korio.util.OS
 import java.util.concurrent.Executors
+import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.startCoroutine
 import kotlin.coroutines.suspendCoroutine
 
-inline suspend fun <T> asyncFun(routine: suspend () -> T): T = suspendCoroutine<T> { routine.startCoroutine(it) }
-
 val workerLazyPool by lazy { Executors.newCachedThreadPool() }
+var tasksInProgress = AtomicInteger(0)
+
+inline suspend fun <T> asyncFun(routine: suspend () -> T): T = suspendCoroutine<T> {
+	routine.startCoroutine(it)
+}
 
 suspend fun <T> executeInWorker(task: suspend () -> T): T = suspendCoroutine<T> { c ->
+	tasksInProgress.incrementAndGet()
 	workerLazyPool.execute {
-		task.startCoroutine(c)
+		try {
+			task.startCoroutine(c)
+		} finally {
+			tasksInProgress.decrementAndGet()
+		}
 	}
 }
 
@@ -23,9 +32,17 @@ fun <T> sync(block: suspend () -> T): T {
 	} else {
 		var result: Any? = null
 
+		tasksInProgress.incrementAndGet()
 		block.startCoroutine(object : Continuation<T> {
-			override fun resume(value: T) = run { result = value }
-			override fun resumeWithException(exception: Throwable) = run { result = exception }
+			override fun resume(value: T) = run {
+				tasksInProgress.decrementAndGet()
+				result = value
+			}
+
+			override fun resumeWithException(exception: Throwable) = run {
+				tasksInProgress.decrementAndGet()
+				result = exception
+			}
 		})
 
 		while (result == null) Thread.sleep(1L)
@@ -42,4 +59,5 @@ suspend fun <T> spawn(task: suspend () -> T): Promise<T> {
 
 // Aliases for spawn
 suspend fun <T> async(task: suspend () -> T): Promise<T> = spawn(task)
+
 suspend fun <T> go(task: suspend () -> T): Promise<T> = spawn(task)

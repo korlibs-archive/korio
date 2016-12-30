@@ -5,7 +5,9 @@ import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.contains
 import com.soywiz.korio.util.getBits
+import com.soywiz.korio.util.indexOf
 import com.soywiz.korio.util.toUInt
 import java.io.FileNotFoundException
 import java.util.*
@@ -13,8 +15,21 @@ import java.util.zip.Inflater
 
 suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 	//val s = zipFile.open(VfsOpenMode.READ)
-	s.setPosition(s.getLength() - 0x16)
-	val data = s.readBytesExact(0x16).openSync()
+	var endBytes = ByteArray(0)
+
+	val PK_END = byteArrayOf(0x50, 0x4B, 0x05, 0x06)
+	var pk_endIndex = -1
+
+	for (chunkSize in listOf(0x16, 0x100, 0x1000, 0x10000)) {
+		s.setPosition(s.getLength() - chunkSize)
+		endBytes = s.readBytesExact(chunkSize)
+		pk_endIndex = endBytes.indexOf(PK_END)
+		if (pk_endIndex >= 0) break
+	}
+
+	if (pk_endIndex < 0) throw IllegalArgumentException("Not a zip file")
+
+	val data = Arrays.copyOfRange(endBytes, pk_endIndex, endBytes.size).openSync()
 
 	fun String.normalizeName() = this.trim('/')
 
@@ -43,6 +58,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 	val filesPerFolder = hashMapOf<String, HashMap<String, ZipEntry>>()
 
 	data.apply {
+		//println(s)
 		if (readS32_be() != 0x504B_0506) throw IllegalStateException("Not a zip file")
 		val diskNumber = readU16_le()
 		val startDiskNumber = readU16_le()
@@ -51,6 +67,8 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 		val directorySize = readS32_le()
 		val directoryOffset = readS32_le()
 		val commentLength = readU16_le()
+
+		//println("Zip: $entriesInDirectory")
 
 		val ds = s.sliceWithSize(directoryOffset.toLong(), directorySize.toLong()).readAvailable().openSync()
 		ds.apply {

@@ -16,7 +16,7 @@ import java.util.Calendar
 class ZipVfsTest {
 	@Test
 	fun testZipUncompressed() = sync {
-		val helloZip = ResourcesVfs()["hello.zip"].openAsZip()
+		val helloZip = ResourcesVfs["hello.zip"].openAsZip()
 
 		Assert.assertEquals(
 			"[VfsStat(file=ZipVfs(ResourcesVfs[hello.zip])[hello], exists=true, isDirectory=true, size=0, device=-1, inode=0, mode=511, owner=nobody, group=nobody, createTime=1482776692000, modifiedTime=1482776692000, lastAccessTime=1482776692000, extraInfo=null)]",
@@ -39,13 +39,13 @@ class ZipVfsTest {
 
 		Assert.assertEquals(
 			"2016-12-26T18:24:52",
-			DateTimeFormatter.ISO_DATE_TIME.format(helloZip["hello/world.txt"].stat().createDate)
+			DateTimeFormatter.ISO_DATE_TIME.format(helloZip["hello/world.txt"].stat().createLocalDate)
 		)
 	}
 
 	@Test
 	fun testZipCompressed() = sync {
-		val helloZip = ResourcesVfs()["compressedHello.zip"].openAsZip()
+		val helloZip = ResourcesVfs["compressedHello.zip"].openAsZip()
 		Assert.assertEquals(
 			"HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO WORLD!",
 			helloZip["hello/compressedWorld.txt"].readString()

@@ -8,7 +8,7 @@ object VfsUtil {
 	fun parts(path: String): List<String> = path.split('/')
 
 	fun normalize(path: String): String {
-		var path2 = path
+		var path2 = path.replace('\\', '/')
 		while (path2.startsWith("/")) path2 = path2.substring(1)
 		val out = LinkedList<String>()
 		for (part in path2.split("/")) {
@@ -21,7 +21,13 @@ object VfsUtil {
 		return out.joinToString("/")
 	}
 
-	fun combine(base: String, access: String): String = normalize(base + "/" + access)
+	fun combine(base: String, access: String): String = if (isAbsolute(access)) normalize(access) else normalize(base + "/" + access)
+
+	fun isAbsolute(base: String): Boolean {
+		if (base.isNotEmpty() && (base[0] == '/' || base[0] == '\\')) return true
+		if (base.length >= 3 && (base[1] == ':' && (base[2] == '\\' || base[2] == '/'))) return true
+		return false
+	}
 
 	fun normalizeAbsolute(path: String): String {
 		val res = path.replace('/', File.separatorChar).trim(File.separatorChar)

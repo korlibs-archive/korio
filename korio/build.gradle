@@ -41,6 +41,7 @@ repositories {
 
 dependencies {
     compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+    //compile "org.jetbrains:annotations-java5:15.0"
     testCompile "junit:junit:4.11"
 }
 

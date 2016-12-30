@@ -6,6 +6,7 @@ import com.soywiz.korio.util.compareToChain
 import java.io.Closeable
 import java.util.*
 import java.util.concurrent.ConcurrentLinkedDeque
+import java.util.concurrent.atomic.AtomicBoolean
 import kotlin.Comparator
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.startCoroutine
@@ -24,9 +25,16 @@ interface EventLoop {
 		}
 
 		fun main(entry: suspend () -> Unit): Unit {
+			tasksInProgress.incrementAndGet()
+			impl.init()
 			entry.startCoroutine(object : Continuation<Unit> {
-				override fun resume(value: Unit) = Unit
-				override fun resumeWithException(exception: Throwable) = exception.printStackTrace()
+				override fun resume(value: Unit) {
+					tasksInProgress.decrementAndGet()
+				}
+				override fun resumeWithException(exception: Throwable) {
+					tasksInProgress.decrementAndGet()
+					exception.printStackTrace()
+				}
 			})
 		}
 
@@ -38,6 +46,7 @@ interface EventLoop {
 		suspend fun sleep(ms: Int): Unit = suspendCoroutine { c -> setTimeout(ms) { c.resume(Unit) } }
 	}
 
+	fun init(): Unit
 	fun setInterval(ms: Int, callback: () -> Unit): Closeable
 	fun setTimeout(ms: Int, callback: () -> Unit): Closeable
 	fun setImmediate(handler: () -> Unit): Unit
@@ -49,12 +58,21 @@ interface EventLoop {
 		val handlers = ConcurrentLinkedDeque<() -> Unit>()
 		var timerHandlers = TreeSet<TimerHandler>(Comparator<TimerHandler> { a, b -> if (Objects.equals(a, b)) 0 else a.time.compareTo(b.time).compareToChain { Objects.hash(a).compareTo(Objects.hash(b)) } })
 
-		val eventLoopOnce = Once()
+		var eventLoopRunning = AtomicBoolean(false)
+
+		override fun init(): Unit {
+			ensureEventLoop()
+		}
 
 		@JsMethodBody("")
-		private fun ensureEventLoop(): Unit = eventLoopOnce {
+		private fun ensureEventLoop(): Unit {
+			if (!eventLoopRunning.compareAndSet(false, true)) return
 			Thread {
-				while (handlers.isNotEmpty() || timerHandlers.isNotEmpty() || Thread.activeCount() > 1) {
+				while (handlers.isNotEmpty() || timerHandlers.isNotEmpty() || tasksInProgress.get() > 0) {
+					//println("step: ${handlers.size} : ${timerHandlers.size} : ${Thread.activeCount()}")
+					//println(workerLazyPool.isTerminated)
+					//println(workerLazyPool.isShutdown)
+					//println(tasksInProgress)
 					while (lock { handlers.isNotEmpty() }) {
 						val handler = lock { handlers.removeFirst() }
 						handler?.invoke()
@@ -69,8 +87,11 @@ interface EventLoop {
 							break
 						}
 					}
-					Thread.sleep(1L)
+					Thread.sleep(16L)
 				}
+				eventLoopRunning.compareAndSet(true, false)
+			}.apply {
+				isDaemon = true
 			}.start()
 		}
 
@@ -105,6 +126,7 @@ interface EventLoop {
 		inline private fun <T> lock(callback: () -> T) = synchronized(this, callback)
 	}
 
+	@Suppress("unused")
 	class EventLoopJs : EventLoop {
 		@JsMethodBody("""var time = p0, handler = p1;return setTimeout(function() { handler['{% METHOD kotlin.jvm.functions.Function0:invoke %}'](); }, time);""")
 		external private fun _setTimeout(time: Int, c: () -> Unit): Double
@@ -117,6 +139,9 @@ interface EventLoop {
 
 		@JsMethodBody("""return clearInterval(p0);""")
 		external private fun _clearInterval(id: Double): Unit
+
+		override fun init(): Unit {
+		}
 
 		override fun setImmediate(handler: () -> Unit) {
 			_setTimeout(0, handler)

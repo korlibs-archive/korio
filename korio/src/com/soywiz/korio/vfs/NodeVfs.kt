@@ -11,7 +11,9 @@ open class NodeVfs : Vfs() {
 		val name: String,
 		val isDirectory: Boolean = false,
 		parent: Node? = null
-	) {
+	) : Iterable<Node> {
+		override fun iterator(): Iterator<Node> = children.values.iterator()
+
 		var parent: Node? = null
 			get() = field
 			set(value) {

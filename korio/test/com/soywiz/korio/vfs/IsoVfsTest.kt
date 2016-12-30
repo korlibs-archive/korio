@@ -8,7 +8,7 @@ import org.junit.Test
 class IsoVfsTest {
 	@Test
 	fun testIso() = sync {
-		val isotestIso = ResourcesVfs()["isotest.iso"].openAsIso()
+		val isotestIso = ResourcesVfs["isotest.iso"].openAsIso()
 		Assert.assertEquals(
 			listOf("HELLO", "HELLO/WORLD.TXT"),
 			isotestIso.listRecursive().toList().map { it.fullname }

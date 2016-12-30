@@ -1,30 +1,37 @@
-import com.soywiz.korio.async.EventLoop
-import com.soywiz.korio.async.async
-import com.soywiz.korio.async.executeInWorker
-import com.soywiz.korio.async.spawn
+import com.soywiz.korio.async.*
 import com.soywiz.korio.net.AsyncServer
 import com.soywiz.korio.stream.writeString
+import com.soywiz.korio.vfs.ResourcesVfs
+import com.soywiz.korio.vfs.UrlVfs
 
 fun main(args: Array<String>) = EventLoop.main {
-	val server = AsyncServer(7778)
+	//println(LocalVfs("/").list().toList())
 
-	println("Listening at ${server.port}")
+	println(UrlVfs("http://127.0.0.1:8080/hello.txt").stat())
 
-	executeInWorker {
-		println("HELLO!")
-	}
+	println(ResourcesVfs.list().map { it.fullname }.toList())
+	//println(ResourcesVfs["hello.txt"].readString())
+	println(UrlVfs("http://127.0.0.1:8080/hello.txt").readString())
 
-	spawn {
-		for (client in server.listen()) {
-			println("client connected!")
-			spawn {
-				println("client connected 2!")
-				client.writeString("HELLO WORLD!")
-			}
-		}
-	}
+	//val server = AsyncServer(7778)
+	//
+	//println("Listening at ${server.port}")
+	//
+	//executeInWorker {
+	//	println("HELLO!")
+	//}
+	//
+	//spawn {
+	//	for (client in server.listen()) {
+	//		println("client connected!")
+	//		spawn {
+	//			println("client connected 2!")
+	//			client.writeString("HELLO WORLD!")
+	//		}
+	//	}
+	//}
 
-	//val resources = ResourcesVfs()
+	//val resources = ResourcesVfs
 	//val url = UrlVfs("http://google.es/")
 	////val url = UrlVfs("http://127.0.0.1:8080/")
 	//val res = url.readString()

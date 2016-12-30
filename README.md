@@ -78,7 +78,7 @@ jail["../../../etc/passwd"].readString() // this won't work
 Korio includes a MountableVfs that allows you to mount other filesystems like this:
 
 ```
-val resources = ResourcesVfs()
+val resources = ResourcesVfs
 val root = MountableVfs {
 	mount("/zip", resources["hello.zip"].openAsZip())
 	mount("/iso", resources["isotest.iso"].openAsIso())
@@ -131,7 +131,7 @@ LocalVfs, UrlVfs, ZipVfs, IsoVfs, ResourcesVfs, JailVfs, MountableVfs, MemoryVfs
 
 For Vfs implementations:
 ```kotlin
-Vfs, Vfs.Proxy, Vfs.Decorate, NodeVfs
+Vfs, Vfs.Proxy, Vfs.Decorate, NodeVfs, MergedVfs
 ```
 
 ### API
@@ -211,9 +211,6 @@ data class VfsStat {
 	val modifiedTime: Long
 	val lastAccessTime: Long
 	val extraInfo: Any?
-	val createDate: LocalDateTime
-	val modifiedDate: LocalDateTime
-	val lastAccessDate: LocalDateTime
 }
 
 class PathInfo(val fullpath: String) {

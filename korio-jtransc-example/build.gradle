@@ -44,6 +44,8 @@ dependencies {
 }
 
 jtransc {
-    minimizeNames = true
+    assets = ["korio-jtransc-example/resources"]
+    //minimizeNames = true
+    minimizeNames = false
     treeshaking = true
 }

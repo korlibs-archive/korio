@@ -9,12 +9,11 @@ import java.io.FileNotFoundException
 class MountableVfsTest {
 	@Test
 	fun testMountable() = sync {
-		val resources = ResourcesVfs()
 		val root = MountableVfs({
-			mount("/zip/demo2", resources["hello.zip"].openAsZip())
-			mount("/zip", resources["hello.zip"].openAsZip())
-			mount("/zip/demo", resources["hello.zip"].openAsZip())
-			mount("/iso", resources["isotest.iso"].openAsIso())
+			mount("/zip/demo2", ResourcesVfs["hello.zip"].openAsZip())
+			mount("/zip", ResourcesVfs["hello.zip"].openAsZip())
+			mount("/zip/demo", ResourcesVfs["hello.zip"].openAsZip())
+			mount("/iso", ResourcesVfs["isotest.iso"].openAsIso())
 		})
 		Assert.assertEquals("HELLO WORLD!", root["/zip/hello/world.txt"].readString())
 		Assert.assertEquals("HELLO WORLD!", root["/zip/demo/hello/world.txt"].readString())

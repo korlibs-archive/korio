@@ -13,11 +13,11 @@ suspend inline fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile
 			b.length.compareTo(a.length).compareToChain { b.compareTo(a) }
 		})
 
-		override fun mount(folder: String, file: VfsFile) = this.apply { mounts[VfsFile.normalize(folder)] = file }
-		override fun unmount(folder: String): Mountable = this.apply { mounts.remove(VfsFile.normalize(folder)) }
+		override fun mount(folder: String, file: VfsFile) = this.apply { mounts[VfsUtil.normalize(folder)] = file }
+		override fun unmount(folder: String): Mountable = this.apply { mounts.remove(VfsUtil.normalize(folder)) }
 
 		override suspend fun access(path: String): VfsFile {
-			val rpath = VfsFile.normalize(path)
+			val rpath = VfsUtil.normalize(path)
 			for ((base, file) in mounts) {
 				//println("$base/$file")
 				if (rpath.startsWith(base)) {
