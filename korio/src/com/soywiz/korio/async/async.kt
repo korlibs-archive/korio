@@ -49,21 +49,21 @@ fun <T> sync(block: suspend () -> T): T {
 	}
 }
 
-suspend fun <T> spawn(task: suspend () -> T): Promise<T> {
+fun <T> spawn(task: suspend () -> T): Promise<T> {
 	val deferred = Promise.Deferred<T>()
 	task.startCoroutine(deferred.toContinuation())
 	return deferred.promise
 }
 
 // Aliases for spawn
-suspend fun <T> async(task: suspend () -> T): Promise<T> = spawn(task)
+fun <T> async(task: suspend () -> T): Promise<T> = spawn(task)
 
-suspend fun <T> go(task: suspend () -> T): Promise<T> = spawn(task)
+fun <T> go(task: suspend () -> T): Promise<T> = spawn(task)
 
-public suspend fun <R, T> (suspend R.() -> T).await(receiver: R): T = suspendCoroutine { c ->
+suspend fun <R, T> (suspend R.() -> T).await(receiver: R): T = suspendCoroutine { c ->
 	this.startCoroutine(receiver, c)
 }
 
-public suspend fun <T> (suspend () -> T).await(): T = suspendCoroutine { c ->
+suspend fun <T> (suspend () -> T).await(): T = suspendCoroutine { c ->
 	this.startCoroutine(c)
 }
