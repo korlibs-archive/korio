@@ -1,11 +1,10 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.async.AsyncSequence
+import com.jtransc.annotation.JTranscMethodBody
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.util.JsMethodBody
 import java.io.*
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
@@ -23,7 +22,7 @@ suspend fun File.open(mode: VfsOpenMode) = LocalVfs(this).open(mode)
 
 fun LocalVfs(): VfsFile = _LocalVfs().root
 
-@JsMethodBody("return {% CONSTRUCTOR com.soywiz.korio.vfs.LocalVfsJs:()V %}();")
+@JTranscMethodBody(target = "js", value = "return {% CONSTRUCTOR com.soywiz.korio.vfs.LocalVfsJs:()V %}();")
 private fun _LocalVfs(): Vfs = LocalVfsNio()
 
 @Suppress("unused")

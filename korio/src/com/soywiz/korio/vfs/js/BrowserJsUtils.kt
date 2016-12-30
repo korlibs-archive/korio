@@ -1,10 +1,10 @@
 package com.soywiz.korio.vfs.js
 
-import com.soywiz.korio.util.JsMethodBody
+import com.jtransc.annotation.JTranscMethodBody
 import kotlin.coroutines.CoroutineIntrinsics
 
 object BrowserJsUtils {
-	@JsMethodBody("""
+	@JTranscMethodBody(target = "js", value = """
         var url = N.istr(p0), start = p1, end = p2, continuation = p3;
 
 		var xhr = new XMLHttpRequest();
@@ -18,11 +18,6 @@ object BrowserJsUtils {
 			continuation['{% METHOD kotlin.coroutines.Continuation:resume %}'](out);
 		};
 
-		xhr.onreadystatechange = function() {
-			//console.log(xhr.readyState);
-			//console.log(xhr.status);
-		};
-
 		xhr.onerror = function(e) {
 			continuation['{% METHOD kotlin.coroutines.Continuation:resumeWithException %}'](N.createRuntimeException('Error ' + xhr.status + " opening " + url));
 		};
@@ -34,9 +29,7 @@ object BrowserJsUtils {
     """)
 	external suspend fun readRangeBytes(url: String, start: Double, end: Double): ByteArray
 
-	suspend fun readBytes(url: String): ByteArray = readRangeBytes(url, -1.0, -1.0)
-
-	@JsMethodBody("""
+	@JTranscMethodBody(target = "js", value = """
         var url = N.istr(p0), continuation = p1;
 
 		var xhr = new XMLHttpRequest();
@@ -54,10 +47,8 @@ object BrowserJsUtils {
 		xhr.send();
 		return this['{% METHOD #CLASS:getSuspended %}']();
     """)
-	external suspend fun statURLBrowser(url: String): JsStat
+	external suspend fun stat(url: String): JsStat
 
 	@Suppress("unused")
 	private fun getSuspended() = CoroutineIntrinsics.SUSPENDED
 }
-
-class JsStat(val size: Double)

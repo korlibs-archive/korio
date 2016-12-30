@@ -3,10 +3,8 @@ package com.soywiz.korio.vfs
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
-import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.SyncStream
-import com.soywiz.korio.stream.openSync
-import com.soywiz.korio.stream.writeStream
+import com.soywiz.korio.async.await
+import com.soywiz.korio.stream.*
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 
@@ -22,25 +20,10 @@ class VfsFile(
 	suspend operator fun set(path: String, content: AsyncStream): Unit = this[path].writeStream(content)
 	suspend operator fun set(path: String, content: VfsFile): Unit = this[path].writeFile(content)
 
-	suspend fun writeStream(src: AsyncStream): Unit = asyncFun {
-		val dst = this.open(VfsOpenMode.CREATE_OR_TRUNCATE)
-		try {
-			dst.writeStream(src)
-		} finally {
-			dst.close()
-		}
-	}
-
+	suspend fun writeStream(src: AsyncStream): Unit = this.openUse(VfsOpenMode.CREATE_OR_TRUNCATE) { this.writeStream(src) }
 	suspend fun writeFile(file: VfsFile): Unit = file.copyTo(this)
 
-	suspend fun copyTo(target: VfsFile): Unit = asyncFun {
-		val src = this.open(VfsOpenMode.READ)
-		try {
-			target.writeStream(src)
-		} finally {
-			src.close()
-		}
-	}
+	suspend fun copyTo(target: VfsFile): Unit = this.openUse(VfsOpenMode.READ) { target.writeStream(this) }
 
 	val parent: VfsFile by lazy { VfsFile(vfs, pathInfo.folder) }
 	val root: VfsFile get() = vfs.root
@@ -49,6 +32,10 @@ class VfsFile(
 	fun appendExtension(name: String): VfsFile = VfsFile(vfs, fullname + ".$name")
 
 	suspend fun open(mode: VfsOpenMode = VfsOpenMode.READ): AsyncStream = vfs.open(path, mode)
+
+	suspend inline fun openUse(mode: VfsOpenMode = VfsOpenMode.READ, callback: suspend AsyncStream.() -> Unit): Unit = asyncFun {
+		open(mode).use { callback.await(this) }
+	}
 
 	suspend inline fun <reified T : Any> readSpecial(noinline onProgress: (Long, Long) -> Unit): T = vfs.readSpecial(path, T::class.java, onProgress)
 	suspend inline fun <reified T : Any> readSpecial(): T = vfs.readSpecial(path, T::class.java)

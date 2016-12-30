@@ -8,24 +8,31 @@ object VfsUtil {
 	fun parts(path: String): List<String> = path.split('/')
 
 	fun normalize(path: String): String {
-		var path2 = path.replace('\\', '/')
-		while (path2.startsWith("/")) path2 = path2.substring(1)
-		val out = LinkedList<String>()
-		for (part in path2.split("/")) {
-			when (part) {
-				"", "." -> Unit
-				".." -> if (out.isNotEmpty()) out.removeLast()
-				else -> out += part
+		val schemeIndex = path.indexOf(":")
+		if (schemeIndex >= 0) {
+			val take = if (path.substring(schemeIndex).startsWith("://")) 3 else 1
+			return path.substring(0, schemeIndex + take) + normalize(path.substring(schemeIndex + take))
+		} else {
+			val path2 = path.replace('\\', '/')
+			val out = LinkedList<String>()
+			for (part in path2.split("/")) {
+				when (part) {
+					"", "." -> if (out.isEmpty()) out += "" else Unit
+					".." -> if (out.isNotEmpty()) out.removeLast()
+					else -> out += part
+				}
 			}
+			return out.joinToString("/")
 		}
-		return out.joinToString("/")
 	}
 
 	fun combine(base: String, access: String): String = if (isAbsolute(access)) normalize(access) else normalize(base + "/" + access)
 
 	fun isAbsolute(base: String): Boolean {
-		if (base.isNotEmpty() && (base[0] == '/' || base[0] == '\\')) return true
-		if (base.length >= 3 && (base[1] == ':' && (base[2] == '\\' || base[2] == '/'))) return true
+		if (base.isEmpty()) return false
+		val b = base.replace('\\', '/').substringBefore('/')
+		if (b.isEmpty()) return true
+		if (b.contains(':')) return true
 		return false
 	}
 

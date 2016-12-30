@@ -1,9 +1,9 @@
 package com.soywiz.korio.vfs
 
+import com.jtransc.annotation.JTranscMethodBody
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
-import com.soywiz.korio.util.JsMethodBody
 import java.io.File
 import java.net.URLClassLoader
 
@@ -11,7 +11,7 @@ val ResourcesVfs by lazy { ResourcesVfs(ClassLoader.getSystemClassLoader() as UR
 
 fun ResourcesVfs(classLoader: URLClassLoader): VfsFile = ResourcesVfsGen(classLoader).root
 
-@JsMethodBody("return {% SMETHOD com.soywiz.korio.vfs.ResourcesVfsGenJs:gen %}();")
+@JTranscMethodBody(target = "js", value = "return {% SMETHOD com.soywiz.korio.vfs.ResourcesVfsGenJs:gen %}();")
 private fun ResourcesVfsGen(classLoader: URLClassLoader): Vfs {
 	return ResourcesVfsJvm(classLoader)
 }
@@ -31,7 +31,7 @@ private class EmbededResourceListing(parent: VfsFile) : Vfs.Decorator(parent) {
 		_init()
 	}
 
-	@JsMethodBody("""
+	@JTranscMethodBody(target = "js", value = """
 		{% for asset in assetFiles %}
 		this['{% METHOD #CLASS:_addFile %}'](N.str({{ asset.path|quote }}), {{ asset.size }});
 		{% end %}

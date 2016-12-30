@@ -3,9 +3,7 @@ package com.soywiz.korio.async
 import com.soywiz.korio.util.OS
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.startCoroutine
-import kotlin.coroutines.suspendCoroutine
+import kotlin.coroutines.*
 
 val workerLazyPool by lazy { Executors.newCachedThreadPool() }
 var tasksInProgress = AtomicInteger(0)
@@ -61,3 +59,11 @@ suspend fun <T> spawn(task: suspend () -> T): Promise<T> {
 suspend fun <T> async(task: suspend () -> T): Promise<T> = spawn(task)
 
 suspend fun <T> go(task: suspend () -> T): Promise<T> = spawn(task)
+
+public suspend fun <R, T> (suspend R.() -> T).await(receiver: R): T = suspendCoroutine { c ->
+	this.startCoroutine(receiver, c)
+}
+
+public suspend fun <T> (suspend () -> T).await(): T = suspendCoroutine { c ->
+	this.startCoroutine(c)
+}

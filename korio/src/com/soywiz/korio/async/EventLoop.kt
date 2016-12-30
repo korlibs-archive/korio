@@ -1,7 +1,6 @@
 package com.soywiz.korio.async
 
-import com.soywiz.korio.util.JsMethodBody
-import com.soywiz.korio.util.Once
+import com.jtransc.annotation.JTranscMethodBody
 import com.soywiz.korio.util.compareToChain
 import java.io.Closeable
 import java.util.*
@@ -14,7 +13,7 @@ import kotlin.coroutines.suspendCoroutine
 
 interface EventLoop {
 	companion object {
-		@JsMethodBody("return {% CONSTRUCTOR com.soywiz.korio.async.EventLoop@EventLoopJs:()V %}();")
+		@JTranscMethodBody(target = "js", value = "return {% CONSTRUCTOR com.soywiz.korio.async.EventLoop@EventLoopJs:()V %}();")
 		private fun createEventLoop(): EventLoop = EventLoopJvm()
 
 		var impl: EventLoop = createEventLoop()
@@ -31,6 +30,7 @@ interface EventLoop {
 				override fun resume(value: Unit) {
 					tasksInProgress.decrementAndGet()
 				}
+
 				override fun resumeWithException(exception: Throwable) {
 					tasksInProgress.decrementAndGet()
 					exception.printStackTrace()
@@ -64,7 +64,7 @@ interface EventLoop {
 			ensureEventLoop()
 		}
 
-		@JsMethodBody("")
+		@JTranscMethodBody(target = "js", value = "")
 		private fun ensureEventLoop(): Unit {
 			if (!eventLoopRunning.compareAndSet(false, true)) return
 			Thread {
@@ -128,16 +128,16 @@ interface EventLoop {
 
 	@Suppress("unused")
 	class EventLoopJs : EventLoop {
-		@JsMethodBody("""var time = p0, handler = p1;return setTimeout(function() { handler['{% METHOD kotlin.jvm.functions.Function0:invoke %}'](); }, time);""")
+		@JTranscMethodBody(target = "js", value = """var time = p0, handler = p1;return setTimeout(function() { handler['{% METHOD kotlin.jvm.functions.Function0:invoke %}'](); }, time);""")
 		external private fun _setTimeout(time: Int, c: () -> Unit): Double
 
-		@JsMethodBody("""var time = p0, handler = p1;return setInterval(function() { handler['{% METHOD kotlin.jvm.functions.Function0:invoke %}'](); }, time);""")
+		@JTranscMethodBody(target = "js", value = """var time = p0, handler = p1;return setInterval(function() { handler['{% METHOD kotlin.jvm.functions.Function0:invoke %}'](); }, time);""")
 		external private fun _setInterval(time: Int, c: () -> Unit): Double
 
-		@JsMethodBody("""return clearTimeout(p0);""")
+		@JTranscMethodBody(target = "js", value = """return clearTimeout(p0);""")
 		external private fun _clearTimeout(id: Double): Unit
 
-		@JsMethodBody("""return clearInterval(p0);""")
+		@JTranscMethodBody(target = "js", value = """return clearInterval(p0);""")
 		external private fun _clearInterval(id: Double): Unit
 
 		override fun init(): Unit {

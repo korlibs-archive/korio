@@ -1,6 +1,7 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.asyncFun
+import com.soywiz.korio.async.await
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.util.*
 import com.soywiz.korio.vfs.VfsFile
@@ -59,6 +60,14 @@ open class AsyncStream : AsyncCloseable {
 	override suspend open fun close(): Unit = Unit
 
 	internal val temp = ByteArray(16)
+}
+
+inline suspend fun AsyncStream.use(callback: suspend AsyncStream.() -> Unit): Unit = asyncFun {
+	try {
+		callback.await(this@use)
+	} finally {
+		close()
+	}
 }
 
 class SliceAsyncStream(internal val base: AsyncStream, internal val baseOffset: Long, internal val baseEnd: Long) : AsyncStream() {
