@@ -17,6 +17,8 @@ suspend fun <T> executeInWorker(task: suspend () -> T): T = suspendCoroutine<T> 
 	workerLazyPool.execute {
 		try {
 			task.startCoroutine(c)
+		} catch (t: Throwable) {
+			c.resumeWithException(t)
 		} finally {
 			tasksInProgress.decrementAndGet()
 		}
