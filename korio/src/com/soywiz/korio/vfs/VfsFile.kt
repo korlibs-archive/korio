@@ -128,5 +128,5 @@ class VfsFile(
 
 	override fun toString(): String = "$vfs[$path]"
 
-	val absolutePath: String by lazy { VfsUtil.normalizeAbsolute("${vfs.absolutePath}/$path") }
+	val absolutePath: String by lazy { VfsUtil.lightCombine(vfs.absolutePath, path) }
 }

@@ -5,8 +5,9 @@ import com.jtransc.annotation.JTranscMethodBody
 object OS {
 	val name by lazy { System.getProperty("os.name").toLowerCase() }
 
-	val isUnix by lazy { name.contains("nix") || name.contains("nux") || name.contains("aix") }
 	val isWindows by lazy { name.contains("win") }
+	val isUnix by lazy { !isWindows }
+	val isLinux by lazy { name.contains("nix") || name.contains("nux") || name.contains("aix") }
 	val isMac by lazy { name.contains("mac") }
 
 	val isJs: Boolean @JTranscMethodBody(target = "js", value = "return true;") get() = false

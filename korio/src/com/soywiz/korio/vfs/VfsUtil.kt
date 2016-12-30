@@ -28,6 +28,8 @@ object VfsUtil {
 
 	fun combine(base: String, access: String): String = if (isAbsolute(access)) normalize(access) else normalize(base + "/" + access)
 
+	fun lightCombine(base: String, access: String): String = if (base.isNotEmpty()) "$base/$access" else "$access"
+
 	fun isAbsolute(base: String): Boolean {
 		if (base.isEmpty()) return false
 		val b = base.replace('\\', '/').substringBefore('/')
@@ -37,7 +39,8 @@ object VfsUtil {
 	}
 
 	fun normalizeAbsolute(path: String): String {
-		val res = path.replace('/', File.separatorChar).trim(File.separatorChar)
-		return if (OS.isUnix) "/$res" else res
+		//val res = path.replace('/', File.separatorChar).trim(File.separatorChar)
+		//return if (OS.isUnix) "/$res" else res
+		return path.replace('/', File.separatorChar)
 	}
 }

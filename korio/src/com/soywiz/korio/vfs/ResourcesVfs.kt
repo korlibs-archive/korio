@@ -77,6 +77,8 @@ private class ResourcesVfsJvm(val classLoader: URLClassLoader, private val merge
 				LocalVfs(File(url.toURI()))
 			}
 
+			//println(vfs)
+
 			if (vfs.extension in setOf("jar", "zip")) {
 				//merged.options += vfs.openAsZip()
 			} else {

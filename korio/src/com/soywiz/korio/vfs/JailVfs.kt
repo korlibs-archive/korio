@@ -10,6 +10,8 @@ fun JailVfs(jailRoot: VfsFile): VfsFile = object : Vfs.Proxy() {
         return file(outPath.substring(baseJail.length))
     }
 
+    override val absolutePath: String get() = jailRoot.absolutePath
+
     override fun toString(): String = "JailVfs($jailRoot)"
 }.root
 

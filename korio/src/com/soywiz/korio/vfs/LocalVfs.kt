@@ -63,7 +63,7 @@ private class LocalVfsNio : Vfs() {
 	val baseAbsolutePath = ""
 	override val absolutePath: String = baseAbsolutePath
 
-	fun resolve(path: String) = VfsUtil.normalizeAbsolute("$baseAbsolutePath/$path")
+	fun resolve(path: String) = VfsUtil.lightCombine(baseAbsolutePath, path)
 	fun resolvePath(path: String) = Paths.get(resolve(path))
 	fun resolveFile(path: String) = File(resolve(path))
 
