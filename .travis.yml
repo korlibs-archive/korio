@@ -4,7 +4,7 @@ jdk:
   - oraclejdk8
 
 script:
-  - gradle -s -i check install distJs
+  - ./gradlew -s -i check install distJs
 
 before_cache:
   - rm -f $HOME/.gradle/caches/modules-2/modules-2.lock
