@@ -123,6 +123,12 @@ class FileSyncStreamBase(val file: File, val mode: String = "r") : SyncStreamBas
 
 fun MemorySyncStream(data: ByteArray = ByteArray(0)) = MemorySyncStreamBase(ByteArrayBuffer(data)).toSyncStream()
 fun MemorySyncStream(data: ByteArrayBuffer) = MemorySyncStreamBase(data).toSyncStream()
+inline fun MemorySyncStreamToByteArray(callback: SyncStream.() -> Unit): ByteArray {
+	val buffer = ByteArrayBuffer()
+	val s = MemorySyncStream(buffer)
+	callback(s)
+	return buffer.toByteArray()
+}
 
 class MemorySyncStreamBase(var data: ByteArrayBuffer = ByteArrayBuffer()) : SyncStreamBase() {
 	override var length: Long
