@@ -13,4 +13,5 @@ object OS {
 	val isJs: Boolean @JTranscMethodBody(target = "js", value = "return true;") get() = false
 
 	val isNodejs: Boolean @JTranscMethodBody(target = "js", value = "return (typeof module !== 'undefined' && module.exports);") get() = false
+	val isBrowserJs: Boolean get() = isJs && !isNodejs
 }
