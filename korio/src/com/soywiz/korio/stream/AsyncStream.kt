@@ -9,15 +9,18 @@ import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 import java.util.*
 
-interface AsyncInputStream {
+interface AsyncBaseStream {
+}
+
+interface AsyncInputStream : AsyncBaseStream {
 	suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int
 }
 
-interface AsyncOutputStream {
+interface AsyncOutputStream : AsyncBaseStream {
 	suspend fun write(buffer: ByteArray, offset: Int, len: Int): Unit
 }
 
-interface AsyncLengthStream {
+interface AsyncLengthStream : AsyncBaseStream {
 	suspend fun setLength(value: Long): Unit = throw UnsupportedOperationException()
 	suspend fun getLength(): Long = throw UnsupportedOperationException()
 }
@@ -30,16 +33,39 @@ interface AsyncRAOutputStream {
 	suspend fun write(position: Long, buffer: ByteArray, offset: Int, len: Int): Unit
 }
 
-fun AsyncInputStream.toAsyncStream(): AsyncStream {
-	val input = this
+fun AsyncBaseStream.toAsyncStream(): AsyncStream {
+	val input = this as? AsyncInputStream
+	val output = this as? AsyncOutputStream
+	val len = this as? AsyncLengthStream
+	val closeable = this as? AsyncCloseable
 	return object : AsyncStreamBase() {
 		var expectedPosition: Long = 0L
 
 		suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
+			if (input == null) throw UnsupportedOperationException()
 			if (position != expectedPosition) throw UnsupportedOperationException("Seeking not supported!")
 			val read = input.read(buffer, offset, len)
 			expectedPosition += read
 			read
+		}
+
+		suspend override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) = asyncFun {
+			if (output == null) throw UnsupportedOperationException()
+			if (position != expectedPosition) throw UnsupportedOperationException("Seeking not supported!")
+			output.write(buffer, offset, len)
+			expectedPosition += len
+		}
+
+		suspend override fun setLength(value: Long) = asyncFun {
+			if (len == null) throw UnsupportedOperationException()
+			len.setLength(value)
+		}
+
+		suspend override fun getLength(): Long = asyncFun { len?.getLength() ?: throw UnsupportedOperationException() }
+
+		suspend override fun close(): Unit = asyncFun {
+			closeable?.close()
+			Unit
 		}
 	}.toAsyncStream()
 }
@@ -208,8 +234,41 @@ suspend fun AsyncInputStream.readS32_be(): Int = asyncFun { readTempExact(4).rea
 suspend fun AsyncInputStream.readS64_be(): Long = asyncFun { readTempExact(8).readS64_be(0) }
 suspend fun AsyncInputStream.readF32_be(): Float = asyncFun { readTempExact(4).readF32_be(0) }
 suspend fun AsyncInputStream.readF64_be(): Double = asyncFun { readTempExact(8).readF64_be(0) }
-suspend fun AsyncStream.readAvailable(): ByteArray = asyncFun { readBytes(getAvailable().toInt()) }
-suspend fun AsyncStream.readAll(): ByteArray = asyncFun { readBytes(getAvailable().toInt()) }
+
+suspend fun AsyncStream.hasLength(): Boolean = asyncFun {
+	try {
+		getLength(); true
+	} catch (t: Throwable) {
+		false
+	}
+}
+
+suspend fun AsyncStream.hasAvailable(): Boolean = asyncFun {
+	try {
+		getAvailable(); true
+	} catch (t: Throwable) {
+		false
+	}
+}
+
+suspend fun AsyncStream.readAll(): ByteArray = asyncFun {
+	if (hasAvailable()) {
+		val available = getAvailable().toInt()
+		readBytes(available)
+	} else {
+		val out = ByteArrayOutputStream()
+		val temp = BYTES_TEMP
+		while (true) {
+			val r = read(temp, 0, temp.size)
+			if (r <= 0) break
+			out.write(temp, 0, r)
+		}
+		out.toByteArray()
+	}
+}
+
+// readAll alias
+suspend fun AsyncStream.readAvailable(): ByteArray = readAll()
 
 suspend fun AsyncInputStream.readUByteArray(count: Int): UByteArray = asyncFun { UByteArray(readBytesExact(count)) }
 

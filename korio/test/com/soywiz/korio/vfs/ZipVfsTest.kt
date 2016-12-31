@@ -2,6 +2,7 @@ package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.sync
 import com.soywiz.korio.async.toList
+import com.soywiz.korio.stream.readAvailable
 import org.junit.Assert
 import org.junit.Test
 import java.text.SimpleDateFormat
@@ -46,10 +47,24 @@ class ZipVfsTest {
 	@Test
 	fun testZipCompressed() = sync {
 		val helloZip = ResourcesVfs["compressedHello.zip"].openAsZip()
+
+		val contents = "HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO WORLD!"
+
 		Assert.assertEquals(
-			"HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO WORLD!",
+			contents,
 			helloZip["hello/compressedWorld.txt"].readString()
 		)
+
+		Assert.assertEquals(
+			contents,
+			helloZip["hello/compressedWorld.txt"].openUse { readAvailable() }.toString(Charsets.UTF_8)
+		)
+
+		Assert.assertEquals(
+			contents.toByteArray().size.toLong(),
+			helloZip["hello/compressedWorld.txt"].openUse { getLength() }
+		)
+
 		Assert.assertEquals(
 			"[/hello, /hello/compressedWorld.txt, /hello/world.txt]",
 			helloZip.listRecursive().toList().map { it.fullname }.toString()
