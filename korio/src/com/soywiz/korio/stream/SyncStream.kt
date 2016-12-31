@@ -187,7 +187,9 @@ fun SyncStream.readExact(out: ByteArray, offset: Int, len: Int): Unit {
 	var remaining = len
 	while (remaining > 0) {
 		val read = read(out, ooffset, remaining)
-		if (read <= 0) throw RuntimeException("EOF")
+		if (read <= 0) {
+			throw RuntimeException("EOF")
+		}
 		remaining -= read
 		ooffset += read
 	}
@@ -287,7 +289,7 @@ fun SyncStream.writeF64_be(v: Double): Unit = write(BYTES_TEMP.apply { writeF64_
 
 fun SyncStreamBase.toSyncStream(position: Long = 0L) = SyncStream(this, position)
 
-fun ByteArray.openSync(mode: String = "r"): SyncStream = MemorySyncStreamBase(ByteArrayBuffer(this)).toSyncStream()
+fun ByteArray.openSync(mode: String = "r"): SyncStream = MemorySyncStreamBase(ByteArrayBuffer(this)).toSyncStream(0L)
 fun ByteArray.openAsync(mode: String = "r"): AsyncStream = openSync(mode).toAsync()
 fun File.openSync(mode: String = "r"): SyncStream = FileSyncStreamBase(this, mode).toSyncStream()
 

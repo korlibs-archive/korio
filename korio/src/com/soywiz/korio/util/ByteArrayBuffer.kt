@@ -2,9 +2,8 @@ package com.soywiz.korio.util
 
 import java.util.*
 
-class ByteArrayBuffer(var data: ByteArray = ByteArray(0)) {
-	private var _size: Int = 0
-
+class ByteArrayBuffer(var data: ByteArray = ByteArray(0), size: Int = data.size) {
+	private var _size: Int = size
 	var size: Int
 		get() = _size
 		set(len) {
