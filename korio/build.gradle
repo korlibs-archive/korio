@@ -85,7 +85,7 @@ if (project.hasProperty('sonatypeUsername')) {
                 pom.project {
                     name "${project.name}"
                     packaging 'jar'
-                    description 'Kotlin cORoutines I/O : Streams + Virtual File System'
+                    description 'Korio: Kotlin cORoutines I/O : Streams + Async TCP Client/Server + Virtual File System for JVM, Node.JS and Browser'
                     url 'https://github.com/soywiz/korio/'
                     inceptionYear '2016'
 

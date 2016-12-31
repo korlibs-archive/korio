@@ -1,4 +1,4 @@
-## Korio: Kotlin cORoutines I/O : Streams + Async TCP Client/Server + Virtual File System
+## Korio: Kotlin cORoutines I/O : Streams + Async TCP Client/Server + Virtual File System for JVM, Node.JS and Browser
 
 [![Build Status](https://travis-ci.org/soywiz/korio.svg?branch=master)](https://travis-ci.org/soywiz/korio)
 [![Maven Version](https://img.shields.io/github/tag/soywiz/korio.svg?style=flat&label=maven)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22korio%22)
@@ -23,7 +23,7 @@ for custom and extensible filesystems with an homogeneous API. This repository d
 dependency and just requires Kotlin 1.1-M04 or greater.
 
 This library is specially useful for webserver where asynchronous is the way to go. And completely asynchronous or
-single threaded targets like javascript or as3, with kotlin-js or JTransc.
+single threaded targets like javascript or as3, with kotlin-js or JTransc (Node.JS and Browser).
 
 ### Streams
 
