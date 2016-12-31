@@ -45,8 +45,7 @@ internal class UrlVfsJs : Vfs() {
 
 	suspend override fun stat(path: String): VfsStat = statCache(path) {
 		try {
-			val info = JsUtils.stat(path)
-			createExistsStat(path, isDirectory = false, size = info.size.toLong())
+			JsUtils.stat(path).toStat(path, this)
 		} catch (e: Throwable) {
 			createNonExistsStat(path)
 		}
