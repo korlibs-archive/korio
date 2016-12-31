@@ -139,6 +139,55 @@ class SliceAsyncStreamBase(internal val base: AsyncStreamBase, internal val base
 	override fun toString(): String = "SliceAsyncStreamBase($base, $baseStart, $baseEnd)"
 }
 
+fun AsyncStream.buffered(blockSize: Int = 2048) = BufferedStreamBase(this.base, blockSize).toAsyncStream(this.position)
+
+class BufferedStreamBase(val base: AsyncStreamBase, val blockSize: Int = 2048) : AsyncStreamBase() {
+	fun getSectorPosition(sector: Long): Long = sector * blockSize
+	fun getSectorAtPosition(position: Long): Long = position / blockSize
+
+	inner class CachedEntry(val startSector: Long, val endSector: Long, val data: ByteArray) {
+		val startPosition = getSectorPosition(startSector)
+		val endPosition = getSectorPosition(endSector)
+
+		fun getPositionInData(position: Long): Int = (position - startPosition).toIntSafe()
+		fun getAvailableAtPosition(position: Long): Int = data.size - getPositionInData(position)
+
+		fun containsSectors(startSector: Long, endSector: Long): Boolean = (startSector >= this.startSector && endSector <= this.endSector)
+	}
+
+	suspend fun readSectorsUncached(start: Long, end: Long): ByteArray = asyncFun {
+		val length = end - start
+		val out = ByteArray((blockSize * length).toInt())
+		val r = base.read(getSectorPosition(start), out, 0, out.size)
+		Arrays.copyOf(out, r)
+	}
+
+	var cached: CachedEntry? = null
+
+	suspend fun readSectorsCached(start: Long, end: Long): CachedEntry = asyncFun {
+		if (!(cached?.containsSectors(start, end) ?: false)) {
+			cached = CachedEntry(start, end, readSectorsUncached(start, end))
+		}
+		cached!!
+	}
+
+	suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
+		val entry = readSectorsCached(getSectorAtPosition(position), getSectorAtPosition(position + len) + 1)
+		val readOffset = entry.getPositionInData(position)
+		val readLen = Math.min(entry.getAvailableAtPosition(position), len)
+		System.arraycopy(entry.data, readOffset, buffer, offset, readLen)
+		readLen
+	}
+
+	suspend override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) = asyncFun {
+		base.write(position, buffer, offset, len)
+	}
+
+	suspend override fun setLength(value: Long) = base.setLength(value)
+	suspend override fun getLength(): Long = base.getLength()
+	suspend override fun close() = base.close()
+}
+
 suspend fun AsyncStream.sliceWithStart(start: Long): AsyncStream = asyncFun { sliceWithBounds(start, this.getLength()) }
 
 fun AsyncStream.sliceWithSize(start: Long, length: Long): AsyncStream = sliceWithBounds(start, start + length)
@@ -218,6 +267,8 @@ suspend fun AsyncInputStream.readBytes(len: Int): ByteArray = asyncFun {
 suspend fun AsyncInputStream.readBytesExact(len: Int): ByteArray = asyncFun { ByteArray(len).apply { readExact(this, 0, len) } }
 
 suspend fun AsyncInputStream.readU8(): Int = asyncFun { readTempExact(1).readU8(0) }
+suspend fun AsyncInputStream.readS8(): Int = asyncFun { readTempExact(1).readS8(0) }
+
 suspend fun AsyncInputStream.readU16_le(): Int = asyncFun { readTempExact(2).readU16_le(0) }
 suspend fun AsyncInputStream.readU24_le(): Int = asyncFun { readTempExact(3).readU24_le(0) }
 suspend fun AsyncInputStream.readU32_le(): Long = asyncFun { readTempExact(4).readU32_le(0) }

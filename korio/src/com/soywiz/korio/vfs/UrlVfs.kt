@@ -5,6 +5,7 @@ import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
+import com.soywiz.korio.stream.buffered
 import com.soywiz.korio.stream.toAsyncStream
 import com.soywiz.korio.util.AsyncCache
 import com.soywiz.korio.vfs.js.JsUtils
@@ -37,7 +38,7 @@ internal class UrlVfsJs : Vfs() {
 				if (info == null) info = stat(path)
 				info!!.size
 			}
-		}.toAsyncStream()
+		}.toAsyncStream().buffered()
 	}
 
 	suspend override fun readFully(path: String): ByteArray = JsUtils.readBytes(path)
@@ -72,7 +73,7 @@ internal class UrlVfsJvm : Vfs() {
 				if (info == null) info = stat(path)
 				info!!.size
 			}
-		}.toAsyncStream()
+		}.toAsyncStream().buffered()
 	}
 
 	suspend override fun readFully(path: String): ByteArray = executeInWorker {

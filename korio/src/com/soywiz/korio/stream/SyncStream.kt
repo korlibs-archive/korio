@@ -121,6 +121,21 @@ class FileSyncStreamBase(val file: File, val mode: String = "r") : SyncStreamBas
 	override fun close() = ra.close()
 }
 
+class FillSyncStreamBase(val fill: Byte, override var length: Long) : SyncStreamBase() {
+	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
+		val end = Math.min(length, position + len)
+		val actualLen = (end - position).toIntSafe()
+		Arrays.fill(buffer, offset, offset + actualLen, fill)
+		return actualLen
+	}
+
+	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) = Unit
+
+	override fun close() = Unit
+}
+
+fun FillSyncStream(fillByte: Int = 0, length: Long = Long.MAX_VALUE) = FillSyncStreamBase(fillByte.toByte(), length).toSyncStream()
+
 fun MemorySyncStream(data: ByteArray = ByteArray(0)) = MemorySyncStreamBase(ByteArrayBuffer(data)).toSyncStream()
 fun MemorySyncStream(data: ByteArrayBuffer) = MemorySyncStreamBase(data).toSyncStream()
 inline fun MemorySyncStreamToByteArray(callback: SyncStream.() -> Unit): ByteArray {
@@ -229,6 +244,7 @@ private fun SyncStream.readTemp(count: Int): ByteArray {
 }
 
 fun SyncStream.readU8(): Int = readTempExact(1).readU8(0)
+fun SyncStream.readS8(): Int = readTempExact(1).readS8(0)
 
 fun SyncStream.readU16_le(): Int = readTempExact(2).readU16_le(0)
 fun SyncStream.readU24_le(): Int = readTempExact(3).readU24_le(0)
