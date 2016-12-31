@@ -143,18 +143,33 @@ interface EventLoop {
 		override fun init(): Unit {
 		}
 
+		val immediateHandlers = LinkedList<() -> Unit>()
+		var insideImmediate = false
+
 		override fun setImmediate(handler: () -> Unit) {
-			_setTimeout(0, handler)
+			//println("setImmediate")
+			immediateHandlers += handler
+			if (!insideImmediate) {
+				insideImmediate = true
+				try {
+					while (immediateHandlers.isNotEmpty()) {
+						val handler = immediateHandlers.removeFirst()
+						handler()
+					}
+				} finally {
+					insideImmediate = false
+				}
+			}
 		}
 
 		override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
+			//println("setTimeout($ms)")
 			val id = _setTimeout(ms, callback)
 			return Closeable { _clearTimeout(id) }
 		}
 
-		inline private fun <T> lock(callback: () -> T) = synchronized(this, callback)
-
 		override fun setInterval(ms: Int, callback: () -> Unit): Closeable {
+			//println("setInterval($ms)")
 			val id = _setInterval(ms, callback)
 			return Closeable { _clearInterval(id) }
 		}
