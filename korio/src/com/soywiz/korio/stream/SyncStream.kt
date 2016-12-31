@@ -18,6 +18,7 @@ open class SyncStream {
 		set(value) = throw UnsupportedOperationException()
 		get() = run { throw UnsupportedOperationException() }
 	val available: Long get() = length - position
+	open fun clone() = slice()
 	internal val temp = ByteArray(16)
 }
 
@@ -78,34 +79,34 @@ class FileSyncStream(val file: File, val mode: String = "r") : SyncStream() {
 		set(value) {
 			ra.setLength(value)
 		}
+
+	override fun clone(): SyncStream = FileSyncStream(file, mode)
 }
 
-class MemorySyncStream(var data: ByteArray = ByteArray(0)) : SyncStream() {
+class MemorySyncStream(var data: ByteArrayBuffer = ByteArrayBuffer()) : SyncStream() {
 	override var position: Long = 0L
-	override var length: Long = data.size.toLong()
-		set(value) {
-			if (value > data.size.toLong()) {
-				data = Arrays.copyOf(data, Math.max(value.toInt(), (data.size + 7) * 2))
-			}
-			field = value
-		}
+	override var length: Long
+		get() = data.size.toLong()
+		set(value) = run { data.size = value.toInt() }
 
 	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		val read = Math.min(len, available.toInt())
-		System.arraycopy(this.data, this.position.toInt(), buffer, offset, read)
+		System.arraycopy(this.data.data, this.position.toInt(), buffer, offset, read)
 		this.position += read
 		return read
 	}
 
 	override fun write(buffer: ByteArray, offset: Int, len: Int) {
 		this.length = Math.max(this.position + len, this.length)
-		System.arraycopy(buffer, offset, this.data, this.position.toInt(), len)
+		System.arraycopy(buffer, offset, this.data.data, this.position.toInt(), len)
 		this.position += len
 	}
 
-	fun toByteArraySlice() = ByteArraySlice(data, 0, length.toInt())
-	fun toByteArray(): ByteArray = Arrays.copyOf(data, length.toInt())
+	fun toByteArraySlice() = ByteArraySlice(data.data, 0, length.toInt())
+	fun toByteArray(): ByteArray = Arrays.copyOf(data.data, length.toInt())
 	override fun toString(): String = "MemorySyncStream(${data.size})"
+
+	override fun clone(): SyncStream = MemorySyncStream(data)
 }
 
 fun SyncStream.sliceWithStart(start: Long): SyncStream = sliceWithBounds(start, this.length)
@@ -240,7 +241,7 @@ fun SyncStream.write64_be(v: Long): Unit = write(temp.apply { write64_be(0, v) }
 fun SyncStream.writeF32_be(v: Float): Unit = write(temp.apply { writeF32_be(0, v) }, 0, 4)
 fun SyncStream.writeF64_be(v: Double): Unit = write(temp.apply { writeF64_be(0, v) }, 0, 8)
 
-fun ByteArray.openSync(mode: String = "r"): MemorySyncStream = MemorySyncStream(this)
+fun ByteArray.openSync(mode: String = "r"): MemorySyncStream = MemorySyncStream(ByteArrayBuffer(this))
 fun ByteArray.openAsync(mode: String = "r") = openSync(mode).toAsync()
 fun File.openSync(mode: String = "r"): FileSyncStream = FileSyncStream(this, mode)
 

@@ -4,7 +4,6 @@ import kotlin.coroutines.Continuation
 import kotlin.coroutines.createCoroutine
 import kotlin.coroutines.suspendCoroutine
 
-
 interface AsyncGenerator<in T> {
 	suspend fun yield(value: T)
 }

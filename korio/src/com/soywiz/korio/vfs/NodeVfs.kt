@@ -4,6 +4,9 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.MemorySyncStream
+import com.soywiz.korio.stream.slice
+import com.soywiz.korio.stream.toAsync
 import java.io.FileNotFoundException
 
 open class NodeVfs : Vfs() {
@@ -65,14 +68,15 @@ open class NodeVfs : Vfs() {
 
 	val rootNode = Node("", isDirectory = true)
 
-	suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
+	suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = asyncFun {
 		val pathInfo = PathInfo(path)
 		val folder = rootNode.access(pathInfo.folder)
 		var node = folder.child(pathInfo.basename)
 		if (node == null && mode.createIfNotExists) {
 			node = folder.createChild(pathInfo.basename, isDirectory = false)
+			node.stream = MemorySyncStream().toAsync()
 		}
-		return node?.stream ?: throw FileNotFoundException(path)
+		node?.stream?.clone() ?: throw FileNotFoundException(path)
 	}
 
 	suspend override fun stat(path: String): VfsStat = asyncFun {

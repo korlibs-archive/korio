@@ -10,7 +10,9 @@ import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 import java.util.*
 
-// Rethink this!
+// @TODO: Rethink this!
+// @TODO: All AsyncStreams should be this, so we can clone it just creating a class with the pointers
+// @TODO: Similar to what VfsFile is for Vfs
 open class AsyncStreamBase : AsyncCloseable {
 	suspend open fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = throw UnsupportedOperationException()
 	suspend open fun write(position: Long, buffer: ByteArray, offset: Int, len: Int): Unit = throw UnsupportedOperationException()
@@ -58,6 +60,8 @@ open class AsyncStream : AsyncCloseable {
 	suspend open fun eof(): Boolean = asyncFun { this.getAvailable() <= 0L }
 
 	override suspend open fun close(): Unit = Unit
+
+	suspend open fun clone(): AsyncStream = slice()
 
 	internal val temp = ByteArray(16)
 }
@@ -250,14 +254,16 @@ fun SyncStream.toAsyncInWorker() = object : AsyncStream() {
 	suspend override fun getLength(): Long = executeInWorker { sync.length }
 }
 
-fun SyncStream.toAsync() = object : AsyncStream() {
-	val sync = this@toAsync
+fun SyncStream.toAsync() = SyncAsyncStream(this)
+
+class SyncAsyncStream(val sync: SyncStream) : AsyncStream() {
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = sync.read(buffer, offset, len)
 	suspend override fun write(buffer: ByteArray, offset: Int, len: Int) = sync.write(buffer, offset, len)
 	suspend override fun setPosition(value: Long) = run { sync.position = value }
 	suspend override fun getPosition(): Long = sync.position
 	suspend override fun setLength(value: Long) = run { sync.length = value }
 	suspend override fun getLength(): Long = sync.length
+	suspend override fun clone(): AsyncStream = SyncAsyncStream(sync.clone())
 }
 
 suspend fun AsyncStream.writeStream(source: AsyncStream): Unit = source.copyTo(this)
