@@ -4,7 +4,11 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.await
-import com.soywiz.korio.stream.*
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.SyncStream
+import com.soywiz.korio.stream.openSync
+import com.soywiz.korio.stream.writeStream
+import com.soywiz.korio.util.use
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
 
@@ -59,7 +63,13 @@ class VfsFile(
 
 	suspend fun stat(): VfsStat = vfs.stat(path)
 	suspend fun size(): Long = asyncFun { vfs.stat(path).size }
-	suspend fun exists(): Boolean = asyncFun { try { vfs.stat(path).exists } catch (e: Throwable) { false } }
+	suspend fun exists(): Boolean = asyncFun {
+		try {
+			vfs.stat(path).exists
+		} catch (e: Throwable) {
+			false
+		}
+	}
 
 	suspend fun isDirectory(): Boolean = asyncFun { stat().isDirectory }
 

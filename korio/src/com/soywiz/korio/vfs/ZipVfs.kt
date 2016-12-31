@@ -5,7 +5,6 @@ import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.contains
 import com.soywiz.korio.util.getBits
 import com.soywiz.korio.util.indexOf
 import com.soywiz.korio.util.toUInt
@@ -143,7 +142,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 				// Uncompressed
 					0 -> compressedData
 				// Deflate
-					8 -> InflateAsyncStream(compressedData, Inflater(true))
+					8 -> InflateAsyncStream(compressedData, Inflater(true)).toAsyncStream()
 					else -> TODO("Not implemented zip method ${entry.compressionMethod}")
 				}
 			}
@@ -180,7 +179,7 @@ private class DosFileDateTime(var time: Int, var date: Int) {
 suspend fun VfsFile.openAsZip() = asyncFun { ZipVfs(this.open(VfsOpenMode.READ), this) }
 suspend fun AsyncStream.openAsZip() = asyncFun { ZipVfs(this) }
 
-class InflateAsyncStream(val base: AsyncStream, val inflater: Inflater) : AsyncStream() {
+class InflateAsyncStream(val base: AsyncStream, val inflater: Inflater) : AsyncInputStream {
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
 		if (inflater.needsInput()) {
 			inflater.setInput(base.readBytes(1024))

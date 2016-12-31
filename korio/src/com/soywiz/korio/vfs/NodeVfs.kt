@@ -5,7 +5,6 @@ import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.MemorySyncStream
-import com.soywiz.korio.stream.slice
 import com.soywiz.korio.stream.toAsync
 import java.io.FileNotFoundException
 

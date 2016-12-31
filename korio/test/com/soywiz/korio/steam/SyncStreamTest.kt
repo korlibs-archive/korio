@@ -2,13 +2,15 @@ package com.soywiz.korio.steam
 
 import com.soywiz.korio.async.sync
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.ByteArrayBuffer
 import org.junit.Assert
 import org.junit.Test
 
 class SyncStreamTest {
 	@Test
 	fun name() {
-		val out = MemorySyncStream()
+		val buffer = ByteArrayBuffer()
+		val out = MemorySyncStream(buffer)
 		Assert.assertEquals(0L, out.position)
 		Assert.assertEquals(0L, out.length)
 		out.write8(0x01)
@@ -21,9 +23,9 @@ class SyncStreamTest {
 		Assert.assertEquals(4L, out.length)
 		Assert.assertEquals(0x0102, out.readU16_be())
 		Assert.assertEquals(0x0304, out.readU16_le())
-		Assert.assertEquals(14, out.data.size)
-		Assert.assertEquals(4, out.toByteArray().size)
-		Assert.assertEquals(4, out.toByteArraySlice().length)
+		Assert.assertEquals(14, buffer.data.size)
+		Assert.assertEquals(4, buffer.toByteArray().size)
+		Assert.assertEquals(4, buffer.toByteArraySlice().length)
 	}
 
 	@Test

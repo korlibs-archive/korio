@@ -1,25 +1,63 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.util.*
-import java.io.ByteArrayOutputStream
-import java.io.File
-import java.io.InputStream
-import java.io.RandomAccessFile
+import java.io.*
 import java.nio.charset.Charset
 import java.util.*
 
-open class SyncStream {
-	open fun read(buffer: ByteArray, offset: Int, len: Int): Int = throw UnsupportedOperationException()
-	open fun write(buffer: ByteArray, offset: Int, len: Int): Unit = throw UnsupportedOperationException()
-	open var position: Long
+interface SyncInputStream {
+	fun read(buffer: ByteArray, offset: Int, len: Int): Int
+}
+
+interface SyncOutputStream {
+	fun write(buffer: ByteArray, offset: Int, len: Int): Unit
+}
+
+interface SyncLengthStream {
+	var length: Long
+}
+
+interface SyncRAInputStream {
+	fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int
+}
+
+interface SyncRAOutputStream {
+	fun write(position: Long, buffer: ByteArray, offset: Int, len: Int): Unit
+}
+
+open class SyncStreamBase : Closeable, SyncRAInputStream, SyncRAOutputStream, SyncLengthStream {
+	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = throw UnsupportedOperationException()
+	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int): Unit = throw UnsupportedOperationException()
+	override var length: Long
 		set(value) = throw UnsupportedOperationException()
-		get() = run { throw UnsupportedOperationException() }
-	open var length: Long
-		set(value) = throw UnsupportedOperationException()
-		get() = run { throw UnsupportedOperationException() }
+		get() = throw UnsupportedOperationException()
+
+	override fun close() = Unit
+}
+
+
+class SyncStream(val base: SyncStreamBase, var position: Long = 0L) : Closeable, SyncInputStream, SyncOutputStream, SyncLengthStream {
+	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+		val read = base.read(position, buffer, offset, len)
+		position += read
+		return read
+	}
+
+	override fun write(buffer: ByteArray, offset: Int, len: Int): Unit {
+		base.write(position, buffer, offset, len)
+		position += len
+	}
+
+	override var length: Long
+		set(value) = run { base.length = value }
+		get() = base.length
+
 	val available: Long get() = length - position
-	open fun clone() = slice()
-	internal val temp = ByteArray(16)
+
+	// @TODO: Add refs to StreamBase?
+	override fun close(): Unit = base.close()
+
+	fun clone() = SyncStream(base, position)
 }
 
 inline fun <T> SyncStream.keepPosition(callback: () -> T): T {
@@ -31,92 +69,91 @@ inline fun <T> SyncStream.keepPosition(callback: () -> T): T {
 	}
 }
 
-class SliceSyncStream(internal val base: SyncStream, internal val baseOffset: Long, internal val baseEnd: Long) : SyncStream() {
-	internal val baseLength: Long = baseEnd - baseOffset
+class SliceSyncStreamBase(internal val base: SyncStreamBase, internal val baseStart: Long, internal val baseEnd: Long) : SyncStreamBase() {
+	internal val baseLength: Long = baseEnd - baseStart
 
-	override var position: Long = 0L
-	override var length: Long = baseLength
+	override var length: Long
+		set(value) = throw UnsupportedOperationException()
+		get() = baseLength
 
-	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-		return base.keepPosition {
-			base.position = this.baseOffset + position
-			val rlen = Math.min(available, len.toLong()).toInt()
-			val res = if (rlen > 0) base.read(buffer, offset, rlen) else 0
-			position += res
-			res
-		}
+	private fun clampPosition(position: Long) = position.clamp(baseStart, baseEnd)
+
+	private fun clampPositionLen(position: Long, len: Int): Pair<Long, Int> {
+		if (position < 0L) throw IllegalArgumentException("Invalid position")
+		val targetStartPosition = clampPosition(this.baseStart + position)
+		val targetEndPosition = clampPosition(targetStartPosition + len)
+		val targetLen = (targetEndPosition - targetStartPosition).toInt()
+		return Pair(targetStartPosition, targetLen)
 	}
 
-	override fun write(buffer: ByteArray, offset: Int, len: Int) {
-		return base.keepPosition {
-			base.position = this.baseOffset + position
-			base.write(buffer, offset, len)
-			position += len
-		}
+	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
+		val (targetStartPosition, targetLen) = clampPositionLen(position, len)
+		return base.read(targetStartPosition, buffer, offset, targetLen)
 	}
 
-	override fun toString(): String = "SliceSyncStream($base, $baseOffset, $baseEnd)"
+	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
+		val (targetStartPosition, targetLen) = clampPositionLen(position, len)
+		return base.write(targetStartPosition, buffer, offset, targetLen)
+	}
+
+	override fun close() = base.close()
+
+	override fun toString(): String = "SliceAsyncStreamBase($base, $baseStart, $baseEnd)"
 }
 
-class FileSyncStream(val file: File, val mode: String = "r") : SyncStream() {
+class FileSyncStreamBase(val file: File, val mode: String = "r") : SyncStreamBase() {
 	val ra = RandomAccessFile(file, mode)
 
-	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = synchronized(ra) {
+		ra.seek(position)
 		return ra.read(buffer, offset, len)
 	}
 
-	override fun write(buffer: ByteArray, offset: Int, len: Int) {
+	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) = synchronized(ra) {
+		ra.seek(position)
 		ra.write(buffer, offset, len)
 	}
 
-	override var position: Long
-		get() = ra.filePointer
-		set(value) {
-			ra.seek(value)
-		}
 	override var length: Long
 		get() = ra.length()
-		set(value) {
-			ra.setLength(value)
-		}
+		set(value) = run { ra.setLength(value) }
 
-	override fun clone(): SyncStream = FileSyncStream(file, mode)
+	override fun close() = ra.close()
 }
 
-class MemorySyncStream(var data: ByteArrayBuffer = ByteArrayBuffer()) : SyncStream() {
-	override var position: Long = 0L
+fun MemorySyncStream(data: ByteArray = ByteArray(0)) = MemorySyncStreamBase(ByteArrayBuffer(data)).toSyncStream()
+fun MemorySyncStream(data: ByteArrayBuffer) = MemorySyncStreamBase(data).toSyncStream()
+
+class MemorySyncStreamBase(var data: ByteArrayBuffer = ByteArrayBuffer()) : SyncStreamBase() {
 	override var length: Long
 		get() = data.size.toLong()
 		set(value) = run { data.size = value.toInt() }
 
-	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-		val read = Math.min(len, available.toInt())
-		System.arraycopy(this.data.data, this.position.toInt(), buffer, offset, read)
-		this.position += read
-		return read
+	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
+		val end = Math.min(this.length, position + len)
+		val actualLen = (end - position).toInt()
+		System.arraycopy(this.data.data, position.toInt(), buffer, offset, actualLen)
+		return actualLen
 	}
 
-	override fun write(buffer: ByteArray, offset: Int, len: Int) {
-		this.length = Math.max(this.position + len, this.length)
-		System.arraycopy(buffer, offset, this.data.data, this.position.toInt(), len)
-		this.position += len
+	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
+		data.ensure((position + len).toInt())
+		System.arraycopy(buffer, offset, this.data.data, position.toInt(), len)
 	}
 
-	fun toByteArraySlice() = ByteArraySlice(data.data, 0, length.toInt())
-	fun toByteArray(): ByteArray = Arrays.copyOf(data.data, length.toInt())
-	override fun toString(): String = "MemorySyncStream(${data.size})"
+	override fun close() = Unit
 
-	override fun clone(): SyncStream = MemorySyncStream(data)
+	override fun toString(): String = "MemorySyncStreamBase(${data.size})"
 }
 
 fun SyncStream.sliceWithStart(start: Long): SyncStream = sliceWithBounds(start, this.length)
 
-fun SyncStream.slice(): SyncStream = SliceSyncStream(this, 0L, length)
+fun SyncStream.slice(): SyncStream = SyncStream(SliceSyncStreamBase(this.base, 0L, length))
 
 fun SyncStream.slice(range: IntRange): SyncStream = sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1))
 fun SyncStream.slice(range: LongRange): SyncStream = sliceWithBounds(range.start, (range.endInclusive + 1))
 
-fun SyncStream.sliceWithBounds(start: Long, end: Long): SyncStream = SliceSyncStream(this, start, end)
+fun SyncStream.sliceWithBounds(start: Long, end: Long): SyncStream = SyncStream(SliceSyncStreamBase(this.base, start, end))
 fun SyncStream.sliceWithSize(position: Long, length: Long): SyncStream = sliceWithBounds(position, position + length)
 
 fun SyncStream.readSlice(length: Long): SyncStream = sliceWithSize(position, length).apply {
@@ -173,8 +210,15 @@ fun SyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
 fun SyncStream.writeBytes(data: ByteArraySlice): Unit = write(data.data, data.position, data.length)
 
 val SyncStream.eof: Boolean get () = this.available <= 0L
-private fun SyncStream.readTempExact(count: Int): ByteArray = temp.apply { readExact(temp, 0, count) }
-private fun SyncStream.readTemp(count: Int): ByteArray = temp.apply { read(temp, 0, count) }
+private fun SyncStream.readTempExact(count: Int): ByteArray {
+	val temp = BYTES_TEMP
+	return temp.apply { readExact(temp, 0, count) }
+}
+
+private fun SyncStream.readTemp(count: Int): ByteArray {
+	val temp = BYTES_TEMP
+	return temp.apply { read(temp, 0, count) }
+}
 
 fun SyncStream.readU8(): Int = readTempExact(1).readU8(0)
 
@@ -223,27 +267,29 @@ fun SyncStream.readFloatArray_be(count: Int): FloatArray = readBytesExact(count 
 fun SyncStream.readDoubleArray_le(count: Int): DoubleArray = readBytesExact(count * 8).readDoubleArray_le(0, count)
 fun SyncStream.readDoubleArray_be(count: Int): DoubleArray = readBytesExact(count * 8).readDoubleArray_be(0, count)
 
-fun SyncStream.write8(v: Int): Unit = write(temp.apply { write8(0, v) }, 0, 1)
+fun SyncStream.write8(v: Int): Unit = write(BYTES_TEMP.apply { write8(0, v) }, 0, 1)
 
-fun SyncStream.write16_le(v: Int): Unit = write(temp.apply { write16_le(0, v) }, 0, 2)
-fun SyncStream.write24_le(v: Int): Unit = write(temp.apply { write24_le(0, v) }, 0, 3)
-fun SyncStream.write32_le(v: Int): Unit = write(temp.apply { write32_le(0, v) }, 0, 4)
-fun SyncStream.write32_le(v: Long): Unit = write(temp.apply { write32_le(0, v) }, 0, 4)
-fun SyncStream.write64_le(v: Long): Unit = write(temp.apply { write64_le(0, v) }, 0, 8)
-fun SyncStream.writeF32_le(v: Float): Unit = write(temp.apply { writeF32_le(0, v) }, 0, 4)
-fun SyncStream.writeF64_le(v: Double): Unit = write(temp.apply { writeF64_le(0, v) }, 0, 8)
+fun SyncStream.write16_le(v: Int): Unit = write(BYTES_TEMP.apply { write16_le(0, v) }, 0, 2)
+fun SyncStream.write24_le(v: Int): Unit = write(BYTES_TEMP.apply { write24_le(0, v) }, 0, 3)
+fun SyncStream.write32_le(v: Int): Unit = write(BYTES_TEMP.apply { write32_le(0, v) }, 0, 4)
+fun SyncStream.write32_le(v: Long): Unit = write(BYTES_TEMP.apply { write32_le(0, v) }, 0, 4)
+fun SyncStream.write64_le(v: Long): Unit = write(BYTES_TEMP.apply { write64_le(0, v) }, 0, 8)
+fun SyncStream.writeF32_le(v: Float): Unit = write(BYTES_TEMP.apply { writeF32_le(0, v) }, 0, 4)
+fun SyncStream.writeF64_le(v: Double): Unit = write(BYTES_TEMP.apply { writeF64_le(0, v) }, 0, 8)
 
-fun SyncStream.write16_be(v: Int): Unit = write(temp.apply { write16_be(0, v) }, 0, 2)
-fun SyncStream.write24_be(v: Int): Unit = write(temp.apply { write24_be(0, v) }, 0, 3)
-fun SyncStream.write32_be(v: Int): Unit = write(temp.apply { write32_be(0, v) }, 0, 4)
-fun SyncStream.write32_be(v: Long): Unit = write(temp.apply { write32_be(0, v) }, 0, 4)
-fun SyncStream.write64_be(v: Long): Unit = write(temp.apply { write64_be(0, v) }, 0, 8)
-fun SyncStream.writeF32_be(v: Float): Unit = write(temp.apply { writeF32_be(0, v) }, 0, 4)
-fun SyncStream.writeF64_be(v: Double): Unit = write(temp.apply { writeF64_be(0, v) }, 0, 8)
+fun SyncStream.write16_be(v: Int): Unit = write(BYTES_TEMP.apply { write16_be(0, v) }, 0, 2)
+fun SyncStream.write24_be(v: Int): Unit = write(BYTES_TEMP.apply { write24_be(0, v) }, 0, 3)
+fun SyncStream.write32_be(v: Int): Unit = write(BYTES_TEMP.apply { write32_be(0, v) }, 0, 4)
+fun SyncStream.write32_be(v: Long): Unit = write(BYTES_TEMP.apply { write32_be(0, v) }, 0, 4)
+fun SyncStream.write64_be(v: Long): Unit = write(BYTES_TEMP.apply { write64_be(0, v) }, 0, 8)
+fun SyncStream.writeF32_be(v: Float): Unit = write(BYTES_TEMP.apply { writeF32_be(0, v) }, 0, 4)
+fun SyncStream.writeF64_be(v: Double): Unit = write(BYTES_TEMP.apply { writeF64_be(0, v) }, 0, 8)
 
-fun ByteArray.openSync(mode: String = "r"): MemorySyncStream = MemorySyncStream(ByteArrayBuffer(this))
-fun ByteArray.openAsync(mode: String = "r") = openSync(mode).toAsync()
-fun File.openSync(mode: String = "r"): FileSyncStream = FileSyncStream(this, mode)
+fun SyncStreamBase.toSyncStream(position: Long = 0L) = SyncStream(this, position)
+
+fun ByteArray.openSync(mode: String = "r"): SyncStream = MemorySyncStreamBase(ByteArrayBuffer(this)).toSyncStream()
+fun ByteArray.openAsync(mode: String = "r"): AsyncStream = openSync(mode).toAsync()
+fun File.openSync(mode: String = "r"): SyncStream = FileSyncStreamBase(this, mode).toSyncStream()
 
 fun SyncStream.writeStream(source: SyncStream): Unit = source.copyTo(this)
 

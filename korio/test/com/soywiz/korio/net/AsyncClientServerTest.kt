@@ -1,8 +1,6 @@
 package com.soywiz.korio.net
 
-import com.soywiz.korio.async.async
 import com.soywiz.korio.async.go
-import com.soywiz.korio.async.spawn
 import com.soywiz.korio.async.sync
 import com.soywiz.korio.stream.readString
 import com.soywiz.korio.stream.writeString

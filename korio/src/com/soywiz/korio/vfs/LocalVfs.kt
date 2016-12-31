@@ -118,37 +118,24 @@ private class LocalVfsNio : Vfs() {
 			VfsOpenMode.CREATE_OR_TRUNCATE -> arrayOf(StandardOpenOption.READ, StandardOpenOption.WRITE, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)
 		})
 
-		return object : AsyncStream() {
-			var position = 0L
-
-			suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
+		return object : AsyncStreamBase() {
+			suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
 				val bb = ByteBuffer.wrap(buffer, offset, len)
-				val read = completionHandler<Int> { channel.read(bb, position, Unit, it) }
-				position += read
-				read
+				completionHandler<Int> { channel.read(bb, position, Unit, it) }
 			}
 
-			suspend override fun write(buffer: ByteArray, offset: Int, len: Int) = asyncFun {
+			suspend override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) = asyncFun {
 				val bb = ByteBuffer.wrap(buffer, offset, len)
 				val write = completionHandler<Int> { channel.write(bb, position, Unit, it) }
-				position += write
 				Unit
 			}
 
-			suspend override fun setPosition(value: Long) = run { position = value }
-			suspend override fun getPosition(): Long = position
-			suspend override fun setLength(value: Long) {
-				channel.truncate(value)
-			}
-
+			suspend override fun setLength(value: Long): Unit = asyncFun { channel.truncate(value); Unit }
 			suspend override fun getLength(): Long = channel.size()
-
-			suspend override fun close() {
-				channel.close()
-			}
+			suspend override fun close() = channel.close()
 
 			override fun toString(): String = "${this@LocalVfsNio}($path)"
-		}
+		}.toAsyncStream()
 	}
 
 	suspend override fun setSize(path: String, size: Long): Unit = executeInWorker {

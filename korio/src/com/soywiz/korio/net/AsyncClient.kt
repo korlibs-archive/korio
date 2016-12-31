@@ -1,7 +1,9 @@
 package com.soywiz.korio.net
 
 import com.soywiz.korio.async.asyncFun
-import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.AsyncInputStream
+import com.soywiz.korio.stream.AsyncOutputStream
+import com.soywiz.korio.util.AsyncCloseable
 import java.net.InetSocketAddress
 import java.net.SocketAddress
 import java.nio.ByteBuffer
@@ -12,7 +14,7 @@ import kotlin.coroutines.suspendCoroutine
 
 class AsyncClient(
 	private val sc: AsynchronousSocketChannel = AsynchronousSocketChannel.open()
-) : AsyncStream() {
+) : AsyncInputStream, AsyncOutputStream, AsyncCloseable {
 	private var _connected = false
 
 	companion object {
