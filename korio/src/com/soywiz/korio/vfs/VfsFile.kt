@@ -41,14 +41,6 @@ class VfsFile(
 		open(mode).use { callback.await(this) }
 	}
 
-	suspend inline fun <reified T : Any> readSpecial(noinline onProgress: (Long, Long) -> Unit): T = vfs.readSpecial(path, T::class.java, onProgress)
-	suspend inline fun <reified T : Any> readSpecial(): T = vfs.readSpecial(path, T::class.java)
-	suspend fun <T : Any> readSpecial(clazz: Class<T>, onProgress: (Long, Long) -> Unit = { _, _ -> }): T = vfs.readSpecial(path, clazz, onProgress)
-
-	suspend inline fun <reified T : Any> writeSpecial(value: T, noinline onProgress: (Long, Long) -> Unit): Unit = vfs.writeSpecial(path, T::class.java, value, onProgress)
-	suspend inline fun <reified T : Any> writeSpecial(value: T): Unit = vfs.writeSpecial(path, T::class.java, value)
-	suspend fun <T : Any> writeSpecial(clazz: Class<T>, value: T, onProgress: (Long, Long) -> Unit = { _, _ -> }): Unit = vfs.writeSpecial(path, clazz, value, onProgress)
-
 	suspend fun read(): ByteArray = vfs.readFully(path)
 
 	suspend fun readAsSyncStream(): SyncStream = asyncFun { read().openSync() }

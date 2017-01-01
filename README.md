@@ -116,13 +116,6 @@ Korio includes includes a mechanism to execute commands inside a VfsFile. This a
 in your local file system, but also allows to implement RPC mechanisms, that will work seamlessly. You can implement here
 ssh or ftp commands as an example.
 
-### Special I/O
-
-You can implement and decorate other VFS for reading/writing special kind of files. For example. A browser allows you to
-download+decode images directly korio provides a `readSpecial` that will allow you to download an image and for example
-generate a Bitmap32. You can create an extension method like this: `suspend fun VfsFile.readBitmap32() = readSpecial<Bitmap32>()`
-to make your life easier. You can see an example at `test/com/soywiz/korio/vfs/ReadSpecialTest.kt`.
-
 ### Included Vfs
 
 There are several filesystems included and you can find examples of usage in the test folder:
@@ -155,11 +148,6 @@ class VfsFile {
 
     // Opening file as AsyncStream
     suspend fun open(mode: VfsOpenMode): AsyncStream
-
-    // Special reading/writing for filesystems supporting it (reading for example Bitmaps, Textures, Sounds using browser for example)
-    suspend inline fun <reified T : Any> readSpecial(): T
-    suspend inline fun <reified T : Any> readSpecial(noinline onProgress: (Long, Long) -> Unit): T
-    suspend fun writeSpecial(value: Any, onProgress: (Long, Long) -> Unit = { _, _ -> }): Unit
 
     // Convenience methods for fully reading/writing files
     suspend fun read(): ByteArray
