@@ -145,6 +145,17 @@ inline fun MemorySyncStreamToByteArray(callback: SyncStream.() -> Unit): ByteArr
 	return buffer.toByteArray()
 }
 
+val SyncStream.hasLength: Boolean get() = try { length; true } catch (e: Throwable) { false }
+val SyncStream.hasAvailable: Boolean get() = try { available; true } catch (e: Throwable) { false }
+
+fun SyncStream.toByteArray(): ByteArray {
+	if (hasLength) {
+		return this.sliceWithBounds(0L, length).readAll()
+	} else {
+		return this.clone().readAll()
+	}
+}
+
 class MemorySyncStreamBase(var data: ByteArrayBuffer = ByteArrayBuffer()) : SyncStreamBase() {
 	override var length: Long
 		get() = data.size.toLong()

@@ -44,4 +44,12 @@ class SyncStreamTest {
 			out.readIntArray_le(8).toList().toString()
 		)
 	}
+
+	@Test
+	fun test2() = sync {
+		val out = MemorySyncStream()
+		out.write16_be(0x1234)
+		val bb = out.toByteArray()
+		Assert.assertArrayEquals(byteArrayOf(0x12, 0x34), bb)
+	}
 }
