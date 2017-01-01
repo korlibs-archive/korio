@@ -22,7 +22,11 @@ private fun ResourcesVfsGen(classLoader: URLClassLoader): Vfs {
 @Suppress("unused")
 object ResourcesVfsGenJs {
 	@JvmStatic fun gen(): Vfs {
-		return EmbededResourceListing(if (OS.isNodejs) JailedLocalVfs(NodeJsUtils.getCWD()) else UrlVfs(BrowserJsUtils.getBaseUrl()))
+		return EmbededResourceListing(if (OS.isNodejs) {
+			LocalVfs(NodeJsUtils.getCWD())
+		} else {
+			UrlVfs(BrowserJsUtils.getBaseUrl())
+		}.jail())
 	}
 }
 
