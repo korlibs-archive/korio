@@ -58,6 +58,8 @@ class SyncStream(val base: SyncStreamBase, var position: Long = 0L) : Closeable,
 	override fun close(): Unit = base.close()
 
 	fun clone() = SyncStream(base, position)
+
+	override fun toString(): String = "SyncStream($base, $position)"
 }
 
 inline fun <T> SyncStream.keepPosition(callback: () -> T): T {
