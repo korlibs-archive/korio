@@ -48,7 +48,7 @@ private class EmbededResourceListing(parent: VfsFile) : Vfs.Decorator(parent) {
 
 	@Suppress("unused")
 	private fun _addFile(fullpath: String, size: Double) {
-		val info = PathInfo(fullpath)
+		val info = PathInfo(fullpath.trim('/'))
 		val folder = nodeVfs.rootNode.access(info.folder, createFolders = true)
 		folder.createChild(info.basename, isDirectory = false).data = size.toLong()
 	}

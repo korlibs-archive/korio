@@ -54,7 +54,6 @@ class SyncStream(val base: SyncStreamBase, var position: Long = 0L) : Closeable,
 
 	val available: Long get() = length - position
 
-	// @TODO: Add refs to StreamBase?
 	override fun close(): Unit = base.close()
 
 	fun clone() = SyncStream(base, position)
@@ -98,7 +97,7 @@ class SliceSyncStreamBase(internal val base: SyncStreamBase, internal val baseSt
 		return base.write(targetStartPosition, buffer, offset, targetLen)
 	}
 
-	override fun close() = base.close()
+	override fun close() = Unit
 
 	override fun toString(): String = "SliceAsyncStreamBase($base, $baseStart, $baseEnd)"
 }

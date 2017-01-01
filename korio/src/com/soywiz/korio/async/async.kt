@@ -72,7 +72,10 @@ suspend fun <T> (suspend () -> T).await(): T = suspendCoroutine { c ->
 
 object EmptyContinuation : Continuation<Any> {
 	override fun resume(value: Any) = Unit
-	override fun resumeWithException(exception: Throwable) = Unit
+	override fun resumeWithException(exception: Throwable) {
+		exception.printStackTrace()
+	}
 }
 
 inline fun spawnAndForget(task: suspend () -> Any): Unit = task.startCoroutine(EmptyContinuation)
+inline fun <T> spawnAndForget(value: T, task: suspend T.() -> Any): Unit = task.startCoroutine(value, EmptyContinuation)

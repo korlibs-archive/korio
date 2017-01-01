@@ -4,10 +4,7 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.await
-import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.SyncStream
-import com.soywiz.korio.stream.openSync
-import com.soywiz.korio.stream.writeStream
+import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.use
 import java.io.ByteArrayOutputStream
 import java.nio.charset.Charset
@@ -41,14 +38,15 @@ class VfsFile(
 		open(mode).use { callback.await(this) }
 	}
 
-	suspend fun read(): ByteArray = vfs.readFully(path)
+	//suspend fun read(): ByteArray = vfs.readFully(path)
+	suspend fun read(): ByteArray = openUse { readAll() }
 
 	suspend fun readAsSyncStream(): SyncStream = asyncFun { read().openSync() }
 
-	suspend fun write(data: ByteArray): Unit = vfs.writeFully(path, data)
+	suspend fun write(data: ByteArray): Unit = openUse(VfsOpenMode.CREATE_OR_TRUNCATE) { write(data) }
 
-	suspend fun readString(charset: Charset = Charsets.UTF_8): String = asyncFun { vfs.readFully(path).toString(charset) }
-	suspend fun writeString(data: String, charset: Charset = Charsets.UTF_8): Unit = asyncFun { vfs.writeFully(path, data.toByteArray(charset)) }
+	suspend fun readString(charset: Charset = Charsets.UTF_8): String = asyncFun { read().toString(charset) }
+	suspend fun writeString(data: String, charset: Charset = Charsets.UTF_8): Unit = asyncFun { write(data.toByteArray(charset)) }
 
 	suspend fun readChunk(offset: Long, size: Int): ByteArray = vfs.readChunk(path, offset, size)
 	suspend fun writeChunk(data: ByteArray, offset: Long, resize: Boolean = false): Unit = vfs.writeChunk(path, data, offset, resize)
@@ -75,6 +73,19 @@ class VfsFile(
 	suspend fun mkdirs() = asyncFun {
 		// @TODO: Create tree up to this
 		mkdir()
+	}
+
+	suspend fun copyToTree(target: VfsFile, notify: (VfsFile) -> Unit = {}): Unit = asyncFun {
+		notify(target)
+		if (this.isDirectory()) {
+			target.mkdir()
+			for (file in list()) {
+				file.copyToTree(target[file.basename], notify)
+			}
+		} else {
+			this.copyTo(target)
+		}
+		Unit
 	}
 
 	suspend fun ensureParents() = asyncFun { parent.mkdirs(); this@VfsFile }

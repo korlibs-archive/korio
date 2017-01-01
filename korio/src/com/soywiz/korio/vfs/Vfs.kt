@@ -31,12 +31,12 @@ abstract class Vfs {
 
 	suspend open fun open(path: String, mode: VfsOpenMode): AsyncStream = throw UnsupportedOperationException()
 
-	suspend open fun readFully(path: String) = asyncFun {
-		val stat = stat(path)
-		readChunk(path, 0L, stat.size.toInt())
-	}
-
-	suspend open fun writeFully(path: String, data: ByteArray) = writeChunk(path, data, 0L, true)
+	//suspend open fun readFully(path: String) = asyncFun {
+	//	val stat = stat(path)
+	//	readChunk(path, 0L, stat.size.toInt())
+	//}
+	//
+	//suspend open fun writeFully(path: String, data: ByteArray) = writeChunk(path, data, 0L, true)
 
 	suspend fun readChunk(path: String, offset: Long, size: Int): ByteArray = asyncFun {
 		val s = open(path, VfsOpenMode.READ)
@@ -82,8 +82,8 @@ abstract class Vfs {
 
 		suspend override fun open(path: String, mode: VfsOpenMode) = asyncFun { initOnce(); access(path).open(mode) }
 
-		suspend override fun readFully(path: String): ByteArray = asyncFun { initOnce(); access(path).read() }
-		suspend override fun writeFully(path: String, data: ByteArray): Unit = asyncFun { initOnce(); access(path).write(data) }
+		//suspend override fun readFully(path: String): ByteArray = asyncFun { initOnce(); access(path).read() }
+		//suspend override fun writeFully(path: String, data: ByteArray): Unit = asyncFun { initOnce(); access(path).write(data) }
 		suspend override fun setSize(path: String, size: Long): Unit = asyncFun { initOnce(); access(path).setSize(size) }
 		suspend override fun stat(path: String): VfsStat = asyncFun { initOnce(); access(path).stat().copy(file = file(path)) }
 		suspend override fun list(path: String) = asyncGenerate {

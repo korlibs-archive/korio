@@ -41,7 +41,7 @@ internal class UrlVfsJs : Vfs() {
 		}.toAsyncStream().buffered()
 	}
 
-	suspend override fun readFully(path: String): ByteArray = JsUtils.readBytes(path)
+	//suspend override fun readFully(path: String): ByteArray = JsUtils.readBytes(path)
 
 	suspend override fun stat(path: String): VfsStat = statCache(path) {
 		try {
@@ -75,10 +75,10 @@ internal class UrlVfsJvm : Vfs() {
 		}.toAsyncStream().buffered()
 	}
 
-	suspend override fun readFully(path: String): ByteArray = executeInWorker {
-		val s = URL(path).openStream()
-		s.readBytes()
-	}
+	//suspend override fun readFully(path: String): ByteArray = executeInWorker {
+	//	val s = URL(path).openStream()
+	//	s.readBytes()
+	//}
 
 	suspend override fun stat(path: String): VfsStat = statCache(path) {
 		executeInWorker {

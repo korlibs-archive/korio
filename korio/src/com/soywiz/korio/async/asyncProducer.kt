@@ -54,13 +54,6 @@ class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 fun <T> asyncProducer(callback: suspend Producer<T>.() -> Unit): Consumer<T> {
 	val p = ProduceConsumer<T>()
 
-	callback.startCoroutine(p, completion = object : Continuation<Unit> {
-		override fun resumeWithException(exception: Throwable) {
-			exception.printStackTrace()
-		}
-
-		override fun resume(value: Unit) {
-		}
-	})
+	callback.startCoroutine(p, completion = EmptyContinuation)
 	return p
 }

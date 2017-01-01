@@ -4,7 +4,7 @@ enum class VfsOpenMode(val str: String, val createIfNotExists: Boolean) {
     READ("r", createIfNotExists = false),
     WRITE("w", createIfNotExists = true),
     APPEND("a+", createIfNotExists = true),
-    CREATE_OR_TRUNCATE("t+", createIfNotExists = false),
+    CREATE_OR_TRUNCATE("t+", createIfNotExists = true),
     CREATE("c", createIfNotExists = true),
     CREATE_NEW("cn", createIfNotExists = false);
 

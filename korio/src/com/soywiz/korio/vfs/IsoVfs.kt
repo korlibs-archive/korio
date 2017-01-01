@@ -270,8 +270,9 @@ object ISO {
 		val fileUnitSize: Int,
 		val interleave: Int,
 		val volumeSequenceNumber: Int,
-		val name: String
+		val rawName: String
 	) {
+		val name = rawName.substringBefore(';')
 		val offset: Long = extent.toLong() * SECTOR_SIZE
 		val isDirectory = (flags and 2) != 0
 
@@ -293,7 +294,7 @@ object ISO {
 						fileUnitSize = s.readU8(),
 						interleave = s.readU8(),
 						volumeSequenceNumber = s.readU16_le_be(),
-						name = s.readTextWithLength()
+						rawName = s.readTextWithLength()
 					)
 				}
 			}

@@ -18,6 +18,6 @@ class ByteArrayBuffer(var data: ByteArray = ByteArray(0), size: Int = data.size)
 		_size = Math.max(size, expected)
 	}
 
-	fun toByteArraySlice() = ByteArraySlice(data, 0, size)
+	fun toByteArraySlice(position: Long = 0) = ByteArraySlice(data, position.toInt(), size)
 	fun toByteArray(): ByteArray = Arrays.copyOf(data, size)
 }

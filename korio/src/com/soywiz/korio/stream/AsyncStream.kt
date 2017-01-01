@@ -103,7 +103,6 @@ class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : AsyncInp
 	suspend fun getAvailable(): Long = asyncFun { getLength() - getPosition() }
 	suspend fun eof(): Boolean = asyncFun { this.getAvailable() <= 0L }
 
-	// @TODO: Add refs to StreamBase?
 	suspend override fun close(): Unit = base.close()
 
 	suspend fun clone(): AsyncStream = AsyncStream(base, position)
@@ -134,7 +133,7 @@ class SliceAsyncStreamBase(internal val base: AsyncStreamBase, internal val base
 
 	suspend override fun getLength(): Long = baseLength
 
-	suspend override fun close() = base.close()
+	suspend override fun close() = Unit
 
 	override fun toString(): String = "SliceAsyncStreamBase($base, $baseStart, $baseEnd)"
 }
