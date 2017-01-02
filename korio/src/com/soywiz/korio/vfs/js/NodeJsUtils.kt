@@ -1,140 +1,108 @@
 package com.soywiz.korio.vfs.js
 
-import com.jtransc.annotation.JTranscMethodBody
-import kotlin.coroutines.CoroutineIntrinsics
+import com.jtransc.js.*
+import kotlin.coroutines.suspendCoroutine
 
 object NodeJsUtils {
-	@JTranscMethodBody(target = "js", value = """
-        var path = N.istr(p0), start = p1, end = p2, continuation = p3;
+	suspend fun readRangeBytes(path: String, start: Double, end: Double): ByteArray = suspendCoroutine { c ->
+		val http = jsRequire("http")
+		val url = jsRequire("url")
+		val info = url.methods["parse"](path)
+		val headers = jsObject()
 
-        var http = require('http');
-        var url = require('url');
-		var info = url.parse(path);
-		//console.log(info);
-		var headers = {};
+		if (start >= 0 && end >= 0) headers["Range"] = "bytes=$start-$end"
 
-		if (start >= 0 && end >= 0) headers['Range'] = 'bytes=' + start + '-' + end;
+		http.methods["get"](jsObject(
+			"host" to info["hostname"],
+			"port" to info["port"],
+			"path" to info["path"],
+			"agent" to false,
+			"encoding" to null,
+			"headers" to headers
+		), jsFunctionRaw1 { res ->
+			val body = jsArray()
+			res.methods["on"]("data", jsFunctionRaw1 { d -> body.methods["push"](d) })
+			res.methods["on"]("end", jsFunctionRaw0 {
+				val r = global["Buffer"].methods["concat"](body)
+				val u8array = jsNew("Int8Array", r)
+				val out = ByteArray(r["length"].toInt())
+				out.asJsDynamic().methods["setArraySlice"](0, u8array)
+				c.resume(out)
+			})
+		}).methods["on"]("error", jsFunctionRaw1 { e ->
+			c.resumeWithException(RuntimeException("Error: ${e.toJavaString()}"))
+		})
+	}
 
-        http.get({
-            host: info.hostname,
-            port: info.port,
-            path: info.path,
-            agent: false,
-			encoding: null,
-			headers: headers
-        }, function (res) {
-			var body = [];
-			res.on('data', function(d) { body.push(d); });
-			res.on('end', function() {
-				var res = Buffer.concat(body);
-				var u8array = new Int8Array(res);
-				var out = new JA_B(res.length);
-				out.setArraySlice(0, u8array);
-				continuation['{% METHOD kotlin.coroutines.Continuation:resume %}'](out);
-			});
-        });
+	suspend fun httpStat(path: String): JsStat = suspendCoroutine { c ->
+		val http = jsRequire("http")
+		val url = jsRequire("url")
+		val info = url.methods["parse"](path)
 
-		return this['{% METHOD #CLASS:getSuspended %}']();
-    """)
-	external suspend fun readRangeBytes(url: String, start: Double, end: Double): ByteArray
+		http.methods["get"](jsObject(
+			"method" to "HEAD",
+			"host" to info["hostname"],
+			"port" to info["port"],
+			"path" to info["path"]
+		), jsFunctionRaw1 { res ->
+			val len = global.methods["parseFloat"](res["headers"]["content-length"])
+			val out = JsStat(len.toDouble())
+			c.resume(out)
+		}).methods["on"]("error", jsFunctionRaw1 { e ->
+			c.resumeWithException(RuntimeException("Error: ${e.toJavaString()}"))
+		})
+	}
 
-	@JTranscMethodBody(target = "js", value = """
-        var path = N.istr(p0), continuation = p1;
-
-        var http = require('http');
-        var url = require('url');
-		var info = url.parse(path);
-
-        http.get({
-			method: 'HEAD',
-            host: info.hostname,
-            port: info.port,
-            path: info.path
-        }, function (res) {
-	        var len = parseFloat(res.headers['content-length']);
-			var out = {% CONSTRUCTOR com.soywiz.korio.vfs.js.JsStat:(D)V %}(len);
-			continuation['{% METHOD kotlin.coroutines.Continuation:resume %}'](out);
-        });
-
-		return this['{% METHOD #CLASS:getSuspended %}']();
-    """)
-	external suspend fun httpStat(url: String): JsStat
-
-	@JTranscMethodBody(target = "js", value = """
-        var path = N.istr(p0), mode = N.istr(p1), continuation = p2;
-
-        var fs = require('fs');
-		fs.open(path, mode, function(err, fd) {
-			if (err) {
-				continuation['{% METHOD kotlin.coroutines.Continuation:resumeWithException %}'](N.createRuntimeException('Error ' + err + ' opening' + path));
+	suspend fun open(path: String, mode: String): JsDynamic = suspendCoroutine { c ->
+		val fs = jsRequire("fs")
+		fs.methods["open"](path, mode, jsFunctionRaw2 { err, fd ->
+			if (err != null) {
+				c.resumeWithException(RuntimeException("Error ${err.toJavaString()} opening $path"))
 			} else {
-				continuation['{% METHOD kotlin.coroutines.Continuation:resume %}'](fd);
+				c.resume(fd!!)
 			}
-		});
+		})
+	}
 
-		return this['{% METHOD #CLASS:getSuspended %}']();
-    """)
-	external suspend fun open(path: String, mode: String): Any
+	suspend fun read(fd: JsDynamic?, position: Double, len: Double): ByteArray = suspendCoroutine { c ->
+		val fs = jsRequire("fs")
+		val buffer = jsNew("Buffer", len)
+		fs.methods["read"](fd, buffer, 0, len, position, jsFunctionRaw3 { err, bytesRead, buffer ->
+			if (err != null) {
+				c.resumeWithException(RuntimeException("Error ${err.toJavaString()} opening ${fd.toJavaString()}"))
+			} else {
+				val u8array = jsNew("Int8Array", buffer, 0, bytesRead)
+				val out = ByteArray(bytesRead.toInt())
+				out.asJsDynamic().methods["setArraySlice"](0, u8array)
+				c.resume(out)
+			}
+		})
+	}
 
-	@JTranscMethodBody(target = "js", value = """
+	suspend fun close(fd: Any): Unit = suspendCoroutine { c ->
+		val fs = jsRequire("fs")
+		fs.methods["close"](fd, jsFunctionRaw2 { err, fd ->
+			if (err != null) {
+				c.resumeWithException(RuntimeException("Error ${err.toJavaString()} closing file"))
+			} else {
+				c.resume(Unit)
+			}
+		})
+	}
+
+	fun getCWD(): String = global["process"].methods["cwd"]().toJavaString()
+
+	suspend fun fstat(path: String): JsStat = suspendCoroutine { c ->
 		// https://nodejs.org/api/fs.html#fs_class_fs_stats
-        var fd = p0, position = p1, len = p2, continuation = p3;
-
-        var fs = require('fs');
-		var buffer = new Buffer(len);
-		fs.read(fd, buffer, 0, len, position, function(err, bytesRead, buffer) {
-			if (err) {
-				continuation['{% METHOD kotlin.coroutines.Continuation:resumeWithException %}'](N.createRuntimeException('Error ' + err + ' opening' + path));
+		val fs = jsRequire("fs")
+		fs.methods["stat"](path, jsFunctionRaw2 { err, stat ->
+			if (err != null) {
+				c.resumeWithException(RuntimeException("Error ${err.toJavaString()} opening $path"))
 			} else {
-
-				var u8array = new Int8Array(buffer, 0, bytesRead);
-				var out = new JA_B(bytesRead);
-				out.setArraySlice(0, u8array);
-
-				continuation['{% METHOD kotlin.coroutines.Continuation:resume %}'](out);
+				val out = JsStat(stat["size"].toDouble())
+				out.isDirectory = stat.methods["isDirectory"]().toBool()
+				c.resume(out)
 			}
-		});
-
-		return this['{% METHOD #CLASS:getSuspended %}']();
-    """)
-	external suspend fun read(handle: Any, position: Double, length: Double): ByteArray
-
-	@JTranscMethodBody(target = "js", value = """
-        var fd = p0, continuation = p2;
-        var fs = require('fs');
-		fs.close(fd, mode, function(err, fd) {
-			if (err) {
-				continuation['{% METHOD kotlin.coroutines.Continuation:resumeWithException %}'](N.createRuntimeException('Error ' + err + ' opening' + path));
-			} else {
-				continuation['{% METHOD kotlin.coroutines.Continuation:resume %}'](null);
-			}
-		});
-		return this['{% METHOD #CLASS:getSuspended %}']();
-    """)
-	external suspend fun close(handle: Any): Unit
-
-	@JTranscMethodBody(target = "js", value = "return N.str(process.cwd());")
-	external fun getCWD(): String
-
-	@JTranscMethodBody(target = "js", value = """
-		// https://nodejs.org/api/fs.html#fs_class_fs_stats
-        var path = N.istr(p0), continuation = p1;
-
-        var fs = require('fs');
-		fs.stat(path, function(err, stat) {
-			if (err) {
-				continuation['{% METHOD kotlin.coroutines.Continuation:resumeWithException %}'](N.createRuntimeException('Error ' + err + ' opening' + path));
-			} else {
-				var out = {% CONSTRUCTOR com.soywiz.korio.vfs.js.JsStat:(D)V %}(+stat.size);
-				out['{% FIELD com.soywiz.korio.vfs.js.JsStat:isDirectory %}'] = stat.isDirectory();
-				continuation['{% METHOD kotlin.coroutines.Continuation:resume %}'](out);
-			}
-		});
-
-		return this['{% METHOD #CLASS:getSuspended %}']();
-    """)
-	external suspend fun fstat(path: String): JsStat
-
-	@Suppress("unused")
-	private fun getSuspended() = CoroutineIntrinsics.SUSPENDED
+		})
+	}
 }

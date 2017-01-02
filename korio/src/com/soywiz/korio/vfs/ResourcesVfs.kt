@@ -1,6 +1,7 @@
 package com.soywiz.korio.vfs
 
 import com.jtransc.annotation.JTranscMethodBody
+import com.jtransc.js.jsGetAssetStats
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
@@ -35,22 +36,11 @@ private class EmbededResourceListing(parent: VfsFile) : Vfs.Decorator(parent) {
 	val nodeVfs = NodeVfs()
 
 	init {
-		_init()
-	}
-
-	@JTranscMethodBody(target = "js", value = """
-		{% for asset in assetFiles %}
-		this['{% METHOD #CLASS:_addFile %}'](N.str({{ asset.path|quote }}), {{ asset.size }});
-		{% end %}
-	""")
-	fun _init() {
-	}
-
-	@Suppress("unused")
-	private fun _addFile(fullpath: String, size: Double) {
-		val info = PathInfo(fullpath.trim('/'))
-		val folder = nodeVfs.rootNode.access(info.folder, createFolders = true)
-		folder.createChild(info.basename, isDirectory = false).data = size.toLong()
+		for (asset in jsGetAssetStats()) {
+			val info = PathInfo(asset.path.trim('/'))
+			val folder = nodeVfs.rootNode.access(info.folder, createFolders = true)
+			folder.createChild(info.basename, isDirectory = false).data = asset.size
+		}
 	}
 
 	suspend override fun stat(path: String): VfsStat {

@@ -1,6 +1,9 @@
 package com.soywiz.korio.async
 
 import com.jtransc.annotation.JTranscMethodBody
+import com.jtransc.js.global
+import com.jtransc.js.jsFunctionRaw0
+import com.jtransc.js.methods
 import com.soywiz.korio.util.compareToChain
 import com.soywiz.korio.util.threadLocal
 import java.io.Closeable
@@ -64,7 +67,6 @@ interface EventLoop {
 			ensureEventLoop()
 		}
 
-		@JTranscMethodBody(target = "js", value = "")
 		private fun ensureEventLoop(): Unit {
 			if (!eventLoopRunning.compareAndSet(false, true)) return
 			Thread {
@@ -134,18 +136,6 @@ interface EventLoop {
 
 	@Suppress("unused")
 	class EventLoopJs : EventLoop {
-		@JTranscMethodBody(target = "js", value = """var time = p0, handler = p1;return setTimeout(function() { handler['{% METHOD kotlin.jvm.functions.Function0:invoke %}'](); }, time);""")
-		external private fun _setTimeout(time: Int, c: () -> Unit): Double
-
-		@JTranscMethodBody(target = "js", value = """var time = p0, handler = p1;return setInterval(function() { handler['{% METHOD kotlin.jvm.functions.Function0:invoke %}'](); }, time);""")
-		external private fun _setInterval(time: Int, c: () -> Unit): Double
-
-		@JTranscMethodBody(target = "js", value = """return clearTimeout(p0);""")
-		external private fun _clearTimeout(id: Double): Unit
-
-		@JTranscMethodBody(target = "js", value = """return clearInterval(p0);""")
-		external private fun _clearInterval(id: Double): Unit
-
 		override fun init(): Unit {
 		}
 
@@ -169,16 +159,15 @@ interface EventLoop {
 		}
 
 		override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
+			val id = global.methods["setTimeout"](jsFunctionRaw0 { callback() }, ms)
 			//println("setTimeout($ms)")
-			val id = _setTimeout(ms, callback)
-			return Closeable { _clearTimeout(id) }
+			return Closeable { global.methods["clearTimeout"](id) }
 		}
 
 		override fun setInterval(ms: Int, callback: () -> Unit): Closeable {
 			//println("setInterval($ms)")
-			val id = _setInterval(ms, callback)
-			return Closeable { _clearInterval(id) }
+			val id = global.methods["setInterval"](jsFunctionRaw0 { callback() }, ms)
+			return Closeable { global.methods["clearInterval"](id) }
 		}
 	}
-
 }

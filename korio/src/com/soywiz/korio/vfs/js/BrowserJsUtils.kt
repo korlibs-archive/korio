@@ -1,61 +1,52 @@
 package com.soywiz.korio.vfs.js
 
-import com.jtransc.annotation.JTranscMethodBody
+import com.jtransc.js.*
 import kotlin.coroutines.CoroutineIntrinsics
+import kotlin.coroutines.suspendCoroutine
 
 object BrowserJsUtils {
-	@JTranscMethodBody(target = "js", value = """
-        var url = N.istr(p0), start = p1, end = p2, continuation = p3;
+	suspend fun readRangeBytes(url: String, start: Double, end: Double): ByteArray = suspendCoroutine { c ->
+		val xhr = jsNew("XMLHttpRequest")
+		xhr.methods["open"]("GET", url, true);
+		xhr["responseType"] = "arraybuffer"
 
-		var xhr = new XMLHttpRequest();
-		xhr.open('GET', url, true);
-		xhr.responseType = 'arraybuffer';
-
-		xhr.onload = function(e) {
-			var u8array = new Uint8Array(this.response);
-			var out = new JA_B(u8array.length);
-			out.setArraySlice(0, u8array);
-			continuation['{% METHOD kotlin.coroutines.Continuation:resume %}'](out);
+		xhr["onload"] = jsFunctionRaw1 { e ->
+			val u8array = jsNew("Uint8Array", xhr["response"])
+			val out = ByteArray(u8array["length"].toInt());
+			(out.asJsDynamic()).methods["setArraySlice"](0, u8array)
+			c.resume(out)
 		};
 
-		xhr.onerror = function(e) {
-			continuation['{% METHOD kotlin.coroutines.Continuation:resumeWithException %}'](N.createRuntimeException('Error ' + xhr.status + " opening " + url));
+		xhr["onerror"] = jsFunctionRaw1 { e ->
+			c.resumeWithException(RuntimeException("Error ${xhr["status"].toJavaString()} opening $url"))
 		};
 
-		if (start >= 0 && end >= 0) xhr.setRequestHeader('Range', 'bytes=' + start + '-' + end);
-		xhr.send();
+		if (start >= 0 && end >= 0) xhr.methods["setRequestHeader"]("Range", "bytes=$start-$end");
+		xhr.methods["send"]();
+	}
 
-		return this['{% METHOD #CLASS:getSuspended %}']();
-    """)
-	external suspend fun readRangeBytes(url: String, start: Double, end: Double): ByteArray
-
-	@JTranscMethodBody(target = "js", value = """
-        var url = N.istr(p0), continuation = p1;
-
-		var xhr = new XMLHttpRequest();
-		xhr.open("HEAD", url, true);
-		xhr.onreadystatechange = function() {
-		    if (this.readyState == this.DONE) {
-		        var len = parseFloat(xhr.getResponseHeader("Content-Length"));
-				var out = {% CONSTRUCTOR com.soywiz.korio.vfs.js.JsStat:(D)V %}(len);
-				continuation['{% METHOD kotlin.coroutines.Continuation:resume %}'](out);
-		    }
+	suspend fun stat(url: String): JsStat = suspendCoroutine { c ->
+		val xhr = jsNew("XMLHttpRequest")
+		xhr.methods["open"]("HEAD", url, true);
+		xhr["onreadystatechange"] = jsFunctionRaw0 {
+			if (xhr["readyState"].eq(xhr["DONE"])) {
+				val len = global.methods["parseFloat"](xhr.methods["getResponseHeader"]("Content-Length"))
+				val out = JsStat(len.toDouble())
+				c.resume(out)
+			}
+		}
+		xhr["onerror"] = jsFunctionRaw1 { e ->
+			c.resumeWithException(RuntimeException("Error ${xhr["status"].toJavaString()} opening $url"))
 		};
-		xhr.onerror = function(e) {
-			continuation['{% METHOD kotlin.coroutines.Continuation:resumeWithException %}'](N.createRuntimeException('Error ' + xhr.status + " opening " + path));
-		};
-		xhr.send();
-		return this['{% METHOD #CLASS:getSuspended %}']();
-    """)
-	external suspend fun stat(url: String): JsStat
+		xhr.methods["send"]();
+	}
 
-	@JTranscMethodBody(target = "js", value = """
-		var baseHref = document.location.href.replace(/\/[^\/]*$/, '');
-		var bases = document.getElementsByTagName('base');
-		if (bases.length > 0) baseHref = bases[0].href;
-		return N.str(baseHref);
-	""")
-	external fun getBaseUrl(): String
+	fun getBaseUrl(): String {
+		var baseHref = document["location"]["href"].methods["replace"](Regex("/[^\\/]*$").toJs(), "")
+		val bases = document.methods["getElementsByTagName"]("base");
+		if (bases["length"].toInt() > 0) baseHref = bases[0]["href"];
+		return baseHref.toJavaString()
+	}
 
 	@Suppress("unused")
 	private fun getSuspended() = CoroutineIntrinsics.SUSPENDED
