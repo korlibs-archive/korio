@@ -7,15 +7,13 @@ buildscript {
     }
     dependencies {
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-        classpath 'com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3'
+        classpath "com.jfrog.bintray.gradle:gradle-bintray-plugin:1.7.3"
+		classpath "com.jtransc:jtransc-gradle-plugin:$jtranscVersion"
     }
 }
 
-plugins {
-    id "com.jtransc" version "0.5.3"
-}
-
 apply plugin: 'java'
+apply plugin: 'jtransc'
 apply plugin: 'kotlin'
 apply plugin: 'maven'
 apply plugin: 'signing'

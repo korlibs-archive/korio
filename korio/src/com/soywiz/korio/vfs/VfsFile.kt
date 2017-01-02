@@ -39,11 +39,11 @@ class VfsFile(
 	}
 
 	//suspend fun read(): ByteArray = vfs.readFully(path)
-	suspend fun read(): ByteArray = openUse { readAll() }
+	suspend fun read(): ByteArray = openUse { this.readAll() }
 
 	suspend fun readAsSyncStream(): SyncStream = asyncFun { read().openSync() }
 
-	suspend fun write(data: ByteArray): Unit = openUse(VfsOpenMode.CREATE_OR_TRUNCATE) { write(data) }
+	suspend fun write(data: ByteArray): Unit = openUse(VfsOpenMode.CREATE_OR_TRUNCATE) { this.writeBytes(data) }
 
 	suspend fun readString(charset: Charset = Charsets.UTF_8): String = asyncFun { read().toString(charset) }
 	suspend fun writeString(data: String, charset: Charset = Charsets.UTF_8): Unit = asyncFun { write(data.toByteArray(charset)) }

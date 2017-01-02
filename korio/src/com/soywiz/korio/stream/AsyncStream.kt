@@ -301,9 +301,9 @@ suspend fun AsyncStream.hasAvailable(): Boolean = asyncFun {
 	}
 }
 
-suspend fun AsyncStream.readAll(): ByteArray = asyncFun {
-	if (hasAvailable()) {
-		val available = getAvailable().toInt()
+suspend fun AsyncInputStream.readAll(): ByteArray = asyncFun {
+	if (this is AsyncStream && this.hasAvailable()) {
+		val available = this.getAvailable().toInt()
 		readBytes(available)
 	} else {
 		val out = ByteArrayOutputStream()
@@ -318,7 +318,7 @@ suspend fun AsyncStream.readAll(): ByteArray = asyncFun {
 }
 
 // readAll alias
-suspend fun AsyncStream.readAvailable(): ByteArray = readAll()
+suspend fun AsyncInputStream.readAvailable(): ByteArray = readAll()
 
 suspend fun AsyncInputStream.readUByteArray(count: Int): UByteArray = asyncFun { UByteArray(readBytesExact(count)) }
 
