@@ -42,7 +42,7 @@ object BrowserJsUtils {
 	}
 
 	fun getBaseUrl(): String {
-		var baseHref = document["location"]["href"].methods["replace"](Regex("/[^\\/]*$").toJs(), "")
+		var baseHref = document["location"]["href"].methods["replace"](jsRegExp("/[^\\/]*$"), "")
 		val bases = document.methods["getElementsByTagName"]("base");
 		if (bases["length"].toInt() > 0) baseHref = bases[0]["href"];
 		return baseHref.toJavaString()
@@ -51,3 +51,5 @@ object BrowserJsUtils {
 	@Suppress("unused")
 	private fun getSuspended() = CoroutineIntrinsics.SUSPENDED
 }
+
+private fun jsRegExp(regex: String): JsDynamic? = global["RegExp"].new(regex)
