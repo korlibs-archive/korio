@@ -8,7 +8,10 @@ import kotlin.coroutines.suspendCoroutine
 
 interface EventLoop {
 	companion object {
-		val defaultImpl: EventLoop by lazy { ServiceLoader.load(EventLoop::class.java).first() }
+		val defaultImpl: EventLoop by lazy {
+			ServiceLoader.load(EventLoop::class.java).firstOrNull()
+				?: throw UnsupportedOperationException("EventLoop implementation not found!")
+		}
 		private var _impl: EventLoop? = null
 		var impl: EventLoop
 			set(value) {

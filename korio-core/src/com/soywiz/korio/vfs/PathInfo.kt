@@ -1,11 +1,12 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.util.indexOfOrNull
+import com.soywiz.korio.util.lastIndexOfOrNull
 
 class PathInfo(val fullpath: String) {
 	val fullpathNormalized: String = fullpath.replace('\\', '/')
 	val folder: String by lazy {
-		fullpath.substring(0, fullpathNormalized.indexOfOrNull('/') ?: 0)
+		fullpath.substring(0, fullpathNormalized.lastIndexOfOrNull('/') ?: 0)
 	}
 	val basename: String by lazy { fullpathNormalized.substringAfterLast('/') }
 	val pathWithoutExtension: String by lazy {

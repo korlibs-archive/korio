@@ -12,6 +12,7 @@ class PathInfoTest {
 
 		Assert.assertEquals("/test/hello.TxT", PathInfo(PATH1).fullpath)
 		Assert.assertEquals("/test/hello", PathInfo(PATH1).pathWithoutExtension)
+		Assert.assertEquals("/test", PathInfo(PATH1).folder)
 		Assert.assertEquals("hello.TxT", PathInfo(PATH1).basename)
 		Assert.assertEquals("hello", PathInfo(PATH1).basenameWithoutExtension)
 		Assert.assertEquals("TxT", PathInfo(PATH2).extension)
@@ -19,6 +20,7 @@ class PathInfoTest {
 
 		Assert.assertEquals("C:\\dev\\test\\hello.TxT", PathInfo(PATH2).fullpath)
 		Assert.assertEquals("C:\\dev\\test\\hello", PathInfo(PATH2).pathWithoutExtension)
+		Assert.assertEquals("C:\\dev\\test", PathInfo(PATH2).folder)
 		Assert.assertEquals("hello.TxT", PathInfo(PATH2).basename)
 		Assert.assertEquals("hello", PathInfo(PATH2).basenameWithoutExtension)
 		Assert.assertEquals("TxT", PathInfo(PATH2).extension)
@@ -26,6 +28,7 @@ class PathInfoTest {
 
 		Assert.assertEquals("C:\\dev\\test\\hello", PathInfo(PATH3).fullpath)
 		Assert.assertEquals("C:\\dev\\test\\hello", PathInfo(PATH3).pathWithoutExtension)
+		Assert.assertEquals("C:\\dev\\test", PathInfo(PATH3).folder)
 		Assert.assertEquals("hello", PathInfo(PATH3).basename)
 		Assert.assertEquals("hello", PathInfo(PATH3).basenameWithoutExtension)
 		Assert.assertEquals("", PathInfo(PATH3).extension)

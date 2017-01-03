@@ -22,7 +22,7 @@ fun String.indexOfOrNull(char: Char, startIndex: Int = 0): Int? {
 	return if (i >= 0) i else null
 }
 
-fun String.lastIndexOfOrNull(char: Char, startIndex: Int = 0): Int? {
+fun String.lastIndexOfOrNull(char: Char, startIndex: Int = lastIndex): Int? {
 	val i = this.lastIndexOf(char, startIndex)
 	return if (i >= 0) i else null
 }
