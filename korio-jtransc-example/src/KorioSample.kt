@@ -1,11 +1,11 @@
-import com.soywiz.korio.async.*
-import com.soywiz.korio.net.AsyncServer
+import com.soywiz.korio.async.EventLoop
+import com.soywiz.korio.async.map
+import com.soywiz.korio.async.spawn
+import com.soywiz.korio.async.toList
 import com.soywiz.korio.stream.readU8
-import com.soywiz.korio.stream.writeString
 import com.soywiz.korio.vfs.ResourcesVfs
 import com.soywiz.korio.vfs.UrlVfs
 import com.soywiz.korio.vfs.openAsIso
-import com.soywiz.korio.vfs.openAsZip
 
 fun main(args: Array<String>) = EventLoop.main {
 	//println(LocalVfs("/").list().toList())

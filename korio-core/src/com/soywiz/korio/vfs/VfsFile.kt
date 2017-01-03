@@ -29,8 +29,8 @@ class VfsFile(
 	val parent: VfsFile by lazy { VfsFile(vfs, pathInfo.folder) }
 	val root: VfsFile get() = vfs.root
 
-	fun withExtension(name: String): VfsFile = VfsFile(vfs, fullnameWithoutExtension + if (name.isNotEmpty()) ".$name" else "")
-	fun appendExtension(name: String): VfsFile = VfsFile(vfs, fullname + ".$name")
+	fun withExtension(ext: String): VfsFile = VfsFile(vfs, fullnameWithoutExtension + if (ext.isNotEmpty()) ".$ext" else "")
+	fun appendExtension(ext: String): VfsFile = VfsFile(vfs, fullname + ".$ext")
 
 	suspend fun open(mode: VfsOpenMode = VfsOpenMode.READ): AsyncStream = vfs.open(path, mode)
 

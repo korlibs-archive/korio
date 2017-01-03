@@ -1,2 +1,8 @@
 rootProject.name = 'korio-root'
-include('korio', 'korio-jtransc-example')
+include(
+		'korio-core',
+		'korio',
+		'korio-kotlinjs',
+		'korio-android',
+		'korio-jtransc-example'
+)

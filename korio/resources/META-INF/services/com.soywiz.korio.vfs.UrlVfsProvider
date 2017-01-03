@@ -1,0 +1,2 @@
+com.soywiz.korio.vfs.jvm.UrlVfsProviderJvm # <target=java>
+com.soywiz.korio.vfs.js.UrlVfsProviderJs # <target=js>

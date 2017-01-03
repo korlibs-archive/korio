@@ -1,0 +1,2 @@
+com.soywiz.korio.async.EventLoopJvm # <target=java>
+com.soywiz.korio.async.EventLoopJs # <target=js>

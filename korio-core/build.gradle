@@ -1,5 +1,4 @@
 apply from: "../include.gradle"
 
 dependencies {
-	compile project(":korio-core")
 }
