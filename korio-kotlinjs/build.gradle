@@ -1,5 +1,16 @@
 apply from: "../include.gradle"
 
+apply plugin: 'kotlin2js'
+
+/*
+sourceSets {
+	main.java.srcDirs = ['src', '../korio-core/src']
+	test.java.srcDirs = ['test']
+	main.resources.srcDirs = ['resources']
+	test.resources.srcDirs = ['testresources']
+}
+*/
+
 dependencies {
 	compile project(":korio-core")
 }

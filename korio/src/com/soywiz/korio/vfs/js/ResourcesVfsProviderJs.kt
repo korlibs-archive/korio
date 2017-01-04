@@ -5,10 +5,9 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.util.OS
 import com.soywiz.korio.vfs.*
-import java.net.URLClassLoader
 
 class ResourcesVfsProviderJs : ResourcesVfsProvider {
-	override fun invoke(classLoader: URLClassLoader): Vfs {
+	override fun invoke(): Vfs {
 		return EmbededResourceListing(if (OS.isNodejs) {
 			LocalVfs(NodeJsUtils.getCWD())
 		} else {

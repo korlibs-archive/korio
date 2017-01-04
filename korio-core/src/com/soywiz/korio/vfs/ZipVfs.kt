@@ -154,7 +154,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 		}
 
 		suspend override fun list(path: String): AsyncSequence<VfsFile> = asyncGenerate {
-			for ((name, entry) in filesPerFolder[path.normalizeName()]!!) {
+			for ((name, entry) in filesPerFolder[path.normalizeName()] ?: hashMapOf()) {
 				//yield(entry.toStat(this@Impl[entry.path]))
 				yield(vfs[entry.path])
 			}

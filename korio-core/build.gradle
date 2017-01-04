@@ -1,4 +1,10 @@
 apply from: "../include.gradle"
 
-dependencies {
+apply plugin: 'kotlin'
+
+sourceSets {
+	main.java.srcDirs = ['src', 'src_serviceloader']
+	test.java.srcDirs = ['test']
+	main.resources.srcDirs = ['resources']
+	test.resources.srcDirs = ['testresources']
 }

@@ -1,5 +1,8 @@
 apply from: "../include.gradle"
 
+apply plugin: 'kotlin'
+
 dependencies {
 	compile project(":korio-core")
+	compile "com.google.android:android:4.1.1.4"
 }

@@ -12,11 +12,6 @@ suspend fun File.open(mode: VfsOpenMode) = LocalVfs(this).open(mode)
 
 fun LocalVfs(): VfsFile = localVfsProvider().root
 
-private val localVfsProvider by lazy {
-	ServiceLoader.load(LocalVfsProvider::class.java).firstOrNull()
-		?: throw UnsupportedOperationException("LocalVfsProvider not defined")
-}
-
 interface LocalVfsProvider {
 	operator fun invoke(): Vfs
 }
