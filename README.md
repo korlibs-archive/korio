@@ -17,13 +17,52 @@ I'm also uploading it to a personal bintray repository:
 maven { url "https://dl.bintray.com/soywiz/soywiz-maven" }
 ```
 
-
-This is a kotlin coroutine library that provides asynchronous nonblocking I/O and virtual filesystem operations
+This is a kotlin coroutine library that provides asynchronous non-blocking I/O and virtual filesystem operations
 for custom and extensible filesystems with an homogeneous API. This repository doesn't require any special library
 dependency and just requires Kotlin 1.1-M04 or greater.
 
 This library is specially useful for webserver where asynchronous is the way to go. And completely asynchronous or
-single threaded targets like javascript or as3, with kotlin-js or JTransc (Node.JS and Browser).
+single threaded targets like JavaScript or AS3, with kotlin-js or JTransc (Node.JS and Browser). So if you use
+korio you will be able to target several platforms without any problem.
+
+It has a modern and useful API. And all works in Java 7, so it is compatible with Android.
+
+### Extended libraries
+
+I have also created other useful multi-target libraries using korio as core.
+
+#### [Korim](http://github.com/soywiz/korim)
+
+Korim is an imaging library with just korio as dependency. It provides bitmap manipulation, and
+pure kotlin image decoding (PNG, JPEG, BMP and TGA), while allowing extending it and some drawing
+geometry primitives. It also supports native font loading and bitmap font loading.
+Korim supports all korio targets including JVM, Javascript and Android and provide native image
+loading in those targets for fastest performance. Also provides generating generate bitmap fonts
+at runtime using native font facilities for each supported target.
+
+### [Korui](http://github.com/soywiz/korui)
+
+Korui is a very portable user interface library. Uses korim and korio as dependencies. And allow
+creating interfaces for JVM (AWT), Android and JavaScript (HTML5) at this point with a clean and
+easy to use interface, but would allow other targets in the future like C++ SDL, iOS,
+Universal Windows UWP and so on.
+It provides some components and layouts. It internally creates lightweight native components for each
+platform and resizes them using common consistent korui layouts. Supported layouts are similar to
+Android ones, but allows creating them using Kotlin DSL. Portable imaging uses Korim and for I/O and asynchronous
+facilities, it uses Korio.
+
+
+### Event Loop and async primitives
+
+Korio provides an Event Loop that integrates with each supported platform seamlessly.
+So in JS the event loop will use setTimeout and setInterval, and will queue actions with it.
+In the case of Android it will use runOnUiThread and timer primitives,
+and in the JVM it would use en emulated Event Loop.
+You can even create your own event loop implementation and hook it.
+
+Korio also provides some async primitives until they are officially available
+at a common place like kotlinx.coroutines, and will provide typealias + @Deprecated for the future migration
+when available.
 
 ### Streams
 
@@ -36,7 +75,7 @@ Both stream classes allow to read and write raw bytes, little and big endian pri
 allowing optimized stream slicing and reading for a simple binary file handling.
 
 Some stream methods:
-```
+```kotlin
 read, write
 setPosition, getPosition
 setLength, getLength
@@ -79,7 +118,7 @@ jail["../../../etc/passwd"].readString() // this won't work
 
 Korio includes a MountableVfs that allows you to mount other filesystems like this:
 
-```
+```kotlin
 val resources = ResourcesVfs
 val root = MountableVfs {
 	mount("/zip", resources["hello.zip"].openAsZip())
@@ -95,7 +134,7 @@ Assert.assertEquals("ISO!", root["/iso/hello/world.txt"].readString())
 
 Korio includes an inmemory vfs to create volatile vfs:
 
-```
+```kotlin
 val mem = MemoryVfs(mapOf(
     "hello/secret.txt" to "SECRET!".toByteArray().openAsync(),
     "hello/world/test.txt" to "HELLO WORLD!".toByteArray().openAsync()
@@ -212,9 +251,21 @@ class PathInfo(val fullpath: String) {
 }
 ```
 
-
 You can create custom virtual file systems and combine them (for S3, for Windows Registry, for FTP/SFTP, an ISO file...)
 or whatever you need.
 
 Also, since you are using a single interface (VfsFile), you can create generic code that will work for files, for network,
 for redis...
+
+### Targets
+
+Korio supports JVM, Android, Browser and Node.JS out of the box at this point. But it is extensible so you can create
+your own targets or benefit from new ones when available.
+
+Features:
+
+* JVM uses NIO and common runtime tools
+* Android uses threads when required and simplifies and unifies resources/assets loading/listing
+* Node.JS uses the all asynchronous methods available and supports full korio
+* Browser allows reading "embedded" resource lists supported by jtransc + reading urls chunks/streaming with buffering in same domain or with CORs. Do not support raw client/server sockets.
+
