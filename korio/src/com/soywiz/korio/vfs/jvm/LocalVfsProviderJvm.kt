@@ -3,6 +3,7 @@ package com.soywiz.korio.vfs.jvm
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.async.toEventLoop
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
@@ -142,14 +143,10 @@ class LocalVfsProviderJvm : LocalVfsProvider {
 		}
 
 		inline suspend fun <T> completionHandler(crossinline callback: (CompletionHandler<T, Unit>) -> Unit) = suspendCoroutine<T> { c ->
+			val cevent = c.toEventLoop()
 			callback(object : CompletionHandler<T, Unit> {
-				override fun completed(result: T, attachment: Unit?) {
-					c.resume(result)
-				}
-
-				override fun failed(exc: Throwable, attachment: Unit?) {
-					c.resumeWithException(exc)
-				}
+				override fun completed(result: T, attachment: Unit?) = cevent.resume(result)
+				override fun failed(exc: Throwable, attachment: Unit?) = cevent.resumeWithException(exc)
 			})
 		}
 

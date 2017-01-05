@@ -26,16 +26,18 @@ interface EventLoop {
 		fun main(entry: suspend () -> Unit): Unit {
 			tasksInProgress.incrementAndGet()
 			impl.init()
-			entry.startCoroutine(object : Continuation<Unit> {
-				override fun resume(value: Unit) {
-					tasksInProgress.decrementAndGet()
-				}
+			impl.setImmediate {
+				entry.startCoroutine(object : Continuation<Unit> {
+					override fun resume(value: Unit) {
+						tasksInProgress.decrementAndGet()
+					}
 
-				override fun resumeWithException(exception: Throwable) {
-					tasksInProgress.decrementAndGet()
-					exception.printStackTrace()
-				}
-			})
+					override fun resumeWithException(exception: Throwable) {
+						tasksInProgress.decrementAndGet()
+						exception.printStackTrace()
+					}
+				})
+			}
 		}
 
 		fun queue(handler: () -> Unit): Unit = impl.setImmediate(handler)

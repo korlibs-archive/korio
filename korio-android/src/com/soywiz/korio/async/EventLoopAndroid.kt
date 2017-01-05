@@ -8,18 +8,14 @@ class EventLoopAndroid : EventLoop {
 	}
 
 	override fun setImmediate(handler: () -> Unit) {
-		KorioAndroidContext.runOnUiThread {
-			handler()
-		}
+		KorioAndroidContext.runOnUiThread(handler)
 	}
 
 	override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
 		var cancelled = false
-		android.os.Handler().postDelayed(Runnable {
+		android.os.Handler().postDelayed({
 			if (!cancelled) {
-				KorioAndroidContext.runOnUiThread {
-					callback()
-				}
+				KorioAndroidContext.runOnUiThread(callback)
 			}
 		}, ms.toLong())
 		return Closeable { cancelled = true }
@@ -28,12 +24,10 @@ class EventLoopAndroid : EventLoop {
 	override fun setInterval(ms: Int, callback: () -> Unit): Closeable {
 		var cancelled = false
 		fun step() {
-			android.os.Handler().postDelayed(Runnable {
+			android.os.Handler().postDelayed({
 				if (!cancelled) {
 					step()
-					KorioAndroidContext.runOnUiThread {
-						callback()
-					}
+					KorioAndroidContext.runOnUiThread(callback)
 				}
 			}, ms.toLong())
 		}

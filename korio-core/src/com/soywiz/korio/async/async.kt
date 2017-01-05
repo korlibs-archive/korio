@@ -1,6 +1,7 @@
 package com.soywiz.korio.async
 
 import com.soywiz.korio.util.OS
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.*
@@ -12,17 +13,30 @@ inline suspend fun <T> asyncFun(routine: suspend () -> T): T = suspendCoroutine<
 	routine.startCoroutine(it)
 }
 
+fun <T> Continuation<T>.toEventLoop(): Continuation<T> {
+	val parent = this
+	return object : Continuation<T> {
+		override fun resume(value: T) = EventLoop.queue { parent.resume(value) }
+		override fun resumeWithException(exception: Throwable) = EventLoop.queue { parent.resumeWithException(exception) }
+	}
+}
+
 suspend fun <T> executeInWorker(task: suspend () -> T): T = suspendCoroutine<T> { c ->
+	val cevent = c.toEventLoop()
 	tasksInProgress.incrementAndGet()
 	workerLazyPool.execute {
 		try {
-			task.startCoroutine(c)
+			task.startCoroutine(cevent)
 		} catch (t: Throwable) {
-			c.resumeWithException(t)
+			cevent.resumeWithException(t)
 		} finally {
 			tasksInProgress.decrementAndGet()
 		}
 	}
+}
+
+operator fun ExecutorService.invoke(callback: () -> Unit) {
+	this.execute(callback)
 }
 
 // Wait for a suspension block for testing purposes
