@@ -12,6 +12,7 @@ import com.soywiz.korio.util.toUInt
 import java.io.FileNotFoundException
 import java.util.*
 import java.util.zip.Inflater
+import kotlin.collections.LinkedHashMap
 
 suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 	//val s = zipFile.open(VfsOpenMode.READ)
@@ -54,8 +55,8 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 		}
 	}
 
-	val files = hashMapOf<String, ZipEntry>()
-	val filesPerFolder = hashMapOf<String, HashMap<String, ZipEntry>>()
+	val files = LinkedHashMap<String, ZipEntry>()
+	val filesPerFolder = LinkedHashMap<String, LinkedHashMap<String, ZipEntry>>()
 
 	data.apply {
 		//println(s)
@@ -99,7 +100,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 				val baseFolder = normalizedName.substringBeforeLast('/', "")
 				val baseName = normalizedName.substringAfterLast('/')
 
-				val folder = filesPerFolder.getOrPut(baseFolder) { hashMapOf() }
+				val folder = filesPerFolder.getOrPut(baseFolder) { LinkedHashMap() }
 				val entry = ZipEntry(
 					path = name,
 					compressionMethod = compressionMethod,
@@ -154,7 +155,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 		}
 
 		suspend override fun list(path: String): AsyncSequence<VfsFile> = asyncGenerate {
-			for ((name, entry) in filesPerFolder[path.normalizeName()] ?: hashMapOf()) {
+			for ((name, entry) in filesPerFolder[path.normalizeName()] ?: LinkedHashMap()) {
 				//yield(entry.toStat(this@Impl[entry.path]))
 				yield(vfs[entry.path])
 			}

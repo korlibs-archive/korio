@@ -31,7 +31,7 @@ open class NodeVfs : Vfs() {
 		}
 
 		var data: Any? = null
-		val children = hashMapOf<String, Node>()
+		val children = LinkedHashMap<String, Node>()
 		val root: Node get() = parent?.root ?: this
 		var stream: AsyncStream? = null
 
