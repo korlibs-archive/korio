@@ -1,0 +1,2 @@
+com.soywiz.korio.net.ws.JvmWebSocketClientFactory # <target=java>
+com.soywiz.korio.net.ws.js.JsWebSocketClientFactory # <target=js>

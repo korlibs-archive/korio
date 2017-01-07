@@ -1,10 +1,14 @@
 package com.soywiz.korio.async
 
-class Signal<T> {
+import java.io.Closeable
+import kotlin.coroutines.suspendCoroutine
+
+class Signal<T> : AsyncSequence<T> {
 	internal val handlers = arrayListOf<(T) -> Unit>()
 
-	fun add(handler: (T) -> Unit) {
+	fun add(handler: (T) -> Unit): Closeable {
 		synchronized(handlers) { handlers += handler }
+		return Closeable { synchronized(handlers) { handlers -= handler } }
 	}
 
 	operator fun invoke(value: T) {
@@ -17,7 +21,21 @@ class Signal<T> {
 		//}
 	}
 
-	operator fun invoke(value: (T) -> Unit) = add(value)
+	operator fun invoke(value: (T) -> Unit): Closeable = add(value)
+
+	override fun iterator(): AsyncIterator<T> = asyncGenerate {
+		while (true) {
+			yield(waitOne())
+		}
+	}.iterator()
 }
 
 operator fun Signal<Unit>.invoke() = invoke(Unit)
+
+suspend fun <T> Signal<T>.waitOne(): T = suspendCoroutine { c ->
+	var close: Closeable? = null
+	close = add {
+		c.resume(it)
+		close?.close()
+	}
+}

@@ -6,6 +6,7 @@ import com.soywiz.korio.util.*
 import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.VfsOpenMode
 import java.io.ByteArrayOutputStream
+import java.io.EOFException
 import java.nio.charset.Charset
 import java.util.*
 
@@ -245,7 +246,7 @@ suspend fun AsyncInputStream.readExact(buffer: ByteArray, offset: Int, len: Int)
 	while (remaining > 0) {
 		val read = read(buffer, coffset, remaining)
 		if (read < 0) break
-		if (read == 0) throw IllegalStateException("Not enough data")
+		if (read == 0) throw EOFException("Not enough data")
 		coffset += read
 		remaining -= read
 	}
@@ -424,3 +425,16 @@ suspend fun AsyncOutputStream.writeIntArray_be(array: IntArray) = writeBytes(Byt
 suspend fun AsyncOutputStream.writeLongArray_be(array: LongArray) = writeBytes(ByteArray(array.size * 8).apply { writeArray_be(0, array) })
 suspend fun AsyncOutputStream.writeFloatArray_be(array: FloatArray) = writeBytes(ByteArray(array.size * 4).apply { writeArray_be(0, array) })
 suspend fun AsyncOutputStream.writeDoubleArray_be(array: DoubleArray) = writeBytes(ByteArray(array.size * 8).apply { writeArray_be(0, array) })
+
+suspend fun AsyncInputStream.readLine(eol: Char = '\n'): String = asyncFun {
+	val out = ByteArrayOutputStream()
+	try {
+		while (true) {
+			val c = readU8()
+			if (c.toChar() == eol) break
+			out.write(c)
+		}
+	} catch (e: EOFException) {
+	}
+	out.toByteArray().toString(Charsets.UTF_8)
+}

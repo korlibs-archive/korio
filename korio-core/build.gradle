@@ -3,7 +3,7 @@ apply from: "../include.gradle"
 apply plugin: 'kotlin'
 
 sourceSets {
-	main.java.srcDirs = ['src', 'src_serviceloader']
+	main.java.srcDirs = ['src', 'src_serviceloader', 'src_jvmcommon']
 	test.java.srcDirs = ['test']
 	main.resources.srcDirs = ['resources']
 	test.resources.srcDirs = ['testresources']
