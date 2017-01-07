@@ -7,6 +7,7 @@ import com.soywiz.korio.async.toEventLoop
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
+import com.soywiz.korio.util.isAliveJre7
 import com.soywiz.korio.vfs.*
 import java.io.*
 import java.nio.ByteBuffer
@@ -45,13 +46,6 @@ class LocalVfsProviderJvm : LocalVfsProvider {
 			p.waitFor()
 			//handler.onCompleted(p.exitValue())
 			p.exitValue()
-		}
-
-		private val Process.isAliveJre7: Boolean get() = try {
-			exitValue()
-			false
-		} catch (e: IllegalThreadStateException) {
-			true
 		}
 
 		private fun InputStream.readAvailableChunk(readRest: Boolean): ByteArray {

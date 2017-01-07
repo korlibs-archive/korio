@@ -5,6 +5,7 @@ import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
+import com.soywiz.korio.util.isAliveJre7
 import com.soywiz.korio.vfs.*
 import java.io.*
 
@@ -27,7 +28,7 @@ class LocalVfsProviderAndroid : LocalVfsProvider {
 				if (o.isNotEmpty()) handler.onOut(o)
 				if (e.isNotEmpty()) handler.onErr(e)
 				if (closing) break
-				if (o.isEmpty() && e.isEmpty() && !p.isAlive) {
+				if (o.isEmpty() && e.isEmpty() && !p.isAliveJre7) {
 					closing = true
 					continue
 				}
