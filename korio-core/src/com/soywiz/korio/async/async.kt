@@ -4,7 +4,9 @@ import com.soywiz.korio.util.OS
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.coroutines.*
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.startCoroutine
+import kotlin.coroutines.suspendCoroutine
 
 val workerLazyPool by lazy { Executors.newCachedThreadPool() }
 var tasksInProgress = AtomicInteger(0)

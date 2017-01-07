@@ -1,7 +1,6 @@
 package com.soywiz.korio.vfs
 
 import java.io.File
-import java.util.*
 
 fun LocalVfs(base: String): VfsFile = LocalVfs()[base]
 fun TempVfs() = LocalVfs()[System.getProperty("java.io.tmpdir")]

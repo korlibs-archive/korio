@@ -1,6 +1,5 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.util.OS
 import java.io.File
 import java.util.*
 

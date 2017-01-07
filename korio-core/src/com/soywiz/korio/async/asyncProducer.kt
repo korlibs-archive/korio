@@ -2,7 +2,6 @@ package com.soywiz.korio.async
 
 import java.util.*
 import java.util.concurrent.CancellationException
-import kotlin.coroutines.Continuation
 import kotlin.coroutines.startCoroutine
 import kotlin.coroutines.suspendCoroutine
 

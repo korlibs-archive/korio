@@ -60,6 +60,7 @@ class ResourcesVfsProviderAndroid : ResourcesVfsProvider {
 	val merged = object : MergedVfs() {
 		override fun toString(): String = "ResourcesVfs"
 	}
+
 	override fun invoke(): Vfs = object : Vfs.Decorator(merged.root) {
 		suspend override fun init() = asyncFun {
 			val ai = KorioAndroidContext.applicationInfo

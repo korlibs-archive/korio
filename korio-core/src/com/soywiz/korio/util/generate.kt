@@ -20,15 +20,22 @@ fun <T> generate(block: suspend Generator<T>.() -> Unit): Iterable<T> = object :
 	}
 }
 
-private class GeneratorIterator<T>: AbstractIterator<T>(), Generator<T>, Continuation<Unit> {
+private class GeneratorIterator<T> : AbstractIterator<T>(), Generator<T>, Continuation<Unit> {
 	lateinit var nextStep: Continuation<Unit>
 
 	// AbstractIterator implementation
-	override fun computeNext() { nextStep.resume(Unit) }
+	override fun computeNext() {
+		nextStep.resume(Unit)
+	}
 
 	// Completion continuation implementation
-	override fun resume(value: Unit) { done() }
-	override fun resumeWithException(exception: Throwable) { throw exception }
+	override fun resume(value: Unit) {
+		done()
+	}
+
+	override fun resumeWithException(exception: Throwable) {
+		throw exception
+	}
 
 	// Generator implementation
 	override suspend fun yield(value: T) {

@@ -11,14 +11,14 @@ class CopyToTreeTest {
 	@Test
 	fun name() = sync {
 		val mem = MemoryVfs(mapOf(
-				"root.txt" to "hello".toByteArray().openAsync(),
-				"hello/world.txt" to "hello".toByteArray().openAsync()
+			"root.txt" to "hello".toByteArray().openAsync(),
+			"hello/world.txt" to "hello".toByteArray().openAsync()
 		))
 		val out = MemoryVfs()
 		mem.copyToTree(out)
 		Assert.assertEquals(
-				"[/root.txt, /hello, /hello/world.txt]",
-				out.listRecursive().map { it.fullname }.toList().toString()
+			"[/root.txt, /hello, /hello/world.txt]",
+			out.listRecursive().map { it.fullname }.toList().toString()
 		)
 	}
 }

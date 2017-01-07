@@ -76,7 +76,7 @@ open class NodeVfs : Vfs() {
 			node.stream = MemorySyncStream().toAsync()
 		}
 		node?.stream?.clone()
-				?: throw FileNotFoundException(path)
+			?: throw FileNotFoundException(path)
 	}
 
 	suspend override fun stat(path: String): VfsStat = asyncFun {

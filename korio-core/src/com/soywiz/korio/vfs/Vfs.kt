@@ -6,7 +6,6 @@ import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.readBytes
 import com.soywiz.korio.stream.writeBytes
-import com.soywiz.korio.util.use
 
 abstract class Vfs {
 	open val absolutePath: String = ""

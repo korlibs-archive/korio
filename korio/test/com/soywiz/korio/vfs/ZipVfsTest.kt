@@ -6,11 +6,6 @@ import com.soywiz.korio.stream.readAvailable
 import org.junit.Assert
 import org.junit.Test
 import java.text.SimpleDateFormat
-import java.time.ZonedDateTime
-import java.time.format.DateTimeFormatter
-import java.util.*
-import java.util.TimeZone
-import java.util.Calendar
 
 class ZipVfsTest {
 	@Test

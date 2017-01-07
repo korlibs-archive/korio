@@ -4,7 +4,6 @@ import com.jtransc.annotation.JTranscMethodBody
 import com.jtransc.js.JsDynamic
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.util.OS
-import kotlin.coroutines.CoroutineIntrinsics
 
 object JsUtils {
 	suspend fun readRangeBytes(url: String, start: Double, end: Double): ByteArray = asyncFun {
