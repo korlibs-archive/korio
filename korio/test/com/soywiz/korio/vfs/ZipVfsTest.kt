@@ -37,8 +37,8 @@ class ZipVfsTest {
 		)
 
 		Assert.assertEquals(
-			"2016-12-26T18:24:52",
-			DateTimeFormatter.ISO_DATE_TIME.format(helloZip["hello/world.txt"].stat().createLocalDate)
+			"2016-12-26 18:24:52",
+			SimpleDateFormat("YYYY-MM-dd HH:mm:ss").format(helloZip["hello/world.txt"].stat().createDate)
 		)
 	}
 
