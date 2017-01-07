@@ -34,7 +34,7 @@ class AndroidAsyncServer(override val requestPort: Int, override val host: Strin
 	private val s: ServerSocket = ServerSocket()
 
 	suspend fun init() = executeInWorker {
-		s.bind(InetSocketAddress(host, port))
+		s.bind(InetSocketAddress(host, requestPort))
 		for (n in 0 until 100) {
 			if (s.isBound) break
 			sleep(50)

@@ -55,7 +55,7 @@ class JsJvmAsyncServer(override val requestPort: Int, override val host: String,
 	val ssc = AsynchronousServerSocketChannel.open()
 
 	suspend fun init() = asyncFun {
-		ssc.bind(InetSocketAddress(host, port), backlog)
+		ssc.bind(InetSocketAddress(host, requestPort), backlog)
 		for (n in 0 until 100) {
 			if (ssc.isOpen) break
 			sleep(50)
