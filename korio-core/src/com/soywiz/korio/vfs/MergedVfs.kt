@@ -25,7 +25,7 @@ open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
 	}
 
 	suspend override fun list(path: String): AsyncSequence<VfsFile> = asyncGenerate {
-		val emitted = HashSet<String>()
+		val emitted = LinkedHashSet<String>()
 		for (vfs in vfsList) {
 			val items = try {
 				vfs[path].list()

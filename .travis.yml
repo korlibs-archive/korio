@@ -4,6 +4,7 @@ jdk:
   - oraclejdk7
 
 script:
+  - jdk_switcher use oraclejdk8
   - ./gradlew -s -i check install distJs
 
 before_cache:
