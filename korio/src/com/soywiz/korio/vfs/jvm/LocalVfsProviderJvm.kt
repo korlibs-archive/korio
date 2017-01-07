@@ -36,7 +36,7 @@ class LocalVfsProviderJvm : LocalVfsProvider {
 				if (o.isNotEmpty()) handler.onOut(o)
 				if (e.isNotEmpty()) handler.onErr(e)
 				if (closing) break
-				if (o.isEmpty() && e.isEmpty() && !p.isAlive) {
+				if (o.isEmpty() && e.isEmpty() && !p.isAliveJre7) {
 					closing = true
 					continue
 				}
@@ -45,7 +45,13 @@ class LocalVfsProviderJvm : LocalVfsProvider {
 			p.waitFor()
 			//handler.onCompleted(p.exitValue())
 			p.exitValue()
+		}
 
+		private val Process.isAliveJre7: Boolean get() = try {
+			exitValue()
+			false
+		} catch (e: IllegalThreadStateException) {
+			true
 		}
 
 		private fun InputStream.readAvailableChunk(readRest: Boolean): ByteArray {
