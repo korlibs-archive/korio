@@ -8,7 +8,7 @@ fun Int.extract(offset: Int): Boolean = ((this ushr offset) and 1) != 0
 
 fun Int.insert(value: Int, offset: Int, count: Int): Int {
 	val mask = (1 shl count) - 1
-	val clearValue = value and (mask shl offset).inv()
+	val clearValue = this and (mask shl offset).inv()
 	return clearValue or ((value and mask) shl offset)
 }
 
