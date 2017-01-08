@@ -26,3 +26,13 @@ fun String.lastIndexOfOrNull(char: Char, startIndex: Int = lastIndex): Int? {
 	val i = this.lastIndexOf(char, startIndex)
 	return if (i >= 0) i else null
 }
+
+fun String.splitInChunks(size: Int): List<String> {
+	val out = arrayListOf<String>()
+	var pos = 0
+	while (pos < this.length) {
+		out += this.substring(pos, Math.min(this.length, pos + size))
+		pos += size
+	}
+	return out
+}

@@ -10,6 +10,5 @@ class Base64Test {
 		Assert.assertEquals("aGVsbG8=", Base64.encode("hello".toByteArray()))
 		Assert.assertArrayEquals(byteArrayOf(1, 2, 3), Base64.decode("AQID"))
 		Assert.assertEquals("hello", Base64.decode("aGVsbG8=").toString(Charsets.UTF_8))
-
 	}
 }
