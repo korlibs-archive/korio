@@ -29,14 +29,18 @@ open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
 		for (vfs in vfsList) {
 			val items = try {
 				vfs[path].list()
-			} catch (e: UnsupportedOperationException) {
+			} catch (e: Throwable) {
 				continue
 			}
-			for (v in items) {
-				if (v.basename !in emitted) {
-					emitted += v.basename
-					yield(file("$path/${v.basename}"))
+			try {
+				for (v in items) {
+					if (v.basename !in emitted) {
+						emitted += v.basename
+						yield(file("$path/${v.basename}"))
+					}
 				}
+			} catch (e: Throwable) {
+
 			}
 		}
 	}
