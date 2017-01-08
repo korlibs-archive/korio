@@ -36,3 +36,21 @@ fun String.splitInChunks(size: Int): List<String> {
 	}
 	return out
 }
+
+fun String.substr(start: Int): String = this.substr(start, this.length)
+
+fun String.substr(start: Int, length: Int): String {
+	val low = (if (start >= 0) start else this.length + start).clamp(0, this.length)
+	val high = (if (length >= 0) low + length else this.length + length).clamp(0, this.length)
+	if (high < low) {
+		return ""
+	} else {
+		return this.substring(low, high)
+	}
+}
+
+fun String.transform(transform: (Char) -> String): String {
+	var out = ""
+	for (ch in this) out += transform(ch)
+	return out
+}

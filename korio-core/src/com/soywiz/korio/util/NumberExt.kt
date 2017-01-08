@@ -3,10 +3,11 @@
 package com.soywiz.korio.util
 
 inline fun Int.mask(): Int = (1 shl this) - 1
+inline fun Long.mask(): Long = (1L shl this.toInt()) - 1L
 fun Int.toUInt(): Long = this.toLong() and 0xFFFFFFFFL
 fun Int.getBits(offset: Int, count: Int): Int = (this ushr offset) and count.mask()
 fun Int.extract(offset: Int, count: Int): Int = (this ushr offset) and count.mask()
-fun Int.extract8(offset: Int): Int = this.extract(offset, 8)
+fun Int.extract8(offset: Int): Int = (this ushr offset) and 0xFF
 fun Int.extract(offset: Int): Boolean = ((this ushr offset) and 1) != 0
 
 fun Int.extractScaled(offset: Int, count: Int, scale: Int): Int {
@@ -51,3 +52,11 @@ fun Long.toIntSafe(): Int {
 	if (this.toInt().toLong() != this) throw IllegalArgumentException("Long doesn't fit Integer")
 	return this.toInt()
 }
+
+fun String.toNumber(): Number = this.toIntOrNull() as Number? ?: this.toLongOrNull() as Number? ?: this.toDoubleOrNull() as Number? ?: 0
+
+fun Byte.toUnsigned() = this.toInt() and 0xFF
+fun Int.toUnsigned() = this.toLong() and 0xFFFFFFFFL
+
+fun Int.signExtend(bits: Int) = (this shl (32 - bits)) shr (32 - bits)
+fun Long.signExtend(bits: Int) = (this shl (64 - bits)) shr (64 - bits)
