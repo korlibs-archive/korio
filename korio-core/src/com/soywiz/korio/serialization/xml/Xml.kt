@@ -3,47 +3,47 @@ package com.soywiz.korio.serialization.xml
 import org.intellij.lang.annotations.Language
 import java.util.*
 
-data class Xml2(val type: Type, val name: String, val attributes: Map<String, String>, val allChildren: List<Xml2>, val content: String) {
-	val descendants: Iterable<Xml2> get() = allChildren.flatMap { it.allChildren + it }
+data class Xml(val type: Type, val name: String, val attributes: Map<String, String>, val allChildren: List<Xml>, val content: String) {
+	val descendants: Iterable<Xml> get() = allChildren.flatMap { it.allChildren + it }
 	val allChildrenNoComments get() = allChildren.filter { it.type != Type.COMMENT }
 
 	companion object {
-		fun Tag(tagName: String, attributes: Map<String, Any?>, children: List<Xml2>): Xml2 {
-			return Xml2(Xml2.Type.NODE, tagName, attributes.filter { it.value != null }.map { it.key to it.value.toString() }.toMap(), children, "")
+		fun Tag(tagName: String, attributes: Map<String, Any?>, children: List<Xml>): Xml {
+			return Xml(Xml.Type.NODE, tagName, attributes.filter { it.value != null }.map { it.key to it.value.toString() }.toMap(), children, "")
 		}
 
-		fun Text(text: String): Xml2 {
-			return Xml2(Xml2.Type.TEXT, "_text_", mapOf(), listOf(), text)
+		fun Text(text: String): Xml {
+			return Xml(Xml.Type.TEXT, "_text_", mapOf(), listOf(), text)
 		}
 
-		fun Comment(text: String): Xml2 {
-			return Xml2(Xml2.Type.COMMENT, "_comment_", mapOf(), listOf(), text)
+		fun Comment(text: String): Xml {
+			return Xml(Xml.Type.COMMENT, "_comment_", mapOf(), listOf(), text)
 		}
 
-		operator fun invoke(@Language("xml") str: String): Xml2 = parse(str)
+		//operator fun invoke(@Language("xml") str: String): Xml = parse(str)
 
-		fun parse(@Language("xml") str: String): Xml2 {
+		fun parse(@Language("xml") str: String): Xml {
 			try {
-				val stream = Xml2Stream.parse(str).iterator()
+				val stream = XmlStream.parse(str).iterator()
 
-				data class Level(val children: List<Xml2>, val close: Xml2Stream.Element.CloseTag?)
+				data class Level(val children: List<Xml>, val close: XmlStream.Element.CloseTag?)
 
 				fun level(): Level {
-					var children = listOf<Xml2>()
+					var children = listOf<Xml>()
 
 					while (stream.hasNext()) {
 						val tag = stream.next()
 						when (tag) {
-							is Xml2Stream.Element.ProcessingInstructionTag -> Unit
-							is Xml2Stream.Element.CommentTag -> children += Xml2.Comment(tag.text)
-							is Xml2Stream.Element.Text -> children += Xml2.Text(tag.text)
-							is Xml2Stream.Element.OpenCloseTag -> children += Xml2.Tag(tag.name, tag.attributes, listOf())
-							is Xml2Stream.Element.OpenTag -> {
+							is XmlStream.Element.ProcessingInstructionTag -> Unit
+							is XmlStream.Element.CommentTag -> children += Xml.Comment(tag.text)
+							is XmlStream.Element.Text -> children += Xml.Text(tag.text)
+							is XmlStream.Element.OpenCloseTag -> children += Xml.Tag(tag.name, tag.attributes, listOf())
+							is XmlStream.Element.OpenTag -> {
 								val out = level()
 								if (out.close?.name != tag.name) throw IllegalArgumentException("Expected ${tag.name} but was ${out.close?.name}")
-								children += Xml2(Xml2.Type.NODE, tag.name, tag.attributes, out.children, "")
+								children += Xml(Xml.Type.NODE, tag.name, tag.attributes, out.children, "")
 							}
-							is Xml2Stream.Element.CloseTag -> return Level(children, tag)
+							is XmlStream.Element.CloseTag -> return Level(children, tag)
 							else -> throw IllegalArgumentException("Unhandled $tag")
 						}
 					}
@@ -52,12 +52,12 @@ data class Xml2(val type: Type, val name: String, val attributes: Map<String, St
 				}
 
 				val children = level().children
-				return children.firstOrNull { it.type == Xml2.Type.NODE }
+				return children.firstOrNull { it.type == Xml.Type.NODE }
 					?: children.firstOrNull()
-					?: Xml2.Text("")
+					?: Xml.Text("")
 			} catch (t: NoSuchElementException) {
 				println("ERROR: XML: $str thrown a NoSuchElementException")
-				return Xml2.Text("!!ERRORED!!")
+				return Xml.Text("!!ERRORED!!")
 			}
 		}
 	}
@@ -94,9 +94,9 @@ data class Xml2(val type: Type, val name: String, val attributes: Map<String, St
 		Type.COMMENT -> "<!--$content-->"
 	}
 
-	operator fun get(name: String): Iterable<Xml2> = children(name)
-	fun children(name: String): Iterable<Xml2> = allChildren.filter { it.name == name }
-	fun child(name: String): Xml2? = children(name).firstOrNull()
+	operator fun get(name: String): Iterable<Xml> = children(name)
+	fun children(name: String): Iterable<Xml> = allChildren.filter { it.name == name }
+	fun child(name: String): Xml? = children(name).firstOrNull()
 	fun childText(name: String): String? = child(name)?.text
 
 	fun double(name: String, defaultValue: Double = 0.0): Double = this.attributes[name]?.toDoubleOrNull() ?: defaultValue

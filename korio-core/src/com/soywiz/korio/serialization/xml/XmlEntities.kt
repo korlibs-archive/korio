@@ -4,7 +4,7 @@ import com.soywiz.korio.util.StrReader
 import com.soywiz.korio.util.flip
 import com.soywiz.korio.util.transform
 
-object Xml2Entities {
+object XmlEntities {
 	// Predefined entities in XML 1.0
 	private val charToEntity = mapOf('"' to "&quote;", '\'' to "&apos;", '<' to "&lt;", '>' to "&gt;", '&' to "&amp;")
 	private val entities = StrReader.Literals.fromList(charToEntity.values.toTypedArray())

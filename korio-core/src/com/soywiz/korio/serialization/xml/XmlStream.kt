@@ -3,7 +3,7 @@ package com.soywiz.korio.serialization.xml
 import com.soywiz.korio.util.StrReader
 import com.soywiz.korio.util.substr
 
-object Xml2Stream {
+object XmlStream {
 	fun parse(str: String): Iterable<Element> = parse(StrReader(str))
 	fun parse(r: StrReader): Iterable<Element> = Xml2Iterable(r)
 
@@ -15,7 +15,7 @@ object Xml2Stream {
 
 		fun flushBuffer() {
 			if (buffer.isNotEmpty()) {
-				current = Element.Text(Xml2Entities.decode(buffer))
+				current = Element.Text(XmlEntities.decode(buffer))
 				buffer = ""
 			}
 		}
@@ -73,10 +73,10 @@ object Xml2Stream {
 									r.skipSpaces()
 									val argsQuote = r.matchSingleOrDoubleQuoteString()
 									attributes[key] = if (argsQuote != null) {
-										Xml2Entities.decode(argsQuote.substr(1, -1))
+										XmlEntities.decode(argsQuote.substr(1, -1))
 									} else {
 										val argsNq = r.matchIdentifier()
-										Xml2Entities.decode(argsNq!!)
+										XmlEntities.decode(argsNq!!)
 									}
 								} else {
 									attributes[key] = key
