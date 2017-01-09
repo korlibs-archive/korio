@@ -21,6 +21,7 @@ fun Int.extractScaledf01(offset: Int, count: Int): Double {
 }
 
 fun Int.extractScaledFF(offset: Int, count: Int): Int = extractScaled(offset, count, 0xFF)
+fun Int.extractScaledFFDefault(offset: Int, count: Int, default: Int): Int = if (count == 0) default else extractScaled(offset, count, 0xFF)
 
 fun Int.insert(value: Int, offset: Int, count: Int): Int {
 	val mask = count.mask()
@@ -38,6 +39,7 @@ fun Int.insertScaled(value: Int, offset: Int, count: Int, scale: Int): Int {
 }
 
 fun Int.insertScaledFF(value: Int, offset: Int, count: Int): Int = this.insertScaled(value, offset, count, 0xFF)
+fun Int.insertScaledFFDefault(value: Int, offset: Int, count: Int, default: Int = 0): Int = if (count == 0) default else this.insertScaled(value, offset, count, 0xFF)
 
 fun Long.nextAlignedTo(align: Long) = if (this % align == 0L) {
 	this
