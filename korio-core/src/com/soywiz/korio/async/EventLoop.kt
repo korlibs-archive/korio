@@ -7,7 +7,7 @@ import kotlin.coroutines.suspendCoroutine
 
 interface EventLoop {
 	companion object {
-		private var _impl: EventLoop? = null
+		var _impl: EventLoop? = null
 		var impl: EventLoop
 			set(value) {
 				_impl = value

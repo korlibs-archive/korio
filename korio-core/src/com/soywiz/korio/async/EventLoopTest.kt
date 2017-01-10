@@ -8,13 +8,7 @@ import kotlin.Comparator
 class EventLoopTest : EventLoop {
 	var time = 0L
 
-	data class Timer(val time: Long, val handler: () -> Unit) : Comparable<Timer> {
-		override fun compareTo(other: Timer): Int = this.time.compareTo(other.time).compareToChain {
-			Objects.hash(this).compareTo(Objects.hash(other))
-		}
-	}
-
-	val timers = TreeSet<Timer>(Comparator<Timer> { a, b -> a.compareTo(b) })
+	val timers = TreeMap<Long, ArrayList<() -> Unit>>()
 
 	override fun init() {
 	}
@@ -36,10 +30,10 @@ class EventLoopTest : EventLoop {
 	}
 
 	override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
-		val info = Timer(this.time + ms, callback)
-		timers += info
+		val items = timers.getOrPut(this.time + ms) { ArrayList() }
+		items += callback
 		return Closeable {
-			timers -= info
+			items -= callback
 		}
 	}
 
@@ -51,11 +45,12 @@ class EventLoopTest : EventLoop {
 		time += ms
 		//println("$time, $timers")
 		while (timers.isNotEmpty()) {
-			val first = timers.first()
-			if (time >= first.time) {
-				timers.remove(first)
+			timers.firstEntry()
+			val (firstTime, firstHandlers) = timers.firstEntry()
+			if (time >= firstTime) {
+				timers.remove(firstTime)
 				//println("handler!")
-				first.handler()
+				for (handler in firstHandlers) handler()
 			} else {
 				break
 			}

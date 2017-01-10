@@ -41,16 +41,16 @@ operator fun ExecutorService.invoke(callback: () -> Unit) {
 	this.execute(callback)
 }
 
-// Wait for a suspension block for testing purposes
-fun <T> sync(block: suspend () -> T): T {
-	if (OS.isJs) {
-		throw UnsupportedOperationException("sync block is not supported on javascript target")
-	} else {
+fun <TEventLoop : EventLoop> sync(el: TEventLoop, block: suspend TEventLoop.() -> Unit): Unit {
+	val oldEl = EventLoop._impl
+	EventLoop._impl = el
+	try {
+		if (OS.isJs) throw UnsupportedOperationException("sync block is not supported on javascript target. It is intended for testing.")
 		var result: Any? = null
 
 		tasksInProgress.incrementAndGet()
-		block.startCoroutine(object : Continuation<T> {
-			override fun resume(value: T) = run {
+		block.startCoroutine(el, object : Continuation<Unit> {
+			override fun resume(value: Unit) = run {
 				tasksInProgress.decrementAndGet()
 				result = value
 			}
@@ -63,8 +63,33 @@ fun <T> sync(block: suspend () -> T): T {
 
 		while (result == null) Thread.sleep(1L)
 		if (result is Throwable) throw result as Throwable
-		return result as T
+		return Unit
+	} finally {
+		EventLoop._impl = oldEl
 	}
+}
+
+// Wait for a suspension block for testing purposes
+fun <T> sync(block: suspend () -> T): T {
+	if (OS.isJs) throw UnsupportedOperationException("sync block is not supported on javascript target. It is intended for testing.")
+	var result: Any? = null
+
+	tasksInProgress.incrementAndGet()
+	block.startCoroutine(object : Continuation<T> {
+		override fun resume(value: T) = run {
+			tasksInProgress.decrementAndGet()
+			result = value
+		}
+
+		override fun resumeWithException(exception: Throwable) = run {
+			tasksInProgress.decrementAndGet()
+			result = exception
+		}
+	})
+
+	while (result == null) Thread.sleep(1L)
+	if (result is Throwable) throw result as Throwable
+	return result as T
 }
 
 fun <T> spawn(task: suspend () -> T): Promise<T> {
