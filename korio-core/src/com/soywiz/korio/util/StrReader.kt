@@ -68,17 +68,17 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 		return null
 	}
 
-	fun matchEReg(v: Regex): String? {
-		val result = v.find(this.str.substring(this.pos)) ?: return null
-		val m = result.groups[0]!!.value
-		this.pos += m.length
-		return m
-	}
-
-	fun matchERegRange(v: Regex): TRange? {
-		val result = v.find(this.str.substring(this.pos)) ?: return null
-		return this.readRange(result.groups[0]!!.value.length)
-	}
+	//fun matchEReg(v: Regex): String? {
+	//	val result = v.find(this.str.substring(this.pos)) ?: return null
+	//	val m = result.groups[0]!!.value
+	//	this.pos += m.length
+	//	return m
+	//}
+//
+	//fun matchERegRange(v: Regex): TRange? {
+	//	val result = v.find(this.str.substring(this.pos)) ?: return null
+	//	return this.readRange(result.groups[0]!!.value.length)
+	//}
 
 	fun matchStartEnd(start: String, end: String): String? {
 		if (substr(this.pos, start.length) != start) return null
