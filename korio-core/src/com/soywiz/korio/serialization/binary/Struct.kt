@@ -11,7 +11,6 @@ import java.lang.reflect.Field
 import java.nio.ByteOrder
 import java.nio.charset.Charset
 import java.util.*
-import kotlin.reflect.KProperty
 
 interface Struct {
 	sealed class Type(val size: Int) {
@@ -39,7 +38,9 @@ interface Struct {
 annotation class Size(val size: Int)
 @Target(AnnotationTarget.FIELD) annotation class Offset(val offset: Int)
 @Target(AnnotationTarget.FIELD) annotation class Count(val count: Int)
+@Target(AnnotationTarget.FIELD) annotation class DynamicCount(val fieldname: String)
 @Target(AnnotationTarget.FIELD) annotation class Encoding(val name: String)
+@Target(AnnotationTarget.FIELD) annotation class Order(val order: Int)
 //@Target(AnnotationTarget.FIELD) annotation class U1
 //@Target(AnnotationTarget.FIELD) annotation class U2
 //@Target(AnnotationTarget.FIELD) annotation class U4
@@ -90,8 +91,11 @@ class StructReflect<T>(val clazz: Class<T>) {
 		}
 	}
 
+	var lastOffset = 0
+
 	val fieldsWithAnnotation = fields
-		.filter { it.getAnnotation(Offset::class.java) != null }
+		.filter { (it.getAnnotation(Offset::class.java) != null) || (it.getAnnotation(Order::class.java) != null) }
+		.sortedBy { it.getAnnotation(Offset::class.java)?.offset ?: it.getAnnotation(Order::class.java)?.order ?: 0 }
 		.map {
 			val bo = if (it.getAnnotation(LE::class.java) != null) {
 				ByteOrder.LITTLE_ENDIAN
@@ -101,13 +105,16 @@ class StructReflect<T>(val clazz: Class<T>) {
 				null
 			}
 
-			val fieldInfo = it.getAnnotation(Offset::class.java)
 			val ab = bo ?: globalBo ?: ByteOrder.LITTLE_ENDIAN
 			val littleEndian = (ab == ByteOrder.LITTLE_ENDIAN)
 
 			val type = decodeType(it, it.type)
 
-			FieldInfo(it, fieldInfo.offset, type, littleEndian)
+			val offset = it.getAnnotation(Offset::class.java)?.offset ?: lastOffset
+
+			lastOffset = offset + type.size
+
+			FieldInfo(it, offset, type, littleEndian)
 		}
 		.sortedBy { it.offset }
 
@@ -159,7 +166,13 @@ fun ByteArray.readStructElement(offset: Int, type: Struct.Type, littleEndian: Bo
 				Struct.Type.S8 -> if (littleEndian) readLongArray_le(offset, count) else readLongArray_be(offset, count)
 				Struct.Type.F4 -> if (littleEndian) readFloatArray_le(offset, count) else readFloatArray_be(offset, count)
 				Struct.Type.F8 -> if (littleEndian) readDoubleArray_le(offset, count) else readDoubleArray_be(offset, count)
-				else -> (0 until count).map { readStructElement(offset + elementSize * it, elementType, littleEndian) }
+				else -> {
+
+					val al = (0 until count).map { readStructElement(offset + elementSize * it, elementType, littleEndian) }
+					val out = Array.newInstance(al.first().javaClass, al.size)
+					for (n in 0 until count) Array.set(out, n, al[n])
+					out
+				}
 			}
 		}
 		is Struct.Type.STRING -> {

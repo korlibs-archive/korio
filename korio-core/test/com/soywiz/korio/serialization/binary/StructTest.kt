@@ -26,6 +26,26 @@ class StructTest {
 		@Offset(0) @Count(20) @Encoding("UTF-8") @JvmField val a: String
 	) : Struct
 
+	data class NoSizeNoOffset(
+		@Order(0) val magic: Int,
+		@Order(1) val ver1: Byte,
+		@Order(2) val ver2: Byte
+	) : Struct
+
+	@Suppress("ArrayInDataClass")
+	data class NoSizeNoOffsetArray(
+		@Order(0) val magic: Int,
+		@Order(1) @Count(2) val items: Array<NoSizeNoOffset>,
+		@Order(2) val v2: Int
+	) : Struct
+
+	// Not supported yet!
+	//class DynamicLength(
+	//	@Order(0) val magic: Int,
+	//	@Order(1) val len: Int,
+	//	@Order(2) @DynamicCount("len") @Encoding("UTF-8") val str: String
+	//) : Struct
+
 	@Test
 	fun name() {
 		val mem = MemorySyncStream()
@@ -73,4 +93,26 @@ class StructTest {
 		val info = mem.readStruct<StructWithString>()
 		Assert.assertEquals("hello", info.a)
 	}
+
+	@Test
+	fun name5() {
+		val mem = MemorySyncStream()
+		mem.writeStruct(NoSizeNoOffset(1, 2, 3))
+		Assert.assertEquals(6, mem.position)
+		mem.position = 0
+		val info = mem.readStruct<NoSizeNoOffset>()
+		Assert.assertEquals("NoSizeNoOffset(magic=1, ver1=2, ver2=3)", info.toString())
+	}
+
+	@Test
+	fun name6() {
+		val mem = MemorySyncStream()
+		mem.writeStruct(NoSizeNoOffsetArray(1, arrayOf(NoSizeNoOffset(2, 3, 4), NoSizeNoOffset(5, 6, 7)), 8))
+		Assert.assertEquals(4 + (6 * 2) + 4, mem.position)
+		mem.position = 0
+		val info = mem.readStruct<NoSizeNoOffsetArray>()
+		Assert.assertEquals("NoSizeNoOffsetArray(magic=1, items=[NoSizeNoOffset(magic=2, ver1=3, ver2=4), NoSizeNoOffset(magic=5, ver1=6, ver2=7)], v2=8)", info.toString())
+	}
+
+
 }
