@@ -3,6 +3,13 @@ package com.soywiz.korio.util
 fun ByteArray.write8(o: Int, v: Int) = run { this[o] = v }
 fun ByteArray.write8(o: Int, v: Long) = run { this[o] = v }
 
+fun ByteArray.write16_LEBE(o: Int, v: Int, little: Boolean) = if (little) write16_le(o, v) else write16_be(o, v)
+fun ByteArray.write32_LEBE(o: Int, v: Int, little: Boolean) = if (little) write32_le(o, v) else write32_be(o, v)
+fun ByteArray.write64_LEBE(o: Int, v: Long, little: Boolean) = if (little) write64_le(o, v) else write64_be(o, v)
+
+fun ByteArray.writeF32_LEBE(o: Int, v: Float, little: Boolean) = if (little) writeF32_le(o, v) else writeF32_be(o, v)
+fun ByteArray.writeF64_LEBE(o: Int, v: Double, little: Boolean) = if (little) writeF64_le(o, v) else writeF64_be(o, v)
+
 fun ByteArray.write16_le(o: Int, v: Int) = run { this[o + 0] = v.extract8(0); this[o + 1] = v.extract8(8) }
 fun ByteArray.write24_le(o: Int, v: Int) = run { this[o + 0] = v.extract8(0); this[o + 1] = v.extract8(8); this[o + 2] = v.extract8(16) }
 fun ByteArray.write32_le(o: Int, v: Int) = run { this[o + 0] = v.extract8(0); this[o + 1] = v.extract8(8); this[o + 2] = v.extract8(16); this[o + 3] = v.extract8(24) }

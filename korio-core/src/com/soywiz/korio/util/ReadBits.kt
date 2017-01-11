@@ -2,6 +2,8 @@
 
 package com.soywiz.korio.util
 
+import java.util.*
+
 private inline fun ByteArray._read8(o: Int): Int = this[o].toInt()
 
 private inline fun ByteArray._read16_le(o: Int): Int = (readU8(o + 0) shl 0) or (readU8(o + 1) shl 8)
@@ -48,6 +50,12 @@ fun ByteArray.readS64_be(o: Int): Long = _read64_be(o)
 fun ByteArray.readF32_be(o: Int): Float = java.lang.Float.intBitsToFloat(_read32_be(o))
 fun ByteArray.readF64_be(o: Int): Double = java.lang.Double.longBitsToDouble(_read64_be(o))
 
+fun ByteArray.readS16_LEBE(o: Int, little: Boolean): Int = if (little) readS16_le(o) else readS16_be(o)
+fun ByteArray.readS32_LEBE(o: Int, little: Boolean): Int = if (little) readS32_le(o) else readS32_be(o)
+fun ByteArray.readS64_LEBE(o: Int, little: Boolean): Long = if (little) readS64_le(o) else readS64_be(o)
+fun ByteArray.readF32_LEBE(o: Int, little: Boolean): Float = if (little) readF32_le(o) else readF32_be(o)
+fun ByteArray.readF64_LEBE(o: Int, little: Boolean): Double = if (little) readF64_le(o) else readF64_be(o)
+
 private inline fun <T> ByteArray.readTypedArray(o: Int, count: Int, elementSize: Int, crossinline gen: () -> T, crossinline read: ByteArray.(array: T, n: Int, pos: Int) -> Unit): T {
 	val array = gen()
 	var pos = o
@@ -57,6 +65,8 @@ private inline fun <T> ByteArray.readTypedArray(o: Int, count: Int, elementSize:
 	}
 	return array
 }
+
+fun ByteArray.readByteArray(o: Int, count: Int): ByteArray = Arrays.copyOfRange(this, o, o + count)
 
 fun ByteArray.readShortArray_le(o: Int, count: Int): ShortArray = this.readTypedArray(o, count, 2, { ShortArray(count) }, { array, n, pos -> array[n] = readS16_le(pos).toShort() })
 fun ByteArray.readCharArray_le(o: Int, count: Int): CharArray = this.readTypedArray(o, count, 2, { kotlin.CharArray(count) }, { array, n, pos -> array[n] = readS16_le(pos).toChar() })
