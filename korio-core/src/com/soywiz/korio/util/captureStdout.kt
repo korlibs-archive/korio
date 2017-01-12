@@ -1,5 +1,7 @@
 package com.soywiz.korio.util
 
+import com.soywiz.korio.async.asyncFun
+import com.soywiz.korio.async.await
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
 import java.io.PrintStream
@@ -11,7 +13,7 @@ object StdoutRouterStream : OutputStream() {
 		System.setOut(StdoutRouter)
 	}
 
-	private val routePerThread = ThreadLocal<OutputStream>()
+	internal val routePerThread = ThreadLocal<OutputStream>()
 
 	override fun write(b: Int) {
 		val os = routePerThread.get()
@@ -50,4 +52,16 @@ object StdoutRouter : PrintStream(StdoutRouterStream) {
 
 fun captureStdout(callback: () -> Unit): String {
 	return StdoutRouterStream.captureThreadSafe(callback).toString()
+}
+
+suspend fun asyncCaptureStdout(callback: suspend () -> Unit): String = asyncFun {
+	val out = ByteArrayOutputStream()
+	val old = StdoutRouterStream.routePerThread.get()
+	try {
+		StdoutRouterStream.routePerThread.set(out)
+		callback.await()
+	} finally {
+		StdoutRouterStream.routePerThread.set(old)
+	}
+	out.toString()
 }
