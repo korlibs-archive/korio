@@ -6,6 +6,8 @@ import java.util.concurrent.Executors
 import kotlin.concurrent.timerTask
 
 class EventLoopJvm : EventLoop {
+	override val available: Boolean get() = true
+
 	val tasksExecutor = Executors.newSingleThreadExecutor()
 
 	val timer = Timer(true)

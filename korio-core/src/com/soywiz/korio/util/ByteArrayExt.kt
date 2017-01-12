@@ -26,3 +26,8 @@ fun ByteArray.toHexString(): String {
 	}
 	return String(out)
 }
+
+fun ByteArray.indexOfElse(element: Byte, default: Int = this.size): Int {
+	val idx = this.indexOf(element)
+	return if (idx >= 0) idx else default
+}

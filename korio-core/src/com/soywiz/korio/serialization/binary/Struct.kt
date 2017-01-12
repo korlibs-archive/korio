@@ -55,8 +55,6 @@ class StructReflect<T>(val clazz: Class<T>) {
 
 	val cf = ClassFactory(clazz)
 	val constructor = clazz.declaredConstructors.firstOrNull() ?: throw IllegalArgumentException("Class $clazz doesn't have constructors")
-	val constructorDummyArgs = createDummyArgs(constructor)
-	val constructorAnnotations = constructor.parameterAnnotations
 	val fields = clazz.declaredFields
 	val globalBo = if (clazz.getAnnotation(LE::class.java) != null) {
 		ByteOrder.LITTLE_ENDIAN
@@ -124,7 +122,7 @@ class StructReflect<T>(val clazz: Class<T>) {
 		?: throw IllegalArgumentException("Empty struct $clazz or without @Offset")
 
 	@Suppress("UNCHECKED_CAST")
-	fun create(): T = constructor.newInstance(*constructorDummyArgs) as T
+	fun create(): T = cf.createDummy()
 
 	init {
 		for (f in fields) {
@@ -176,7 +174,8 @@ fun ByteArray.readStructElement(offset: Int, type: Struct.Type, littleEndian: Bo
 			}
 		}
 		is Struct.Type.STRING -> {
-			readByteArray(offset, type.count).toString(type.charset).trimEnd('\u0000')
+			val strBytes = readByteArray(offset, type.count)
+			Arrays.copyOf(strBytes, strBytes.indexOfElse(0)).toString(type.charset)
 		}
 	}
 }
@@ -230,20 +229,13 @@ fun <T : Struct> ByteArray.writeStruct(offset: Int, obj: T): ByteArray {
 	return out
 }
 
-fun <T : Struct> T.getStructBytes(): ByteArray {
-	return ByteArray(StructReflect[this.javaClass].size).writeStruct(0, this)
-}
+fun <T : Struct> T.getStructBytes(): ByteArray = ByteArray(StructReflect[this.javaClass].size).writeStruct(0, this)
 
-fun <T : Struct> SyncStream.writeStruct(obj: T) {
-	this.writeBytes(obj.getStructBytes())
-}
+fun <T : Struct> SyncStream.writeStruct(obj: T) = this.writeBytes(obj.getStructBytes())
 
 inline suspend fun <reified T : Struct> AsyncStream.readStruct() = this.readStruct(T::class.java)
 suspend fun <T : Struct> AsyncStream.readStruct(clazz: Class<T>): T = asyncFun {
 	readBytes(clazz.getStructSize()).readStruct(0, clazz)
 }
 
-suspend fun <T : Struct> AsyncStream.writeStruct(obj: T) = asyncFun {
-	this.writeBytes(obj.getStructBytes())
-
-}
+suspend fun <T : Struct> AsyncStream.writeStruct(obj: T) = asyncFun { this.writeBytes(obj.getStructBytes()) }

@@ -194,7 +194,17 @@ fun SyncStream.slice(): SyncStream = SyncStream(SliceSyncStreamBase(this.base, 0
 fun SyncStream.slice(range: IntRange): SyncStream = sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1))
 fun SyncStream.slice(range: LongRange): SyncStream = sliceWithBounds(range.start, (range.endInclusive + 1))
 
-fun SyncStream.sliceWithBounds(start: Long, end: Long): SyncStream = SyncStream(SliceSyncStreamBase(this.base, start, end))
+fun SyncStream.sliceWithBounds(start: Long, end: Long): SyncStream {
+	val len = this.length
+	val clampedStart = start.clamp(0, len)
+	val clampedEnd = end.clamp(0, len)
+	if (this.base is SliceSyncStreamBase) {
+		return SliceSyncStreamBase(this.base.base, this.base.baseStart + clampedStart, this.base.baseStart + clampedEnd).toSyncStream()
+	} else {
+		return SliceSyncStreamBase(this.base, clampedStart, clampedEnd).toSyncStream()
+	}
+}
+
 fun SyncStream.sliceWithSize(position: Long, length: Long): SyncStream = sliceWithBounds(position, position + length)
 
 fun SyncStream.readSlice(length: Long): SyncStream = sliceWithSize(position, length).apply {

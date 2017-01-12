@@ -51,7 +51,7 @@ object ISO {
 	}
 
 	class IsoReader(val s: AsyncStream) {
-		fun getSector(sector: Int, size: Int): AsyncStream = s.sliceWithSize(sector.toLong() * SECTOR_SIZE, size.toLong())
+		suspend fun getSector(sector: Int, size: Int): AsyncStream = s.sliceWithSize(sector.toLong() * SECTOR_SIZE, size.toLong())
 		suspend fun getSectorMemory(sector: Int, size: Int) = asyncFun { getSector(sector, size).readAvailable().openSync() }
 
 		suspend fun read(): IsoFile = asyncFun {
@@ -92,7 +92,7 @@ object ISO {
 			for (c in children) c.dump()
 		}
 
-		fun open2(mode: VfsOpenMode) = reader.getSector(record.extent, record.size)
+		suspend fun open2(mode: VfsOpenMode) = reader.getSector(record.extent, record.size)
 		operator fun get(name: String): IsoFile {
 			var current = this
 			for (part in name.split("/")) {

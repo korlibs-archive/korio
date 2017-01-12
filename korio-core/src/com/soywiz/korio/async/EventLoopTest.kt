@@ -1,14 +1,14 @@
 package com.soywiz.korio.async
 
-import com.soywiz.korio.util.compareToChain
 import java.io.Closeable
 import java.util.*
-import kotlin.Comparator
 
 class EventLoopTest : EventLoop {
 	var time = 0L
 
 	val timers = TreeMap<Long, ArrayList<() -> Unit>>()
+
+	override val available = true
 
 	override fun init() {
 	}

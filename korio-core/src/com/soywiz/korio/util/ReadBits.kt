@@ -2,6 +2,7 @@
 
 package com.soywiz.korio.util
 
+import java.nio.charset.Charset
 import java.util.*
 
 private inline fun ByteArray._read8(o: Int): Int = this[o].toInt()
@@ -81,3 +82,17 @@ fun ByteArray.readIntArray_be(o: Int, count: Int): IntArray = this.readTypedArra
 fun ByteArray.readLongArray_be(o: Int, count: Int): LongArray = this.readTypedArray(o, count, 8, { LongArray(count) }, { array, n, pos -> array[n] = readS64_be(pos) })
 fun ByteArray.readFloatArray_be(o: Int, count: Int): FloatArray = this.readTypedArray(o, count, 4, { FloatArray(count) }, { array, n, pos -> array[n] = readF32_be(pos) })
 fun ByteArray.readDoubleArray_be(o: Int, count: Int): DoubleArray = this.readTypedArray(o, count, 8, { DoubleArray(count) }, { array, n, pos -> array[n] = readF64_be(pos) })
+
+fun ByteArray.readStringz(o: Int, size: Int, charset: Charset = Charsets.UTF_8): String {
+	var idx = o
+	val stop = Math.min(this.size, o + size)
+	while (idx < stop) {
+		if (this[idx] == 0.toByte()) break
+		idx++
+	}
+	return Arrays.copyOfRange(this, o, idx).toString(charset)
+}
+
+fun ByteArray.readStringz(o: Int, charset: Charset = Charsets.UTF_8): String {
+	return readStringz(o, size - o, charset)
+}

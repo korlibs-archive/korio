@@ -1,5 +1,6 @@
 package com.soywiz.korio.vfs
 
+import com.jtransc.js.toJsDynamic
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
@@ -18,13 +19,13 @@ class VfsFile(
 
 	suspend operator fun set(path: String, content: String): Unit = this[path].writeString(content)
 	suspend operator fun set(path: String, content: ByteArray): Unit = this[path].write(content)
-	suspend operator fun set(path: String, content: AsyncStream): Unit = this[path].writeStream(content)
-	suspend operator fun set(path: String, content: VfsFile): Unit = this[path].writeFile(content)
+	suspend operator fun set(path: String, content: AsyncStream): Unit = asyncFun<Unit> { this[path].writeStream(content) }
+	suspend operator fun set(path: String, content: VfsFile): Unit = asyncFun<Unit> { this[path].writeFile(content) }
 
-	suspend fun writeStream(src: AsyncStream): Unit = this.openUse(VfsOpenMode.CREATE_OR_TRUNCATE) { this.writeStream(src) }
-	suspend fun writeFile(file: VfsFile): Unit = file.copyTo(this)
+	suspend fun writeStream(src: AsyncStream): Long = this.openUse(VfsOpenMode.CREATE_OR_TRUNCATE) { this.writeStream(src) }
+	suspend fun writeFile(file: VfsFile): Long = file.copyTo(this)
 
-	suspend fun copyTo(target: VfsFile): Unit = this.openUse(VfsOpenMode.READ) { target.writeStream(this) }
+	suspend fun copyTo(target: VfsFile): Long = this.openUse(VfsOpenMode.READ) { target.writeStream(this) }
 
 	val parent: VfsFile by lazy { VfsFile(vfs, pathInfo.folder) }
 	val root: VfsFile get() = vfs.root
@@ -75,14 +76,15 @@ class VfsFile(
 		mkdir()
 	}
 
-	suspend fun copyToTree(target: VfsFile, notify: (VfsFile) -> Unit = {}): Unit = asyncFun {
-		notify(target)
+	suspend fun copyToTree(target: VfsFile, notify: (Pair<VfsFile, VfsFile>) -> Unit = {}): Unit = asyncFun {
+		notify(this to target)
 		if (this.isDirectory()) {
 			target.mkdir()
 			for (file in list()) {
 				file.copyToTree(target[file.basename], notify)
 			}
 		} else {
+			//println("copyToTree: $this -> $target")
 			this.copyTo(target)
 		}
 		Unit

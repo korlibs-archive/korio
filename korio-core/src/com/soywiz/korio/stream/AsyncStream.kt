@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.asyncFun
@@ -8,6 +10,7 @@ import com.soywiz.korio.vfs.VfsOpenMode
 import java.io.ByteArrayOutputStream
 import java.io.EOFException
 import java.nio.charset.Charset
+import java.nio.charset.CharsetDecoder
 import java.util.*
 
 interface AsyncBaseStream {
@@ -21,9 +24,17 @@ interface AsyncOutputStream : AsyncBaseStream {
 	suspend fun write(buffer: ByteArray, offset: Int, len: Int): Unit
 }
 
+interface AsyncPositionStream : AsyncBaseStream {
+	suspend fun setPosition(value: Long): Unit = throw UnsupportedOperationException()
+	suspend fun getPosition(): Long = throw UnsupportedOperationException()
+}
+
 interface AsyncLengthStream : AsyncBaseStream {
 	suspend fun setLength(value: Long): Unit = throw UnsupportedOperationException()
 	suspend fun getLength(): Long = throw UnsupportedOperationException()
+}
+
+interface AsyncPositionLengthStream : AsyncPositionStream, AsyncLengthStream {
 }
 
 interface AsyncRAInputStream {
@@ -83,7 +94,7 @@ open class AsyncStreamBase : AsyncCloseable, AsyncRAInputStream, AsyncRAOutputSt
 
 fun AsyncStreamBase.toAsyncStream(position: Long = 0L): AsyncStream = AsyncStream(this, position)
 
-class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : AsyncInputStream, AsyncOutputStream, AsyncCloseable {
+class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : AsyncInputStream, AsyncOutputStream, AsyncPositionLengthStream, AsyncCloseable {
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
 		val read = base.read(position, buffer, offset, len)
 		position += read
@@ -96,10 +107,10 @@ class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : AsyncInp
 		Unit
 	}
 
-	suspend fun setPosition(value: Long): Unit = run { this.position = value }
-	suspend fun getPosition(): Long = this.position
-	suspend fun setLength(value: Long): Unit = base.setLength(value)
-	suspend fun getLength(): Long = base.getLength()
+	suspend override fun setPosition(value: Long): Unit = run { this.position = value }
+	suspend override fun getPosition(): Long = this.position
+	suspend override fun setLength(value: Long): Unit = base.setLength(value)
+	suspend override fun getLength(): Long = base.getLength()
 
 	suspend fun getAvailable(): Long = asyncFun { getLength() - getPosition() }
 	suspend fun eof(): Boolean = asyncFun { this.getAvailable() <= 0L }
@@ -108,6 +119,9 @@ class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : AsyncInp
 
 	suspend fun clone(): AsyncStream = AsyncStream(base, position)
 }
+
+suspend fun AsyncPositionLengthStream.getAvailable() = asyncFun { getLength() - getPosition() }
+suspend fun AsyncPositionLengthStream.eof() = asyncFun { this.getAvailable() <= 0L }
 
 class SliceAsyncStreamBase(internal val base: AsyncStreamBase, internal val baseStart: Long, internal val baseEnd: Long) : AsyncStreamBase() {
 	internal val baseLength = baseEnd - baseStart
@@ -190,17 +204,20 @@ class BufferedStreamBase(val base: AsyncStreamBase, val blockSize: Int = 2048) :
 
 suspend fun AsyncStream.sliceWithStart(start: Long): AsyncStream = asyncFun { sliceWithBounds(start, this.getLength()) }
 
-fun AsyncStream.sliceWithSize(start: Long, length: Long): AsyncStream = sliceWithBounds(start, start + length)
+suspend fun AsyncStream.sliceWithSize(start: Long, length: Long): AsyncStream = sliceWithBounds(start, start + length)
 
-fun AsyncStream.slice(range: IntRange): AsyncStream = sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1))
-fun AsyncStream.slice(range: LongRange): AsyncStream = sliceWithBounds(range.start, (range.endInclusive + 1))
+suspend fun AsyncStream.slice(range: IntRange): AsyncStream = sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1))
+suspend fun AsyncStream.slice(range: LongRange): AsyncStream = sliceWithBounds(range.start, (range.endInclusive + 1))
 
-fun AsyncStream.sliceWithBounds(start: Long, end: Long): AsyncStream {
-	// @TODO: Check bounds
-	return if (this.base is SliceAsyncStreamBase) {
-		SliceAsyncStreamBase(this.base.base, this.base.baseStart + start, this.base.baseStart + end).toAsyncStream()
+suspend fun AsyncStream.sliceWithBounds(start: Long, end: Long): AsyncStream = asyncFun {
+	val len = this.getLength()
+	val clampedStart = start.clamp(0, len)
+	val clampedEnd = end.clamp(0, len)
+
+	if (this.base is SliceAsyncStreamBase) {
+		SliceAsyncStreamBase(this.base.base, this.base.baseStart + clampedStart, this.base.baseStart + clampedEnd).toAsyncStream()
 	} else {
-		SliceAsyncStreamBase(this.base, start, end).toAsyncStream()
+		SliceAsyncStreamBase(this.base, clampedStart, clampedEnd).toAsyncStream()
 	}
 }
 
@@ -381,23 +398,34 @@ class SyncAsyncStreamBaseInWorker(val sync: SyncStreamBase) : AsyncStreamBase() 
 	suspend override fun getLength(): Long = executeInWorker { sync.length }
 }
 
-suspend fun AsyncOutputStream.writeStream(source: AsyncInputStream): Unit = source.copyTo(this)
+suspend fun AsyncOutputStream.writeStream(source: AsyncInputStream): Long = source.copyTo(this)
 
-suspend fun AsyncOutputStream.writeFile(source: VfsFile): Unit = asyncFun {
+suspend fun AsyncOutputStream.writeFile(source: VfsFile): Long = asyncFun {
 	val out = this@writeFile
 	source.openUse(VfsOpenMode.READ) {
 		out.writeStream(this)
 	}
 }
 
-suspend fun AsyncInputStream.copyTo(target: AsyncOutputStream): Unit = asyncFun {
+suspend fun AsyncInputStream.copyTo(target: AsyncOutputStream): Long = asyncFun {
 	val chunk = BYTES_TEMP
+	var totalCount = 0L
+
+	//if (this is AsyncPositionLengthStream) {
+	//	println("Position: " + this.getPosition())
+	//	println("Length: " + this.getLength())
+	//	println("Available: " + this.getAvailable())
+	//}
+
 	while (true) {
 		val count = this.read(chunk)
 		if (count <= 0) break
 		target.write(chunk, 0, count)
+		totalCount += count
 	}
-	Unit
+	//println("Copied: $totalCount, chunkSize: ${chunk.size}")
+	//Unit
+	totalCount
 }
 
 suspend fun AsyncStream.writeToAlign(alignment: Int, value: Int = 0) = asyncFun {

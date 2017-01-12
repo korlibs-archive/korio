@@ -54,3 +54,10 @@ fun String.transform(transform: (Char) -> String): String {
 	for (ch in this) out += transform(ch)
 	return out
 }
+
+fun Any?.toBetterString(): String {
+	if (this == null) return "null"
+	val clazz = this.javaClass
+	if (clazz.isArray) return "" + ReflectedArray(this).toList()
+	return "$this"
+}

@@ -3,11 +3,14 @@ package com.soywiz.korio.async
 import com.jtransc.js.global
 import com.jtransc.js.jsFunctionRaw0
 import com.jtransc.js.methods
+import com.soywiz.korio.util.OS
 import java.io.Closeable
 import java.util.*
 
 @Suppress("unused")
 class EventLoopJs : EventLoop {
+	override val available: Boolean get() = OS.isJs
+
 	override fun init(): Unit {
 	}
 

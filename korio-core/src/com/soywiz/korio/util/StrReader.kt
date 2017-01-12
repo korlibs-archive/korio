@@ -28,20 +28,23 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 
 	fun slice(start: Int, end: Int): String = this.str.substring(start, end)
 	fun peek(count: Int): String = substr(this.pos, count)
-	fun peek(): Char = this.str[this.pos]
-	fun peekChar(): Char = this.str[this.pos]
+	fun peek(): Char = if (hasMore) this.str[this.pos] else '\u0000'
+	fun peekChar(): Char = if (hasMore) this.str[this.pos] else '\u0000'
 	fun read(count: Int): String = this.peek(count).apply { skip(count) }
 	fun skipUntil(char: Char) = run { while (hasMore && this.peekChar() != char) this.readChar() }
 	fun skipUntilIncluded(char: Char) = run { while (hasMore && this.readChar() != char) Unit }
 	//inline fun skipWhile(check: (Char) -> Boolean) = run { while (check(this.peekChar())) this.skip(1) }
 	inline fun skipWhile(filter: (Char) -> Boolean) = run { while (hasMore && filter(this.peekChar())) this.readChar() }
+	inline fun skipUntil(filter: (Char) -> Boolean) = run { while (hasMore && !filter(this.peekChar())) this.readChar() }
+	inline fun matchWhile(check: (Char) -> Boolean): String? = slice { skipWhile(check) }
 
 	fun readUntil(char: Char) = this.slice { skipUntil(char) }
 	fun readUntilIncluded(char: Char) = this.slice { skipUntilIncluded(char) }
 	inline fun readWhile(filter: (Char) -> Boolean) = this.slice { skipWhile(filter) } ?: ""
+	inline fun readUntil(filter: (Char) -> Boolean) = this.slice { skipUntil(filter) } ?: ""
 	fun unread(count: Int = 1) = this.apply { this.pos -= count; }
-	fun readChar(): Char = this.str[this.pos++]
-	fun read(): Char = this.str[this.pos++]
+	fun readChar(): Char = if (hasMore) this.str[this.pos++] else '\u0000'
+	fun read(): Char = if (hasMore) this.str[this.pos++] else '\u0000'
 
 	fun readExpect(expected: String): String {
 		val readed = this.read(expected.length)
@@ -51,7 +54,9 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 
 	fun expect(expected: Char) = readExpect("$expected")
 	fun skip(count: Int = 1) = this.apply { this.pos += count; }
-	private fun substr(pos: Int, length: Int): String = this.str.substring(pos, Math.min(pos + length, this.length))
+	private fun substr(pos: Int, length: Int): String {
+		return this.str.substring(Math.min(pos, this.length), Math.min(pos + length, this.length))
+	}
 
 	fun matchLit(lit: String): String? {
 		if (substr(this.pos, lit.length) != lit) return null
@@ -66,6 +71,22 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 			if (lits.contains(substr(this.pos, len))) return this.readRange(len)
 		}
 		return null
+	}
+
+	fun skipSpaces() = this.apply { this.skipWhile { Character.isWhitespace(it) } }
+
+	fun matchIdentifier() = matchWhile { Character.isLetterOrDigit(it) || it == '-' || it == '~' || it == ':' }
+	fun matchSingleOrDoubleQuoteString(): String? {
+		when (this.peekChar()) {
+			'\'', '"' -> {
+				return this.slice {
+					val quoteType = this.readChar()
+					this.readUntil(quoteType)
+					this.readChar()
+				}
+			}
+			else -> return null
+		}
 	}
 
 	//fun matchEReg(v: Regex): String? {
@@ -155,25 +176,6 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 		fun startEmptyRange(): TRange = TRange(this.min, this.min, this.reader)
 		fun endEmptyRange(): TRange = TRange(this.max, this.max, this.reader)
 		fun displace(offset: Int): TRange = TRange(this.min + offset, this.max + offset, this.reader)
-	}
-
-	inline fun skipUntil(check: (Char) -> Boolean) = run { while (!check(this.peekChar())) this.skip(1) }
-	inline fun matchWhile(check: (Char) -> Boolean): String? = slice { skipWhile(check) }
-
-	fun skipSpaces() = this.apply { this.skipWhile { Character.isWhitespace(it) } }
-
-	fun matchIdentifier() = matchWhile { Character.isLetterOrDigit(it) || it == '-' || it == '~' || it == ':' }
-	fun matchSingleOrDoubleQuoteString(): String? {
-		when (this.peekChar()) {
-			'\'', '"' -> {
-				return this.slice {
-					val quoteType = this.readChar()
-					this.readUntil(quoteType)
-					this.readChar()
-				}
-			}
-			else -> return null
-		}
 	}
 }
 

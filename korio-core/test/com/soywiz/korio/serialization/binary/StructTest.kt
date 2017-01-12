@@ -95,6 +95,17 @@ class StructTest {
 	}
 
 	@Test
+	fun name4b() {
+		val mem = MemorySyncStream()
+		mem.writeStringz("hello", 20)
+		mem.position--
+		mem.write8(3)
+		mem.position = 0
+		val info = mem.readStruct<StructWithString>()
+		Assert.assertEquals("hello", info.a)
+	}
+
+	@Test
 	fun name5() {
 		val mem = MemorySyncStream()
 		mem.writeStruct(NoSizeNoOffset(1, 2, 3))

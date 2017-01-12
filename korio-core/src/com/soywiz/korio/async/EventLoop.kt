@@ -47,6 +47,7 @@ interface EventLoop {
 		suspend fun sleep(ms: Int): Unit = suspendCoroutine { c -> setTimeout(ms) { c.resume(Unit) } }
 	}
 
+	val available: Boolean
 	fun init(): Unit
 	fun setInterval(ms: Int, callback: () -> Unit): Closeable
 	fun setTimeout(ms: Int, callback: () -> Unit): Closeable
