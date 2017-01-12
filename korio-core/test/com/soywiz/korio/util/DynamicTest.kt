@@ -15,5 +15,11 @@ class DynamicTest {
 	fun name() {
 		Assert.assertEquals(true, Dynamic.binop(1.0, 3, "<"))
 		Assert.assertEquals(false, Dynamic.binop(1.0, 3, ">"))
+		Assert.assertEquals(true, Dynamic.binop(1, 3.0, "<"))
+		Assert.assertEquals(false, Dynamic.binop(1, 3.0, ">"))
+		Assert.assertEquals(true, Dynamic.binop(1.0, 3.0, "<"))
+		Assert.assertEquals(false, Dynamic.binop(1.0, 3.0, ">"))
+		Assert.assertEquals(false, Dynamic.binop(6.0, 3.0, "<"))
+		Assert.assertEquals(true, Dynamic.binop(6.0, 3.0, ">"))
 	}
 }

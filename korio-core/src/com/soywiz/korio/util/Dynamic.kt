@@ -83,6 +83,9 @@ object Dynamic {
 	}
 
 	fun compare(l: Any?, r: Any?): Int {
+		if (l is Number && r is Number) {
+			return l.toDouble().compareTo(r.toDouble())
+		}
 		val lc = toComparable(l)
 		val rc = toComparable(r)
 		if (lc.javaClass.isAssignableFrom(rc.javaClass)) {
