@@ -30,10 +30,11 @@ fun untestedWarn(msg: String): Unit = println("Untested: $msg")
 
 fun noImplWarn(msg: String): Unit = println("Not implemented: $msg")
 
-inline fun ignoreErrors(action: () -> Unit) {
+inline fun <T> ignoreErrors(show: Boolean = false, action: () -> T): T? {
 	try {
-		action()
+		return action()
 	} catch (e: Throwable) {
-		e.printStackTrace()
+		if (show) e.printStackTrace()
+		return null
 	}
 }
