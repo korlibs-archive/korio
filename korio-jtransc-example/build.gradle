@@ -6,7 +6,8 @@ apply plugin: 'application'
 apply plugin: 'jtransc'
 
 //mainClassName = "KorioSampleKt"
-mainClassName = "KorioWebsocketExample"
+//mainClassName = "KorioWebsocketExample"
+mainClassName = "KorioFilewatchExample"
 
 sourceSets {
     main.java.srcDirs = ['src']

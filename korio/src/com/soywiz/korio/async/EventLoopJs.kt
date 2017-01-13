@@ -10,6 +10,7 @@ import java.util.*
 @Suppress("unused")
 class EventLoopJs : EventLoop {
 	override val available: Boolean get() = OS.isJs
+	override val priority: Int = 2000
 
 	override fun init(): Unit {
 	}

@@ -4,6 +4,7 @@ import com.soywiz.korio.android.KorioAndroidContext
 import java.io.Closeable
 
 class EventLoopAndroid : EventLoop {
+	override val priority: Int = 2000
 	override val available: Boolean get() = System.getProperty("java.runtime.name").contains("android", ignoreCase = true)
 
 	override fun init(): Unit {

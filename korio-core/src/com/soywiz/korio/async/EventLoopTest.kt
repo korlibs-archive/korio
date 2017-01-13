@@ -9,6 +9,7 @@ class EventLoopTest : EventLoop {
 	val timers = TreeMap<Long, ArrayList<() -> Unit>>()
 
 	override val available = true
+	override val priority: Int = Int.MAX_VALUE - 1000
 
 	override fun init() {
 	}

@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.vfs.js
 
 import com.jtransc.js.*
@@ -95,14 +97,22 @@ object NodeJsUtils {
 	suspend fun fstat(path: String): JsStat = suspendCoroutine { c ->
 		// https://nodejs.org/api/fs.html#fs_class_fs_stats
 		val fs = jsRequire("fs")
-		fs.methods["stat"](path, jsFunctionRaw2 { err, stat ->
-			if (err != null) {
-				c.resumeWithException(RuntimeException("Error ${err.toJavaString()} opening $path"))
-			} else {
-				val out = JsStat(stat["size"].toDouble())
-				out.isDirectory = stat.methods["isDirectory"]().toBool()
-				c.resume(out)
-			}
-		})
+		//fs.methods["exists"](path, jsFunctionRaw1 { jsexists ->
+		//	val exists = jsexists.toBool()
+		//	if (exists) {
+				fs.methods["stat"](path, jsFunctionRaw2 { err, stat ->
+					//console.methods["log"](stat)
+					if (err != null) {
+						c.resumeWithException(RuntimeException("Error ${err.toJavaString()} opening $path"))
+					} else {
+						val out = JsStat(stat["size"].toDouble())
+						out.isDirectory = stat.methods["isDirectory"]().toBool()
+						c.resume(out)
+					}
+				})
+		//	} else {
+		//		c.resumeWithException(RuntimeException("File '$path' doesn't exists"))
+		//	}
+		//})
 	}
 }

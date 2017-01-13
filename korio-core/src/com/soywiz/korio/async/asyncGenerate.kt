@@ -1,5 +1,9 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.async
 
+import com.soywiz.korio.util.Extra
+import java.util.concurrent.ConcurrentLinkedQueue
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.createCoroutine
 import kotlin.coroutines.suspendCoroutine
@@ -15,6 +19,39 @@ interface AsyncSequence<out T> {
 interface AsyncIterator<out T> {
 	suspend operator fun hasNext(): Boolean
 	suspend operator fun next(): T
+}
+
+class AsyncSequenceEmitter<T : Any> : Extra by Extra.Mixin() {
+	val signal = Signal<Unit>()
+	var queuedElements = ConcurrentLinkedQueue<T>()
+	var closed = false
+
+	fun close() {
+		closed = true
+		signal()
+	}
+
+	fun emit(v: T) {
+		queuedElements.add(v)
+		signal()
+	}
+
+	operator fun invoke(v: T) = emit(v)
+
+	fun toSequence(): AsyncSequence<T> = object : AsyncSequence<T> {
+		override fun iterator(): AsyncIterator<T> = object : AsyncIterator<T> {
+			suspend override fun hasNext(): Boolean = asyncFun {
+				while (queuedElements.size == 0 && !closed) signal.waitOne()
+				!closed
+			}
+
+			suspend override fun next(): T = asyncFun {
+				while (queuedElements.size == 0 && !closed) signal.waitOne()
+				if (closed) throw RuntimeException("Already closed")
+				queuedElements.remove()
+			}
+		}
+	}
 }
 
 fun <T> asyncGenerate(block: suspend AsyncGenerator<T>.() -> Unit): AsyncSequence<T> = object : AsyncSequence<T> {
@@ -106,7 +143,6 @@ class AsyncGeneratorIterator<T> : AsyncIterator<T>, AsyncGenerator<T>, Continuat
 	}
 }
 
-
 inline suspend fun <T, T2> AsyncSequence<T>.map(crossinline transform: (T) -> T2) = asyncGenerate<T2> {
 	for (e in this@map) {
 		yield(transform(e))
@@ -148,3 +184,31 @@ inline suspend fun <T, TR> AsyncSequence<T>.fold(initial: TR, crossinline folder
 }
 
 suspend fun AsyncSequence<Int>.sum(): Int = this.fold(0) { a, b -> a + b }
+
+
+suspend fun <T> AsyncSequence<T>.isEmpty(): Boolean = asyncFun {
+	var hasItems = false
+	for (e in this@isEmpty) {
+		hasItems = true
+		break
+	}
+	hasItems
+}
+
+suspend fun <T> AsyncSequence<T>.isNotEmpty(): Boolean = asyncFun {
+	var hasItems = false
+	for (e in this@isNotEmpty) {
+		hasItems = true
+		break
+	}
+	!hasItems
+}
+
+suspend fun <T : Any?> AsyncSequence<T>.firstOrNull(): T? = asyncFun {
+	var result: T? = null
+	for (e in this@firstOrNull) {
+		result = e
+		break
+	}
+	result
+}

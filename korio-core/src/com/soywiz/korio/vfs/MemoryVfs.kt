@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.asyncFun
@@ -18,12 +20,12 @@ suspend fun MemoryVfs(items: Map<String, AsyncStream> = mapOf()): VfsFile = asyn
 }
 
 suspend fun MemoryVfsMix(items: Map<String, Any> = mapOf()): VfsFile = asyncFun {
-	MemoryVfs(items.mapValues { (key, value) ->
-		when (value) {
-			is SyncStream -> value.toAsync()
-			is ByteArray -> value.openAsync()
-			is String -> value.toByteArray().openAsync()
-			else -> value.toString().toByteArray().openAsync()
+	MemoryVfs(items.mapValues { (_, v) ->
+		when (v) {
+			is SyncStream -> v.toAsync()
+			is ByteArray -> v.openAsync()
+			is String -> v.toByteArray().openAsync()
+			else -> v.toString().toByteArray().openAsync()
 		}
 	})
 }

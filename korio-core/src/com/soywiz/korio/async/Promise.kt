@@ -84,4 +84,3 @@ class Promise<T : Any?> {
 
 	suspend fun await(): T = suspendCoroutine(this::then)
 }
-

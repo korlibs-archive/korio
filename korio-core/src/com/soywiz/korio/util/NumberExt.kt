@@ -62,3 +62,11 @@ fun Int.toUnsigned() = this.toLong() and 0xFFFFFFFFL
 
 fun Int.signExtend(bits: Int) = (this shl (32 - bits)) shr (32 - bits)
 fun Long.signExtend(bits: Int) = (this shl (64 - bits)) shr (64 - bits)
+
+infix fun Int.umod(other: Int): Int {
+	val remainder = this % other
+	return when {
+		remainder < 0 -> remainder + other
+		else -> remainder
+	}
+}

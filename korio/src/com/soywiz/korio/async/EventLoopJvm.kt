@@ -6,6 +6,7 @@ import java.util.concurrent.Executors
 import kotlin.concurrent.timerTask
 
 class EventLoopJvm : EventLoop {
+	override val priority: Int = 1000
 	override val available: Boolean get() = true
 
 	val tasksExecutor = Executors.newSingleThreadExecutor()

@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.vfs.android
 
 import com.soywiz.korio.android.KorioAndroidContext
@@ -9,7 +11,6 @@ import com.soywiz.korio.stream.MemorySyncStream
 import com.soywiz.korio.stream.toAsyncInWorker
 import com.soywiz.korio.vfs.*
 import java.io.FileNotFoundException
-
 
 val AndroidAssetsVfs by lazy {
 	object : Vfs() {

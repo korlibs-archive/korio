@@ -48,6 +48,7 @@ interface EventLoop {
 	}
 
 	val available: Boolean
+	val priority: Int
 	fun init(): Unit
 	fun setInterval(ms: Int, callback: () -> Unit): Closeable
 	fun setTimeout(ms: Int, callback: () -> Unit): Closeable

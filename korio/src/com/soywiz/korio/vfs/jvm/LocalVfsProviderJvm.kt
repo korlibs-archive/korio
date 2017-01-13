@@ -1,9 +1,8 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.vfs.jvm
 
-import com.soywiz.korio.async.asyncFun
-import com.soywiz.korio.async.asyncGenerate
-import com.soywiz.korio.async.executeInWorker
-import com.soywiz.korio.async.toEventLoop
+import com.soywiz.korio.async.*
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
@@ -13,12 +12,13 @@ import java.io.*
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousFileChannel
 import java.nio.channels.CompletionHandler
-import java.nio.file.Files
-import java.nio.file.Paths
-import java.nio.file.StandardOpenOption
+import java.nio.file.*
+import java.nio.file.StandardWatchEventKinds.*
+import java.util.concurrent.TimeUnit
 import kotlin.coroutines.suspendCoroutine
 
-class LocalVfsProviderJvm : LocalVfsProvider {
+
+class LocalVfsProviderJvm : LocalVfsProvider() {
 	override fun invoke(): Vfs = object : Vfs() {
 		val that = this
 		val baseAbsolutePath = ""
@@ -118,13 +118,12 @@ class LocalVfsProviderJvm : LocalVfsProvider {
 			} else {
 				createNonExistsStat(fullpath)
 			}
-
 		}
 
 		suspend override fun list(path: String) = executeInWorker {
 			asyncGenerate {
-				for (path in Files.newDirectoryStream(resolvePath(path))) {
-					val file = path.toFile()
+				for (p in Files.newDirectoryStream(resolvePath(path))) {
+					val file = p.toFile()
 					yield(VfsFile(that, file.absolutePath))
 				}
 			}
@@ -148,6 +147,55 @@ class LocalVfsProviderJvm : LocalVfsProvider {
 				override fun completed(result: T, attachment: Unit?) = cevent.resume(result)
 				override fun failed(exc: Throwable, attachment: Unit?) = cevent.resumeWithException(exc)
 			})
+		}
+
+		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable {
+			var running = true
+			val fs = FileSystems.getDefault()
+			val watcher = fs.newWatchService()
+
+			fs.getPath(path).register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
+
+			spawnAndForget {
+				while (running) {
+					val key = executeInWorker {
+						var r: WatchKey?
+						do {
+							r = watcher.poll(100L, TimeUnit.MILLISECONDS)
+						} while (r == null && running)
+						r
+					} ?: continue
+
+					for (e in key.pollEvents()) {
+						val kind = e.kind()
+						val filepath = e.context() as Path
+						val rfilepath = fs.getPath(path, filepath.toString())
+						val file = rfilepath.toFile()
+						val absolutePath = file.absolutePath
+						val vfsFile = file(absolutePath)
+						when (kind) {
+							StandardWatchEventKinds.OVERFLOW -> {
+								println("Overflow WatchService")
+							}
+							StandardWatchEventKinds.ENTRY_CREATE -> {
+								handler(VfsFileEvent(VfsFileEvent.Kind.CREATED, vfsFile))
+							}
+							StandardWatchEventKinds.ENTRY_MODIFY -> {
+								handler(VfsFileEvent(VfsFileEvent.Kind.MODIFIED, vfsFile))
+							}
+							StandardWatchEventKinds.ENTRY_DELETE -> {
+								handler(VfsFileEvent(VfsFileEvent.Kind.DELETED, vfsFile))
+							}
+						}
+					}
+					key.reset()
+				}
+			}
+
+			return Closeable {
+				running = false
+				watcher.close()
+			}
 		}
 
 		override fun toString(): String = "LocalVfs"

@@ -1,8 +1,22 @@
+//ext.useAndroid = true
+
 apply from: "../include.gradle"
 
-apply plugin: 'kotlin'
+//apply plugin: 'com.android.library'
+//apply plugin: 'kotlin-android'
+//
+//android {
+//	compileSdkVersion 24
+//	buildToolsVersion "24.0.3"
+//}
+//
 
 dependencies {
 	compile project(":korio-core")
 	compile "com.google.android:android:4.1.1.4"
+	//compile files('lib/appcompat-v7.jar')
+	//compile "com.google.android:support-v4:r7"
+	//compile "com.android.support:appcompat-v7:24.2.1"
+	//compile files('korio-android/lib/appcompat-v7.jar')
+	//compile files('lib/appcompat-v7.jar')
 }

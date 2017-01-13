@@ -1,14 +1,19 @@
 group 'com.soywiz'
 version "$korioVersion"
 
-apply plugin: 'java'
+if (project.hasProperty('useAndroid')) {
+	project.apply plugin: 'com.android.library'
+	apply plugin: 'kotlin-android'
+} else {
+	project.apply plugin: 'java'
+	apply plugin: 'kotlin'
+	compileJava.options.encoding = 'UTF-8'
+	compileTestJava.options.encoding = 'UTF-8'
+}
 apply plugin: 'maven'
 apply plugin: 'signing'
 apply plugin: 'maven-publish'
 apply plugin: 'com.jfrog.bintray'
-
-compileJava.options.encoding = 'UTF-8'
-compileTestJava.options.encoding = 'UTF-8'
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
@@ -48,7 +53,7 @@ task sourcesJar(type: Jar) {
 }
 
 artifacts {
-	archives jar
+	//archives jar
 	archives javadocJar
 	archives sourcesJar
 }

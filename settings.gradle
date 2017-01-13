@@ -4,5 +4,6 @@ include(
 		'korio',
 		'korio-kotlinjs',
 		'korio-android',
+		'korio-vertx',
 		'korio-jtransc-example'
 )

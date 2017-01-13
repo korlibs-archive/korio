@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.vfs.android
 
 import com.soywiz.korio.async.asyncFun

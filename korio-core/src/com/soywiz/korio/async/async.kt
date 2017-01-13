@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.async
 
 import com.soywiz.korio.util.OS
@@ -118,5 +120,6 @@ object EmptyContinuation : Continuation<Any> {
 	}
 }
 
-inline fun spawnAndForget(task: suspend () -> Any): Unit = task.startCoroutine(EmptyContinuation)
+@Suppress("UNCHECKED_CAST")
+inline fun <T> spawnAndForget(task: suspend () -> T): Unit = task.startCoroutine(EmptyContinuation as Continuation<T>)
 inline fun <T> spawnAndForget(value: T, task: suspend T.() -> Any): Unit = task.startCoroutine(value, EmptyContinuation)

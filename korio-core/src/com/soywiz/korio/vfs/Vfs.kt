@@ -1,11 +1,16 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
+import com.soywiz.korio.async.spawn
+import com.soywiz.korio.error.unsupported
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.readBytes
 import com.soywiz.korio.stream.writeBytes
+import java.io.Closeable
 
 abstract class Vfs {
 	open val absolutePath: String = ""
@@ -31,13 +36,6 @@ abstract class Vfs {
 
 	suspend open fun open(path: String, mode: VfsOpenMode): AsyncStream = throw UnsupportedOperationException()
 
-	//suspend open fun readFully(path: String) = asyncFun {
-	//	val stat = stat(path)
-	//	readChunk(path, 0L, stat.size.toInt())
-	//}
-	//
-	//suspend open fun writeFully(path: String, data: ByteArray) = writeChunk(path, data, 0L, true)
-
 	suspend fun readChunk(path: String, offset: Long, size: Int): ByteArray = asyncFun {
 		val s = open(path, VfsOpenMode.READ)
 		if (offset != 0L) s.setPosition(offset)
@@ -56,27 +54,20 @@ abstract class Vfs {
 	}
 
 	suspend open fun stat(path: String): VfsStat = createNonExistsStat(path)
-
-	/*
-	suspend open fun stat(path: String): VfsStat = asyncFun {
-		try {
-			val len = open(path, VfsOpenMode.READ).use { getLength() }
-			createExistsStat(path, isDirectory = false, len)
-		} catch (e: Throwable) {
-			createNonExistsStat(path)
-		}
-	}
-	*/
-
 	suspend open fun list(path: String): AsyncSequence<VfsFile> = asyncGenerate { }
-	suspend open fun mkdir(path: String): Boolean = throw UnsupportedOperationException()
-	suspend open fun delete(path: String): Boolean = throw UnsupportedOperationException()
-	suspend open fun rename(src: String, dst: String): Boolean = throw UnsupportedOperationException()
+	suspend open fun mkdir(path: String): Boolean = unsupported()
+	suspend open fun delete(path: String): Boolean = unsupported()
+	suspend open fun rename(src: String, dst: String): Boolean = unsupported()
+	suspend open fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = Closeable { }
 
 	abstract class Proxy : Vfs() {
 		abstract suspend protected fun access(path: String): VfsFile
 		suspend open protected fun transform(out: VfsFile): VfsFile {
 			return file(out.path)
+		}
+
+		suspend protected fun VfsFile.transform2(): VfsFile {
+			return transform(this)
 		}
 
 		suspend open protected fun init() {
@@ -91,19 +82,10 @@ abstract class Vfs {
 		}
 
 		suspend override fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler): Int = asyncFun { initOnce(); access(path).exec(cmdAndArgs, handler) }
-
 		suspend override fun open(path: String, mode: VfsOpenMode) = asyncFun { initOnce(); access(path).open(mode) }
-
-		//suspend override fun readFully(path: String): ByteArray = asyncFun { initOnce(); access(path).read() }
-		//suspend override fun writeFully(path: String, data: ByteArray): Unit = asyncFun { initOnce(); access(path).write(data) }
 		suspend override fun setSize(path: String, size: Long): Unit = asyncFun { initOnce(); access(path).setSize(size) }
-
 		suspend override fun stat(path: String): VfsStat = asyncFun { initOnce(); access(path).stat().copy(file = file(path)) }
-		suspend override fun list(path: String) = asyncGenerate {
-			initOnce()
-			for (it in access(path).list()) yield(transform(it))
-		}
-
+		suspend override fun list(path: String) = asyncGenerate { initOnce(); for (it in access(path).list()) yield(transform(it)) }
 		suspend override fun delete(path: String): Boolean = asyncFun { initOnce(); access(path).delete() }
 		suspend override fun mkdir(path: String): Boolean = asyncFun { initOnce(); access(path).mkdir() }
 		suspend override fun rename(src: String, dst: String): Boolean = asyncFun {
@@ -112,6 +94,17 @@ abstract class Vfs {
 			val dstFile = access(dst)
 			if (srcFile.vfs != dstFile.vfs) throw IllegalArgumentException("Can't rename between filesystems. Use copyTo instead, and remove later.")
 			srcFile.renameTo(dstFile.path)
+		}
+
+		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = asyncFun {
+			initOnce()
+			access(path).watch { e ->
+				spawn {
+					val f1 = e.file.transform2()
+					val f2 = e.other?.transform2()
+					handler(e.copy(file = f1, other = f2))
+				}
+			}
 		}
 	}
 

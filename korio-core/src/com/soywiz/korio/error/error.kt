@@ -22,6 +22,7 @@ fun mustValidate(msg: String): Nothing = throw MustValidateCodeException(msg)
 fun noImpl(msg: String): Nothing = throw NotImplementedException(msg)
 fun invalidOp(msg: String, cause: Throwable? = null): Nothing = throw InvalidOperationException(msg, cause)
 fun unsupported(msg: String): Nothing = throw java.lang.UnsupportedOperationException(msg)
+fun unsupported(): Nothing = throw java.lang.UnsupportedOperationException()
 fun invalidArgument(msg: String): Nothing = throw InvalidArgumentException(msg)
 fun unexpected(msg: String): Nothing = throw UnexpectedException(msg)
 

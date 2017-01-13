@@ -1,7 +1,11 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.net
 
 import com.soywiz.korio.async.*
-import java.net.*
+import java.net.InetSocketAddress
+import java.net.ServerSocket
+import java.net.Socket
 
 class AndroidAsyncSocketFactory : AsyncSocketFactory {
 	override suspend fun createClient(): AsyncClient = AndroidAsyncClient()

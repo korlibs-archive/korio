@@ -221,6 +221,9 @@ class VfsFile {
 	suspend fun execToString(vararg cmdAndArgs: String, charset: Charset = Charsets.UTF_8): String
 	suspend fun passthru(cmdAndArgs: List<String>, charset: Charset = Charsets.UTF_8): Int
 	suspend fun passthru(vararg cmdAndArgs: String, charset: Charset = Charsets.UTF_8): Int
+	
+	// File watching
+	suspend fun watch(handler: (VfsFileEvent) -> Unit): Closeable = vfs.watch(path, handler)
 
     // Jail this file so generated VfsFile can't access ancestors
     fun jail(): VfsFile = JailVfs(this)
@@ -256,6 +259,7 @@ or whatever you need.
 
 Also, since you are using a single interface (VfsFile), you can create generic code that will work for files, for network,
 for redis...
+You can use a MemoryVfs for testing while using a real folder in your code without having to mock code.
 
 ### Targets
 

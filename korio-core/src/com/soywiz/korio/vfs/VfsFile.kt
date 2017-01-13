@@ -1,6 +1,7 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.vfs
 
-import com.jtransc.js.toJsDynamic
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
@@ -8,6 +9,7 @@ import com.soywiz.korio.async.await
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.use
 import java.io.ByteArrayOutputStream
+import java.io.Closeable
 import java.nio.charset.Charset
 
 class VfsFile(
@@ -101,9 +103,7 @@ class VfsFile(
 			yield(file)
 			val stat = file.stat()
 			if (stat.isDirectory) {
-				for (file in file.listRecursive()) {
-					yield(file)
-				}
+				for (f in file.listRecursive()) yield(f)
 			}
 		}
 	}
@@ -142,6 +142,8 @@ class VfsFile(
 	}
 
 	suspend fun passthru(vararg cmdAndArgs: String, charset: Charset = Charsets.UTF_8): Int = passthru(cmdAndArgs.toList(), charset)
+
+	suspend fun watch(handler: (VfsFileEvent) -> Unit): Closeable = vfs.watch(path, handler)
 
 	override fun toString(): String = "$vfs[$path]"
 
