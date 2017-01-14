@@ -7,7 +7,12 @@ import java.util.concurrent.Executors
 class EventLoopTest : EventLoop {
 	var time = 0L
 
-	val worker = Executors.newSingleThreadExecutor()
+	var workerThread: Thread? = null
+	val worker = Executors.newSingleThreadExecutor().apply {
+		execute {
+			workerThread = Thread.currentThread()
+		}
+	}
 	val timers = TreeMap<Long, ArrayList<() -> Unit>>()
 
 	override val available = true
@@ -48,7 +53,19 @@ class EventLoopTest : EventLoop {
 		}
 	}
 
-	fun step(ms: Int) {
+	suspend fun waitPending() = asyncFun {
+		while (workerThread == null) Thread.sleep(1L)
+		if (Thread.currentThread() != workerThread) {
+			var pending = true
+			worker.execute {
+				pending = false
+			}
+			while (pending) Thread.sleep(1L)
+		}
+	}
+
+	suspend fun step(ms: Int) = asyncFun {
+		waitPending()
 		time += ms
 		//println("$time, $timers")
 		while (timers.isNotEmpty()) {
