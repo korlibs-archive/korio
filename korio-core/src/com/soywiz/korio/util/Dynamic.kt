@@ -345,17 +345,18 @@ object Dynamic {
 	}
 
 	interface Context {
-		fun Any?.toDynamicString() = Dynamic.toString(this)
-		fun Any?.toDynamicBool() = Dynamic.toBool(this)
-		fun Any?.toDynamicInt() = Dynamic.toInt(this)
-		fun Any?.toDynamicList() = Dynamic.toList(this)
-		fun Any?.toDynamicIterable() = Dynamic.toIterable(this)
-		fun Any?.dynamicLength() = Dynamic.length(this)
-		suspend fun Any?.dynamicGet(key: Any?) = Dynamic.accessAny(this, key)
-		suspend fun Any?.dynamicSet(key: Any?, value: Any?) = Dynamic.setAny(this, key, value)
-		suspend fun Any?.dynamicCall(vararg args: Any?) = Dynamic.callAny(this, args.toList())
-		suspend fun Any?.dynamicCallMethod(methodName: Any?, vararg args: Any?) = Dynamic.callAny(this, methodName, args.toList())
-		suspend fun Any?.dynamicCastTo(target: Class<*>) = Dynamic.dynamicCast(this, target)
+		// @TODO: Bug with coroutines in Kotlin 1.1-M04. Can't use right now.
+		//fun Any?.toDynamicString() = Dynamic.toString(this)
+		//fun Any?.toDynamicBool() = Dynamic.toBool(this)
+		//fun Any?.toDynamicInt() = Dynamic.toInt(this)
+		//fun Any?.toDynamicList() = Dynamic.toList(this)
+		//fun Any?.toDynamicIterable() = Dynamic.toIterable(this)
+		//fun Any?.dynamicLength() = Dynamic.length(this)
+		//suspend fun Any?.dynamicGet(key: Any?) = Dynamic.accessAny(this, key)
+		//suspend fun Any?.dynamicSet(key: Any?, value: Any?) = Dynamic.setAny(this, key, value)
+		//suspend fun Any?.dynamicCall(vararg args: Any?) = Dynamic.callAny(this, args.toList())
+		//suspend fun Any?.dynamicCallMethod(methodName: Any?, vararg args: Any?) = Dynamic.callAny(this, methodName, args.toList())
+		//suspend fun Any?.dynamicCastTo(target: Class<*>) = Dynamic.dynamicCast(this, target)
 	}
 
 	val contextInstance: Context = object : Context {}
