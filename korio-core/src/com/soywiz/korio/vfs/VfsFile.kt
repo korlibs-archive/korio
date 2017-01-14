@@ -98,8 +98,9 @@ class VfsFile(
 
 	suspend fun list(): AsyncSequence<VfsFile> = vfs.list(path)
 
-	suspend fun listRecursive(): AsyncSequence<VfsFile> = asyncGenerate {
+	suspend fun listRecursive(filter: (VfsFile) -> Boolean = { true }): AsyncSequence<VfsFile> = asyncGenerate {
 		for (file in list()) {
+			if (!filter(file)) continue
 			yield(file)
 			val stat = file.stat()
 			if (stat.isDirectory) {

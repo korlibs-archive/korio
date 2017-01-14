@@ -3,7 +3,7 @@
 package com.soywiz.korio.async
 
 import com.soywiz.korio.util.Extra
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.*
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.createCoroutine
 import kotlin.coroutines.suspendCoroutine
@@ -22,9 +22,9 @@ interface AsyncIterator<out T> {
 }
 
 class AsyncSequenceEmitter<T : Any> : Extra by Extra.Mixin() {
-	val signal = Signal<Unit>()
-	var queuedElements = ConcurrentLinkedQueue<T>()
-	var closed = false
+	private val signal = Signal<Unit>()
+	private var queuedElements = LinkedList<T>()
+	private var closed = false
 
 	fun close() {
 		closed = true
@@ -32,7 +32,7 @@ class AsyncSequenceEmitter<T : Any> : Extra by Extra.Mixin() {
 	}
 
 	fun emit(v: T) {
-		queuedElements.add(v)
+		synchronized(queuedElements) { queuedElements.add(v) }
 		signal()
 	}
 
@@ -41,14 +41,14 @@ class AsyncSequenceEmitter<T : Any> : Extra by Extra.Mixin() {
 	fun toSequence(): AsyncSequence<T> = object : AsyncSequence<T> {
 		override fun iterator(): AsyncIterator<T> = object : AsyncIterator<T> {
 			suspend override fun hasNext(): Boolean = asyncFun {
-				while (queuedElements.size == 0 && !closed) signal.waitOne()
-				!closed
+				while (synchronized(queuedElements) { queuedElements.isEmpty() && !closed }) signal.waitOne()
+				queuedElements.isNotEmpty() || !closed
 			}
 
 			suspend override fun next(): T = asyncFun {
-				while (queuedElements.size == 0 && !closed) signal.waitOne()
-				if (closed) throw RuntimeException("Already closed")
-				queuedElements.remove()
+				while (synchronized(queuedElements) { queuedElements.isEmpty() && !closed }) signal.waitOne()
+				if (queuedElements.isEmpty() && closed) throw RuntimeException("Already closed")
+				synchronized(queuedElements) { queuedElements.remove() }
 			}
 		}
 	}

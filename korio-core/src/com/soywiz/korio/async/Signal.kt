@@ -32,10 +32,10 @@ class Signal<T> : AsyncSequence<T> {
 
 operator fun Signal<Unit>.invoke() = invoke(Unit)
 
-suspend fun <T> Signal<T>.waitOne(): T = suspendCoroutine { c ->
+suspend fun <T> Signal<T>.waitOne(): T = suspendCoroutineEL { c ->
 	var close: Closeable? = null
 	close = add {
-		c.resume(it)
 		close?.close()
+		c.resume(it)
 	}
 }

@@ -17,6 +17,12 @@ inline suspend fun <T> asyncFun(routine: suspend () -> T): T = suspendCoroutine<
 	routine.startCoroutine(it)
 }
 
+inline suspend fun <T> suspendCoroutineEL(crossinline block: (Continuation<T>) -> Unit): T {
+	return suspendCoroutine { c ->
+		block(c.toEventLoop())
+	}
+}
+
 fun <T> Continuation<T>.toEventLoop(): Continuation<T> {
 	val parent = this
 	return object : Continuation<T> {
@@ -25,14 +31,13 @@ fun <T> Continuation<T>.toEventLoop(): Continuation<T> {
 	}
 }
 
-suspend fun <T> executeInWorker(task: suspend () -> T): T = suspendCoroutine<T> { c ->
-	val cevent = c.toEventLoop()
+suspend fun <T> executeInWorker(task: suspend () -> T): T = suspendCoroutineEL<T> { c ->
 	tasksInProgress.incrementAndGet()
 	workerLazyPool.execute {
 		try {
-			task.startCoroutine(cevent)
+			task.startCoroutine(c)
 		} catch (t: Throwable) {
-			cevent.resumeWithException(t)
+			c.resumeWithException(t)
 		} finally {
 			tasksInProgress.decrementAndGet()
 		}
@@ -122,4 +127,5 @@ object EmptyContinuation : Continuation<Any> {
 
 @Suppress("UNCHECKED_CAST")
 inline fun <T> spawnAndForget(task: suspend () -> T): Unit = task.startCoroutine(EmptyContinuation as Continuation<T>)
+
 inline fun <T> spawnAndForget(value: T, task: suspend T.() -> Any): Unit = task.startCoroutine(value, EmptyContinuation)

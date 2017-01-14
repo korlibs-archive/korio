@@ -1,19 +1,18 @@
 package com.soywiz.korio.net
 
-import com.soywiz.korio.async.go
 import com.soywiz.korio.async.spawn
 import com.soywiz.korio.async.sync
 import com.soywiz.korio.stream.readString
 import com.soywiz.korio.stream.writeString
 import org.junit.Assert
 import org.junit.Test
-import java.util.concurrent.ConcurrentLinkedQueue
+import java.util.*
 
 class AsyncClientServerTest {
 	@Test
 	fun testClientServer() = sync {
 		val server = AsyncServer(port = 0)
-		val events = ConcurrentLinkedQueue<String>()
+		val events = LinkedList<String>()
 
 		val client1 = spawn {
 			val client = AsyncClient.createAndConnect("127.0.0.1", server.port)

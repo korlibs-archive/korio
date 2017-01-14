@@ -1,9 +1,7 @@
 package com.soywiz.korio.async
 
 import java.io.Closeable
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.startCoroutine
-import kotlin.coroutines.suspendCoroutine
+import kotlin.coroutines.*
 
 interface EventLoop {
 	companion object {

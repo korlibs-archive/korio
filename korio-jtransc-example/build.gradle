@@ -32,5 +32,6 @@ jtransc {
     assets = ["korio-jtransc-example/resources"]
     //minimizeNames = true
     minimizeNames = false
-    treeshaking = true
+    //treeshaking = true
+	treeshaking = false
 }

@@ -2,13 +2,10 @@
 
 package com.soywiz.korio.vfs.js
 
-import com.jtransc.js.jsFunctionRaw2
-import com.jtransc.js.methods
-import com.jtransc.js.toJavaString
-import com.jtransc.js.toJavaStringOrNull
+import com.jtransc.js.*
+import com.soywiz.korio.async.AsyncSequence
+import com.soywiz.korio.async.AsyncSequenceEmitter
 import com.soywiz.korio.async.asyncFun
-import com.soywiz.korio.async.sleep
-import com.soywiz.korio.async.spawn
 import com.soywiz.korio.async.spawnAndForget
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
@@ -41,6 +38,23 @@ class LocalVfsProviderJs : LocalVfsProvider() {
 			} catch (t: Throwable) {
 				createNonExistsStat(path)
 			}
+		}
+
+		suspend override fun list(path: String): AsyncSequence<VfsFile> = asyncFun {
+			val emitter = AsyncSequenceEmitter<VfsFile>()
+			val fs = jsRequire("fs")
+			//console.methods["log"](path)
+			fs.methods["readdir"](path, jsFunctionRaw2 { err, files ->
+				//console.methods["log"](err)
+				//console.methods["log"](files)
+				for (n in 0 until files["length"].toInt()) {
+					val file = files[n].toJavaString()
+					//println("::$file")
+					emitter(file("$path/$file"))
+				}
+				emitter.close()
+			})
+			emitter.toSequence()
 		}
 
 		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = asyncFun {
