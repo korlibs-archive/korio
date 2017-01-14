@@ -12,7 +12,6 @@ import com.soywiz.korio.util.toUInt
 import java.io.FileNotFoundException
 import java.util.*
 import java.util.zip.Inflater
-import kotlin.collections.LinkedHashMap
 
 suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 	//val s = zipFile.open(VfsOpenMode.READ)

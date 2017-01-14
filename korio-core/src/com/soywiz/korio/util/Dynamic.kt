@@ -5,12 +5,10 @@ import com.soywiz.korio.async.invokeSuspend
 import com.soywiz.korio.error.ignoreErrors
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.error.noImpl
-import sun.reflect.MethodAccessor
 import java.lang.Byte
 import java.lang.Enum
 import java.lang.Float
 import java.lang.reflect.Array
-import java.lang.reflect.Method
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.*
@@ -326,11 +324,11 @@ object Dynamic {
 
 	suspend fun callAny(obj: Any?, key: Any?, args: List<Any?>): Any? = asyncFun {
 		if (obj == null) return@asyncFun null
-		if (key == null) return@asyncFun  null
+		if (key == null) return@asyncFun null
 		val method = obj.javaClass.methods.first { it.name == key }
 		method.isAccessible = true
 		val result = method.invokeSuspend(obj, args)
-		return@asyncFun  result
+		return@asyncFun result
 	}
 
 	suspend fun callAny(callable: Any?, args: List<Any?>): Any? {

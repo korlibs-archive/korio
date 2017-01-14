@@ -1,7 +1,11 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.async
 
 import java.io.Closeable
-import kotlin.coroutines.*
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.startCoroutine
+import kotlin.coroutines.suspendCoroutine
 
 interface EventLoop {
 	companion object {

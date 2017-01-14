@@ -1,3 +1,5 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 import com.soywiz.korio.async.EventLoop
 import com.soywiz.korio.vfs.LocalVfs
 

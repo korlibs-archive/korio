@@ -107,9 +107,11 @@ object Yaml {
 
 	interface Token {
 		val str: String
+
 		data class LINE(override val str: String) : Token {
 			val level = str.sumBy { if (it == '\t') 4 else 1 }
 		}
+
 		data class ID(override val str: String) : Token
 		data class SYMBOL(override val str: String) : Token
 	}

@@ -1,7 +1,8 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.async
 
 import java.io.Closeable
-import kotlin.coroutines.suspendCoroutine
 
 class Signal<T> : AsyncSequence<T> {
 	internal val handlers = arrayListOf<(T) -> Unit>()
@@ -12,8 +13,10 @@ class Signal<T> : AsyncSequence<T> {
 	}
 
 	operator fun invoke(value: T) {
-		for (handler in synchronized(handlers) { handlers.toList() }) {
-			handler(value)
+		EventLoop.queue {
+			for (handler in synchronized(handlers) { handlers.toList() }) {
+				handler(value)
+			}
 		}
 		//while (handlers.isNotEmpty()) {
 		//	val handler = handlers.remove()

@@ -10,7 +10,6 @@ import com.soywiz.korio.vfs.VfsOpenMode
 import java.io.ByteArrayOutputStream
 import java.io.EOFException
 import java.nio.charset.Charset
-import java.nio.charset.CharsetDecoder
 import java.util.*
 
 interface AsyncBaseStream {

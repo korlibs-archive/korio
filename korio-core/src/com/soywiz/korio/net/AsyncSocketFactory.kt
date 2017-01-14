@@ -5,7 +5,6 @@ import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.util.AsyncCloseable
-import java.net.SocketAddress
 
 interface AsyncSocketFactory {
 	suspend fun createClient(): AsyncClient

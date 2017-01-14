@@ -10,28 +10,28 @@ apply plugin: 'jtransc'
 mainClassName = "KorioFilewatchExample"
 
 sourceSets {
-    main.java.srcDirs = ['src']
-    test.java.srcDirs = ['test']
-    main.resources.srcDirs = ['resources']
-    test.resources.srcDirs = ['testresources']
+	main.java.srcDirs = ['src']
+	test.java.srcDirs = ['test']
+	main.resources.srcDirs = ['resources']
+	test.resources.srcDirs = ['testresources']
 }
 
 repositories {
-    mavenLocal()
-    maven { url "https://dl.bintray.com/kotlin/kotlin-eap-1.1" }
-    mavenCentral()
+	mavenLocal()
+	maven { url "https://dl.bintray.com/kotlin/kotlin-eap-1.1" }
+	mavenCentral()
 }
 
 dependencies {
-    compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-    compile project(":korio")
-    testCompile "junit:junit:4.11"
+	compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+	compile project(":korio")
+	testCompile "junit:junit:4.11"
 }
 
 jtransc {
-    assets = ["korio-jtransc-example/resources"]
-    //minimizeNames = true
-    minimizeNames = false
-    //treeshaking = true
+	assets = ["korio-jtransc-example/resources"]
+	//minimizeNames = true
+	minimizeNames = false
+	//treeshaking = true
 	treeshaking = false
 }

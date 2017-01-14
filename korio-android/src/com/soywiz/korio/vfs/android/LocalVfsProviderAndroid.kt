@@ -4,7 +4,6 @@ package com.soywiz.korio.vfs.android
 
 import android.os.Environment
 import android.os.FileObserver
-import com.soywiz.korio.android.KorioActivity
 import com.soywiz.korio.android.KorioAndroidContext
 import com.soywiz.korio.async.EventLoop
 import com.soywiz.korio.async.asyncGenerate
@@ -164,15 +163,15 @@ class LocalVfsProviderAndroid : LocalVfsProvider() {
 							FileObserver.CREATE, FileObserver.MOVED_TO -> handler(VfsFileEvent(VfsFileEvent.Kind.CREATED, that[rpath]))
 							FileObserver.MODIFY -> handler(VfsFileEvent(VfsFileEvent.Kind.MODIFIED, that[rpath]))
 							FileObserver.DELETE, FileObserver.MOVED_FROM -> handler(VfsFileEvent(VfsFileEvent.Kind.DELETED, that[rpath]))
-							//FileObserver.MOVED_FROM, FileObserver.MOVED_TO -> {
-							//	if (event == FileObserver.MOVED_FROM) movedFrom = rpath
-							//	//if (event == FileObserver.MOVED_FROM) movedFrom = rpath
-							//	//if (event == FileObserver.MOVED_TO) movedTo = rpath
-							//	//if (movedFrom != null && movedTo != null) {
-							//	//	// @TODO: This could be wrong!
-							//	//	handler(VfsFileEvent(VfsFileEvent.Kind.RENAMED, that[movedFrom!!], that[movedTo!!]))
-							//	//}
-							//}
+						//FileObserver.MOVED_FROM, FileObserver.MOVED_TO -> {
+						//	if (event == FileObserver.MOVED_FROM) movedFrom = rpath
+						//	//if (event == FileObserver.MOVED_FROM) movedFrom = rpath
+						//	//if (event == FileObserver.MOVED_TO) movedTo = rpath
+						//	//if (movedFrom != null && movedTo != null) {
+						//	//	// @TODO: This could be wrong!
+						//	//	handler(VfsFileEvent(VfsFileEvent.Kind.RENAMED, that[movedFrom!!], that[movedTo!!]))
+						//	//}
+						//}
 						}
 					}
 				}

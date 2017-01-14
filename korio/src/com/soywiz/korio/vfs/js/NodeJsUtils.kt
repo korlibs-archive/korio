@@ -100,16 +100,16 @@ object NodeJsUtils {
 		//fs.methods["exists"](path, jsFunctionRaw1 { jsexists ->
 		//	val exists = jsexists.toBool()
 		//	if (exists) {
-				fs.methods["stat"](path, jsFunctionRaw2 { err, stat ->
-					//console.methods["log"](stat)
-					if (err != null) {
-						c.resumeWithException(RuntimeException("Error ${err.toJavaString()} opening $path"))
-					} else {
-						val out = JsStat(stat["size"].toDouble())
-						out.isDirectory = stat.methods["isDirectory"]().toBool()
-						c.resume(out)
-					}
-				})
+		fs.methods["stat"](path, jsFunctionRaw2 { err, stat ->
+			//console.methods["log"](stat)
+			if (err != null) {
+				c.resumeWithException(RuntimeException("Error ${err.toJavaString()} opening $path"))
+			} else {
+				val out = JsStat(stat["size"].toDouble())
+				out.isDirectory = stat.methods["isDirectory"]().toBool()
+				c.resume(out)
+			}
+		})
 		//	} else {
 		//		c.resumeWithException(RuntimeException("File '$path' doesn't exists"))
 		//	}

@@ -1,6 +1,5 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.util.Dynamic
 import org.junit.Assert
 import org.junit.Test
 

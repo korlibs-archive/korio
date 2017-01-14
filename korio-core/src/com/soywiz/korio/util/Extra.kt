@@ -4,6 +4,7 @@ import kotlin.reflect.KProperty
 
 open interface Extra {
 	val extra: HashMap<String, Any?>
+
 	class Mixin(override val extra: HashMap<String, Any?> = HashMap()) : Extra
 }
 

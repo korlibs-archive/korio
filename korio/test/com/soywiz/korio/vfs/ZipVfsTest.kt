@@ -7,6 +7,7 @@ import org.junit.Assert
 import org.junit.Test
 import java.text.SimpleDateFormat
 
+@Suppress("EXPERIMENTAL_FEATURE_WARNING")
 class ZipVfsTest {
 	@Test
 	fun testZipUncompressed() = sync {

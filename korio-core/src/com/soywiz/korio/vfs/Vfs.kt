@@ -73,7 +73,7 @@ abstract class Vfs {
 		suspend open protected fun init() {
 		}
 
-		private var initialized = false
+		var initialized = false
 		suspend private fun initOnce() = asyncFun {
 			if (!initialized) {
 				initialized = true

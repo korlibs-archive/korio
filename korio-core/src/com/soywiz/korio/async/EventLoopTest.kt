@@ -2,10 +2,12 @@ package com.soywiz.korio.async
 
 import java.io.Closeable
 import java.util.*
+import java.util.concurrent.Executors
 
 class EventLoopTest : EventLoop {
 	var time = 0L
 
+	val worker = Executors.newSingleThreadExecutor()
 	val timers = TreeMap<Long, ArrayList<() -> Unit>>()
 
 	override val available = true
@@ -32,14 +34,18 @@ class EventLoopTest : EventLoop {
 
 	override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
 		val items = timers.getOrPut(this.time + ms) { ArrayList() }
-		items += callback
+		items += {
+			worker.execute { callback() }
+		}
 		return Closeable {
 			items -= callback
 		}
 	}
 
 	override fun setImmediate(handler: () -> Unit) {
-		handler()
+		worker.execute {
+			handler()
+		}
 	}
 
 	fun step(ms: Int) {
@@ -51,7 +57,9 @@ class EventLoopTest : EventLoop {
 			if (time >= firstTime) {
 				timers.remove(firstTime)
 				//println("handler!")
-				for (handler in firstHandlers) handler()
+				worker.execute {
+					for (handler in firstHandlers) handler()
+				}
 			} else {
 				break
 			}

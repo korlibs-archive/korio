@@ -96,6 +96,7 @@ fun <T> sync(block: suspend () -> T): T {
 
 	while (result == null) Thread.sleep(1L)
 	if (result is Throwable) throw result as Throwable
+	@Suppress("UNCHECKED_CAST")
 	return result as T
 }
 
