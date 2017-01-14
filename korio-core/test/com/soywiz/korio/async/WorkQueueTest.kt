@@ -10,6 +10,7 @@ class WorkQueueTest {
 		val queue = WorkQueue()
 		queue { sleep(100); out += "a" }
 		queue { sleep(100); out += "b" }
+		step(0)
 		Assert.assertEquals("", out)
 		step(100)
 		Assert.assertEquals("a", out)
@@ -24,6 +25,7 @@ class WorkQueueTest {
 		val queue2 = WorkQueue()
 		queue1 { sleep(100); out += "a" }
 		queue2 { sleep(100); out += "b" }
+		step(0)
 		Assert.assertEquals("", out)
 		step(100)
 		Assert.assertEquals("ab", out)

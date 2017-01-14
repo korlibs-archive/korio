@@ -2,18 +2,13 @@ package com.soywiz.korio.async
 
 import java.io.Closeable
 import java.util.*
-import java.util.concurrent.Executors
 
 class EventLoopTest : EventLoop {
-	var time = 0L
+	private var time = 0L
 
-	var workerThread: Thread? = null
-	val worker = Executors.newSingleThreadExecutor().apply {
-		execute {
-			workerThread = Thread.currentThread()
-		}
-	}
-	val timers = TreeMap<Long, ArrayList<() -> Unit>>()
+	private var tasks = LinkedList<() -> Unit>()
+	private val lock = Object()
+	private val timers = TreeMap<Long, ArrayList<() -> Unit>>()
 
 	override val available = true
 	override val priority: Int = Int.MAX_VALUE - 1000
@@ -38,48 +33,53 @@ class EventLoopTest : EventLoop {
 	}
 
 	override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
-		val items = timers.getOrPut(this.time + ms) { ArrayList() }
-		items += {
-			worker.execute { callback() }
-		}
+		val items = synchronized(lock) { timers.getOrPut(this.time + ms) { ArrayList() } }
+		items += callback
 		return Closeable {
 			items -= callback
 		}
 	}
 
-	override fun setImmediate(handler: () -> Unit) {
-		worker.execute {
-			handler()
+	var executing = false
+	fun executeTasks() {
+		if (executing) return
+		executing = true
+		try {
+			var checkTimers = true
+			while (synchronized(lock) { tasks.isNotEmpty() || checkTimers }) {
+				val task = synchronized(lock) { if (tasks.isNotEmpty()) tasks.removeFirst() else null }
+				if (task != null) task()
+
+				val handlers = synchronized(lock) {
+					if (timers.isNotEmpty()) {
+						val item = timers.firstEntry()
+						if (time >= item.key) {
+							timers.remove(item.key)
+							item.value
+						} else {
+							checkTimers = false
+							null
+						}
+					} else {
+						checkTimers = false
+						null
+					}
+				}
+
+				if (handlers != null) for (handler in handlers) handler()
+			}
+		} finally {
+			executing = false
 		}
 	}
 
-	suspend fun waitPending() = asyncFun {
-		while (workerThread == null) Thread.sleep(1L)
-		if (Thread.currentThread() != workerThread) {
-			var pending = true
-			worker.execute {
-				pending = false
-			}
-			while (pending) Thread.sleep(1L)
-		}
+	override fun setImmediate(handler: () -> Unit) {
+		synchronized(lock) { tasks.add(handler) }
+		executeTasks()
 	}
 
 	suspend fun step(ms: Int) = asyncFun {
-		waitPending()
 		time += ms
-		//println("$time, $timers")
-		while (timers.isNotEmpty()) {
-			timers.firstEntry()
-			val (firstTime, firstHandlers) = timers.firstEntry()
-			if (time >= firstTime) {
-				timers.remove(firstTime)
-				//println("handler!")
-				worker.execute {
-					for (handler in firstHandlers) handler()
-				}
-			} else {
-				break
-			}
-		}
+		executeTasks()
 	}
 }
