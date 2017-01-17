@@ -3,7 +3,7 @@ package com.soywiz.korio.async
 import java.io.Closeable
 import java.util.*
 
-class EventLoopTest : EventLoop {
+class EventLoopTest : EventLoop() {
 	private var time = 0L
 
 	private var tasks = LinkedList<() -> Unit>()

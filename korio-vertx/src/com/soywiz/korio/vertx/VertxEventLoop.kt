@@ -3,7 +3,7 @@ package com.soywiz.korio.vertx
 import com.soywiz.korio.async.EventLoop
 import java.io.Closeable
 
-class VertxEventLoop : EventLoop {
+class VertxEventLoop : EventLoop() {
 	val _vertx = vertx
 
 	override val priority = 500

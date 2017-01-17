@@ -4,6 +4,7 @@ import org.intellij.lang.annotations.Language
 import java.util.*
 
 data class Xml(val type: Type, val name: String, val attributes: Map<String, String>, val allChildren: List<Xml>, val content: String) {
+	val nameLC: String = name.toLowerCase().trim()
 	val descendants: Iterable<Xml> get() = allChildren.flatMap { it.allChildren + it }
 	val allChildrenNoComments get() = allChildren.filter { it.type != Type.COMMENT }
 

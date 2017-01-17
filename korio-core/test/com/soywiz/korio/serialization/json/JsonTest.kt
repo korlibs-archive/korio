@@ -40,4 +40,16 @@ class JsonTest {
 		Assert.assertEquals("[1,2,3]", Json.encode(listOf(1, 2, 3)))
 		Assert.assertEquals("""{"a":1,"b":2}""", Json.encode(hashMapOf("a" to 1, "b" to 2)))
 	}
+
+	data class Demo(val a: Int, val b: String)
+
+	@Test
+	fun encodeTyped() {
+		Assert.assertEquals("""{"a":1,"b":"test"}""", Json.encode(Demo(1, "test")))
+	}
+
+	@Test
+	fun decodeToType1() {
+		Assert.assertEquals(Demo(1, "hello"), Json.decodeToType<Demo>("""{"a": 1, "b": "hello"}"""))
+	}
 }

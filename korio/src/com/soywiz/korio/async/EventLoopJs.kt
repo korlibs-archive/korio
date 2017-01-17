@@ -8,7 +8,7 @@ import java.io.Closeable
 import java.util.*
 
 @Suppress("unused")
-class EventLoopJs : EventLoop {
+class EventLoopJs : EventLoop() {
 	override val available: Boolean get() = OS.isJs
 	override val priority: Int = 2000
 
@@ -25,8 +25,8 @@ class EventLoopJs : EventLoop {
 			insideImmediate = true
 			try {
 				while (immediateHandlers.isNotEmpty()) {
-					val handler = immediateHandlers.removeFirst()
-					handler()
+					val fhandler = immediateHandlers.removeFirst()
+					fhandler()
 				}
 			} finally {
 				insideImmediate = false

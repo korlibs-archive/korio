@@ -7,7 +7,7 @@ import kotlin.coroutines.Continuation
 import kotlin.coroutines.startCoroutine
 import kotlin.coroutines.suspendCoroutine
 
-interface EventLoop {
+abstract class EventLoop {
 	companion object {
 		var _impl: EventLoop? = null
 		var impl: EventLoop
@@ -49,11 +49,27 @@ interface EventLoop {
 		suspend fun sleep(ms: Int): Unit = suspendCoroutine { c -> setTimeout(ms) { c.resume(Unit) } }
 	}
 
-	val available: Boolean
-	val priority: Int
-	fun init(): Unit
-	fun setInterval(ms: Int, callback: () -> Unit): Closeable
-	fun setTimeout(ms: Int, callback: () -> Unit): Closeable
-	fun setImmediate(handler: () -> Unit): Unit
+	open val available: Boolean = true
+	open val priority: Int = 5000
+	open fun init(): Unit = Unit
+	abstract fun setTimeout(ms: Int, callback: () -> Unit): Closeable
+
+	open fun setInterval(ms: Int, callback: () -> Unit): Closeable {
+		var cancelled = false
+		fun step() {
+			setTimeout(ms, {
+				if (!cancelled) {
+					step()
+					callback()
+				}
+			})
+		}
+		step()
+		return Closeable { cancelled = true }
+	}
+
+	open fun setImmediate(handler: () -> Unit): Unit {
+		setTimeout(0, handler)
+	}
 }
 

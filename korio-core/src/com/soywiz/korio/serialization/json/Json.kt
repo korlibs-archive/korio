@@ -1,5 +1,6 @@
 package com.soywiz.korio.serialization.json
 
+import com.soywiz.korio.util.ClassFactory
 import com.soywiz.korio.util.StrReader
 import com.soywiz.korio.util.toNumber
 import org.intellij.lang.annotations.Language
@@ -9,6 +10,10 @@ object Json {
 	fun invalidJson(msg: String = "Invalid JSON"): Nothing = throw IOException(msg)
 
 	fun decode(@Language("json") s: String): Any? = StrReader(s).decode()
+
+	inline fun <reified T : Any> decodeToType(@Language("json") s: String): T = decodeToType(s, T::class.java)
+	@Suppress("UNCHECKED_CAST")
+	fun <T> decodeToType(@Language("json") s: String, clazz: Class<T>): T = ClassFactory(clazz).create(decode(s) as Map<String, Any?>)
 
 	fun StrReader.decode(): Any? {
 		val ic = skipSpaces().read()
@@ -72,6 +77,7 @@ object Json {
 		}
 	}
 
+	@Language("json")
 	fun encode(obj: Any?) = StringBuilder().apply { encode(obj, this) }.toString()
 
 	fun encode(obj: Any?, b: StringBuilder) {
@@ -100,22 +106,16 @@ object Json {
 				b.append('"')
 				for (c in obj) {
 					when (c) {
-						'\\' -> b.append("\\\\")
-						'/' -> b.append("\\/")
-						'\'' -> b.append("\\'")
-						'"' -> b.append("\\\"")
-						'\b' -> b.append("\\b")
-						'\u000c' -> b.append("\\f")
-						'\n' -> b.append("\\n")
-						'\r' -> b.append("\\r")
-						'\t' -> b.append("\\t")
+						'\\' -> b.append("\\\\") ; '/' -> b.append("\\/") ; '\'' -> b.append("\\'")
+						'"' -> b.append("\\\"") ; '\b' -> b.append("\\b") ; '\u000c' -> b.append("\\f")
+						'\n' -> b.append("\\n") ; '\r' -> b.append("\\r") ; '\t' -> b.append("\\t")
 						else -> b.append(c)
 					}
 				}
 				b.append('"')
 			}
 			is Number -> b.append("$obj")
-			else -> invalidJson("Don't know how to handle $obj")
+			else -> encode(ClassFactory(obj.javaClass).toMap(obj), b)
 		}
 	}
 }
