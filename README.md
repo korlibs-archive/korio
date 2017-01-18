@@ -87,7 +87,12 @@ writeBytes, write8, write16_le, write32_le, write64_le, writeF32_le, writeF64_le
 
 ### AsyncClient + AsyncServer
 
-Korio includes a TCP client (implementing AsyncStream) and a TCP server with a lazy asynchronous connection iterator.
+Korio includes a TCP client (implementing AsyncStream) and a TCP server with a lazy asynchronous connection iterator for all supported platforms but browser javascript. 
+
+### WebSocketClient
+
+Korio includes a WebSocket client. It has two implementations: one simple and generic for targets supporting AsyncClient and other for browser javascript.
+So this is supported on all targets.
 
 ### VFS
 
