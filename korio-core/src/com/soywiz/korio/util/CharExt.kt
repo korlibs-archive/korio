@@ -4,6 +4,8 @@ fun Char.isLetterOrUnderscore(): Boolean = this.isLetter() || this == '_' || thi
 fun Char.isLetterDigitOrUnderscore(): Boolean = this.isLetterOrDigit() || this == '_' || this == '$'
 fun Char.isLetterOrDigitOrDollar(): Boolean = this.isLetterOrDigit() || this == '$'
 
+val Char.isNumeric: Boolean get() = this.isDigit() || this == '.' || this == 'e' || this == '-'
+
 // @TODO: Make a proper table
 // 0x20, 0x7e
 //return this.isLetterDigitOrUnderscore() || this == '.' || this == '/' || this == '\'' || this == '"' || this == '(' || this == ')' || this == '[' || this == ']' || this == '+' || this == '-' || this == '*' || this == '/'

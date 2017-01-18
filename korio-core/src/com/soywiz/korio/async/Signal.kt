@@ -4,10 +4,11 @@ package com.soywiz.korio.async
 
 import java.io.Closeable
 
-class Signal<T> : AsyncSequence<T> {
+class Signal<T>(val onRegister: () -> Unit = {}) : AsyncSequence<T> {
 	internal val handlers = arrayListOf<(T) -> Unit>()
 
 	fun add(handler: (T) -> Unit): Closeable {
+		onRegister()
 		synchronized(handlers) { handlers += handler }
 		return Closeable { synchronized(handlers) { handlers -= handler } }
 	}

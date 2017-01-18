@@ -119,6 +119,14 @@ suspend fun <T> (suspend () -> T).await(): T = suspendCoroutine { c ->
 	this.startCoroutine(c)
 }
 
+fun <R, T> (suspend R.() -> T).execAndForget(receiver: R) = spawnAndForget {
+	this.await(receiver)
+}
+
+fun <T> (suspend () -> T).execAndForget() = spawnAndForget {
+	this.await()
+}
+
 object EmptyContinuation : Continuation<Any> {
 	override fun resume(value: Any) = Unit
 	override fun resumeWithException(exception: Throwable) {
