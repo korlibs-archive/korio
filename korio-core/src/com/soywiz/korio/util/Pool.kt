@@ -21,7 +21,6 @@ class Pool<T>(val reset: (T) -> Unit = {}, val gen: () -> T) {
 	}
 
 	fun free(v: List<T>) {
-
 		for (it in v) reset(it)
 		items.addAll(v)
 	}

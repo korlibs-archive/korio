@@ -43,6 +43,10 @@ class JsonTest {
 
 	data class Demo(val a: Int, val b: String)
 
+	data class DemoList(val demos: ArrayList<Demo>)
+
+	data class DemoSet(val demos: Set<Demo>)
+
 	@Test
 	fun encodeTyped() {
 		Assert.assertEquals("""{"a":1,"b":"test"}""", Json.encode(Demo(1, "test")))
@@ -51,5 +55,24 @@ class JsonTest {
 	@Test
 	fun decodeToType1() {
 		Assert.assertEquals(Demo(1, "hello"), Json.decodeToType<Demo>("""{"a": 1, "b": "hello"}"""))
+	}
+
+	@Test
+	fun decodeUnicode() {
+		Assert.assertEquals("aeb", Json.decode(""" "a\u0065b" """))
+	}
+
+	@Test
+	fun decodeTypedList() {
+		val result = Json.decodeToType<DemoList>("""{ "demos" : [{"a":1,"b":"A"}, {"a":2,"b":"B"}] }""")
+		val demo = result.demos.first()
+		Assert.assertEquals(1, demo.a)
+	}
+
+	@Test
+	fun decodeTypedSet() {
+		val result = Json.decodeToType<DemoSet>("""{ "demos" : [{"a":1,"b":"A"}, {"a":2,"b":"B"}] }""")
+		val demo = result.demos.first()
+		Assert.assertEquals(1, demo.a)
 	}
 }

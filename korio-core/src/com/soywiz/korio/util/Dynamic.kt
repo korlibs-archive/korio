@@ -16,11 +16,12 @@ import java.util.*
 object Dynamic {
 	@Suppress("UNCHECKED_CAST")
 	fun <T> createEmptyClass(clazz: Class<T>): T {
+		if (clazz == java.util.Set::class.java) return setOf<Any?>() as T
 		if (clazz == java.util.List::class.java) return listOf<Any?>() as T
 		if (clazz == java.util.Map::class.java) return mapOf<Any?, Any?>() as T
 		if (clazz == java.lang.Iterable::class.java) return listOf<Any?>() as T
 
-		val constructor = clazz.constructors.first()
+		val constructor = clazz.declaredConstructors.firstOrNull() ?: invalidOp("Can't find constructor for class '$clazz'")
 		val args = constructor.parameterTypes.map {
 			dynamicCast(null, it)
 		}
@@ -146,17 +147,18 @@ object Dynamic {
 
 	@Suppress("UNCHECKED_CAST")
 	fun <T : Any> dynamicCast(value: Any?, target: Class<T>, genericType: Type? = null): T? {
-		if (value != null && target.isAssignableFrom(value.javaClass)) {
-			return if (genericType != null && genericType is ParameterizedType) {
-				val typeArgs = genericType.actualTypeArguments
-				when (value) {
-					is List<*> -> value.map { dynamicCast(it, typeArgs[0] as Class<Any>) }
-					else -> value
-				} as T
-			} else {
-				value as T
-			}
-		}
+		//if (value != null && target.isAssignableFrom(value.javaClass)) {
+		//	return if (genericType != null && genericType is ParameterizedType) {
+		//		val typeArgs = genericType.actualTypeArguments
+		//		when (value) {
+		//			is Set<*> -> value.map { dynamicCast(it, typeArgs[0] as Class<Any>) }.toSet()
+		//			is List<*> -> value.map { dynamicCast(it, typeArgs[0] as Class<Any>) }
+		//			else -> value
+		//		} as T
+		//	} else {
+		//		value as T
+		//	}
+		//}
 		val str = if (value != null) "$value" else "0"
 		if (target.isPrimitive) {
 			when (target) {
@@ -181,7 +183,6 @@ object Dynamic {
 		if (target.isAssignableFrom(java.lang.Double::class.java)) return str.toDouble() as T
 		if (target.isAssignableFrom(java.lang.String::class.java)) return (if (value == null) "" else str) as T
 		if (target.isEnum) return if (value != null) Enum.valueOf<AnyEnum>(target as Class<AnyEnum>, str) as T else target.enumConstants.first()
-		if (value is List<*>) return value.toList() as T
 		if (value is Map<*, *>) {
 			val map = value as Map<Any?, *>
 			val resultClass = target as Class<Any>
@@ -194,6 +195,17 @@ object Dynamic {
 				}
 			}
 			return result as T
+		}
+		if (value is Iterable<*>) {
+			if (genericType is ParameterizedType) {
+				val typeArgs = genericType.actualTypeArguments
+				val out = value.map { dynamicCast(it, typeArgs[0] as Class<Any>) }
+				return when {
+					target.isAssignableFrom(Set::class.java) -> out.toSet() as T
+					else -> out as T
+				}
+			}
+			return value.toList() as T
 		}
 		if (value == null) return createEmptyClass(target)
 		invalidOp("Can't convert '$value' to '$target'")

@@ -29,6 +29,7 @@ class ClassFactory<T> private constructor(val clazz: Class<T>, internal: kotlin.
 				Double.TYPE -> return 0.0
 			}
 			if (clazz.isArray) return java.lang.reflect.Array.newInstance(clazz.componentType, 0)
+			if (clazz.isAssignableFrom(Set::class.java)) return HashSet<Any>()
 			if (clazz.isAssignableFrom(List::class.java)) return ArrayList<Any>()
 			if (clazz.isAssignableFrom(Map::class.java)) return HashMap<Any, Any>()
 			return ClassFactory[clazz].createDummy()
@@ -50,7 +51,8 @@ class ClassFactory<T> private constructor(val clazz: Class<T>, internal: kotlin.
 		val instance = createDummy()
 		for (field in fields) {
 			if (values.containsKey(field.name)) {
-				field.set(instance, values[field.name])
+				field.isAccessible = true
+				field.set(instance, Dynamic.dynamicCast(values[field.name], field.type, field.genericType))
 			}
 		}
 		return instance
