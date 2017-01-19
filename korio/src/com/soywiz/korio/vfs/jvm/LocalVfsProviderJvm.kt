@@ -79,18 +79,17 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 			})
 
 			return object : AsyncStreamBase() {
-				suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
+				suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 					val bb = ByteBuffer.wrap(buffer, offset, len)
-					completionHandler<Int> { channel.read(bb, position, Unit, it) }
+					return completionHandler<Int> { channel.read(bb, position, Unit, it) }
 				}
 
-				suspend override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) = asyncFun {
+				suspend override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
 					val bb = ByteBuffer.wrap(buffer, offset, len)
-					val write = completionHandler<Int> { channel.write(bb, position, Unit, it) }
-					Unit
+					completionHandler<Int> { channel.write(bb, position, Unit, it) }
 				}
 
-				suspend override fun setLength(value: Long): Unit = asyncFun { channel.truncate(value); Unit }
+				suspend override fun setLength(value: Long): Unit { channel.truncate(value); Unit }
 				suspend override fun getLength(): Long = channel.size()
 				suspend override fun close() = channel.close()
 
@@ -120,7 +119,7 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 			}
 		}
 
-		suspend override fun list(path: String): AsyncSequence<VfsFile> = asyncFun {
+		suspend override fun list(path: String): AsyncSequence<VfsFile> {
 			val emitter = AsyncSequenceEmitter<VfsFile>()
 			val files = executeInWorker { Files.newDirectoryStream(resolvePath(path)) }
 			spawnAndForget {
@@ -135,7 +134,7 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 					}
 				}
 			}
-			emitter.toSequence()
+			return emitter.toSequence()
 		}
 
 		suspend override fun mkdir(path: String): Boolean = executeInWorker {

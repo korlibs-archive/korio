@@ -2,9 +2,9 @@ package com.soywiz.korio.async
 
 import java.lang.reflect.Method
 import kotlin.coroutines.Continuation
-import kotlin.coroutines.CoroutineIntrinsics
+import kotlin.coroutines.intrinsics.SUSPENDED_MARKER
 
-suspend fun Method.invokeSuspend(obj: Any?, args: List<Any?>): Any? = asyncFun {
+suspend fun Method.invokeSuspend(obj: Any?, args: List<Any?>): Any? {
 	val method = this
 
 	val lastParam = method.parameterTypes.lastOrNull()
@@ -16,7 +16,7 @@ suspend fun Method.invokeSuspend(obj: Any?, args: List<Any?>): Any? = asyncFun {
 		margs += deferred.toContinuation()
 	}
 	val result = method.invoke(obj, *margs.toTypedArray())
-	if (result == CoroutineIntrinsics.SUSPENDED) {
+	return if (result == SUSPENDED_MARKER) {
 		deferred?.promise?.await()
 	} else {
 		result

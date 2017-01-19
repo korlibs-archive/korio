@@ -1,17 +1,10 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.stream.*
 
-suspend fun IsoVfs(file: VfsFile): VfsFile = asyncFun {
-	ISO.openVfs(file.open(VfsOpenMode.READ))
-}
-
-suspend fun IsoVfs(s: AsyncStream): VfsFile = asyncFun {
-	ISO.openVfs(s)
-}
-
+suspend fun IsoVfs(file: VfsFile): VfsFile = ISO.openVfs(file.open(VfsOpenMode.READ))
+suspend fun IsoVfs(s: AsyncStream): VfsFile = ISO.openVfs(s)
 suspend fun AsyncStream.openAsIso() = IsoVfs(this)
 suspend fun VfsFile.openAsIso() = IsoVfs(this)
 
@@ -20,25 +13,16 @@ object ISO {
 
 	suspend fun read(s: AsyncStream): IsoFile = IsoReader(s).read()
 
-	suspend fun openVfs(s: AsyncStream) = asyncFun {
+	suspend fun openVfs(s: AsyncStream): VfsFile {
 		val iso = read(s)
-		(object : Vfs() {
+		return (object : Vfs() {
 			val vfs = this
 			val isoFile = iso
 
 			fun getVfsStat(file: IsoFile): VfsStat = createExistsStat(file.fullname, isDirectory = file.isDirectory, size = file.size)
 
-			suspend override fun stat(path: String): VfsStat = asyncFun {
-				try {
-					getVfsStat(isoFile[path])
-				} catch (e: Throwable) {
-					createNonExistsStat(path)
-				}
-			}
-
-			suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
-				return isoFile[path].open2(mode)
-			}
+			suspend override fun stat(path: String): VfsStat = try { getVfsStat(isoFile[path]) } catch (e: Throwable) { createNonExistsStat(path) }
+			suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = isoFile[path].open2(mode)
 
 			suspend override fun list(path: String) = asyncGenerate {
 				val file = isoFile[path]
@@ -52,16 +36,16 @@ object ISO {
 
 	class IsoReader(val s: AsyncStream) {
 		suspend fun getSector(sector: Int, size: Int): AsyncStream = s.sliceWithSize(sector.toLong() * SECTOR_SIZE, size.toLong())
-		suspend fun getSectorMemory(sector: Int, size: Int) = asyncFun { getSector(sector, size).readAvailable().openSync() }
+		suspend fun getSectorMemory(sector: Int, size: Int) = getSector(sector, size).readAvailable().openSync()
 
-		suspend fun read(): IsoFile = asyncFun {
+		suspend fun read(): IsoFile {
 			val primary = PrimaryVolumeDescriptor(getSectorMemory(0x10, SECTOR_SIZE.toInt()))
 			val root = IsoFile(this@IsoReader, primary.rootDirectoryRecord, null)
 			readDirectoryRecords(root, getSectorMemory(primary.rootDirectoryRecord.extent, primary.rootDirectoryRecord.size))
-			root
+			return root
 		}
 
-		suspend fun readDirectoryRecords(parent: IsoFile, sector: SyncStream): Unit = asyncFun {
+		suspend fun readDirectoryRecords(parent: IsoFile, sector: SyncStream): Unit {
 			while (!sector.eof) {
 				val dr = DirectoryRecord(sector)
 				if (dr == null) {

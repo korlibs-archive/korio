@@ -1,6 +1,5 @@
 package com.soywiz.korio.vfs.jvm
 
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
@@ -19,10 +18,10 @@ class UrlVfsProviderJvm : UrlVfsProvider {
 	override fun invoke(): Vfs = object : Vfs() {
 		val statCache = AsyncCache()
 
-		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = asyncFun {
+		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
 			var info: VfsStat? = null
 
-			object : AsyncStreamBase() {
+			return object : AsyncStreamBase() {
 				suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker {
 					val conn = URL(path).openConnection() as HttpURLConnection
 					conn.setRequestProperty("Range", "bytes=$position-${(position + len) - 1}")
@@ -32,9 +31,9 @@ class UrlVfsProviderJvm : UrlVfsProvider {
 					res.size
 				}
 
-				suspend override fun getLength(): Long = asyncFun {
+				suspend override fun getLength(): Long {
 					if (info == null) info = stat(path)
-					info!!.size
+					return info!!.size
 				}
 			}.toAsyncStream().buffered()
 		}

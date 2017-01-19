@@ -1,13 +1,13 @@
+@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
+
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.util.compareToChain
 import java.io.FileNotFoundException
 import java.util.*
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.startCoroutine
-import kotlin.coroutines.suspendCoroutine
+import kotlin.coroutines.*
 
-suspend inline fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile = suspendCoroutine { c ->
+suspend fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile = suspendCoroutine { c ->
 	val mount = object : Vfs.Proxy(), Mountable {
 		private val mounts = TreeMap<String, VfsFile>({ a, b ->
 			b.length.compareTo(a.length).compareToChain { b.compareTo(a) }
@@ -28,6 +28,7 @@ suspend inline fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile
 		}
 	}
 	callback.startCoroutine(mount, object : Continuation<Unit> {
+		override val context: CoroutineContext = EmptyCoroutineContext
 		override fun resume(value: Unit) = c.resume(mount.root)
 		override fun resumeWithException(exception: Throwable) = c.resumeWithException(exception)
 	})

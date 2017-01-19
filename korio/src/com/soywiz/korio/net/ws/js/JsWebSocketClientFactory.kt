@@ -2,14 +2,13 @@ package com.soywiz.korio.net.ws.js
 
 import com.jtransc.annotation.JTranscMethodBody
 import com.jtransc.js.*
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.waitOne
 import com.soywiz.korio.net.ws.WebSocketClient
 import com.soywiz.korio.net.ws.WebSocketClientFactory
 import java.net.URI
 
 class JsWebSocketClientFactory : WebSocketClientFactory {
-	override suspend fun create(url: URI, protocols: List<String>?, origin: String?, wskey: String?, debug: Boolean): WebSocketClient = asyncFun { JsWebSocketClient(url, protocols, DEBUG = debug).apply { init() } }
+	override suspend fun create(url: URI, protocols: List<String>?, origin: String?, wskey: String?, debug: Boolean): WebSocketClient = JsWebSocketClient(url, protocols, DEBUG = debug).apply { init() }
 }
 
 class JsWebSocketClient(url: URI, protocols: List<String>?, val DEBUG: Boolean) : WebSocketClient(url, protocols, true) {
@@ -44,7 +43,7 @@ class JsWebSocketClient(url: URI, protocols: List<String>?, val DEBUG: Boolean) 
 		})
 	}
 
-	suspend fun init() = asyncFun {
+	suspend fun init() {
 		if (DEBUG) println("[WS] Wait connection ($url)...")
 		onOpen.waitOne()
 		if (DEBUG) println("[WS] Connected!")
@@ -55,16 +54,14 @@ class JsWebSocketClient(url: URI, protocols: List<String>?, val DEBUG: Boolean) 
 		jsws.methods["close"]()
 	}
 
-	override suspend fun send(message: String) = asyncFun {
+	override suspend fun send(message: String) {
 		if (DEBUG) println("[WS-SEND]: $message")
 		jsws.methods["send"](message)
-		Unit
 	}
 
-	override suspend fun send(message: ByteArray) = asyncFun {
+	override suspend fun send(message: ByteArray) {
 		if (DEBUG) println("[WS-SEND]: ${message.toList()}")
 		jsws.methods["send"](message.toJsTypedArray())
-		Unit
 	}
 }
 

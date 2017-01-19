@@ -1,6 +1,5 @@
 package com.soywiz.korio.vfs.jvm
 
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.MemorySyncStream
@@ -15,7 +14,7 @@ class ResourcesVfsProviderJvm : ResourcesVfsProvider {
 		val merged = MergedVfs()
 
 		return object : Vfs.Decorator(merged.root) {
-			suspend override fun init() = asyncFun {
+			suspend override fun init() {
 				if (classLoader is URLClassLoader) {
 					for (url in classLoader.urLs) {
 						val urlStr = url.toString()

@@ -4,7 +4,6 @@ package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.Signal
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
@@ -74,7 +73,7 @@ open class NodeVfs : Vfs() {
 
 	val rootNode = Node("", isDirectory = true)
 
-	suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = asyncFun {
+	suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
 		val pathInfo = PathInfo(path)
 		val folder = rootNode.access(pathInfo.folder)
 		var node = folder.child(pathInfo.basename)
@@ -101,12 +100,11 @@ open class NodeVfs : Vfs() {
 				suspend override fun close() = s.close()
 			}.toAsyncStream()
 		}
-		node?.stream?.clone()
-			?: throw FileNotFoundException(path)
+		return node?.stream?.clone() ?: throw FileNotFoundException(path)
 	}
 
-	suspend override fun stat(path: String): VfsStat = asyncFun {
-		try {
+	suspend override fun stat(path: String): VfsStat {
+		return try {
 			val node = rootNode.access(path)
 			//createExistsStat(path, isDirectory = node.isDirectory, size = node.stream?.getLength() ?: 0L) // @TODO: Kotlin wrong code generated!
 			val length = node.stream?.getLength() ?: 0L
@@ -123,11 +121,11 @@ open class NodeVfs : Vfs() {
 		}
 	}
 
-	suspend override fun delete(path: String): Boolean = asyncFun {
+	suspend override fun delete(path: String): Boolean {
 		val node = rootNode[path]
 		node.parent = null
 		events(VfsFileEvent(VfsFileEvent.Kind.DELETED, this[path]))
-		true
+		return true
 	}
 
 	suspend override fun mkdir(path: String): Boolean {

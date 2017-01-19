@@ -5,7 +5,6 @@ package com.soywiz.korio.vfs.js
 import com.jtransc.js.*
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.AsyncSequenceEmitter
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.spawnAndForget
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
@@ -15,15 +14,15 @@ import java.io.Closeable
 
 class LocalVfsProviderJs : LocalVfsProvider() {
 	override fun invoke(): Vfs = object : Vfs() {
-		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = asyncFun {
+		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
 			val stat = NodeJsUtils.fstat(path)
 			val handle = NodeJsUtils.open(path, "r")
 
-			object : AsyncStreamBase() {
-				suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
+			return object : AsyncStreamBase() {
+				suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 					val data = NodeJsUtils.read(handle, position.toDouble(), len.toDouble())
 					System.arraycopy(data, 0, buffer, offset, data.size)
-					data.size
+					return data.size
 				}
 
 				suspend override fun getLength(): Long = stat.size.toLong()
@@ -31,16 +30,14 @@ class LocalVfsProviderJs : LocalVfsProvider() {
 			}.toAsyncStream()
 		}
 
-		suspend override fun stat(path: String): VfsStat = asyncFun {
-			try {
-				val stat = NodeJsUtils.fstat(path)
-				createExistsStat(path, isDirectory = stat.isDirectory, size = stat.size.toLong())
-			} catch (t: Throwable) {
-				createNonExistsStat(path)
-			}
+		suspend override fun stat(path: String): VfsStat = try {
+			val stat = NodeJsUtils.fstat(path)
+			createExistsStat(path, isDirectory = stat.isDirectory, size = stat.size.toLong())
+		} catch (t: Throwable) {
+			createNonExistsStat(path)
 		}
 
-		suspend override fun list(path: String): AsyncSequence<VfsFile> = asyncFun {
+		suspend override fun list(path: String): AsyncSequence<VfsFile> {
 			val emitter = AsyncSequenceEmitter<VfsFile>()
 			val fs = jsRequire("fs")
 			//console.methods["log"](path)
@@ -54,10 +51,10 @@ class LocalVfsProviderJs : LocalVfsProvider() {
 				}
 				emitter.close()
 			})
-			emitter.toSequence()
+			return emitter.toSequence()
 		}
 
-		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = asyncFun {
+		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable {
 			val fs = jsRequire("fs")
 			val watcher = fs.methods["watch"](path, jsObject("persistent" to true, "recursive" to true), jsFunctionRaw2 { eventType, filename ->
 				spawnAndForget {
@@ -80,9 +77,7 @@ class LocalVfsProviderJs : LocalVfsProvider() {
 				}
 			})
 
-			Closeable {
-				watcher.methods["close"]()
-			}
+			return Closeable { watcher.methods["close"]() }
 		}
 
 		override fun toString(): String = "LocalVfs"

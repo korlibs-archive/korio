@@ -1,6 +1,5 @@
 package com.soywiz.korio.net.ws
 
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.spawn
 import com.soywiz.korio.crypto.Base64
 import com.soywiz.korio.net.AsyncClient
@@ -10,8 +9,8 @@ import java.io.EOFException
 import java.net.URI
 
 class JvmWebSocketClientFactory : WebSocketClientFactory {
-	override suspend fun create(url: URI, protocols: List<String>?, origin: String?, wskey: String?, debug: Boolean): WebSocketClient = asyncFun {
-		JvmWebSocketClient(url, protocols, origin, wskey, DEBUG = debug).apply { init() }
+	override suspend fun create(url: URI, protocols: List<String>?, origin: String?, wskey: String?, debug: Boolean): WebSocketClient {
+		return JvmWebSocketClient(url, protocols, origin, wskey, DEBUG = debug).apply { init() }
 	}
 }
 
@@ -24,7 +23,7 @@ class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?
 	}
 	val port = url.portWithDefault(defaultPort)
 
-	suspend fun init() = asyncFun {
+	suspend fun init() {
 		socket = AsyncClient(url.host, port)
 		// Thread
 		val getRequest = prepareClientHandshake(url.toString(), url.host, port, wskey ?: "wskey", origin ?: "http://127.0.0.1/")
@@ -51,7 +50,7 @@ class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?
 		return this
 	}
 
-	suspend fun readFrame(socket: AsyncClient) = asyncFun {
+	suspend fun readFrame(socket: AsyncClient) {
 		val head1 = socket.readU8()
 		val fin = (head1 and 0x80) != 0
 		val opcode = Opcode.IDS[head1 and 0xF] ?: throw IllegalStateException("Invalid Opcode")
@@ -140,17 +139,17 @@ class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?
 		return out
 	}
 
-	suspend fun sendFrame(opcode: Opcode, payload: ByteArray, mask: Int = 0) = asyncFun {
+	suspend fun sendFrame(opcode: Opcode, payload: ByteArray, mask: Int = 0) {
 		if (DEBUG) println("[WS-SEND] Frame:$opcode:${payload.size}")
 
 		socket.writeBytes(prepareFrame(opcode, payload, mask))
 	}
 
-	override suspend fun send(message: String) = asyncFun {
+	override suspend fun send(message: String) {
 		sendFrame(Opcode.TEXT, message.toByteArray(Charsets.UTF_8))
 	}
 
-	override suspend fun send(message: ByteArray) = asyncFun {
+	override suspend fun send(message: ByteArray) {
 		sendFrame(Opcode.BINARY, message)
 	}
 

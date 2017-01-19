@@ -9,7 +9,9 @@ import java.net.Socket
 
 class AndroidAsyncSocketFactory : AsyncSocketFactory {
 	override suspend fun createClient(): AsyncClient = AndroidAsyncClient()
-	override suspend fun createServer(port: Int, host: String, backlog: Int): AsyncServer = asyncFun { AndroidAsyncServer(port, host, backlog).apply { init() } }
+	override suspend fun createServer(port: Int, host: String, backlog: Int): AsyncServer {
+		return AndroidAsyncServer(port, host, backlog).apply { init() }
+	}
 }
 
 class AndroidAsyncClient(private val s: Socket = Socket()) : AsyncClient {

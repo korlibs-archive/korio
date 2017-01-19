@@ -1,6 +1,5 @@
 package com.soywiz.korio.serialization.binary
 
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.SyncStream
 import com.soywiz.korio.stream.readBytes
@@ -234,8 +233,8 @@ fun <T : Struct> T.getStructBytes(): ByteArray = ByteArray(StructReflect[this.ja
 fun <T : Struct> SyncStream.writeStruct(obj: T) = this.writeBytes(obj.getStructBytes())
 
 inline suspend fun <reified T : Struct> AsyncStream.readStruct() = this.readStruct(T::class.java)
-suspend fun <T : Struct> AsyncStream.readStruct(clazz: Class<T>): T = asyncFun {
-	readBytes(clazz.getStructSize()).readStruct(0, clazz)
+suspend fun <T : Struct> AsyncStream.readStruct(clazz: Class<T>): T {
+	return readBytes(clazz.getStructSize()).readStruct(0, clazz)
 }
 
-suspend fun <T : Struct> AsyncStream.writeStruct(obj: T) = asyncFun { this.writeBytes(obj.getStructBytes()) }
+suspend fun <T : Struct> AsyncStream.writeStruct(obj: T) = this.writeBytes(obj.getStructBytes())

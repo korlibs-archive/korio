@@ -1,7 +1,6 @@
 package com.soywiz.korio.net
 
 import com.soywiz.korio.async.AsyncSequence
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.sleep
 import java.net.InetSocketAddress
@@ -14,7 +13,7 @@ import kotlin.coroutines.suspendCoroutine
 
 class JsJvmAsyncSocketFactory : AsyncSocketFactory {
 	override suspend fun createClient(): AsyncClient = JsJvmAsyncClient()
-	override suspend fun createServer(port: Int, host: String, backlog: Int): AsyncServer = asyncFun { JsJvmAsyncServer(port, host, backlog).apply { init() } }
+	override suspend fun createServer(port: Int, host: String, backlog: Int): AsyncServer = JsJvmAsyncServer(port, host, backlog).apply { init() }
 }
 
 class JsJvmAsyncClient(private val sc: AsynchronousSocketChannel = AsynchronousSocketChannel.open()) : AsyncClient {
@@ -46,7 +45,7 @@ class JsJvmAsyncClient(private val sc: AsynchronousSocketChannel = AsynchronousS
 		})
 	}
 
-	suspend override fun close(): Unit = asyncFun {
+	suspend override fun close(): Unit {
 		sc.close()
 	}
 }
@@ -54,7 +53,7 @@ class JsJvmAsyncClient(private val sc: AsynchronousSocketChannel = AsynchronousS
 class JsJvmAsyncServer(override val requestPort: Int, override val host: String, override val backlog: Int = 128) : AsyncServer {
 	val ssc = AsynchronousServerSocketChannel.open()
 
-	suspend fun init() = asyncFun {
+	suspend fun init() {
 		ssc.bind(InetSocketAddress(host, requestPort), backlog)
 		for (n in 0 until 100) {
 			if (ssc.isOpen) break

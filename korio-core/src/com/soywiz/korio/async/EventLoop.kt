@@ -3,9 +3,7 @@
 package com.soywiz.korio.async
 
 import java.io.Closeable
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.startCoroutine
-import kotlin.coroutines.suspendCoroutine
+import kotlin.coroutines.*
 
 abstract class EventLoop {
 	companion object {
@@ -29,6 +27,8 @@ abstract class EventLoop {
 			impl.init()
 			impl.setImmediate {
 				entry.startCoroutine(object : Continuation<Unit> {
+					override val context: CoroutineContext = EmptyCoroutineContext
+
 					override fun resume(value: Unit) {
 						tasksInProgress.decrementAndGet()
 					}

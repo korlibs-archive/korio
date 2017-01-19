@@ -1,6 +1,5 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.invokeSuspend
 import com.soywiz.korio.error.ignoreErrors
 import com.soywiz.korio.error.invalidOp
@@ -35,8 +34,8 @@ object Dynamic {
 		field?.set(instance, value)
 	}
 
-	suspend fun <T : Any> getField(instance: T?, name: String): Any? = asyncFun {
-		if (instance == null) {
+	suspend fun <T : Any> getField(instance: T?, name: String): Any? {
+		return if (instance == null) {
 			null
 		} else {
 			val clazz = instance.javaClass
@@ -116,13 +115,11 @@ object Dynamic {
 		}
 	}
 
-	suspend fun accessAny(instance: Any?, key: Any?): Any? = asyncFun {
-		when (instance) {
-			null -> null
-			is Map<*, *> -> instance[key]
-			is Iterable<*> -> instance.toList()[toInt(key)]
-			else -> getField(instance, key.toString())
-		}
+	suspend fun accessAny(instance: Any?, key: Any?): Any? = when (instance) {
+		null -> null
+		is Map<*, *> -> instance[key]
+		is Iterable<*> -> instance.toList()[toInt(key)]
+		else -> getField(instance, key.toString())
 	}
 
 	@Suppress("UNCHECKED_CAST")
@@ -334,13 +331,12 @@ object Dynamic {
 		else -> element in toList(collection)
 	}
 
-	suspend fun callAny(obj: Any?, key: Any?, args: List<Any?>): Any? = asyncFun {
-		if (obj == null) return@asyncFun null
-		if (key == null) return@asyncFun null
+	suspend fun callAny(obj: Any?, key: Any?, args: List<Any?>): Any? {
+		if (obj == null || key == null) return null
 		val method = obj.javaClass.methods.first { it.name == key }
 		method.isAccessible = true
 		val result = method.invokeSuspend(obj, args)
-		return@asyncFun result
+		return result
 	}
 
 	suspend fun callAny(callable: Any?, args: List<Any?>): Any? {

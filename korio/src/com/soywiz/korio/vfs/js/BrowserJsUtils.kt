@@ -1,7 +1,6 @@
 package com.soywiz.korio.vfs.js
 
 import com.jtransc.js.*
-import kotlin.coroutines.CoroutineIntrinsics
 import kotlin.coroutines.suspendCoroutine
 
 object BrowserJsUtils {
@@ -47,9 +46,6 @@ object BrowserJsUtils {
 		if (bases["length"].toInt() > 0) baseHref = bases[0]["href"];
 		return baseHref.toJavaString()
 	}
-
-	@Suppress("unused")
-	private fun getSuspended() = CoroutineIntrinsics.SUSPENDED
 }
 
 private fun jsRegExp(regex: String): JsDynamic? = global["RegExp"].new(regex)

@@ -78,7 +78,7 @@ class EventLoopTest : EventLoop() {
 		executeTasks()
 	}
 
-	suspend fun step(ms: Int) = asyncFun {
+	suspend fun step(ms: Int) {
 		time += ms
 		executeTasks()
 	}

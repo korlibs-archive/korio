@@ -6,16 +6,10 @@ import com.soywiz.korio.util.OS
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.startCoroutine
-import kotlin.coroutines.suspendCoroutine
+import kotlin.coroutines.*
 
 val workerLazyPool by lazy { Executors.newCachedThreadPool() }
 var tasksInProgress = AtomicInteger(0)
-
-inline suspend fun <T> asyncFun(routine: suspend () -> T): T = suspendCoroutine<T> {
-	routine.startCoroutine(it)
-}
 
 inline suspend fun <T> suspendCoroutineEL(crossinline block: (Continuation<T>) -> Unit): T {
 	return suspendCoroutine { c ->
@@ -26,6 +20,7 @@ inline suspend fun <T> suspendCoroutineEL(crossinline block: (Continuation<T>) -
 fun <T> Continuation<T>.toEventLoop(): Continuation<T> {
 	val parent = this
 	return object : Continuation<T> {
+		override val context: CoroutineContext = EmptyCoroutineContext
 		override fun resume(value: T) = EventLoop.queue { parent.resume(value) }
 		override fun resumeWithException(exception: Throwable) = EventLoop.queue { parent.resumeWithException(exception) }
 	}
@@ -57,6 +52,8 @@ fun <TEventLoop : EventLoop> sync(el: TEventLoop, block: suspend TEventLoop.() -
 
 		tasksInProgress.incrementAndGet()
 		block.startCoroutine(el, object : Continuation<Unit> {
+			override val context: CoroutineContext = EmptyCoroutineContext
+
 			override fun resume(value: Unit) = run {
 				tasksInProgress.decrementAndGet()
 				result = value
@@ -83,6 +80,8 @@ fun <T> sync(block: suspend () -> T): T {
 
 	tasksInProgress.incrementAndGet()
 	block.startCoroutine(object : Continuation<T> {
+		override val context: CoroutineContext = EmptyCoroutineContext
+
 		override fun resume(value: T) = run {
 			tasksInProgress.decrementAndGet()
 			result = value
@@ -128,6 +127,8 @@ fun <T> (suspend () -> T).execAndForget() = spawnAndForget {
 }
 
 object EmptyContinuation : Continuation<Any> {
+	override val context: CoroutineContext = EmptyCoroutineContext
+
 	override fun resume(value: Any) = Unit
 	override fun resumeWithException(exception: Throwable) {
 		exception.printStackTrace()

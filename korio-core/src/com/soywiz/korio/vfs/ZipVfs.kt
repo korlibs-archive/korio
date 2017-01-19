@@ -1,7 +1,6 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.AsyncSequence
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.stream.*
@@ -13,7 +12,7 @@ import java.io.FileNotFoundException
 import java.util.*
 import java.util.zip.Inflater
 
-suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
+suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 	//val s = zipFile.open(VfsOpenMode.READ)
 	var endBytes = ByteArray(0)
 
@@ -120,10 +119,10 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 	class Impl : Vfs() {
 		val vfs = this
 
-		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = asyncFun {
+		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
 			val entry = files[path.normalizeName()] ?: throw FileNotFoundException(path)
 			val base = entry.headerEntry.slice()
-			base.run {
+			return base.run {
 				if (readS32_be() != 0x504B_0304) throw IllegalStateException("Not a zip file")
 				val version = readU16_le()
 				val flags = readU16_le()
@@ -163,7 +162,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null) = asyncFun {
 		override fun toString(): String = "ZipVfs($zipFile)"
 	}
 
-	Impl().root
+	return Impl().root
 }
 
 private class DosFileDateTime(var time: Int, var date: Int) {
@@ -177,15 +176,15 @@ private class DosFileDateTime(var time: Int, var date: Int) {
 	val javaDate: Date by lazy { Date(utcTimestamp) }
 }
 
-suspend fun VfsFile.openAsZip() = asyncFun { ZipVfs(this.open(VfsOpenMode.READ), this) }
-suspend fun AsyncStream.openAsZip() = asyncFun { ZipVfs(this) }
+suspend fun VfsFile.openAsZip() = ZipVfs(this.open(VfsOpenMode.READ), this)
+suspend fun AsyncStream.openAsZip() = ZipVfs(this)
 
 class InflateAsyncStream(val base: AsyncStream, val inflater: Inflater, val uncompressedSize: Long? = null) : AsyncInputStream, AsyncLengthStream, AsyncCloseable {
-	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = asyncFun {
+	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		if (inflater.needsInput()) {
 			inflater.setInput(base.readBytes(1024))
 		}
-		executeInWorker {
+		return executeInWorker {
 			inflater.inflate(buffer, offset, len)
 		}
 	}
@@ -193,7 +192,7 @@ class InflateAsyncStream(val base: AsyncStream, val inflater: Inflater, val unco
 	suspend override fun setLength(value: Long) = throw UnsupportedOperationException()
 	suspend override fun getLength(): Long = uncompressedSize ?: throw UnsupportedOperationException()
 
-	suspend override fun close() = asyncFun {
+	suspend override fun close() {
 		inflater.end()
 	}
 }

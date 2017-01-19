@@ -1,6 +1,5 @@
 package com.soywiz.korio.serialization.xml
 
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.vfs.VfsFile
 import org.intellij.lang.annotations.Language
 
@@ -12,4 +11,4 @@ fun String.toXml(): Xml = Xml.parse(this)
 
 fun Xml(@Language("xml") str: String): Xml = Xml.parse(str)
 
-suspend fun VfsFile.readXml(): Xml = asyncFun { Xml(this.readString()) }
+suspend fun VfsFile.readXml(): Xml = Xml(this.readString())

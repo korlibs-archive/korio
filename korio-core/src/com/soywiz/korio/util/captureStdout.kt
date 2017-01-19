@@ -1,6 +1,5 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.await
 import java.io.ByteArrayOutputStream
 import java.io.OutputStream
@@ -54,7 +53,7 @@ fun captureStdout(callback: () -> Unit): String {
 	return StdoutRouterStream.captureThreadSafe(callback).toString()
 }
 
-suspend fun asyncCaptureStdout(callback: suspend () -> Unit): String = asyncFun {
+suspend fun asyncCaptureStdout(callback: suspend () -> Unit): String {
 	val out = ByteArrayOutputStream()
 	val old = StdoutRouterStream.routePerThread.get()
 	try {
@@ -63,5 +62,5 @@ suspend fun asyncCaptureStdout(callback: suspend () -> Unit): String = asyncFun 
 	} finally {
 		StdoutRouterStream.routePerThread.set(old)
 	}
-	out.toString()
+	return out.toString()
 }

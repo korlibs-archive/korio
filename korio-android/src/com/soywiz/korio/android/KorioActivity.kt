@@ -4,7 +4,6 @@ import android.app.Activity
 import android.os.Bundle
 import com.soywiz.korio.async.EventLoop
 import com.soywiz.korio.async.Signal
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.sleep
 import com.soywiz.korio.util.Extra
 import com.soywiz.korio.util.Once
@@ -33,9 +32,9 @@ open class KorioActivity : Activity(), Extra by Extra.Mixin() {
 		}
 	}
 
-	suspend open fun requestPermission(name: String): Boolean = asyncFun {
+	suspend open fun requestPermission(name: String): Boolean {
 		sleep(1000)
-		false
+		return false
 	}
 
 	/*

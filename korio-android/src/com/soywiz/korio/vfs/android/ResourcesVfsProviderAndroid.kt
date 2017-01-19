@@ -4,7 +4,6 @@ package com.soywiz.korio.vfs.android
 
 import com.soywiz.korio.android.KorioAndroidContext
 import com.soywiz.korio.async.AsyncSequence
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.MemorySyncStream
@@ -63,7 +62,7 @@ class ResourcesVfsProviderAndroid : ResourcesVfsProvider {
 	}
 
 	override fun invoke(): Vfs = object : Vfs.Decorator(merged.root) {
-		suspend override fun init() = asyncFun {
+		suspend override fun init() {
 			val ai = KorioAndroidContext.applicationInfo
 			val source = ai.sourceDir
 			merged.vfsList += LocalVfs(source).openAsZip()

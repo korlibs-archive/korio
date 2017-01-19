@@ -2,6 +2,8 @@ package com.soywiz.korio.async
 
 import java.util.*
 import kotlin.coroutines.Continuation
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
 import kotlin.coroutines.suspendCoroutine
 
 class Promise<T : Any?> {
@@ -12,6 +14,7 @@ class Promise<T : Any?> {
 		fun toContinuation(): Continuation<T> {
 			val deferred = this
 			return object : Continuation<T> {
+				override val context: CoroutineContext = EmptyCoroutineContext
 				override fun resume(value: T) = deferred.resolve(value)
 				override fun resumeWithException(exception: Throwable) = deferred.reject(exception)
 			}

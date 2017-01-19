@@ -38,8 +38,7 @@ fun Int.insertScaled(value: Int, offset: Int, count: Int, scale: Int): Int {
 	return insert((value * mask) / scale, offset, count)
 }
 
-fun Int.insertScaledFF(value: Int, offset: Int, count: Int): Int = this.insertScaled(value, offset, count, 0xFF)
-fun Int.insertScaledFFDefault(value: Int, offset: Int, count: Int, default: Int = 0): Int = if (count == 0) default else this.insertScaled(value, offset, count, 0xFF)
+fun Int.insertScaledFF(value: Int, offset: Int, count: Int): Int = if (count == 0) this else this.insertScaled(value, offset, count, 0xFF)
 
 fun Long.nextAlignedTo(align: Long) = if (this % align == 0L) {
 	this

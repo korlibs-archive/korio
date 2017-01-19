@@ -3,7 +3,6 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.AsyncSequence
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.spawn
 import com.soywiz.korio.error.unsupported
@@ -36,20 +35,20 @@ abstract class Vfs {
 
 	suspend open fun open(path: String, mode: VfsOpenMode): AsyncStream = throw UnsupportedOperationException()
 
-	suspend fun readChunk(path: String, offset: Long, size: Int): ByteArray = asyncFun {
+	suspend fun readChunk(path: String, offset: Long, size: Int): ByteArray {
 		val s = open(path, VfsOpenMode.READ)
 		if (offset != 0L) s.setPosition(offset)
-		s.readBytes(size)
+		return s.readBytes(size)
 	}
 
-	suspend fun writeChunk(path: String, data: ByteArray, offset: Long, resize: Boolean): Unit = asyncFun {
+	suspend fun writeChunk(path: String, data: ByteArray, offset: Long, resize: Boolean): Unit {
 		val s = open(path, VfsOpenMode.CREATE)
 		s.setPosition(offset)
 		s.writeBytes(data)
 		if (resize) s.setLength(s.getPosition())
 	}
 
-	suspend open fun setSize(path: String, size: Long): Unit = asyncFun {
+	suspend open fun setSize(path: String, size: Long): Unit {
 		open(path, mode = VfsOpenMode.WRITE).setLength(size)
 	}
 
@@ -74,31 +73,32 @@ abstract class Vfs {
 		}
 
 		var initialized = false
-		suspend private fun initOnce() = asyncFun {
+		suspend private fun initOnce(): Proxy {
 			if (!initialized) {
 				initialized = true
 				init()
 			}
+			return this
 		}
 
-		suspend override fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler): Int = asyncFun { initOnce(); access(path).exec(cmdAndArgs, handler) }
-		suspend override fun open(path: String, mode: VfsOpenMode) = asyncFun { initOnce(); access(path).open(mode) }
-		suspend override fun setSize(path: String, size: Long): Unit = asyncFun { initOnce(); access(path).setSize(size) }
-		suspend override fun stat(path: String): VfsStat = asyncFun { initOnce(); access(path).stat().copy(file = file(path)) }
+		suspend override fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler): Int = initOnce().access(path).exec(cmdAndArgs, handler)
+		suspend override fun open(path: String, mode: VfsOpenMode) = initOnce().access(path).open(mode)
+		suspend override fun setSize(path: String, size: Long): Unit = initOnce().access(path).setSize(size)
+		suspend override fun stat(path: String): VfsStat = initOnce().access(path).stat().copy(file = file(path))
 		suspend override fun list(path: String) = asyncGenerate { initOnce(); for (it in access(path).list()) yield(transform(it)) }
-		suspend override fun delete(path: String): Boolean = asyncFun { initOnce(); access(path).delete() }
-		suspend override fun mkdir(path: String): Boolean = asyncFun { initOnce(); access(path).mkdir() }
-		suspend override fun rename(src: String, dst: String): Boolean = asyncFun {
+		suspend override fun delete(path: String): Boolean = initOnce().access(path).delete()
+		suspend override fun mkdir(path: String): Boolean = initOnce().access(path).mkdir()
+		suspend override fun rename(src: String, dst: String): Boolean {
 			initOnce()
 			val srcFile = access(src)
 			val dstFile = access(dst)
 			if (srcFile.vfs != dstFile.vfs) throw IllegalArgumentException("Can't rename between filesystems. Use copyTo instead, and remove later.")
-			srcFile.renameTo(dstFile.path)
+			return srcFile.renameTo(dstFile.path)
 		}
 
-		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = asyncFun {
+		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable {
 			initOnce()
-			access(path).watch { e ->
+			return access(path).watch { e ->
 				spawn {
 					val f1 = e.file.transform2()
 					val f2 = e.other?.transform2()

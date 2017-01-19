@@ -3,7 +3,6 @@
 package com.soywiz.korio.vertx
 
 import com.soywiz.korio.async.Promise
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.async.await
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
@@ -23,6 +22,7 @@ fun <T : Any?> Promise.Deferred<T>.toVertxHandler(): Handler<AsyncResult<T>> {
 	}
 }
 
+/*
 inline suspend fun <T> vx(crossinline callback: (Handler<AsyncResult<T>>) -> Unit) = suspendCoroutine<T> { c ->
 	callback(object : Handler<AsyncResult<T>> {
 		override fun handle(event: AsyncResult<T>) {
@@ -34,8 +34,22 @@ inline suspend fun <T> vx(crossinline callback: (Handler<AsyncResult<T>>) -> Uni
 		}
 	})
 }
+*/
 
-suspend fun <T : Any?> vxResult(callback: suspend () -> T): AsyncResult<T> = asyncFun {
+// @TODO: @BUG: https://youtrack.jetbrains.com/issue/KT-15821
+suspend fun <T> vx(callback: (Handler<AsyncResult<T>>) -> Unit) = suspendCoroutine<T> { c ->
+	callback(object : Handler<AsyncResult<T>> {
+		override fun handle(event: AsyncResult<T>) {
+			if (event.succeeded()) {
+				c.resume(event.result())
+			} else {
+				c.resumeWithException(event.cause())
+			}
+		}
+	})
+}
+
+suspend fun <T : Any?> vxResult(callback: suspend () -> T): AsyncResult<T> {
 	var succeeded = false
 	var failed = false
 	var result: T? = null
@@ -47,7 +61,7 @@ suspend fun <T : Any?> vxResult(callback: suspend () -> T): AsyncResult<T> = asy
 		cause = e
 		failed = true
 	}
-	object : AsyncResult<T> {
+	return object : AsyncResult<T> {
 		override fun succeeded(): Boolean = succeeded
 		override fun failed(): Boolean = failed
 		override fun cause(): Throwable? = cause

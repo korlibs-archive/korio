@@ -1,7 +1,6 @@
 package com.soywiz.korio.net
 
 import com.soywiz.korio.async.AsyncSequence
-import com.soywiz.korio.async.asyncFun
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.util.AsyncCloseable
@@ -21,10 +20,10 @@ interface AsyncClient : AsyncInputStream, AsyncOutputStream, AsyncCloseable {
 	companion object {
 		suspend operator fun invoke(host: String, port: Int) = createAndConnect(host, port)
 
-		suspend fun createAndConnect(host: String, port: Int) = asyncFun {
+		suspend fun createAndConnect(host: String, port: Int): AsyncClient {
 			val socket = asyncSocketFactory.createClient()
 			socket.connect(host, port)
-			socket
+			return socket
 		}
 	}
 }
@@ -36,9 +35,7 @@ interface AsyncServer {
 	val port: Int
 
 	companion object {
-		operator suspend fun invoke(port: Int, host: String = "127.0.0.1", backlog: Int = 128) = asyncFun {
-			asyncSocketFactory.createServer(port, host, backlog)
-		}
+		operator suspend fun invoke(port: Int, host: String = "127.0.0.1", backlog: Int = 128) = asyncSocketFactory.createServer(port, host, backlog)
 	}
 
 	suspend fun listen(): AsyncSequence<AsyncClient>
