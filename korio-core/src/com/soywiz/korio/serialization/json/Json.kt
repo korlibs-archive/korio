@@ -2,6 +2,7 @@ package com.soywiz.korio.serialization.json
 
 import com.soywiz.korio.util.ClassFactory
 import com.soywiz.korio.util.StrReader
+import com.soywiz.korio.util.readStringLit
 import com.soywiz.korio.util.toNumber
 import org.intellij.lang.annotations.Language
 import java.io.IOException
@@ -55,24 +56,8 @@ object Json {
 				invalidJson()
 			}
 			'"' -> {
-				val out = StringBuilder()
-				while (true) {
-					val c = read()
-					if (c == '\\') {
-						val cc = read()
-						out.append(when (cc) {
-							'\\' -> '\\'; '/' -> '/'; '\'' -> '\''; '"' -> '"'
-							'b' -> '\b'; 'f' -> '\u000c'; 'n' -> '\n'; 'r' -> '\r'; 't' -> '\t'
-							'u' -> read(4).toInt(0x10).toChar()
-							else -> invalidJson("Invalid char '$cc'")
-						})
-					} else if (c == '"') {
-						break
-					} else {
-						out.append(c)
-					}
-				}
-				return out.toString()
+				unread()
+				return readStringLit()
 			}
 			else -> invalidJson("Not expected '$ic'")
 		}

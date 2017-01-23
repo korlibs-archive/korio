@@ -1,5 +1,8 @@
 package com.soywiz.korio.util
 
+import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.serialization.json.Json
+
 class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 	companion object {
 		fun literals(vararg lits: String): Literals = Literals.fromList(lits.toList().toTypedArray())
@@ -180,4 +183,31 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 	}
 }
 
-
+fun StrReader.readStringLit(reportErrors: Boolean = true): String {
+	val out = StringBuilder()
+	val quotec = read()
+	when (quotec) {
+		'"', '\'' -> Unit
+		else -> invalidOp("Invalid string literal")
+	}
+	var closed = false
+	while (hasMore) {
+		val c = read()
+		if (c == '\\') {
+			val cc = read()
+			out.append(when (cc) {
+				'\\' -> '\\'; '/' -> '/'; '\'' -> '\''; '"' -> '"'
+				'b' -> '\b'; 'f' -> '\u000c'; 'n' -> '\n'; 'r' -> '\r'; 't' -> '\t'
+				'u' -> read(4).toInt(0x10).toChar()
+				else -> Json.invalidJson("Invalid char '$cc'")
+			})
+		} else if (c == quotec) {
+			closed = true
+			break
+		} else {
+			out.append(c)
+		}
+	}
+	if (!closed && reportErrors) throw RuntimeException("String literal not closed!")
+	return out.toString()
+}

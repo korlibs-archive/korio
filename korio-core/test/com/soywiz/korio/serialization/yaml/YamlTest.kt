@@ -108,20 +108,28 @@ class YamlTest {
 		)
 	}
 
+	@Test
+	fun name7() {
+		Assert.assertEquals(
+			mapOf(
+				"null" to null,
+				"booleans" to listOf(true, false),
+				"string" to "012345"
+			),
+			Yaml.read("""
+				|null:
+				|booleans: [ true, false ]
+				|string: '012345'
+
+			""".trimMargin())
+		)
+	}
+
 	//@Test
-	//fun name7() {
+	//fun name8() {
 	//	Assert.assertEquals(
-	//		mapOf(
-	//			"null" to null,
-	//			"booleans" to listOf(true, false),
-	//			"string" to "012345"
-	//		),
-	//		Yaml.read("""
-	//			|null:
-	//			|booleans: [ true, false ]
-	//			|string: '012345'
-	//
-	//		""".trimMargin())
+	//		null,
+	//		Yaml.read("[a:1,b:2]")
 	//	)
 	//}
 }

@@ -3,16 +3,35 @@ package com.soywiz.korio.serialization.yaml
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.util.ListReader
 import com.soywiz.korio.util.StrReader
+import com.soywiz.korio.util.readStringLit
+import com.soywiz.korio.util.unquote
 import java.util.*
 
 object Yaml {
 	fun read(str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
 
+	private fun parseStr(tok: Token) = when (tok) {
+		is Token.STR -> tok.ustr
+		else -> parseStr(tok.str)
+	}
+
 	private fun parseStr(str: String) = when (str) {
 		"null" -> null
 		"true" -> true
 		"false" -> false
-		else -> str.toIntOrNull() ?: str.toDoubleOrNull() ?: str
+		else -> {
+			try {
+				java.lang.Integer.parseInt(str)
+			} catch (e: NumberFormatException) {
+				try {
+					java.lang.Double.parseDouble(str)
+				} catch (e: NumberFormatException) {
+					str
+				}
+			}
+			// @TODO: jtransc bug. Check!
+			//str.toIntOrNull() ?: str.toDoubleOrNull() ?: str
+		}
 	}
 
 	//const val TRACE = true
@@ -46,6 +65,7 @@ object Yaml {
 			} else {
 				// current level
 				if (line != null) s.read()
+				if (s.eof) break
 				val item = s.peek()
 				when (item.str) {
 					"-" -> {
@@ -74,10 +94,11 @@ object Yaml {
 						return olist
 					}
 					else -> {
-						val key = s.read().str
+						val kkey = s.read()
+						val key = kkey.str
 						if (s.eof || s.peek().str != ":") {
 							if (TRACE) println("${levelStr}LIT: $key")
-							return parseStr(key)
+							return parseStr(kkey)
 						} else {
 							if (map == null) map = LinkedHashMap()
 							if (s.read().str != ":") invalidOp
@@ -99,6 +120,7 @@ object Yaml {
 	fun StrReader.tokenize(): List<Token> {
 		val out = arrayListOf<Token>()
 
+		val s = this
 		var str = ""
 		fun flush() {
 			if (str.isNotBlank() && str.isNotEmpty()) {
@@ -129,15 +151,14 @@ object Yaml {
 					}
 					'#' -> {
 						flush(); readUntilLineEnd(); skip(); continue@linestart
-					} // Ignore comments
+					}
 					'\n' -> {
 						flush(); continue@linestart
 					}
-					'"' -> {
+					'"', '\'' -> {
 						flush()
-						// @TODO: Do Handle escaping
-						val ss = readUntil { it == '"' }
-						out += Token.ID(ss)
+						s.unread()
+						out += Token.STR(s.readStringLit())
 					}
 					else -> str += c
 				}
@@ -155,6 +176,10 @@ object Yaml {
 		}
 
 		data class ID(override val str: String) : Token
+		data class STR(override val str: String) : Token {
+			val ustr = str.unquote()
+		}
+
 		data class SYMBOL(override val str: String) : Token
 	}
 
