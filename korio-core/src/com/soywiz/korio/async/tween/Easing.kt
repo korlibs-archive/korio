@@ -82,7 +82,7 @@ object Easings {
 	val EASE_IN_BOUNCE = Easing { 1.0 - EASE_OUT_BOUNCE(1.0 - it) }
 	val EASE_IN_OUT_BOUNCE = Easing.combine(EASE_IN_BOUNCE, EASE_OUT_BOUNCE)
 	val EASE_OUT_IN_BOUNCE = Easing.combine(EASE_OUT_BOUNCE, EASE_IN_BOUNCE)
-	val EASE_IN_QUAD = Easing.cubic { t1, b, c, d -> val t = t1 / d; c * t * t + b }
-	val EASE_OUT_QUAD = Easing.cubic { t1, b, c, d -> val t = t1 / d; -c * t * (t - 2) + b }
-	val EASE_IN_OUT_QUAD = Easing.cubic { _t, b, c, d -> val t = _t / (d / 2.0); if (t < 1) (c / 2 * t * t + b) else (-c / 2 * ((t - 1) * ((t - 1) - 2) - 1) + b) }
+	val EASE_IN_QUAD = Easing { 1.0 * it * it }
+	val EASE_OUT_QUAD = Easing { -1.0 * it * (it - 2) }
+	val EASE_IN_OUT_QUAD = Easing { val t = it * 2.0; if (t < 1) (1.0 / 2 * t * t) else (-1.0 / 2 * ((t - 1) * ((t - 1) - 2) - 1)) }
 }

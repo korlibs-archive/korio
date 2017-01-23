@@ -60,7 +60,9 @@ class withTimeoutTest {
 		var out = ""
 		try {
 			withTimeout(200) {
-				out += UrlVfs("http://127.0.0.2:1337/test").readString()
+				//out += UrlVfs("http://127.0.0.2:1337/test").readString() // fails on travis
+				sleep(10000)
+				out += "test"
 			}
 		} catch (e: CancellationException) {
 			out += "<CANCEL>"
