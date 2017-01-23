@@ -1,6 +1,7 @@
 package com.soywiz.korio.async
 
 import java.util.*
+import java.util.concurrent.CancellationException
 import kotlin.coroutines.Continuation
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.EmptyCoroutineContext
@@ -9,15 +10,24 @@ import kotlin.coroutines.suspendCoroutine
 class Promise<T : Any?> {
 	class Deferred<T : Any?> {
 		val promise = Promise<T>()
+		val onCancel = promise.onCancel
 		fun resolve(value: T): Unit = run { promise.complete(value, null) }
 		fun reject(error: Throwable): Unit = run { promise.complete(null, error) }
-		fun toContinuation(): Continuation<T> {
+		fun toContinuation(ctx: CoroutineContext = CoroutineCancelContext()): CancellableContinuation<T> {
 			val deferred = this
-			return object : Continuation<T> {
-				override val context: CoroutineContext = EmptyCoroutineContext
+			val cc = CancellableContinuation(object : Continuation<T> {
+				override val context: CoroutineContext = ctx
 				override fun resume(value: T) = deferred.resolve(value)
 				override fun resumeWithException(exception: Throwable) = deferred.reject(exception)
+			})
+			onCancel {
+				cc.cancel()
 			}
+			cc.onCancel {
+				promise.cancel()
+				cc.cancel()
+			}
+			return cc
 		}
 	}
 
@@ -31,7 +41,6 @@ class Promise<T : Any?> {
 	private var done: Boolean = false
 	private val resolvedHandlers = LinkedList<(T) -> Unit>()
 	private val rejectedHandlers = LinkedList<(Throwable) -> Unit>()
-	private val cancelHandlers = LinkedList<(Throwable) -> Unit>()
 
 	private fun flush() {
 		if (!done) return
@@ -58,7 +67,7 @@ class Promise<T : Any?> {
 			this.error = error
 			this.done = true
 
-			if (error != null && this.rejectedHandlers.isEmpty()) {
+			if (error != null && this.rejectedHandlers.isEmpty() && error !is CancellationException) {
 				error.printStackTrace()
 			}
 
@@ -83,6 +92,13 @@ class Promise<T : Any?> {
 			resolved = { c.resume(it) },
 			rejected = { c.resumeWithException(it) }
 		)
+	}
+
+	private val onCancel = Signal<Unit>()
+
+	fun cancel() {
+		onCancel()
+		complete(null, CancellationException())
 	}
 
 	suspend fun await(): T = suspendCoroutine(this::then)

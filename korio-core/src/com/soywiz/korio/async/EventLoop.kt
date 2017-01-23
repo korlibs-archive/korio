@@ -3,8 +3,12 @@
 package com.soywiz.korio.async
 
 import java.io.Closeable
-import kotlin.coroutines.*
+import kotlin.coroutines.Continuation
+import kotlin.coroutines.CoroutineContext
+import kotlin.coroutines.EmptyCoroutineContext
+import kotlin.coroutines.startCoroutine
 
+// @TODO: Check CoroutineDispatcher
 abstract class EventLoop {
 	companion object {
 		var _impl: EventLoop? = null
@@ -45,8 +49,20 @@ abstract class EventLoop {
 		fun setImmediate(handler: () -> Unit): Unit = impl.setImmediate(handler)
 		fun setTimeout(ms: Int, callback: () -> Unit): Closeable = impl.setTimeout(ms, callback)
 		fun setInterval(ms: Int, callback: () -> Unit): Closeable = impl.setInterval(ms, callback)
+		fun requestAnimationFrame(handler: () -> Unit): Unit = impl.requestAnimationFrame(handler)
 
-		suspend fun sleep(ms: Int): Unit = suspendCoroutine { c -> setTimeout(ms) { c.resume(Unit) } }
+		suspend fun sleep(ms: Int): Unit = suspendCancellableCoroutine { c ->
+			val cc = setTimeout(ms) { c.resume(Unit) }
+			c.onCancel {
+				cc.close()
+			}
+		}
+
+		val time: Long get() = impl.time
+
+		//suspend fun sleep(ms: Int): Unit = suspendCoroutine { c ->
+		//	setTimeout(ms) { c.resume(Unit) }
+		//}
 	}
 
 	open val available: Boolean = true
@@ -71,5 +87,13 @@ abstract class EventLoop {
 	open fun setImmediate(handler: () -> Unit): Unit {
 		setTimeout(0, handler)
 	}
-}
 
+	open fun requestAnimationFrame(handler: () -> Unit): Unit {
+		setTimeout(1000 / 60, handler)
+	}
+
+	open val time: Long get() = System.currentTimeMillis()
+
+	open fun step(ms: Int): Unit {
+	}
+}

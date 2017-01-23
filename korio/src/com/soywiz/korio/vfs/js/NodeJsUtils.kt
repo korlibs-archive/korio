@@ -3,10 +3,11 @@
 package com.soywiz.korio.vfs.js
 
 import com.jtransc.js.*
+import com.soywiz.korio.async.suspendCancellableCoroutine
 import kotlin.coroutines.suspendCoroutine
 
 object NodeJsUtils {
-	suspend fun readRangeBytes(path: String, start: Double, end: Double): ByteArray = suspendCoroutine { c ->
+	suspend fun readRangeBytes(path: String, start: Double, end: Double): ByteArray = suspendCancellableCoroutine { c ->
 		val http = jsRequire("http")
 		val url = jsRequire("url")
 		val info = url.methods["parse"](path)
@@ -14,7 +15,7 @@ object NodeJsUtils {
 
 		if (start >= 0 && end >= 0) headers["Range"] = "bytes=$start-$end"
 
-		http.methods["get"](jsObject(
+		val r = http.methods["get"](jsObject(
 			"host" to info["hostname"],
 			"port" to info["port"],
 			"path" to info["path"],
@@ -34,14 +35,18 @@ object NodeJsUtils {
 		}).methods["on"]("error", jsFunctionRaw1 { e ->
 			c.resumeWithException(RuntimeException("Error: ${e.toJavaString()}"))
 		})
+
+		c.onCancel {
+			r.methods["abort"]()
+		}
 	}
 
-	suspend fun httpStat(path: String): JsStat = suspendCoroutine { c ->
+	suspend fun httpStat(path: String): JsStat = suspendCancellableCoroutine { c ->
 		val http = jsRequire("http")
 		val url = jsRequire("url")
 		val info = url.methods["parse"](path)
 
-		http.methods["get"](jsObject(
+		val r = http.methods["get"](jsObject(
 			"method" to "HEAD",
 			"host" to info["hostname"],
 			"port" to info["port"],
@@ -53,6 +58,11 @@ object NodeJsUtils {
 		}).methods["on"]("error", jsFunctionRaw1 { e ->
 			c.resumeWithException(RuntimeException("Error: ${e.toJavaString()}"))
 		})
+
+		c.onCancel {
+			r.methods["abort"]()
+		}
+
 	}
 
 	suspend fun open(path: String, mode: String): JsDynamic = suspendCoroutine { c ->

@@ -3,6 +3,7 @@
 package com.soywiz.korio.async
 
 import com.soywiz.korio.util.OS
+import java.util.concurrent.CancellationException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -11,26 +12,43 @@ import kotlin.coroutines.*
 val workerLazyPool by lazy { Executors.newCachedThreadPool() }
 var tasksInProgress = AtomicInteger(0)
 
-inline suspend fun <T> suspendCoroutineEL(crossinline block: (Continuation<T>) -> Unit): T {
-	return suspendCoroutine { c ->
-		block(c.toEventLoop())
-	}
+inline suspend fun <T> suspendCoroutineEL(crossinline block: (Continuation<T>) -> Unit): T = suspendCoroutine { c ->
+	block(c.toEventLoop())
 }
 
 fun <T> Continuation<T>.toEventLoop(): Continuation<T> {
 	val parent = this
 	return object : Continuation<T> {
-		override val context: CoroutineContext = EmptyCoroutineContext
+		override val context: CoroutineContext = parent.context
 		override fun resume(value: T) = EventLoop.queue { parent.resume(value) }
 		override fun resumeWithException(exception: Throwable) = EventLoop.queue { parent.resumeWithException(exception) }
 	}
 }
 
-suspend fun <T> executeInWorker(task: suspend () -> T): T = suspendCoroutineEL<T> { c ->
+interface CheckRunning {
+	val cancelled: Boolean
+	fun checkCancelled(): Unit
+}
+
+suspend fun <T> executeInWorker(task: suspend CheckRunning.() -> T): T = suspendCancellableCoroutine<T> { c ->
 	tasksInProgress.incrementAndGet()
 	workerLazyPool.execute {
+		val checkRunning = object : CheckRunning {
+			override var cancelled = false
+
+			init {
+				c.onCancel {
+					cancelled = true
+				}
+			}
+
+			override fun checkCancelled() {
+				if (cancelled) throw CancellationException()
+			}
+		}
+
 		try {
-			task.startCoroutine(c)
+			task.startCoroutine(checkRunning, c)
 		} catch (t: Throwable) {
 			c.resumeWithException(t)
 		} finally {
@@ -43,7 +61,7 @@ operator fun ExecutorService.invoke(callback: () -> Unit) {
 	this.execute(callback)
 }
 
-fun <TEventLoop : EventLoop> sync(el: TEventLoop, block: suspend TEventLoop.() -> Unit): Unit {
+fun <TEventLoop : EventLoop> sync(el: TEventLoop, step: Int = 10, block: suspend TEventLoop.() -> Unit): Unit {
 	val oldEl = EventLoop._impl
 	EventLoop._impl = el
 	try {
@@ -65,7 +83,10 @@ fun <TEventLoop : EventLoop> sync(el: TEventLoop, block: suspend TEventLoop.() -
 			}
 		})
 
-		while (result == null) Thread.sleep(1L)
+		while (result == null) {
+			Thread.sleep(1L)
+			el.step(step)
+		}
 		if (result is Throwable) throw result as Throwable
 		return Unit
 	} finally {
@@ -80,7 +101,7 @@ fun <T> sync(block: suspend () -> T): T {
 
 	tasksInProgress.incrementAndGet()
 	block.startCoroutine(object : Continuation<T> {
-		override val context: CoroutineContext = EmptyCoroutineContext
+		override val context: CoroutineContext = CoroutineCancelContext()
 
 		override fun resume(value: T) = run {
 			tasksInProgress.decrementAndGet()
@@ -128,11 +149,8 @@ fun <T> (suspend () -> T).execAndForget() = spawnAndForget {
 
 object EmptyContinuation : Continuation<Any> {
 	override val context: CoroutineContext = EmptyCoroutineContext
-
 	override fun resume(value: Any) = Unit
-	override fun resumeWithException(exception: Throwable) {
-		exception.printStackTrace()
-	}
+	override fun resumeWithException(exception: Throwable) = exception.printStackTrace()
 }
 
 @Suppress("UNCHECKED_CAST")

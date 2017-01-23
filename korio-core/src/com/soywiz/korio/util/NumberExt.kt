@@ -47,6 +47,7 @@ fun Long.nextAlignedTo(align: Long) = if (this % align == 0L) {
 }
 
 fun Int.clamp(min: Int, max: Int): Int = if (this < min) min else if (this > max) max else this
+fun Double.clamp(min: Double, max: Double): Double = if (this < min) min else if (this > max) max else this
 fun Long.clamp(min: Long, max: Long): Long = if (this < min) min else if (this > max) max else this
 
 fun Long.toIntSafe(): Int {

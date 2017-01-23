@@ -1,10 +1,10 @@
 package com.soywiz.korio.vfs.js
 
 import com.jtransc.js.*
-import kotlin.coroutines.suspendCoroutine
+import com.soywiz.korio.async.suspendCancellableCoroutine
 
 object BrowserJsUtils {
-	suspend fun readRangeBytes(url: String, start: Double, end: Double): ByteArray = suspendCoroutine { c ->
+	suspend fun readRangeBytes(url: String, start: Double, end: Double): ByteArray = suspendCancellableCoroutine { c ->
 		val xhr = jsNew("XMLHttpRequest")
 		xhr.methods["open"]("GET", url, true);
 		xhr["responseType"] = "arraybuffer"
@@ -21,10 +21,15 @@ object BrowserJsUtils {
 		};
 
 		if (start >= 0 && end >= 0) xhr.methods["setRequestHeader"]("Range", "bytes=$start-$end");
+
+		c.onCancel {
+			xhr.methods["abort"]();
+		}
+
 		xhr.methods["send"]();
 	}
 
-	suspend fun stat(url: String): JsStat = suspendCoroutine { c ->
+	suspend fun stat(url: String): JsStat = suspendCancellableCoroutine { c ->
 		val xhr = jsNew("XMLHttpRequest")
 		xhr.methods["open"]("HEAD", url, true);
 		xhr["onreadystatechange"] = jsFunctionRaw0 {
@@ -37,6 +42,11 @@ object BrowserJsUtils {
 		xhr["onerror"] = jsFunctionRaw1 { e ->
 			c.resumeWithException(RuntimeException("Error ${xhr["status"].toJavaString()} opening $url"))
 		};
+
+		c.onCancel {
+			xhr.methods["abort"]();
+		}
+
 		xhr.methods["send"]();
 	}
 

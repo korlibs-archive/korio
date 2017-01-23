@@ -13,6 +13,7 @@ import com.soywiz.korio.vfs.Vfs
 import com.soywiz.korio.vfs.VfsOpenMode
 import com.soywiz.korio.vfs.VfsStat
 import java.io.BufferedInputStream
+import java.io.IOException
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -28,9 +29,20 @@ class UrlVfsProviderAndroid : UrlVfsProvider {
 					val conn = URL(path).openConnection() as HttpURLConnection
 					conn.setRequestProperty("Range", "bytes=$position-${(position + len) - 1}")
 					conn.connect()
-					val res = BufferedInputStream(conn.inputStream).readBytes()
-					System.arraycopy(res, 0, buffer, offset, res.size)
-					res.size
+					val bis = BufferedInputStream(conn.inputStream)
+					var cpos = offset
+					var pending = len
+					var totalRead = 0
+					while (pending > 0) {
+						checkCancelled()
+						val read = bis.read(buffer, cpos, Math.max(pending, 0x4000))
+						if (read == 0) break
+						if (read <= 0) throw IOException("Read: $read")
+						cpos += read
+						pending -= read
+						totalRead += read
+					}
+					totalRead
 				}
 
 				suspend override fun getLength(): Long {

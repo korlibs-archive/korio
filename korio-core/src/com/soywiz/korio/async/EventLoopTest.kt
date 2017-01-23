@@ -4,7 +4,7 @@ import java.io.Closeable
 import java.util.*
 
 class EventLoopTest : EventLoop() {
-	private var time = 0L
+	override var time: Long = 0L; private set
 
 	private var tasks = LinkedList<() -> Unit>()
 	private val lock = Object()
@@ -78,7 +78,7 @@ class EventLoopTest : EventLoop() {
 		executeTasks()
 	}
 
-	suspend fun step(ms: Int) {
+	override fun step(ms: Int) {
 		time += ms
 		executeTasks()
 	}
