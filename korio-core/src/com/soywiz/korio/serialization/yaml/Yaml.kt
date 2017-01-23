@@ -8,7 +8,12 @@ import java.util.*
 object Yaml {
 	fun read(str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
 
-	private fun parseStr(str: String) = str.toIntOrNull() ?: str.toDoubleOrNull() ?: str
+	private fun parseStr(str: String) = when (str) {
+		"null" -> null
+		"true" -> true
+		"false" -> false
+		else -> str.toIntOrNull() ?: str.toDoubleOrNull() ?: str
+	}
 
 	//const val TRACE = true
 	const val TRACE = false
@@ -42,25 +47,45 @@ object Yaml {
 				// current level
 				if (line != null) s.read()
 				val item = s.peek()
-				if (item.str == "-") {
-					if (s.read().str != "-") invalidOp
-					if (list == null) list = arrayListOf()
-					if (TRACE) println("${levelStr}LIST_ITEM...")
-					val res = read(s, level + 1)
-					if (TRACE) println("${levelStr}LIST_ITEM: $res")
-					list.add(res)
-				} else {
-					val key = s.read().str
-					if (s.eof || s.peek().str != ":") {
-						if (TRACE) println("${levelStr}LIT: $key")
-						return parseStr(key)
-					} else {
-						if (map == null) map = LinkedHashMap()
-						if (s.read().str != ":") invalidOp
-						if (TRACE) println("${levelStr}MAP[$key]...")
-						val value = read(s, level + 1)
-						map[key] = value
-						if (TRACE) println("${levelStr}MAP[$key]: $value")
+				when (item.str) {
+					"-" -> {
+						if (s.read().str != "-") invalidOp
+						if (list == null) list = arrayListOf()
+						if (TRACE) println("${levelStr}LIST_ITEM...")
+						val res = read(s, level + 1)
+						if (TRACE) println("${levelStr}LIST_ITEM: $res")
+						list.add(res)
+					}
+					"[" -> {
+						if (s.read().str != "[") invalidOp
+						val olist = arrayListOf<Any?>()
+						array@ while (s.peek().str != "]") {
+							olist += read(s, level + 1)
+							val p = s.peek().str
+							when (p) {
+								"," -> {
+									s.read(); continue@array
+								}
+								"]" -> break@array
+								else -> invalidOp("Unexpected '$p'")
+							}
+						}
+						if (s.read().str != "]") invalidOp
+						return olist
+					}
+					else -> {
+						val key = s.read().str
+						if (s.eof || s.peek().str != ":") {
+							if (TRACE) println("${levelStr}LIT: $key")
+							return parseStr(key)
+						} else {
+							if (map == null) map = LinkedHashMap()
+							if (s.read().str != ":") invalidOp
+							if (TRACE) println("${levelStr}MAP[$key]...")
+							val value = read(s, level + 1)
+							map[key] = value
+							if (TRACE) println("${levelStr}MAP[$key]: $value")
+						}
 					}
 				}
 			}
@@ -68,7 +93,7 @@ object Yaml {
 
 		if (TRACE) println("${levelStr}RETURN: list=$list, map=$map")
 
-		return list ?: map ?: "<eof>"
+		return list ?: map
 	}
 
 	fun StrReader.tokenize(): List<Token> {
@@ -94,11 +119,12 @@ object Yaml {
 				if (indents.isEmpty()) invalidOp
 			}
 			val indentLevel = indents.size - 1
+			while (out.isNotEmpty() && out.last() is Token.LINE) out.removeAt(out.size - 1)
 			out += Token.LINE(indentStr, indentLevel)
 			while (hasMore) {
 				val c = read()
 				when (c) {
-					':', '-', '[', ']' -> {
+					':', '-', '[', ']', ',' -> {
 						flush(); out += Token.SYMBOL("$c")
 					}
 					'#' -> {
