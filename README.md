@@ -3,7 +3,9 @@
 [![Build Status](https://travis-ci.org/soywiz/korio.svg?branch=master)](https://travis-ci.org/soywiz/korio)
 [![Maven Version](https://img.shields.io/github/tag/soywiz/korio.svg?style=flat&label=maven)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22korio%22)
 
-[KORIO](http://github.com/soywiz/korio) - [KORIM](http://github.com/soywiz/korim) - [KORUI](http://github.com/soywiz/korui)
+![](https://raw.githubusercontent.com/soywiz/kor/master/logos/128/korio.png)
+
+[All KOR libraries](https://github.com/soywiz/kor)
 
 Use with gradle (uploaded to maven central):
 
@@ -26,31 +28,6 @@ single threaded targets like JavaScript or AS3, with kotlin-js or JTransc (Node.
 korio you will be able to target several platforms without any problem.
 
 It has a modern and useful API. And all works in Java 7, so it is compatible with Android.
-
-### Extended libraries
-
-I have also created other useful multi-target libraries using korio as core.
-
-#### [Korim](http://github.com/soywiz/korim)
-
-Korim is an imaging library with just korio as dependency. It provides bitmap manipulation, and
-pure kotlin image decoding (PNG, JPEG, BMP and TGA), while allowing extending it and some drawing
-geometry primitives. It also supports native font loading and bitmap font loading.
-Korim supports all korio targets including JVM, Javascript and Android and provide native image
-loading in those targets for fastest performance. Also provides generating generate bitmap fonts
-at runtime using native font facilities for each supported target.
-
-### [Korui](http://github.com/soywiz/korui)
-
-Korui is a very portable user interface library. Uses korim and korio as dependencies. And allow
-creating interfaces for JVM (AWT), Android and JavaScript (HTML5) at this point with a clean and
-easy to use interface, but would allow other targets in the future like C++ SDL, iOS,
-Universal Windows UWP and so on.
-It provides some components and layouts. It internally creates lightweight native components for each
-platform and resizes them using common consistent korui layouts. Supported layouts are similar to
-Android ones, but allows creating them using Kotlin DSL. Portable imaging uses Korim and for I/O and asynchronous
-facilities, it uses Korio.
-
 
 ### Event Loop and async primitives
 
