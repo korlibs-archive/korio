@@ -10,7 +10,7 @@
 Use with gradle (uploaded to maven central):
 
 ```
-compile "com.soywiz:korio:$korioVersion"
+compile "com.soywiz:korio:$korVersion"
 ```
 
 I'm also uploading it to a personal bintray repository:

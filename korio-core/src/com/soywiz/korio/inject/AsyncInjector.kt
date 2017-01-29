@@ -1,7 +1,6 @@
 package com.soywiz.korio.inject
 
-import com.soywiz.korio.async.Promise
-import com.soywiz.korio.async.async
+import com.soywiz.korio.error.invalidOp
 
 @Target(AnnotationTarget.CLASS)
 annotation class Prototype
@@ -9,12 +8,13 @@ annotation class Prototype
 @Target(AnnotationTarget.CLASS)
 annotation class Singleton
 
-class AsyncInjector {
+class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 	private val instances = hashMapOf<Class<*>, Any?>()
 
-	suspend inline fun <reified T : Any> get() = getAsync(T::class.java).await()
+	fun child() = AsyncInjector(this, level + 1)
 
-	inline fun <reified T : Any> getAsync(): Promise<T> = getAsync(T::class.java)
+	suspend inline fun <reified T : Any> get() = get(T::class.java)
+
 	inline fun <reified T : Any> map(instance: T): AsyncInjector = map(T::class.java, instance)
 
 	init {
@@ -27,41 +27,52 @@ class AsyncInjector {
 	}
 
 	@Suppress("UNCHECKED_CAST")
-	fun <T : Any?> getAsync(clazz: Class<T>): Promise<T> = async {
-		if (instances.containsKey(clazz) || clazz.getAnnotation(Singleton::class.java) != null) {
+	suspend fun <T : Any?> get(clazz: Class<T>): T {
+		return getOrNull(clazz) ?: create(clazz)
+	}
+
+	suspend fun <T : Any?> getOrNull(clazz: Class<T>): T? {
+		return if (instances.containsKey(clazz) || clazz.getAnnotation(Singleton::class.java) != null) {
 			if (!instances.containsKey(clazz)) {
-				val instance = createAsync(clazz).await()
+				val instance = create(clazz)
 				instances[clazz] = instance
 			}
 			instances[clazz]!! as T
 		} else {
-			createAsync(clazz).await()
+			parent?.getOrNull(clazz)
 		}
 	}
 
 	@Suppress("UNCHECKED_CAST")
-	fun <T : Any?> createAsync(clazz: Class<T>): Promise<T> = async {
-		val constructor = clazz.declaredConstructors.first()
-		val promises = arrayListOf<Promise<out Any>>()
-		val out = arrayListOf<Any>()
-		for (paramType in constructor.parameterTypes) {
-			promises += getAsync(paramType)
-		}
-		for (prom in promises) {
-			out += prom.await()
-		}
-		val instance = constructor.newInstance(*out.toTypedArray()) as T
-		if (instance is AsyncDependency) {
-			try {
-				instance.init()
-			} catch (e: Throwable) {
-				println("AsyncInjector (${e.message}):")
-				e.printStackTrace()
-				throw e
+	suspend fun <T : Any?> create(clazz: Class<T>): T {
+		try {
+			val constructor = clazz.declaredConstructors.firstOrNull() ?: invalidOp("Class '$clazz' doesn't have constructors")
+			val out = arrayListOf<Any>()
+
+			for ((paramType, annotations) in constructor.parameterTypes.zip(constructor.parameterAnnotations)) {
+				if (annotations.isNotEmpty()) {
+					val i = this.child()
+					for (annotation in annotations) {
+						i.map(annotation.annotationClass.java as Class<Any>, annotation as Any)
+					}
+					out += i.get(paramType)
+				} else {
+					out += get(paramType)
+				}
 			}
+			val instance = constructor.newInstance(*out.toTypedArray()) as T
+			if (instance is AsyncDependency) {
+				instance.init()
+			}
+			return instance
+		} catch (e: Throwable) {
+			println("$this error while creating '$clazz': (${e.message}):")
+			e.printStackTrace()
+			throw e
 		}
-		instance
 	}
+
+	override fun toString(): String = "AsyncInjector(level=$level, instances=${instances.size})"
 }
 
 interface AsyncDependency {

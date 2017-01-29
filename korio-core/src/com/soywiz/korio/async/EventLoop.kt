@@ -59,6 +59,15 @@ abstract class EventLoop {
 		}
 
 		val time: Long get() = impl.time
+		suspend fun sleepNextFrame(): Unit = suspendCancellableCoroutine { c ->
+			var cancelled = false
+			requestAnimationFrame {
+				if (!cancelled) c.resume(Unit)
+			}
+			c.onCancel {
+				cancelled = true
+			}
+		}
 
 		//suspend fun sleep(ms: Int): Unit = suspendCoroutine { c ->
 		//	setTimeout(ms) { c.resume(Unit) }
