@@ -1,9 +1,6 @@
 package com.soywiz.korio.serialization.json
 
-import com.soywiz.korio.util.ClassFactory
-import com.soywiz.korio.util.StrReader
-import com.soywiz.korio.util.readStringLit
-import com.soywiz.korio.util.toNumber
+import com.soywiz.korio.util.*
 import org.intellij.lang.annotations.Language
 import java.io.IOException
 
@@ -20,7 +17,7 @@ object Json {
 		val ic = skipSpaces().read()
 		when (ic) {
 			'{' -> {
-				val out = hashMapOf<String, Any?>()
+				val out = LinkedHashMap<String, Any?>()
 				obj@ while (true) {
 					when (skipSpaces().read()) {
 						'}' -> break@obj; ',' -> continue@obj; else -> unread()
@@ -88,20 +85,64 @@ object Json {
 				}
 				b.append(']')
 			}
-			is String -> {
-				b.append('"')
-				for (c in obj) {
-					when (c) {
-						'\\' -> b.append("\\\\") ; '/' -> b.append("\\/") ; '\'' -> b.append("\\'")
-						'"' -> b.append("\\\"") ; '\b' -> b.append("\\b") ; '\u000c' -> b.append("\\f")
-						'\n' -> b.append("\\n") ; '\r' -> b.append("\\r") ; '\t' -> b.append("\\t")
-						else -> b.append(c)
-					}
-				}
-				b.append('"')
-			}
+			is String -> encodeString(obj, b)
 			is Number -> b.append("$obj")
 			else -> encode(ClassFactory(obj.javaClass).toMap(obj), b)
 		}
+	}
+
+	fun encodePretty(obj: Any?, indentChunk: String = "\t"): String = Indenter().apply {
+		encodePretty(obj, this)
+	}.toString(doIndent = true, indentChunk = indentChunk)
+
+	fun encodePretty(obj: Any?, b: Indenter) {
+		when (obj) {
+			null -> b.inline("null")
+			is Boolean -> b.inline(if (obj) "true" else "false")
+			is Map<*, *> -> {
+				b.line("{")
+				b.indent {
+					val entries = obj.entries
+					for ((i, v) in entries.withIndex()) {
+						if (i != 0) b.line(",")
+						b.inline(encodeString("" + v.key))
+						b.inline(": ")
+						encodePretty(v.value, b)
+						if (i == entries.size - 1) b.line("")
+					}
+				}
+				b.inline("}")
+			}
+			is Iterable<*> -> {
+				b.line("[")
+				b.indent {
+					val entries = obj.toList()
+					for ((i, v) in entries.withIndex()) {
+						if (i != 0) b.line(",")
+						encodePretty(v, b)
+						if (i == entries.size - 1) b.line("")
+					}
+				}
+				b.inline("]")
+			}
+			is String -> b.inline(encodeString(obj))
+			is Number -> b.inline("$obj")
+			else -> encodePretty(ClassFactory(obj.javaClass).toMap(obj), b)
+		}
+	}
+
+	private fun encodeString(str: String) = StringBuilder().apply { encodeString(str, this) }.toString()
+
+	private fun encodeString(str: String, b: StringBuilder) {
+		b.append('"')
+		for (c in str) {
+			when (c) {
+				'\\' -> b.append("\\\\"); '/' -> b.append("\\/"); '\'' -> b.append("\\'")
+				'"' -> b.append("\\\""); '\b' -> b.append("\\b"); '\u000c' -> b.append("\\f")
+				'\n' -> b.append("\\n"); '\r' -> b.append("\\r"); '\t' -> b.append("\\t")
+				else -> b.append(c)
+			}
+		}
+		b.append('"')
 	}
 }
