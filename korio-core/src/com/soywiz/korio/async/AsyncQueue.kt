@@ -15,6 +15,11 @@ class AsyncQueue {
 		return this
 	}
 
+	suspend fun await(func: suspend () -> Unit): Unit {
+		invoke(func)
+		await()
+	}
+
 	suspend fun await(): Unit {
 		promise.await()
 	}
