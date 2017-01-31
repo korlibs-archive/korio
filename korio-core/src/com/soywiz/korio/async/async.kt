@@ -61,6 +61,10 @@ operator fun ExecutorService.invoke(callback: () -> Unit) {
 	this.execute(callback)
 }
 
+fun syncTest(block: suspend EventLoopTest.() -> Unit): Unit {
+	sync(el = EventLoopTest(), step = 10, block = block)
+}
+
 fun <TEventLoop : EventLoop> sync(el: TEventLoop, step: Int = 10, block: suspend TEventLoop.() -> Unit): Unit {
 	val oldEl = EventLoop._impl
 	EventLoop._impl = el
@@ -118,6 +122,10 @@ fun <T> sync(block: suspend () -> T): T {
 	if (result is Throwable) throw result as Throwable
 	@Suppress("UNCHECKED_CAST")
 	return result as T
+}
+
+suspend fun parallel(vararg tasks: suspend () -> Unit) {
+	tasks.map { go(it) }.await()
 }
 
 fun <T> spawn(task: suspend () -> T): Promise<T> {
