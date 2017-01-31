@@ -2,10 +2,10 @@ package com.soywiz.korio.async
 
 import kotlin.coroutines.startCoroutine
 
-class WorkQueue {
+class AsyncQueue {
 	private var promise: Promise<Any> = Promise.resolved(Unit)
 
-	operator fun invoke(func: suspend () -> Unit): WorkQueue {
+	operator fun invoke(func: suspend () -> Unit): AsyncQueue {
 		val oldPromise = this.promise
 		val newDeferred = Promise.Deferred<Any>()
 		this.promise = newDeferred.promise
@@ -14,4 +14,11 @@ class WorkQueue {
 		}
 		return this
 	}
+
+	suspend fun await(): Unit {
+		promise.await()
+	}
 }
+
+@Deprecated("AsyncQueue", ReplaceWith("AsyncQueue"))
+typealias WorkQueue = AsyncQueue
