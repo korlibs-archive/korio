@@ -52,22 +52,19 @@ class Promise<T : Any?> {
 		} else {
 			while (resolvedHandlers.isNotEmpty()) {
 				val handler = resolvedHandlers.removeFirst()
-				EventLoop.queue { handler(value!!) }
+				EventLoop.queue { handler(value as T) }
 			}
 		}
 	}
 
 	internal fun complete(value: T?, error: Throwable?): Promise<T> {
 		if (!this.done) {
-			if (value == null && error == null) {
-				throw RuntimeException("Invalid completion!")
-			}
-
 			this.value = value
 			this.error = error
 			this.done = true
 
 			if (error != null && this.rejectedHandlers.isEmpty() && error !is CancellationException) {
+				System.err.println("## Not handled Promise exception:")
 				error.printStackTrace()
 			}
 

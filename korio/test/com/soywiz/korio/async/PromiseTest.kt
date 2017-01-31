@@ -1,10 +1,23 @@
 package com.soywiz.korio.async
 
+import com.soywiz.korio.expectException
 import org.junit.Assert
 import org.junit.Test
 import java.util.concurrent.CancellationException
 
 class PromiseTest {
+	@Test
+	fun nullPromise() = syncTest {
+		val promise = Promise.resolved<String?>(null)
+		Assert.assertEquals(null, promise.await())
+	}
+
+	@Test
+	fun rejectedPromise() = syncTest {
+		val promise = Promise.rejected<String?>(IllegalStateException())
+		expectException<IllegalStateException> { promise.await() }
+	}
+
 	@Test
 	fun name() = sync {
 		var out = ""
