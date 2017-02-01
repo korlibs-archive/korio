@@ -1,6 +1,7 @@
 package com.soywiz.korio.inject
 
 import com.soywiz.korio.error.invalidOp
+import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.CLASS)
 annotation class Prototype
@@ -46,7 +47,12 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 	@Suppress("UNCHECKED_CAST")
 	suspend fun <T : Any?> create(clazz: Class<T>): T {
 		try {
-			val constructor = clazz.declaredConstructors.firstOrNull() ?: invalidOp("Class '$clazz' doesn't have constructors")
+			val loaderClass = clazz.getDeclaredAnnotation(LoaderClass::class.java)
+			val constructor = if (loaderClass != null) {
+				loaderClass.clazz.java.declaredConstructors.firstOrNull() ?: invalidOp("Class '$clazz' doesn't have constructors")
+			} else {
+				clazz.declaredConstructors.firstOrNull() ?: invalidOp("Class '$clazz' doesn't have constructors")
+			}
 			val out = arrayListOf<Any>()
 
 			for ((paramType, annotations) in constructor.parameterTypes.zip(constructor.parameterAnnotations)) {
@@ -60,11 +66,15 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 					out += get(paramType)
 				}
 			}
-			val instance = constructor.newInstance(*out.toTypedArray()) as T
+			val instance = constructor.newInstance(*out.toTypedArray())
 			if (instance is AsyncDependency) {
 				instance.init()
 			}
-			return instance
+			if (loaderClass != null) {
+				return (instance as Loader<T>).load()
+			} else {
+				return instance as T
+			}
 		} catch (e: Throwable) {
 			println("$this error while creating '$clazz': (${e.message}):")
 			e.printStackTrace()
@@ -74,6 +84,12 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 
 	override fun toString(): String = "AsyncInjector(level=$level, instances=${instances.size})"
 }
+
+interface Loader<T> {
+	suspend fun load(): T
+}
+
+annotation class LoaderClass(val clazz: KClass<out Loader<*>>)
 
 interface AsyncDependency {
 	suspend fun init(): Unit
