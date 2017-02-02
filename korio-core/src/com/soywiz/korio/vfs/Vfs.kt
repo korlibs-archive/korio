@@ -104,25 +104,6 @@ abstract class Vfs {
 		//	}
 		//}
 
-// Reproduce bug:
-
-// FAILS: Internal error: wrong code generated
-//suspend fun Any.ext(): Int = 10
-//suspend fun coroutinebug(v: Any?) {
-//	v?.ext()
-//}
-
-// WORKS:
-//suspend fun Any.ext(): Int = 10
-//suspend fun coroutinebug(v: Any?) {
-//	@Suppress("IfThenToSafeAccess")
-//	if (v != null) v.ext()
-//}
-
-// WORKS:
-//suspend fun Any.ext(): Int = 10
-//suspend fun coroutinebug(v: Any?) = v?.ext()
-
 		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable {
 			initOnce()
 			return access(path).watch { e ->
