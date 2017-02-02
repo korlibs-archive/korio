@@ -47,7 +47,7 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 	@Suppress("UNCHECKED_CAST")
 	suspend fun <T : Any?> create(clazz: Class<T>): T {
 		try {
-			val loaderClass = clazz.getDeclaredAnnotation(LoaderClass::class.java)
+			val loaderClass = clazz.getAnnotation(LoaderClass::class.java)
 			val constructor = if (loaderClass != null) {
 				loaderClass.clazz.java.declaredConstructors.firstOrNull() ?: invalidOp("Class '$clazz' doesn't have constructors")
 			} else {
