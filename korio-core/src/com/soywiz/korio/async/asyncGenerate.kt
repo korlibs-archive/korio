@@ -115,7 +115,6 @@ class SuspendingIteratorCoroutine<T>(
 	}
 }
 
-// @TODO: @BUG: https://youtrack.jetbrains.com/issue/KT-15828#u=1484838346426
 typealias AsyncGenerator<T> = SuspendingSequenceBuilder<T>
 typealias AsyncSequence<T> = SuspendingSequence<T>
 typealias AsyncIterator<T> = SuspendingIterator<T>
@@ -240,34 +239,24 @@ class AsyncGeneratorIterator<T> : AsyncIterator<T>, AsyncGenerator<T>, Continuat
 }
 */
 
-@PublishedApi
-// @todo: @bug: https://youtrack.jetbrains.com/issue/KT-15820
-internal inline suspend fun <T, T2> _map(seq: SuspendingSequence<T>, crossinline transform: (T) -> T2) = asyncGenerate<T2> {
-	for (e in seq) {
+inline suspend fun <T, T2> SuspendingSequence<T>.map(crossinline transform: (T) -> T2) = asyncGenerate<T2> {
+	for (e in this@map) {
 		yield(transform(e))
 	}
 }
 
-inline suspend fun <T, T2> SuspendingSequence<T>.map(crossinline transform: (T) -> T2) = _map(this, transform)
-
-@PublishedApi
-// @todo: @bug: https://youtrack.jetbrains.com/issue/KT-15820
-internal inline suspend fun <T> _filter(it: SuspendingSequence<T>, crossinline filter: (T) -> Boolean) = asyncGenerate<T> {
-	for (e in it) {
+inline suspend fun <T> SuspendingSequence<T>.filter(crossinline filter: (T) -> Boolean) = asyncGenerate<T> {
+	for (e in this@filter) {
 		if (filter(e)) {
 			yield(e)
 		}
 	}
 }
 
-inline suspend fun <T> SuspendingSequence<T>.filter(crossinline filter: (T) -> Boolean) = _filter(this, filter)
-
-@PublishedApi
-// @todo: @bug: https://youtrack.jetbrains.com/issue/KT-15820
-internal suspend fun <T> _chunks(it: SuspendingSequence<T>, count: Int) = asyncGenerate<List<T>> {
+suspend fun <T> SuspendingSequence<T>.chunks(count: Int) = asyncGenerate<List<T>> {
 	val chunk = arrayListOf<T>()
 
-	for (e in it) {
+	for (e in this@chunks) {
 		chunk += e
 		if (chunk.size > count) {
 			yield(chunk.toList())
@@ -280,23 +269,11 @@ internal suspend fun <T> _chunks(it: SuspendingSequence<T>, count: Int) = asyncG
 	}
 }
 
-suspend fun <T> SuspendingSequence<T>.chunks(count: Int) = _chunks(this, count)
-
-suspend fun <T> SuspendingSequence<T>.toList(): List<T> {
+suspend fun <T> AsyncSequence<T>.toList(): List<T> {
 	val out = arrayListOf<T>()
-	val it = this.iterator()
-	while (it.hasNext()) {
-		out += it.next()
-	}
+	for (e in this@toList) out += e
 	return out
 }
-
-// @TODO: @BUG: https://youtrack.jetbrains.com/issue/KT-15824
-//suspend fun <T> AsyncSequence<T>.toList(): List<T> {
-//	val out = arrayListOf<T>()
-//	for (e in this@toList) out += e
-//	return out
-//}
 
 inline suspend fun <T, TR> SuspendingSequence<T>.fold(initial: TR, crossinline folder: (T, TR) -> TR): TR {
 	var result: TR = initial
