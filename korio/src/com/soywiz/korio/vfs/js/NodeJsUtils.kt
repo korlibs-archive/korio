@@ -4,7 +4,7 @@ package com.soywiz.korio.vfs.js
 
 import com.jtransc.js.*
 import com.soywiz.korio.async.suspendCancellableCoroutine
-import kotlin.coroutines.suspendCoroutine
+import com.soywiz.korio.coroutine.korioSuspendCoroutine
 
 object NodeJsUtils {
 	suspend fun readRangeBytes(path: String, start: Double, end: Double): ByteArray = suspendCancellableCoroutine { c ->
@@ -65,7 +65,7 @@ object NodeJsUtils {
 
 	}
 
-	suspend fun open(path: String, mode: String): JsDynamic = suspendCoroutine { c ->
+	suspend fun open(path: String, mode: String): JsDynamic = korioSuspendCoroutine { c ->
 		val fs = jsRequire("fs")
 		fs.methods["open"](path, mode, jsFunctionRaw2 { err, fd ->
 			if (err != null) {
@@ -76,7 +76,7 @@ object NodeJsUtils {
 		})
 	}
 
-	suspend fun read(fd: JsDynamic?, position: Double, len: Double): ByteArray = suspendCoroutine { c ->
+	suspend fun read(fd: JsDynamic?, position: Double, len: Double): ByteArray = korioSuspendCoroutine { c ->
 		val fs = jsRequire("fs")
 		val buffer = jsNew("Buffer", len)
 		fs.methods["read"](fd, buffer, 0, len, position, jsFunctionRaw3 { err, bytesRead, buffer ->
@@ -91,7 +91,7 @@ object NodeJsUtils {
 		})
 	}
 
-	suspend fun close(fd: Any): Unit = suspendCoroutine { c ->
+	suspend fun close(fd: Any): Unit = korioSuspendCoroutine { c ->
 		val fs = jsRequire("fs")
 		fs.methods["close"](fd, jsFunctionRaw2 { err, fd ->
 			if (err != null) {
@@ -104,7 +104,7 @@ object NodeJsUtils {
 
 	fun getCWD(): String = global["process"].methods["cwd"]().toJavaString()
 
-	suspend fun fstat(path: String): JsStat = suspendCoroutine { c ->
+	suspend fun fstat(path: String): JsStat = korioSuspendCoroutine { c ->
 		// https://nodejs.org/api/fs.html#fs_class_fs_stats
 		val fs = jsRequire("fs")
 		//fs.methods["exists"](path, jsFunctionRaw1 { jsexists ->

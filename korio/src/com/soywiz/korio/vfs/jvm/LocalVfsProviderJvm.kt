@@ -3,6 +3,7 @@
 package com.soywiz.korio.vfs.jvm
 
 import com.soywiz.korio.async.*
+import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
@@ -15,7 +16,6 @@ import java.nio.channels.CompletionHandler
 import java.nio.file.*
 import java.nio.file.StandardWatchEventKinds.*
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.suspendCoroutine
 
 
 class LocalVfsProviderJvm : LocalVfsProvider() {
@@ -89,7 +89,10 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 					completionHandler<Int> { channel.write(bb, position, Unit, it) }
 				}
 
-				suspend override fun setLength(value: Long): Unit { channel.truncate(value); Unit }
+				suspend override fun setLength(value: Long): Unit {
+					channel.truncate(value); Unit
+				}
+
 				suspend override fun getLength(): Long = channel.size()
 				suspend override fun close() = channel.close()
 
@@ -149,7 +152,7 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 			resolveFile(src).renameTo(resolveFile(dst))
 		}
 
-		inline suspend fun <T> completionHandler(crossinline callback: (CompletionHandler<T, Unit>) -> Unit) = suspendCoroutine<T> { c ->
+		inline suspend fun <T> completionHandler(crossinline callback: (CompletionHandler<T, Unit>) -> Unit) = korioSuspendCoroutine<T> { c ->
 			val cevent = c.toEventLoop()
 			callback(object : CompletionHandler<T, Unit> {
 				override fun completed(result: T, attachment: Unit?) = cevent.resume(result)

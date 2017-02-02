@@ -61,13 +61,9 @@ abstract class Vfs {
 
 	abstract class Proxy : Vfs() {
 		abstract suspend protected fun access(path: String): VfsFile
-		suspend open protected fun transform(out: VfsFile): VfsFile {
-			return file(out.path)
-		}
-
-		suspend protected fun VfsFile.transform2(): VfsFile {
-			return transform(this)
-		}
+		suspend open protected fun transform(out: VfsFile): VfsFile = file(out.path)
+		suspend protected fun VfsFile.transform2(): VfsFile = transform(this)
+		//suspend protected fun transform2_f(f: VfsFile): VfsFile = transform(f)
 
 		suspend open protected fun init() {
 		}
@@ -108,17 +104,13 @@ abstract class Vfs {
 		//	}
 		//}
 
-		suspend private fun _watch(handler: (VfsFileEvent) -> Unit, e: VfsFileEvent) {
-			val f1 = e.file.transform2()
-			val f2 = e.other?.transform2()
-			handler(e.copy(VfsFileEvent.Kind.CREATED, f1, f2))
-		}
-
 		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable {
 			initOnce()
 			return access(path).watch { e ->
 				spawn {
-					_watch(handler, e)
+					val f1 = e.file.transform2()
+					val f2 = if (e.other != null) e.other.transform2() else null
+					handler(e.copy(file = f1, other = f2))
 				}
 			}
 		}

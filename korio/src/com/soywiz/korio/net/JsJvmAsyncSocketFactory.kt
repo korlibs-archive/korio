@@ -3,13 +3,13 @@ package com.soywiz.korio.net
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.sleep
+import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousServerSocketChannel
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.CompletionHandler
 import java.util.concurrent.TimeUnit
-import kotlin.coroutines.suspendCoroutine
 
 class JsJvmAsyncSocketFactory : AsyncSocketFactory {
 	override suspend fun createClient(): AsyncClient = JsJvmAsyncClient()
@@ -19,7 +19,7 @@ class JsJvmAsyncSocketFactory : AsyncSocketFactory {
 class JsJvmAsyncClient(private val sc: AsynchronousSocketChannel = AsynchronousSocketChannel.open()) : AsyncClient {
 	private var _connected = false
 
-	suspend override fun connect(host: String, port: Int): Unit = suspendCoroutine { c ->
+	suspend override fun connect(host: String, port: Int): Unit = korioSuspendCoroutine { c ->
 		sc.connect(InetSocketAddress(host, port), this, object : CompletionHandler<Void, AsyncClient> {
 			override fun completed(result: Void?, attachment: AsyncClient): Unit = run { _connected = true; c.resume(Unit) }
 			override fun failed(exc: Throwable, attachment: AsyncClient): Unit = run { _connected = false; c.resumeWithException(exc) }
@@ -28,7 +28,7 @@ class JsJvmAsyncClient(private val sc: AsynchronousSocketChannel = AsynchronousS
 
 	override val connected: Boolean get() = sc.isOpen
 
-	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = suspendCoroutine { c ->
+	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = korioSuspendCoroutine { c ->
 		val bb = ByteBuffer.wrap(buffer, offset, len)
 
 		sc.read(bb, 10L, TimeUnit.SECONDS, this, object : CompletionHandler<Int, AsyncClient> {
@@ -37,7 +37,7 @@ class JsJvmAsyncClient(private val sc: AsynchronousSocketChannel = AsynchronousS
 		})
 	}
 
-	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = suspendCoroutine { c ->
+	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = korioSuspendCoroutine { c ->
 		val bb = ByteBuffer.wrap(buffer, offset, len)
 		sc.write(bb, 10L, TimeUnit.SECONDS, this, object : CompletionHandler<Int, AsyncClient> {
 			override fun completed(result: Int, attachment: AsyncClient): Unit = run { c.resume(Unit) }
@@ -67,7 +67,7 @@ class JsJvmAsyncServer(override val requestPort: Int, override val host: String,
 		while (true) yield(JsJvmAsyncClient(ssc.saccept()))
 	}
 
-	suspend fun AsynchronousServerSocketChannel.saccept(): AsynchronousSocketChannel = suspendCoroutine { c ->
+	suspend fun AsynchronousServerSocketChannel.saccept(): AsynchronousSocketChannel = korioSuspendCoroutine { c ->
 		this.accept(kotlin.Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
 			override fun completed(result: AsynchronousSocketChannel, attachment: Unit) = kotlin.Unit.apply { c.resume(result) }
 			override fun failed(exc: Throwable, attachment: Unit) = kotlin.Unit.apply { c.resumeWithException(exc) }
