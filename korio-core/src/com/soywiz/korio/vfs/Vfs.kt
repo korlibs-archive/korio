@@ -109,6 +109,9 @@ abstract class Vfs {
 			return access(path).watch { e ->
 				spawn {
 					val f1 = e.file.transform2()
+
+					// @TODO: Bug kotlin-beta-38 wrong code generated
+					@Suppress("IfThenToSafeAccess")
 					val f2 = if (e.other != null) e.other.transform2() else null
 					handler(e.copy(file = f1, other = f2))
 				}

@@ -1,10 +1,11 @@
 package com.soywiz.korio.async
 
+import com.soywiz.korio.coroutine.AbstractCoroutineContextElement
 import com.soywiz.korio.coroutine.Continuation
+import com.soywiz.korio.coroutine.CoroutineContext
+import com.soywiz.korio.coroutine.CoroutineContextKey
 import com.soywiz.korio.util.Cancellable
 import java.util.*
-import kotlin.coroutines.experimental.AbstractCoroutineContextElement
-import kotlin.coroutines.experimental.CoroutineContext
 
 //inline suspend fun <T> suspendCancellableCoroutine(crossinline block: (CancellableContinuation<T>) -> Unit): T = suspendCoroutineOrReturn { c ->
 inline suspend fun <T> suspendCancellableCoroutine(crossinline block: (CancellableContinuation<T>) -> Unit): T = suspendCoroutineEL { c ->
@@ -27,7 +28,7 @@ class CoroutineCancelContext() : AbstractCoroutineContextElement(CoroutineCancel
 		synchronized(handlers) { handlers += handler }
 	}
 
-	companion object Key : CoroutineContext.Key<CoroutineCancelContext>
+	companion object Key : CoroutineContextKey<CoroutineCancelContext>
 
 	override fun toString(): String = "CoroutineCancelSignal(${handlers.size})"
 }

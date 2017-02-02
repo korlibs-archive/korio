@@ -10,6 +10,7 @@ val COROUTINE_SUSPENDED = kotlin.coroutines.experimental.intrinsics.COROUTINE_SU
 typealias RestrictsSuspension = kotlin.coroutines.experimental.RestrictsSuspension
 typealias Continuation<T> = kotlin.coroutines.experimental.Continuation<T>
 typealias CoroutineContext = kotlin.coroutines.experimental.CoroutineContext
+typealias CoroutineContextKey<T> = kotlin.coroutines.experimental.CoroutineContext.Key<T>
 typealias EmptyCoroutineContext = kotlin.coroutines.experimental.EmptyCoroutineContext
 typealias AbstractCoroutineContextElement = kotlin.coroutines.experimental.AbstractCoroutineContextElement
 

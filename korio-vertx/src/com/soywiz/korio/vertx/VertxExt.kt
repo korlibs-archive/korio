@@ -4,9 +4,9 @@ package com.soywiz.korio.vertx
 
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.await
+import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import io.vertx.core.AsyncResult
 import io.vertx.core.Handler
-import kotlin.coroutines.suspendCoroutine
 
 fun <T : Any?> Promise.Deferred<T>.toVertxHandler(): Handler<AsyncResult<T>> {
 	val deferred = this
@@ -23,7 +23,7 @@ fun <T : Any?> Promise.Deferred<T>.toVertxHandler(): Handler<AsyncResult<T>> {
 }
 
 /*
-inline suspend fun <T> vx(crossinline callback: (Handler<AsyncResult<T>>) -> Unit) = suspendCoroutine<T> { c ->
+inline suspend fun <T> vx(noinline callback: (Handler<AsyncResult<T>>) -> Unit) = korioSuspendCoroutine<T> { c ->
 	callback(object : Handler<AsyncResult<T>> {
 		override fun handle(event: AsyncResult<T>) {
 			if (event.succeeded()) {
@@ -36,15 +36,12 @@ inline suspend fun <T> vx(crossinline callback: (Handler<AsyncResult<T>>) -> Uni
 }
 */
 
-// @TODO: @BUG: https://youtrack.jetbrains.com/issue/KT-15821
-suspend fun <T> vx(callback: (Handler<AsyncResult<T>>) -> Unit) = suspendCoroutine<T> { c ->
-	callback(object : Handler<AsyncResult<T>> {
-		override fun handle(event: AsyncResult<T>) {
-			if (event.succeeded()) {
-				c.resume(event.result())
-			} else {
-				c.resumeWithException(event.cause())
-			}
+inline suspend fun <T> vx(crossinline callback: (Handler<AsyncResult<T>>) -> Unit) = korioSuspendCoroutine<T> { c ->
+	callback(Handler<AsyncResult<T>> { event ->
+		if (event.succeeded()) {
+			c.resume(event.result())
+		} else {
+			c.resumeWithException(event.cause())
 		}
 	})
 }
