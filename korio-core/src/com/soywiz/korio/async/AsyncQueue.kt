@@ -1,6 +1,6 @@
 package com.soywiz.korio.async
 
-import kotlin.coroutines.startCoroutine
+import com.soywiz.korio.coroutine.korioStartCoroutine
 
 class AsyncQueue {
 	private var promise: Promise<Any> = Promise.resolved(Unit)
@@ -10,7 +10,7 @@ class AsyncQueue {
 		val newDeferred = Promise.Deferred<Any>()
 		this.promise = newDeferred.promise
 		oldPromise.then {
-			func.startCoroutine(newDeferred.toContinuation())
+			func.korioStartCoroutine(newDeferred.toContinuation())
 		}
 		return this
 	}

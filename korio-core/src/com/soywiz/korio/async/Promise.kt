@@ -1,11 +1,10 @@
 package com.soywiz.korio.async
 
+import com.soywiz.korio.coroutine.Continuation
+import com.soywiz.korio.coroutine.CoroutineContext
+import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import java.util.*
 import java.util.concurrent.CancellationException
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.coroutines.suspendCoroutine
 
 class Promise<T : Any?> {
 	class Deferred<T : Any?> {
@@ -98,5 +97,5 @@ class Promise<T : Any?> {
 		complete(null, CancellationException())
 	}
 
-	suspend fun await(): T = suspendCoroutine(this::then)
+	suspend fun await(): T = korioSuspendCoroutine(this::then)
 }

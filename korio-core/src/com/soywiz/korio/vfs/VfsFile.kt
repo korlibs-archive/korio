@@ -36,7 +36,7 @@ class VfsFile(
 
 	suspend fun open(mode: VfsOpenMode = VfsOpenMode.READ): AsyncStream = vfs.open(path, mode)
 
-	suspend inline fun <T> openUse(mode: VfsOpenMode = VfsOpenMode.READ, callback: suspend AsyncStream.() -> T): T {
+	suspend inline fun <T> openUse(mode: VfsOpenMode = VfsOpenMode.READ, noinline callback: suspend AsyncStream.() -> T): T {
 		return open(mode).use { callback.await(this) }
 	}
 

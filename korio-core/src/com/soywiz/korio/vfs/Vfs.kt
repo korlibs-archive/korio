@@ -96,13 +96,29 @@ abstract class Vfs {
 			return srcFile.renameTo(dstFile.path)
 		}
 
+		// @TODO: Bug kotlin-beta-38 wrong code generated
+		//suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable {
+		//	initOnce()
+		//	return access(path).watch { e ->
+		//		spawn {
+		//			val f1 = e.file.transform2()
+		//			val f2 = e.other?.transform2()
+		//			handler(e.copy(file = f1, other = f2))
+		//		}
+		//	}
+		//}
+
+		suspend private fun _watch(handler: (VfsFileEvent) -> Unit, e: VfsFileEvent) {
+			val f1 = e.file.transform2()
+			val f2 = e.other?.transform2()
+			handler(e.copy(VfsFileEvent.Kind.CREATED, f1, f2))
+		}
+
 		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable {
 			initOnce()
 			return access(path).watch { e ->
 				spawn {
-					val f1 = e.file.transform2()
-					val f2 = e.other?.transform2()
-					handler(e.copy(file = f1, other = f2))
+					_watch(handler, e)
 				}
 			}
 		}

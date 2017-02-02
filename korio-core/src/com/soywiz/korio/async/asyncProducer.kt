@@ -1,9 +1,9 @@
 package com.soywiz.korio.async
 
+import com.soywiz.korio.coroutine.korioStartCoroutine
+import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import java.util.*
 import java.util.concurrent.CancellationException
-import kotlin.coroutines.startCoroutine
-import kotlin.coroutines.suspendCoroutine
 
 typealias CancelHandler = Signal<Unit>
 
@@ -33,12 +33,12 @@ class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 		}
 	}
 
-	suspend override fun consume(): T = suspendCoroutine { c ->
+	suspend override fun consume(): T = korioSuspendCoroutine { c ->
 		consumers += { c.resume(it) }
 		flush()
 	}
 
-	suspend override fun consumeWithCancelHandler(cancel: CancelHandler): T = suspendCoroutine { c ->
+	suspend override fun consumeWithCancelHandler(cancel: CancelHandler): T = korioSuspendCoroutine { c ->
 		val consumer: (T) -> Unit = { c.resume(it) }
 		cancel {
 			consumers -= consumer
@@ -53,6 +53,6 @@ class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 fun <T> asyncProducer(callback: suspend Producer<T>.() -> Unit): Consumer<T> {
 	val p = ProduceConsumer<T>()
 
-	callback.startCoroutine(p, completion = EmptyContinuation)
+	callback.korioStartCoroutine(p, completion = EmptyContinuation)
 	return p
 }

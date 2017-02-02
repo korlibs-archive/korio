@@ -7,6 +7,7 @@ import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import java.io.EOFException
 import java.net.URI
+import kotlin.experimental.xor
 
 class JvmWebSocketClientFactory : WebSocketClientFactory {
 	override suspend fun create(url: URI, protocols: List<String>?, origin: String?, wskey: String?, debug: Boolean): WebSocketClient {

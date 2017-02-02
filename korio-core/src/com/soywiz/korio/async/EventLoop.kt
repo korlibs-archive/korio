@@ -2,11 +2,11 @@
 
 package com.soywiz.korio.async
 
+import com.soywiz.korio.coroutine.Continuation
+import com.soywiz.korio.coroutine.CoroutineContext
+import com.soywiz.korio.coroutine.EmptyCoroutineContext
+import com.soywiz.korio.coroutine.korioStartCoroutine
 import java.io.Closeable
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.EmptyCoroutineContext
-import kotlin.coroutines.startCoroutine
 
 // @TODO: Check CoroutineDispatcher
 abstract class EventLoop {
@@ -30,7 +30,7 @@ abstract class EventLoop {
 			tasksInProgress.incrementAndGet()
 			impl.init()
 			impl.setImmediate {
-				entry.startCoroutine(object : Continuation<Unit> {
+				entry.korioStartCoroutine(object : Continuation<Unit> {
 					override val context: CoroutineContext = EmptyCoroutineContext
 
 					override fun resume(value: Unit) {

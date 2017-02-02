@@ -8,7 +8,7 @@ class AsyncCache {
 	internal val promises = LinkedHashMap<String, Promise<*>>()
 
 	@Suppress("UNCHECKED_CAST")
-	inline suspend operator fun <T> invoke(key: String, gen: suspend () -> T): T {
+	inline suspend operator fun <T> invoke(key: String, noinline gen: suspend () -> T): T {
 		return (promises.getOrPut(key) { async(gen) } as Promise<T>).await()
 	}
 }

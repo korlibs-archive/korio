@@ -1,9 +1,9 @@
 package com.soywiz.korio.async
 
+import com.soywiz.korio.coroutine.Continuation
+import com.soywiz.korio.coroutine.CoroutineContext
+import com.soywiz.korio.coroutine.korioStartCoroutine
 import java.util.concurrent.CancellationException
-import kotlin.coroutines.Continuation
-import kotlin.coroutines.CoroutineContext
-import kotlin.coroutines.startCoroutine
 
 suspend fun withTimeout(ms: Int, name: String = "timeout", callback: suspend () -> Unit) = suspendCancellableCoroutine<Unit> { c ->
 	var cancelled = false
@@ -17,7 +17,7 @@ suspend fun withTimeout(ms: Int, name: String = "timeout", callback: suspend () 
 		timer.close()
 		c.cancel()
 	}
-	callback.startCoroutine(object : Continuation<Unit> {
+	callback.korioStartCoroutine(object : Continuation<Unit> {
 		override val context: CoroutineContext = c.context
 
 		override fun resume(value: Unit) {
