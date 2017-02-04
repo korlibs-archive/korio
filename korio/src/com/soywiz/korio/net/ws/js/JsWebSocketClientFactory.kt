@@ -18,14 +18,14 @@ class JsWebSocketClient(url: URI, protocols: List<String>?, val DEBUG: Boolean) 
 		jsNew("WebSocket", url)
 	}.apply {
 		this["binaryType"] = "arraybuffer"
-		methods["addEventListener"]("open", jsFunctionRaw1 { onOpen(Unit) })
-		methods["addEventListener"]("close", jsFunctionRaw1 { event ->
+		this.call("addEventListener", "open", jsFunctionRaw1 { onOpen(Unit) })
+		this.call("addEventListener", "close", jsFunctionRaw1 { event ->
 			var code = event["code"].toInt()
 			var reason = event["reason"].toJavaStringOrNull()
 			var wasClean = event["wasClean"].toBool()
 			onClose(Unit)
 		})
-		methods["addEventListener"]("message", jsFunctionRaw1 { event ->
+		this.call("addEventListener", "message", jsFunctionRaw1 { event ->
 			val data = event["data"]
 			if (DEBUG) println("[WS-RECV]: ${data.toJavaStringOrNull()}")
 			if (data.jsIsString()) {
@@ -51,17 +51,17 @@ class JsWebSocketClient(url: URI, protocols: List<String>?, val DEBUG: Boolean) 
 
 	override fun close(code: Int, reason: String) {
 		//jsws.methods["close"](code, reason)
-		jsws.methods["close"]()
+		jsws.call("close")
 	}
 
 	override suspend fun send(message: String) {
 		if (DEBUG) println("[WS-SEND]: $message")
-		jsws.methods["send"](message)
+		jsws.call("send", message)
 	}
 
 	override suspend fun send(message: ByteArray) {
 		if (DEBUG) println("[WS-SEND]: ${message.toList()}")
-		jsws.methods["send"](message.toJsTypedArray())
+		jsws.call("send", message.toJsTypedArray())
 	}
 }
 

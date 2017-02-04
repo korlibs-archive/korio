@@ -34,15 +34,22 @@ object Dynamic {
 		field?.set(instance, value)
 	}
 
-	suspend fun <T : Any> getField(instance: T?, name: String): Any? {
+	suspend fun <T : Any> getField(instance: T?, key: String): Any? {
 		return if (instance == null) {
 			null
 		} else {
+			// use getAny instead
+			//if (instance is Map<*, *>) return instance[key]
+			//if (instance is List<*>) {
+			//	val index = key.toIntOrNull()
+			//	if (index != null) return instance[index]
+			//}
 			val clazz = instance.javaClass
 			val dmethods = clazz.declaredMethods
-			val getterName = "get${name.capitalize()}"
+			val getterName = "get${key.capitalize()}"
 			val getter = ignoreErrors { dmethods.firstOrNull { it.name == getterName } }
-			val method = ignoreErrors { dmethods.firstOrNull { it.name == name } }
+			val method = ignoreErrors { dmethods.firstOrNull { it.name == key } }
+
 			if (getter != null) {
 				getter.isAccessible = true
 				getter.invokeSuspend(instance, listOf())
@@ -51,7 +58,7 @@ object Dynamic {
 				//method.invoke(instance)
 				method.invokeSuspend(instance, listOf())
 			} else {
-				val field = clazz.declaredFields.find { it.name == name }
+				val field = clazz.declaredFields.find { it.name == key }
 
 				//val field = instance.javaClass.getField(name)
 				field?.isAccessible = true
@@ -121,6 +128,8 @@ object Dynamic {
 		is Iterable<*> -> instance.toList()[toInt(key)]
 		else -> getField(instance, key.toString())
 	}
+
+	suspend fun getAny(instance: Any?, key: Any?): Any? = accessAny(instance, key)
 
 	@Suppress("UNCHECKED_CAST")
 	fun setAny(instance: Any?, key: Any?, value: Any?): Any? {

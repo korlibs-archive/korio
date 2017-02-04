@@ -41,7 +41,7 @@ class LocalVfsProviderJs : LocalVfsProvider() {
 			val emitter = AsyncSequenceEmitter<VfsFile>()
 			val fs = jsRequire("fs")
 			//console.methods["log"](path)
-			fs.methods["readdir"](path, jsFunctionRaw2 { err, files ->
+			fs.call("readdir", path, jsFunctionRaw2 { err, files ->
 				//console.methods["log"](err)
 				//console.methods["log"](files)
 				for (n in 0 until files["length"].toInt()) {
@@ -56,7 +56,7 @@ class LocalVfsProviderJs : LocalVfsProvider() {
 
 		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable {
 			val fs = jsRequire("fs")
-			val watcher = fs.methods["watch"](path, jsObject("persistent" to true, "recursive" to true), jsFunctionRaw2 { eventType, filename ->
+			val watcher = fs.call("watch", path, jsObject("persistent" to true, "recursive" to true), jsFunctionRaw2 { eventType, filename ->
 				spawnAndForget {
 					val et = eventType.toJavaString()
 					val fn = filename.toJavaString()
@@ -77,7 +77,7 @@ class LocalVfsProviderJs : LocalVfsProvider() {
 				}
 			})
 
-			return Closeable { watcher.methods["close"]() }
+			return Closeable { watcher.call("close") }
 		}
 
 		override fun toString(): String = "LocalVfs"

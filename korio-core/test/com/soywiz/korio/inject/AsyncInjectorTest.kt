@@ -38,10 +38,10 @@ class AsyncInjectorTest {
 
 	annotation class Path(val path: String)
 
-	@LoaderClass(BitmapFontLoader::class) class BitmapFont(val path: String)
+	@AsyncFactoryClass(BitmapFontLoader::class) class BitmapFont(val path: String)
 
-	class BitmapFontLoader(val path: Path) : Loader<BitmapFont> {
-		override suspend fun load() = BitmapFont(path.path)
+	class BitmapFontLoader(val path: Path) : AsyncFactory<BitmapFont> {
+		override suspend fun create() = BitmapFont(path.path)
 	}
 
 	@Test
@@ -55,4 +55,35 @@ class AsyncInjectorTest {
 		val demo = inject.get<Demo>()
 		Assert.assertEquals("path/to/font", demo.font.path)
 	}
+
+	//@Inject lateinit var injector: AsyncInjector
+
+	@Test
+	fun testInjectAnnotation() = syncTest {
+		var log = ""
+
+		open class Base : AsyncDependency {
+			@Inject lateinit private var injector: AsyncInjector
+
+			override suspend fun init() {
+				log += "Base.init<" + injector.get<Int>() + ">"
+			}
+		}
+
+		@Singleton
+		class Demo(
+			val a: java.lang.Integer
+		) : Base() {
+			override suspend fun init() {
+				super.init()
+				log += "Demo.init<$a>"
+			}
+		}
+
+		val inject = AsyncInjector()
+		inject.map(10)
+		val demo = inject.get<Demo>()
+		Assert.assertEquals(10, demo.a)
+	}
+
 }
