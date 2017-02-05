@@ -41,6 +41,10 @@ Korio also provides some async primitives until they are officially available
 at a common place like kotlinx.coroutines, and will provide typealias + @Deprecated for the future migration
 when available.
 
+### Serialization
+
+Embeded **Json**, **Xml** and **Yaml** parsers. Can also write Json (with pretty print support) and Xml. Support Json to Object mapping with kotlin data classes suport.
+
 ### Streams
 
 Korio provides AsyncStream and SyncStream classes with a simplified readable, writable and seekable API,
