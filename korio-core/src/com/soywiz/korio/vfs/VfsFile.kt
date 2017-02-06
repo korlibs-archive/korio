@@ -18,12 +18,15 @@ class VfsFile(
 ) : VfsNamed(path) {
 	operator fun get(path: String): VfsFile = VfsFile(vfs, VfsUtil.combine(this.path, path))
 
-	suspend operator fun set(path: String, content: String): Unit = this[path].writeString(content)
-	suspend operator fun set(path: String, content: ByteArray): Unit = this[path].write(content)
+	suspend operator fun set(path: String, content: String): Unit = this[path].put(content.toByteArray(Charsets.UTF_8).openAsync())
+	suspend operator fun set(path: String, content: ByteArray): Unit = this[path].put(content.openAsync())
 	suspend operator fun set(path: String, content: AsyncStream): Unit = run { this[path].writeStream(content) }
 	suspend operator fun set(path: String, content: VfsFile): Unit = run { this[path].writeFile(content) }
 
-	suspend fun writeStream(src: AsyncStream): Long = this.openUse(VfsOpenMode.CREATE_OR_TRUNCATE) { this.writeStream(src) }
+	suspend fun put(content: AsyncStream, attributes: List<Vfs.Attribute> = listOf()): Unit = vfs.put(path, content, attributes)
+	suspend fun put(content: AsyncStream, vararg attributes: Vfs.Attribute): Unit = vfs.put(path, content, attributes.toList())
+
+	suspend fun writeStream(src: AsyncStream): Long = run { put(src); src.getLength() }
 	suspend fun writeFile(file: VfsFile): Long = file.copyTo(this)
 
 	suspend fun copyTo(target: VfsFile): Long = this.openUse(VfsOpenMode.READ) { target.writeStream(this) }

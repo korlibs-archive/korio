@@ -33,6 +33,12 @@ class Promise<T : Any?> {
 	companion object {
 		fun <T> resolved(value: T) = Promise<T>().complete(value, null)
 		fun <T> rejected(error: Throwable) = Promise<T>().complete(null, error)
+
+		suspend fun <T> create(callback: suspend (deferred: Deferred<T>) -> Unit): T {
+			val deferred = Deferred<T>()
+			callback(deferred)
+			return deferred.promise.await()
+		}
 	}
 
 	private var value: T? = null

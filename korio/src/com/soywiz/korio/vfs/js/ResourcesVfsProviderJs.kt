@@ -1,6 +1,6 @@
 package com.soywiz.korio.vfs.js
 
-import com.jtransc.js.jsGetAssetStats
+import com.jtransc.js.*
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.util.OS
@@ -9,11 +9,19 @@ import com.soywiz.korio.vfs.*
 class ResourcesVfsProviderJs : ResourcesVfsProvider {
 	override fun invoke(): Vfs {
 		return EmbededResourceListing(if (OS.isNodejs) {
-			LocalVfs(NodeJsUtils.getCWD())
+			LocalVfs(getCWD())
 		} else {
-			//UrlVfs(BrowserJsUtils.getBaseUrl()) // @TODO: Bug JTRANSC treeshaking?
-			UrlVfsProviderJs()()[BrowserJsUtils.getBaseUrl()]
+			UrlVfs(getBaseUrl())
 		}.jail())
+	}
+
+	private fun getCWD(): String = global["process"].call("cwd").toJavaString()
+
+	private fun getBaseUrl(): String {
+		var baseHref = document["location"]["href"].call("replace", jsRegExp("/[^\\/]*$"), "")
+		val bases = document.call("getElementsByTagName", "base")
+		if (bases["length"].toInt() > 0) baseHref = bases[0]["href"]
+		return baseHref.toJavaString()
 	}
 }
 

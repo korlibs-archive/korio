@@ -1,23 +1,62 @@
-@file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
-
-package com.soywiz.korio.vfs.android
+package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.AsyncStreamBase
-import com.soywiz.korio.stream.buffered
+import com.soywiz.korio.stream.openAsync
+import com.soywiz.korio.stream.toAsync
 import com.soywiz.korio.stream.toAsyncStream
-import com.soywiz.korio.util.AsyncCache
-import com.soywiz.korio.vfs.UrlVfsProvider
-import com.soywiz.korio.vfs.Vfs
-import com.soywiz.korio.vfs.VfsOpenMode
-import com.soywiz.korio.vfs.VfsStat
-import java.io.BufferedInputStream
-import java.io.IOException
+import com.soywiz.korio.util.toUintClamp
+import java.io.FileNotFoundException
 import java.net.HttpURLConnection
 import java.net.URL
 
-class UrlVfsProviderAndroid : UrlVfsProvider {
+class HttpClientFactoryJvm : HttpClientFactory() {
+	override fun create(): HttpClient = object : HttpClient() {
+		suspend override fun request(method: Method, url: String, headers: Headers, content: AsyncStream?): Response = executeInWorker {
+			try {
+				val aurl = URL(url)
+				HttpURLConnection.setFollowRedirects(false)
+				val con = aurl.openConnection() as HttpURLConnection
+				con.requestMethod = method.name
+				for (header in headers) {
+					con.addRequestProperty(header.first, header.second)
+				}
+				con.connect()
+				if (content != null) {
+					con.doOutput = true
+					val len = content.getAvailable()
+					var left = len
+					val temp = ByteArray(1024)
+					while (left > 0) {
+						val read = content.read(temp, 0, Math.min(temp.size, left.toUintClamp()))
+						if (read <= 0) invalidOp("Problem reading")
+						left -= read
+						con.outputStream.write(temp, 0, read)
+					}
+					con.outputStream.close()
+				}
+
+				Response(
+						status = con.responseCode,
+						statusText = con.responseMessage,
+						headers = HttpClient.Headers.fromListMap(con.headerFields),
+						content = con.inputStream.toAsync().toAsyncStream()
+				)
+			} catch (e: FileNotFoundException) {
+				Response(
+						status = 404,
+						statusText = "NotFound",
+						headers = HttpClient.Headers(),
+						content = byteArrayOf().openAsync()
+				)
+			}
+		}
+	}
+}
+
+/*
+class UrlVfsProviderJvm : UrlVfsProvider {
 	override fun invoke(): Vfs = object : Vfs() {
 		val statCache = AsyncCache()
 
@@ -74,4 +113,4 @@ class UrlVfsProviderAndroid : UrlVfsProvider {
 		}
 	}
 }
-
+*/

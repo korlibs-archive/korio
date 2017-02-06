@@ -5,7 +5,9 @@ package com.soywiz.korio.vfs.js
 import com.jtransc.js.*
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.AsyncSequenceEmitter
+import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.spawnAndForget
+import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
@@ -15,23 +17,23 @@ import java.io.Closeable
 class LocalVfsProviderJs : LocalVfsProvider() {
 	override fun invoke(): Vfs = object : Vfs() {
 		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
-			val stat = NodeJsUtils.fstat(path)
-			val handle = NodeJsUtils.open(path, "r")
+			val stat = fstat(path)
+			val handle = open(path, "r")
 
 			return object : AsyncStreamBase() {
 				suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
-					val data = NodeJsUtils.read(handle, position.toDouble(), len.toDouble())
+					val data = read(handle, position.toDouble(), len.toDouble())
 					System.arraycopy(data, 0, buffer, offset, data.size)
 					return data.size
 				}
 
 				suspend override fun getLength(): Long = stat.size.toLong()
-				suspend override fun close(): Unit = NodeJsUtils.close(handle)
+				suspend override fun close(): Unit = close(handle)
 			}.toAsyncStream()
 		}
 
 		suspend override fun stat(path: String): VfsStat = try {
-			val stat = NodeJsUtils.fstat(path)
+			val stat = fstat(path)
 			createExistsStat(path, isDirectory = stat.isDirectory, size = stat.size.toLong())
 		} catch (t: Throwable) {
 			createNonExistsStat(path)
@@ -81,5 +83,67 @@ class LocalVfsProviderJs : LocalVfsProvider() {
 		}
 
 		override fun toString(): String = "LocalVfs"
+	}
+
+
+	suspend fun open(path: String, mode: String): JsDynamic = korioSuspendCoroutine { c ->
+		val fs = jsRequire("fs")
+		fs.call("open", path, mode, jsFunctionRaw2 { err, fd ->
+			if (err != null) {
+				c.resumeWithException(RuntimeException("Error ${err.toJavaString()} opening $path"))
+			} else {
+				c.resume(fd!!)
+			}
+		})
+	}
+
+	suspend fun read(fd: JsDynamic?, position: Double, len: Double): ByteArray = Promise.create { c ->
+		val fs = jsRequire("fs")
+		val buffer = jsNew("Buffer", len)
+		fs.call("read", fd, buffer, 0, len, position, jsFunctionRaw3 { err, bytesRead, buffer ->
+			if (err != null) {
+				c.reject(RuntimeException("Error ${err.toJavaString()} opening ${fd.toJavaString()}"))
+			} else {
+				val u8array = jsNew("Int8Array", buffer, 0, bytesRead)
+				val out = ByteArray(bytesRead.toInt())
+				out.asJsDynamic().call("setArraySlice", 0, u8array)
+				c.resolve(out)
+			}
+		})
+	}
+
+	suspend fun close(fd: Any): Unit = Promise.create { c ->
+		val fs = jsRequire("fs")
+		fs.call("close", fd, jsFunctionRaw2 { err, fd ->
+			if (err != null) {
+				c.reject(RuntimeException("Error ${err.toJavaString()} closing file"))
+			} else {
+				c.resolve(Unit)
+			}
+		})
+	}
+
+
+
+	suspend fun fstat(path: String): JsStat = Promise.create { c ->
+		// https://nodejs.org/api/fs.html#fs_class_fs_stats
+		val fs = jsRequire("fs")
+		//fs.methods["exists"](path, jsFunctionRaw1 { jsexists ->
+		//	val exists = jsexists.toBool()
+		//	if (exists) {
+		fs.call("stat", path, jsFunctionRaw2 { err, stat ->
+			//console.methods["log"](stat)
+			if (err != null) {
+				c.reject(RuntimeException("Error ${err.toJavaString()} opening $path"))
+			} else {
+				val out = JsStat(stat["size"].toDouble())
+				out.isDirectory = stat.call("isDirectory").toBool()
+				c.resolve(out)
+			}
+		})
+		//	} else {
+		//		c.resumeWithException(RuntimeException("File '$path' doesn't exists"))
+		//	}
+		//})
 	}
 }

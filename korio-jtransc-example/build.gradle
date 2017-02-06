@@ -5,9 +5,9 @@ apply plugin: 'kotlin'
 apply plugin: 'application'
 apply plugin: 'jtransc'
 
-//mainClassName = "KorioSampleKt"
+mainClassName = "KorioSampleKt"
 //mainClassName = "KorioWebsocketExample"
-mainClassName = "KorioFilewatchExample"
+//mainClassName = "KorioFilewatchExample"
 
 sourceSets {
 	main.java.srcDirs = ['src']
@@ -32,6 +32,6 @@ jtransc {
 	assets = ["korio-jtransc-example/resources"]
 	//minimizeNames = true
 	minimizeNames = false
-	//treeshaking = true
-	treeshaking = false
+	treeshaking = true
+	//treeshaking = false
 }

@@ -5,5 +5,7 @@ include(
 		'korio-kotlinjs',
 		'korio-android',
 		'korio-vertx',
-		'korio-jtransc-example'
+		'korio-jtransc-example',
+		'korio-ext-db',
+		'korio-ext-amazon-s3',
 )

@@ -8,6 +8,7 @@ import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.VfsOpenMode
 import java.io.ByteArrayOutputStream
 import java.io.EOFException
+import java.io.InputStream
 import java.nio.charset.Charset
 import java.util.*
 
@@ -291,6 +292,7 @@ suspend fun AsyncInputStream.readBytesExact(len: Int): ByteArray { // bug https:
 	readExact(out, 0, len)
 	return out
 }
+
 suspend fun AsyncInputStream.readU8(): Int = readTempExact(1).readU8(0)
 suspend fun AsyncInputStream.readS8(): Int = readTempExact(1).readS8(0)
 suspend fun AsyncInputStream.readU16_le(): Int = readTempExact(2).readU16_le(0)
@@ -311,8 +313,17 @@ suspend fun AsyncInputStream.readS32_be(): Int = readTempExact(4).readS32_be(0)
 suspend fun AsyncInputStream.readS64_be(): Long = readTempExact(8).readS64_be(0)
 suspend fun AsyncInputStream.readF32_be(): Float = readTempExact(4).readF32_be(0)
 suspend fun AsyncInputStream.readF64_be(): Double = readTempExact(8).readF64_be(0)
-suspend fun AsyncStream.hasLength(): Boolean = try { getLength(); true } catch (t: Throwable) { false }
-suspend fun AsyncStream.hasAvailable(): Boolean = try { getAvailable(); true } catch (t: Throwable) { false }
+suspend fun AsyncStream.hasLength(): Boolean = try {
+	getLength(); true
+} catch (t: Throwable) {
+	false
+}
+
+suspend fun AsyncStream.hasAvailable(): Boolean = try {
+	getAvailable(); true
+} catch (t: Throwable) {
+	false
+}
 
 suspend fun AsyncInputStream.readAll(): ByteArray {
 	return if (this is AsyncStream && this.hasAvailable()) {
@@ -458,4 +469,13 @@ suspend fun AsyncInputStream.readLine(eol: Char = '\n'): String {
 	} catch (e: EOFException) {
 	}
 	return out.toByteArray().toString(Charsets.UTF_8)
+}
+
+fun InputStream.toAsync(): AsyncInputStream {
+	val syncIS = this
+	return object : AsyncInputStream {
+		suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker {
+			syncIS.read(buffer, offset, len)
+		}
+	}
 }

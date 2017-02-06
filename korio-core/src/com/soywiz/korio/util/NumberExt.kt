@@ -55,6 +55,14 @@ fun Long.toIntSafe(): Int {
 	return this.toInt()
 }
 
+fun Long.toIntClamp(min: Int = Int.MIN_VALUE, max: Int = Int.MAX_VALUE): Int {
+	if (this < min) return min
+	if (this > max) return max
+	return this.toInt()
+}
+
+fun Long.toUintClamp(min: Int = 0, max: Int = Int.MAX_VALUE) = this.toIntClamp(0, Int.MAX_VALUE)
+
 fun String.toNumber(): Number = this.toIntOrNull() as Number? ?: this.toLongOrNull() as Number? ?: this.toDoubleOrNull() as Number? ?: 0
 
 fun Byte.toUnsigned() = this.toInt() and 0xFF

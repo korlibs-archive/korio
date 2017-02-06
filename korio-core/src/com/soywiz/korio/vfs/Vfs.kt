@@ -6,9 +6,8 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.spawn
 import com.soywiz.korio.error.unsupported
-import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.readBytes
-import com.soywiz.korio.stream.writeBytes
+import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.use
 import java.io.Closeable
 
 abstract class Vfs {
@@ -20,13 +19,13 @@ abstract class Vfs {
 	fun file(path: String) = root[path]
 
 	fun createExistsStat(
-		path: String, isDirectory: Boolean, size: Long, device: Long = -1, inode: Long = -1, mode: Int = 511,
-		owner: String = "nobody", group: String = "nobody", createTime: Long = 0L, modifiedTime: Long = createTime, lastAccessTime: Long = modifiedTime,
-		extraInfo: Any? = null
+			path: String, isDirectory: Boolean, size: Long, device: Long = -1, inode: Long = -1, mode: Int = 511,
+			owner: String = "nobody", group: String = "nobody", createTime: Long = 0L, modifiedTime: Long = createTime, lastAccessTime: Long = modifiedTime,
+			extraInfo: Any? = null
 	) = VfsStat(
-		file = file(path), exists = true, isDirectory = isDirectory, size = size, device = device, inode = inode, mode = mode,
-		owner = owner, group = group, createTime = createTime, modifiedTime = modifiedTime, lastAccessTime = lastAccessTime,
-		extraInfo = extraInfo
+			file = file(path), exists = true, isDirectory = isDirectory, size = size, device = device, inode = inode, mode = mode,
+			owner = owner, group = group, createTime = createTime, modifiedTime = modifiedTime, lastAccessTime = lastAccessTime,
+			extraInfo = extraInfo
 	)
 
 	fun createNonExistsStat(path: String, extraInfo: Any? = null) = VfsStat(file(path), exists = false, isDirectory = false, size = 0L, device = -1L, inode = -1L, mode = 511, owner = "nobody", group = "nobody", createTime = 0L, modifiedTime = 0L, lastAccessTime = 0L, extraInfo = extraInfo)
@@ -34,6 +33,16 @@ abstract class Vfs {
 	suspend open fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler = VfsProcessHandler()): Int = throw UnsupportedOperationException()
 
 	suspend open fun open(path: String, mode: VfsOpenMode): AsyncStream = throw UnsupportedOperationException()
+
+	interface Attribute
+
+	inline fun <reified T> Iterable<Attribute>.get(): T? = this.firstOrNull { it is T } as T?
+
+	suspend open fun put(path: String, content: AsyncStream, attributes: List<Attribute> = listOf()) {
+		open(path, VfsOpenMode.CREATE_OR_TRUNCATE).use {
+			content.copyTo(this)
+		}
+	}
 
 	suspend fun readChunk(path: String, offset: Long, size: Int): ByteArray {
 		val s = open(path, VfsOpenMode.READ)
@@ -79,6 +88,7 @@ abstract class Vfs {
 
 		suspend override fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler): Int = initOnce().access(path).exec(cmdAndArgs, handler)
 		suspend override fun open(path: String, mode: VfsOpenMode) = initOnce().access(path).open(mode)
+		suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) = initOnce().access(path).put(content, attributes)
 		suspend override fun setSize(path: String, size: Long): Unit = initOnce().access(path).setSize(size)
 		suspend override fun stat(path: String): VfsStat = initOnce().access(path).stat().copy(file = file(path))
 		suspend override fun list(path: String) = asyncGenerate { initOnce(); for (it in access(path).list()) yield(transform(it)) }
