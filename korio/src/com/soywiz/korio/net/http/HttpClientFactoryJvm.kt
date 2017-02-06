@@ -19,15 +19,20 @@ class HttpClientFactoryJvm : HttpClientFactory() {
 				HttpURLConnection.setFollowRedirects(false)
 				val con = aurl.openConnection() as HttpURLConnection
 				con.requestMethod = method.name
+				//println("URL:$url")
+				//println("METHOD:${method.name}")
 				for (header in headers) {
+					//println("HEADER:$header")
 					con.addRequestProperty(header.first, header.second)
 				}
-				con.connect()
 				if (content != null) {
 					con.doOutput = true
 					val len = content.getAvailable()
 					var left = len
 					val temp = ByteArray(1024)
+					con.addRequestProperty("content-length", "$len")
+					//println("HEADER:content-length, $len")
+					con.connect()
 					while (left > 0) {
 						val read = content.read(temp, 0, Math.min(temp.size, left.toUintClamp()))
 						if (read <= 0) invalidOp("Problem reading")
@@ -35,6 +40,8 @@ class HttpClientFactoryJvm : HttpClientFactory() {
 						con.outputStream.write(temp, 0, read)
 					}
 					con.outputStream.close()
+				} else {
+					con.connect()
 				}
 
 				Response(

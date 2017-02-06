@@ -38,11 +38,21 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 
 	private fun normalizePath(path: String) = "/" + path.trim('/')
 
-	class ACCESS(var text: String) : Vfs.Attribute
-	class CONTENT_TYPE(var text: String) : Vfs.Attribute
+	class ACCESS(var text: String) : Vfs.Attribute {
+		companion object {
+			val PRIVATE = ACCESS("private")
+			val PUBLIC_READ = ACCESS("public-read")
+		}
+	}
+	class CONTENT_TYPE(var text: String) : Vfs.Attribute {
+		companion object {
+			val TEXT_PLAIN = CONTENT_TYPE("text/plain")
+			val APPLICATION_OCTET_STREAM = CONTENT_TYPE("application/octet-stream")
+		}
+	}
 
 	suspend override fun stat(path: String): VfsStat {
-		val result = request(HttpClient.Method.HEAD, normalizePath(path))
+		val result = request(HttpClient.Method.HEAD, path)
 
 		return if (result.success) {
 			createExistsStat(path, isDirectory = true, size = result.headers["content-length"]?.toLongOrNull() ?: 0L)
@@ -55,7 +65,7 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 		if (mode.write) invalidOp("Use put for writing")
 		return request(
 				HttpClient.Method.GET,
-				normalizePath(path)
+				path
 		).content.toAsyncStream()
 	}
 
@@ -65,7 +75,7 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 
 		request(
 				HttpClient.Method.PUT,
-				normalizePath(path),
+				path,
 				contentType = contentType?.text ?: "application/octet-stream",
 				headers = mapOf(
 						"x-amz-acl" to (access?.text ?: "private")
@@ -73,11 +83,12 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 		)
 	}
 
-	suspend fun request(method: HttpClient.Method, path: String, contentType: String = "", contentMd5: String = "", headers: Map<String, String> = mapOf(), content: ByteArray = byteArrayOf()): HttpClient.Response {
+	suspend fun request(method: HttpClient.Method, path: String, contentType: String = "", contentMd5: String = "", headers: Map<String, String> = mapOf(), content: ByteArray? = null): HttpClient.Response {
+		val npath = normalizePath(path)
 		return httpClient.request(
-				method, path,
-				headers = genHeaders(method, path, contentType, contentMd5, headers),
-				content = content.openAsync()
+				method, absolutePath + npath,
+				headers = genHeaders(method, npath, contentType, contentMd5, headers),
+				content = content?.openAsync()
 		)
 	}
 
