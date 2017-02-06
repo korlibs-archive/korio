@@ -25,5 +25,18 @@ class AsyncQueue {
 	}
 }
 
+class AsyncThread {
+	private var lastPromise: Promise<*> = Promise.resolved(Unit)
+
+	operator suspend fun <T> invoke(func: suspend () -> T): T {
+		val newDeferred = Promise.Deferred<T>()
+		lastPromise.then {
+			func.korioStartCoroutine(newDeferred.toContinuation())
+		}
+		lastPromise = newDeferred.promise
+		return newDeferred.promise.await() as T
+	}
+}
+
 @Deprecated("AsyncQueue", ReplaceWith("AsyncQueue"))
 typealias WorkQueue = AsyncQueue
