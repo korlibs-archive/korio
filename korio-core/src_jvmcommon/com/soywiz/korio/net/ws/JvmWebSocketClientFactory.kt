@@ -1,5 +1,6 @@
 package com.soywiz.korio.net.ws
 
+import com.jtransc.js.jsDebugger
 import com.soywiz.korio.async.spawn
 import com.soywiz.korio.crypto.Base64
 import com.soywiz.korio.net.AsyncClient
@@ -15,7 +16,9 @@ class JvmWebSocketClientFactory : WebSocketClientFactory {
 	}
 }
 
-class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?, val wskey: String?, val DEBUG: Boolean) : WebSocketClient(url, protocols, true) {
+class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?, val wskey: String?, DEBUG: Boolean) : WebSocketClient(url, protocols, true) {
+	val DEBUG = DEBUG
+	//val DEBUG = true
 	lateinit var socket: AsyncClient
 	val defaultPort = when (url.scheme) {
 		"ws" -> 80
@@ -38,7 +41,10 @@ class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?
 			}
 		}
 		spawn {
-			while (true) readFrame(socket)
+			try {
+				while (true) readFrame(socket)
+			} catch (e: EOFException) {
+			}
 		}
 	}
 
@@ -52,9 +58,16 @@ class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?
 	}
 
 	suspend fun readFrame(socket: AsyncClient) {
+		//while (true) {
+		//	val c = socket.readU8()
+		//	println("%02X".format(c))
+		//}
+
 		val head1 = socket.readU8()
 		val fin = (head1 and 0x80) != 0
-		val opcode = Opcode.IDS[head1 and 0xF] ?: throw IllegalStateException("Invalid Opcode")
+		val op = head1 and 0xF
+		val opcode = Opcode.IDS[op]
+				?: throw IllegalStateException("Invalid Opcode $op")
 		val head2 = socket.readU8()
 		val masked = (head2 and 0x80) != 0
 		val plen = (head2 and 0x7f)
@@ -140,7 +153,7 @@ class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?
 		return out
 	}
 
-	suspend fun sendFrame(opcode: Opcode, payload: ByteArray, mask: Int = 0) {
+	suspend fun sendFrame(opcode: Opcode, payload: ByteArray, mask: Int = -1) {
 		if (DEBUG) println("[WS-SEND] Frame:$opcode:${payload.size}")
 
 		socket.writeBytes(prepareFrame(opcode, payload, mask))

@@ -27,7 +27,7 @@ class ResourcesVfsProviderJvm : ResourcesVfsProvider {
 						//println(vfs)
 
 						if (vfs.extension in setOf("jar", "zip")) {
-							//merged.options += vfs.openAsZip()
+							//merged.vfsList += vfs.openAsZip()
 						} else {
 							merged.vfsList += vfs.jail()
 						}
@@ -35,9 +35,29 @@ class ResourcesVfsProviderJvm : ResourcesVfsProvider {
 					//println(merged.options)
 				}
 
+				//println("ResourcesVfsProviderJvm:classLoader:$classLoader")
+
 				merged.vfsList += object : Vfs() {
+					private fun normalize(path: String): String = path.trim('/')
+
 					suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = executeInWorker {
-						MemorySyncStream(classLoader.getResourceAsStream(path).readBytes()).toAsync()
+						val npath = normalize(path)
+						//println("ResourcesVfsProviderJvm:open: $path")
+						MemorySyncStream(classLoader.getResourceAsStream(npath).readBytes()).toAsync()
+					}
+
+					suspend override fun stat(path: String): VfsStat = executeInWorker {
+						val npath = normalize(path)
+						//println("ResourcesVfsProviderJvm:stat: $npath")
+						try {
+							val s = classLoader.getResourceAsStream(npath)
+							val size = s.available()
+							s.read()
+							createExistsStat(npath, isDirectory = false, size = size.toLong())
+						} catch (e: Throwable) {
+							//e.printStackTrace()
+							createNonExistsStat(npath)
+						}
 					}
 				}.root
 			}
