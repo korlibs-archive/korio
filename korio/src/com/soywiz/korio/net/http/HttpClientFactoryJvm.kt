@@ -11,9 +11,9 @@ import java.io.FileNotFoundException
 import java.net.HttpURLConnection
 import java.net.URL
 
-class HttpClientFactoryJvm : HttpClientFactory() {
-	override fun create(): HttpClient = object : HttpClient() {
-		suspend override fun request(method: Method, url: String, headers: Headers, content: AsyncStream?): Response = executeInWorker {
+class HttpClientFactoryJvm : HttpFactory() {
+	override fun createClient(): HttpClient = object : HttpClient() {
+		suspend override fun request(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = executeInWorker {
 			try {
 				val aurl = URL(url)
 				HttpURLConnection.setFollowRedirects(false)
@@ -51,14 +51,14 @@ class HttpClientFactoryJvm : HttpClientFactory() {
 				Response(
 						status = con.responseCode,
 						statusText = con.responseMessage,
-						headers = HttpClient.Headers.fromListMap(con.headerFields),
+						headers = Http.Headers.fromListMap(con.headerFields),
 						content = con.inputStream.toAsync().toAsyncStream()
 				)
 			} catch (e: FileNotFoundException) {
 				Response(
 						status = 404,
 						statusText = "NotFound",
-						headers = HttpClient.Headers(),
+						headers = Http.Headers(),
 						content = byteArrayOf().openAsync()
 				)
 			}

@@ -1,6 +1,7 @@
 package com.soywiz.korio.vertx
 
 import com.soywiz.korio.async.syncTest
+import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
 import io.vertx.core.http.HttpServer
 import org.junit.Assert
@@ -19,7 +20,7 @@ class HttpTest {
 
 		val client = HttpClient()
 
-		val result = client.request(HttpClient.Method.GET, "http://127.0.0.1:$port/test").readAllBytes().toString(Charsets.UTF_8)
+		val result = client.request(Http.Method.GET, "http://127.0.0.1:$port/test").readAllBytes().toString(Charsets.UTF_8)
 
 		Assert.assertEquals("hello /test", result)
 

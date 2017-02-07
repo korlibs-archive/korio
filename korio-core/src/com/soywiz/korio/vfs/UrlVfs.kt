@@ -1,6 +1,6 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.net.http.HttpClient
+import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.createHttpClient
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
@@ -35,7 +35,7 @@ private class UrlVfsImpl(val url: String) : Vfs() {
 		return object : AsyncStreamBase() {
 			suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 				if (len == 0) return 0
-				val res = client.request(HttpClient.Method.GET, fullUrl, HttpClient.Headers(mapOf(
+				val res = client.request(Http.Method.GET, fullUrl, Http.Headers(mapOf(
 						"range" to "bytes=$position-${position + len - 1}"
 				)))
 				val out = res.content.read(buffer, offset, len)
@@ -47,22 +47,22 @@ private class UrlVfsImpl(val url: String) : Vfs() {
 		//}.toAsyncStream()
 	}
 
-	class HttpHeaders(val headers: HttpClient.Headers) : Attribute
+	class HttpHeaders(val headers: Http.Headers) : Attribute
 
 	suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) {
 		val headers = attributes.get<HttpHeaders>()
 		val mimeType = attributes.get<MimeType>() ?: MimeType.APPLICATION_JSON
-		val hheaders = headers?.headers ?: HttpClient.Headers()
+		val hheaders = headers?.headers ?: Http.Headers()
 		val contentLength = content.getLength()
 
-		client.request(HttpClient.Method.PUT, getFullUrl(path), hheaders.withReplaceHeaders(
+		client.request(Http.Method.PUT, getFullUrl(path), hheaders.withReplaceHeaders(
 				"content-length" to "$contentLength",
 				"content-type" to mimeType.mime
 		), content)
 	}
 
 	suspend override fun stat(path: String): VfsStat {
-		val result = client.request(HttpClient.Method.HEAD, getFullUrl(path))
+		val result = client.request(Http.Method.HEAD, getFullUrl(path))
 
 		return if (result.success) {
 			createExistsStat(path, isDirectory = true, size = result.headers["content-length"]?.toLongOrNull() ?: 0L)

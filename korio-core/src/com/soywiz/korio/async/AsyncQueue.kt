@@ -9,7 +9,7 @@ class AsyncQueue {
 		val oldPromise = this.promise
 		val newDeferred = Promise.Deferred<Any>()
 		this.promise = newDeferred.promise
-		oldPromise.then {
+		oldPromise.always {
 			func.korioStartCoroutine(newDeferred.toContinuation())
 		}
 		return this

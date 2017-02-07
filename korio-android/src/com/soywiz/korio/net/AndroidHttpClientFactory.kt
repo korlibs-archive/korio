@@ -2,8 +2,9 @@ package com.soywiz.korio.net
 
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
-import com.soywiz.korio.net.http.HttpClientFactory
+import com.soywiz.korio.net.http.HttpFactory
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.toAsync
@@ -13,9 +14,9 @@ import java.io.FileNotFoundException
 import java.net.HttpURLConnection
 import java.net.URL
 
-class AndroidHttpClientFactory : HttpClientFactory() {
-	override fun create(): HttpClient = object : HttpClient() {
-		suspend override fun request(method: Method, url: String, headers: Headers, content: AsyncStream?): Response = executeInWorker {
+class AndroidHttpClientFactory : HttpFactory() {
+	override fun createClient(): HttpClient = object : HttpClient() {
+		suspend override fun request(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = executeInWorker {
 			try {
 				val aurl = URL(url)
 				HttpURLConnection.setFollowRedirects(false)
@@ -50,14 +51,14 @@ class AndroidHttpClientFactory : HttpClientFactory() {
 				Response(
 						status = con.responseCode,
 						statusText = con.responseMessage,
-						headers = HttpClient.Headers.fromListMap(con.headerFields),
+						headers = Http.Headers.fromListMap(con.headerFields),
 						content = con.inputStream.toAsync().toAsyncStream()
 				)
 			} catch (e: FileNotFoundException) {
 				Response(
 						status = 404,
-						statusText = "NotFound",
-						headers = HttpClient.Headers(),
+						statusText = "NotFound ${e.message}",
+						headers = Http.Headers(),
 						content = byteArrayOf().openAsync()
 				)
 			}

@@ -2,6 +2,8 @@ package com.soywiz.korio.ext.s3
 
 import com.soywiz.korio.crypto.toBase64
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.ext.amazon.AmazonAuth
+import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.toAsyncStream
@@ -59,7 +61,7 @@ class S3(val accessKey: String, val secretKey: String, val endpoint: String, val
 	}
 
 	suspend override fun stat(path: String): VfsStat {
-		val result = request(HttpClient.Method.HEAD, path)
+		val result = request(Http.Method.HEAD, path)
 
 		return if (result.success) {
 			createExistsStat(path, isDirectory = true, size = result.headers["content-length"]?.toLongOrNull() ?: 0L)
@@ -70,7 +72,7 @@ class S3(val accessKey: String, val secretKey: String, val endpoint: String, val
 
 	suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
 		if (mode.write) invalidOp("Use put for writing")
-		return request(HttpClient.Method.GET, path).content.toAsyncStream()
+		return request(Http.Method.GET, path).content.toAsyncStream()
 	}
 
 	suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) {
@@ -79,7 +81,7 @@ class S3(val accessKey: String, val secretKey: String, val endpoint: String, val
 		val contentLength = content.getAvailable()
 
 		request(
-				HttpClient.Method.PUT,
+				Http.Method.PUT,
 				path,
 				contentType = contentType.mime,
 				headers = mapOf(
@@ -91,7 +93,7 @@ class S3(val accessKey: String, val secretKey: String, val endpoint: String, val
 		)
 	}
 
-	suspend fun request(method: HttpClient.Method, path: String, contentType: String = "", contentMd5: String = "", headers: Map<String, String> = mapOf(), content: AsyncStream? = null): HttpClient.Response {
+	suspend fun request(method: Http.Method, path: String, contentType: String = "", contentMd5: String = "", headers: Map<String, String> = mapOf(), content: AsyncStream? = null): HttpClient.Response {
 		val npath = parsePath(path)
 		return httpClient.request(
 				method, npath.absolutePath,
@@ -111,10 +113,7 @@ class S3(val accessKey: String, val secretKey: String, val endpoint: String, val
 		return ParsedPath(parts[0].trim('/'), parts[1].trim('/'))
 	}
 
-	private fun genHeaders(method: HttpClient.Method, path: ParsedPath, contentType: String = "", contentMd5: String = "", headers: Map<String, String> = kotlin.collections.mapOf()): HttpClient.Headers {
-		val awsAccessKey = accessKey
-		val awsSecretKey = secretKey
-
+	private fun genHeaders(method: Http.Method, path: ParsedPath, contentType: String = "", contentMd5: String = "", headers: Map<String, String> = kotlin.collections.mapOf()): Http.Headers {
 		val _headers = hashMapOf<String, String>()
 		val amzHeaders = kotlin.collections.hashMapOf<String, String>()
 
@@ -135,14 +134,7 @@ class S3(val accessKey: String, val secretKey: String, val endpoint: String, val
 		val canonicalizedAmzHeaders = amzHeaders.entries.sortedBy { it.key }.map { "${it.key}:${it.value}\n" }.joinToString()
 		val canonicalizedResource = path.cannonical
 		val toSign = method.name + "\n" + contentMd5 + "\n" + contentType + "\n" + date + "\n" + canonicalizedAmzHeaders + canonicalizedResource
-		val signature = b64SignHmacSha1(awsSecretKey, toSign)
-		val authorization = "AWS $awsAccessKey:$signature"
-		addHeader("authorization", authorization)
-		return HttpClient.Headers(_headers)
-	}
-
-	private fun b64SignHmacSha1(awsSecretKey: String, canonicalString: String): String {
-		val signingKey = SecretKeySpec(awsSecretKey.toByteArray(Charsets.UTF_8), "HmacSHA1")
-		return Mac.getInstance("HmacSHA1").apply { init(signingKey) }.doFinal(canonicalString.toByteArray(Charsets.UTF_8)).toBase64()
+		addHeader("authorization", AmazonAuth.genAwsAuthorization(accessKey, secretKey, toSign))
+		return Http.Headers(_headers)
 	}
 }

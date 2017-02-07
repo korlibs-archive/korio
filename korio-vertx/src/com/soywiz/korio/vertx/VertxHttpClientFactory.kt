@@ -6,7 +6,7 @@ import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.toAsyncInputStream
 import com.soywiz.korio.ds.MapList
 import com.soywiz.korio.net.http.HttpClient
-import com.soywiz.korio.net.http.HttpClientFactory
+import com.soywiz.korio.net.http.HttpFactory
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.readBytes
 import io.vertx.core.buffer.Buffer
@@ -15,12 +15,12 @@ import io.vertx.core.http.HttpClientResponse
 import io.vertx.core.http.HttpMethod
 import java.net.URL
 
-class VertxHttpClientFactory : HttpClientFactory() {
+class VertxHttpClientFactory : HttpFactory() {
 	override val available: Boolean = false
 	override val priority: Int = 500
 
 	//override fun create(): HttpClient = VertxHttpClient()
-	override fun create(): HttpClient = TODO()
+	override fun createClient(): HttpClient = TODO()
 }
 
 /*

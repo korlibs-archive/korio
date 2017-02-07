@@ -1,30 +1,34 @@
 package com.soywiz.korio.net.http
 
+import com.soywiz.korio.async.Promise
 import com.soywiz.korio.ds.MapList
 import com.soywiz.korio.service.Services
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.readAll
+import com.soywiz.korio.util.Cancellable
 import java.io.IOException
 import java.nio.charset.Charset
 
-open class HttpClient protected constructor() {
+interface Http {
 	enum class Method {
 		//HEAD, POST, GET, PUT, DELETE, OPTIONS, TRACE
 		OPTIONS,
 		GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH, OTHER
 	}
 
-
 	data class Headers(val items: MapList<String, String> = MapList()) : Iterable<Pair<String, String>> {
+		val itemsCI = MapList<String, String>(items.toList().flatMap { (key, values) -> values.map { key.toLowerCase() to it } })
+
 		//class MapEntry<K, V>(override val key: K, override val value: V) : Map.Entry<K, V>
 		override fun iterator(): Iterator<Pair<String, String>> = items.flatMapIterator()
 
 		constructor(map: Map<String, String>) : this(MapList(map.entries.map { it.key to it.value }))
 		constructor(str: String?) : this(parse(str))
+		constructor(vararg items: Pair<String, String>) : this(MapList(items.toList()))
 
-		operator fun get(key: String): String? = items.getFirst(key)
+		operator fun get(key: String): String? = itemsCI.getFirst(key.toLowerCase())
 
 		companion object {
 			fun fromListMap(map: Map<String?, List<String>>): Headers {
@@ -45,11 +49,13 @@ open class HttpClient protected constructor() {
 
 		override fun toString(): String = "Headers(${items.joinToString(", ")})"
 	}
+}
 
+open class HttpClient protected constructor() {
 	data class Response(
 			val status: Int,
 			val statusText: String,
-			val headers: Headers,
+			val headers: Http.Headers,
 			val content: AsyncInputStream
 	) {
 		val success = status < 400
@@ -58,14 +64,14 @@ open class HttpClient protected constructor() {
 		fun withStringResponse(str: String, charset: Charset = Charsets.UTF_8) = this.copy(content = str.toByteArray(charset).openAsync())
 	}
 
-	suspend open fun request(method: Method, url: String, headers: Headers = Headers(), content: AsyncStream? = null): Response {
+	suspend open fun request(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null): Response {
 		TODO()
 	}
 
 	class HttpException(val msg: String) : IOException(msg)
 
 	suspend fun readBytes(url: String): ByteArray {
-		val res = request(Method.GET, url)
+		val res = request(Http.Method.GET, url)
 		if (!res.success) throw HttpException("Http error: " + res.status + " " + res.statusText)
 		return res.content.readAll()
 	}
@@ -75,15 +81,32 @@ open class HttpClient protected constructor() {
 	}
 
 	companion object {
-		operator fun invoke() = httpClientFactory.create()
+		operator fun invoke() = httpFactory.createClient()
+	}
+}
+
+open class HttpServer protected constructor() {
+	companion object {
+		operator fun invoke() = httpFactory.createServer()
+	}
+
+	class Request {
+	}
+
+	suspend open fun listen(port: Int, host: String = "127.0.0.1", handler: suspend (Request) -> Unit) {
+		val deferred = Promise.Deferred<Unit>()
+		deferred.onCancel {
+
+		}
+		deferred.promise.await()
 	}
 }
 
 class LogHttpClient : HttpClient() {
 	val log = arrayListOf<String>()
-	var response = HttpClient.Response(200, "OK", Headers(), "LogHttpClient.response".toByteArray(Charsets.UTF_8).openAsync())
+	var response = HttpClient.Response(200, "OK", Http.Headers(), "LogHttpClient.response".toByteArray(Charsets.UTF_8).openAsync())
 
-	suspend override fun request(method: Method, url: String, headers: Headers, content: AsyncStream?): Response {
+	suspend override fun request(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
 		val contentString = content?.readAll()?.toString(Charsets.UTF_8)
 		log += "$method, $url, $headers, $contentString"
 		return response
@@ -92,10 +115,12 @@ class LogHttpClient : HttpClient() {
 	fun getAndClearLog() = log.toList().apply { log.clear() }
 }
 
-open class HttpClientFactory : Services.Impl() {
-	open fun create(): HttpClient = object : HttpClient() {}
+open class HttpFactory : Services.Impl() {
+	open fun createClient(): HttpClient = object : HttpClient() {}
+	open fun createServer(): HttpServer = object : HttpServer() {}
 }
 
-val httpClientFactory by lazy { Services.load<HttpClientFactory>() }
+val httpFactory by lazy { Services.load<HttpFactory>() }
 
-fun createHttpClient() = httpClientFactory.create()
+fun createHttpClient() = httpFactory.createClient()
+fun createHttpServer() = httpFactory.createServer()

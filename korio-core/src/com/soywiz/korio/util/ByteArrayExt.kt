@@ -16,16 +16,23 @@ fun List<ByteArray>.join(): ByteArray {
 }
 
 val HEX_DIGITS = "0123456789ABCDEF"
-fun ByteArray.toHexString(): String {
-	val out = CharArray(this.size * 2)
+val HEX_DIGITS_UPPER = HEX_DIGITS.toUpperCase()
+val HEX_DIGITS_LOWER = HEX_DIGITS.toLowerCase()
+
+private fun toHexStringBase(data: ByteArray, digits: String = HEX_DIGITS): String {
+	val out = CharArray(data.size * 2)
 	var m = 0
-	for (n in this.indices) {
-		val v = this[n].toInt() and 0xFF
-		out[m++] = HEX_DIGITS[(v ushr 4) and 0xF]
-		out[m++] = HEX_DIGITS[(v ushr 0) and 0xF]
+	for (n in data.indices) {
+		val v = data[n].toInt() and 0xFF
+		out[m++] = digits[(v ushr 4) and 0xF]
+		out[m++] = digits[(v ushr 0) and 0xF]
 	}
 	return String(out)
 }
+
+fun ByteArray.toHexString() = toHexStringBase(this, HEX_DIGITS_UPPER)
+fun ByteArray.toHexStringLower() = toHexStringBase(this, HEX_DIGITS_LOWER)
+fun ByteArray.toHexStringUpper() = toHexStringBase(this, HEX_DIGITS_UPPER)
 
 fun ByteArray.indexOfElse(element: Byte, default: Int = this.size): Int {
 	val idx = this.indexOf(element)

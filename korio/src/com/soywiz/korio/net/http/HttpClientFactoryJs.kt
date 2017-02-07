@@ -7,12 +7,12 @@ import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.readAll
 import com.soywiz.korio.util.OS
 
-class HttpClientFactoryJs : HttpClientFactory() {
-	override fun create(): HttpClient = if (OS.isNodejs) HttpClientNodeJs() else HttpClientBrowserJs()
+class HttpClientFactoryJs : HttpFactory() {
+	override fun createClient(): HttpClient = if (OS.isNodejs) HttpClientNodeJs() else HttpClientBrowserJs()
 }
 
 class HttpClientNodeJs : HttpClient() {
-	suspend override fun request(method: Method, url: String, headers: Headers, content: AsyncStream?): Response = Promise.create { deferred ->
+	suspend override fun request(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = Promise.create { deferred ->
 		println(url)
 
 		val http = jsRequire("http")
@@ -44,7 +44,7 @@ class HttpClientNodeJs : HttpClient() {
 				deferred.resolve(Response(
 						status = statusCode,
 						statusText = statusMessage,
-						headers = Headers((jsHeadersObj?.toObjectMap() ?: mapOf()).mapValues { it.value.toJavaStringOrNull() ?: "" }),
+						headers = Http.Headers((jsHeadersObj?.toObjectMap() ?: mapOf()).mapValues { it.value.toJavaStringOrNull() ?: "" }),
 						content = out.openAsync()
 				))
 			})
@@ -66,7 +66,7 @@ class HttpClientNodeJs : HttpClient() {
 }
 
 class HttpClientBrowserJs : HttpClient() {
-	suspend override fun request(method: Method, url: String, headers: HttpClient.Headers, content: AsyncStream?): Response = Promise.create { deferred ->
+	suspend override fun request(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = Promise.create { deferred ->
 		val xhr = jsNew("XMLHttpRequest")
 		xhr.call("open", "GET", url, true)
 		xhr["responseType"] = "arraybuffer"
@@ -78,7 +78,7 @@ class HttpClientBrowserJs : HttpClient() {
 			deferred.resolve(HttpClient.Response(
 					status = xhr["status"].toInt(),
 					statusText = xhr["statusText"].toJavaStringOrNull() ?: "",
-					headers = HttpClient.Headers(xhr.call("getAllResponseHeaders").toJavaStringOrNull()),
+					headers = Http.Headers(xhr.call("getAllResponseHeaders").toJavaStringOrNull()),
 					content = out.openAsync()
 			))
 		}
