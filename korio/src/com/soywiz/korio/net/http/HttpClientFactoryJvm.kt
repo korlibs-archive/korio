@@ -2,7 +2,10 @@ package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.stream.*
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.openAsync
+import com.soywiz.korio.stream.toAsync
+import com.soywiz.korio.stream.toAsyncStream
 import com.soywiz.korio.util.toUintClamp
 import java.io.FileNotFoundException
 import java.net.HttpURLConnection

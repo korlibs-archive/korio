@@ -1,16 +1,20 @@
 package com.soywiz.korio.net.http
 
 import com.soywiz.korio.ds.MapList
-import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.service.Services
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.readAll
+import java.io.IOException
 import java.nio.charset.Charset
-import java.util.*
 
 open class HttpClient protected constructor() {
-	enum class Method { HEAD, POST, GET, PUT, DELETE, OPTIONS, TRACE }
+	enum class Method {
+		//HEAD, POST, GET, PUT, DELETE, OPTIONS, TRACE
+		OPTIONS,
+		GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH, OTHER
+	}
 
 
 	data class Headers(val items: MapList<String, String> = MapList()) : Iterable<Pair<String, String>> {
@@ -58,6 +62,18 @@ open class HttpClient protected constructor() {
 		TODO()
 	}
 
+	class HttpException(val msg: String) : IOException(msg)
+
+	suspend fun readBytes(url: String): ByteArray {
+		val res = request(Method.GET, url)
+		if (!res.success) throw HttpException("Http error: " + res.status + " " + res.statusText)
+		return res.content.readAll()
+	}
+
+	suspend fun readString(url: String, charset: Charset = Charsets.UTF_8): String {
+		return readBytes(url).toString(charset)
+	}
+
 	companion object {
 		operator fun invoke() = httpClientFactory.create()
 	}
@@ -76,12 +92,10 @@ class LogHttpClient : HttpClient() {
 	fun getAndClearLog() = log.toList().apply { log.clear() }
 }
 
-open class HttpClientFactory {
+open class HttpClientFactory : Services.Impl() {
 	open fun create(): HttpClient = object : HttpClient() {}
 }
 
-val httpClientFactory by lazy {
-	ServiceLoader.load(HttpClientFactory::class.java).firstOrNull() ?: invalidOp("Can't find implementation for ${HttpClientFactory::class.java.name}")
-}
+val httpClientFactory by lazy { Services.load<HttpClientFactory>() }
 
 fun createHttpClient() = httpClientFactory.create()

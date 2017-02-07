@@ -2,6 +2,9 @@ package com.soywiz.korio.async
 
 import com.soywiz.korio.coroutine.korioStartCoroutine
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
+import com.soywiz.korio.stream.AsyncInputStream
+import com.soywiz.korio.stream.AsyncOutputStream
+import com.soywiz.korio.util.BYTES_EMPTY
 import java.util.*
 import java.util.concurrent.CancellationException
 
@@ -55,4 +58,34 @@ fun <T> asyncProducer(callback: suspend Producer<T>.() -> Unit): Consumer<T> {
 
 	callback.korioStartCoroutine(p, completion = EmptyContinuation)
 	return p
+}
+
+fun Producer<ByteArray>.toAsyncOutputStream() = AsyncProducerStream(this)
+fun Consumer<ByteArray>.toAsyncInputStream() = AsyncConsumerStream(this)
+
+class AsyncProducerStream(val producer: Producer<ByteArray>) : AsyncOutputStream {
+	suspend override fun write(buffer: ByteArray, offset: Int, len: Int) {
+		TODO()
+	}
+}
+
+class AsyncConsumerStream(val consumer: Consumer<ByteArray>) : AsyncInputStream {
+	var current = BYTES_EMPTY
+	var currentPos = 0
+	val available get() = current.size - currentPos
+
+	suspend private fun ensureNonEmptyBuffer() {
+		while (available == 0) {
+			currentPos = 0
+			current = consumer.consume()
+		}
+	}
+
+	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+		ensureNonEmptyBuffer()
+		val actualRead = Math.min(len, available)
+		System.arraycopy(current, currentPos, buffer, offset, actualRead)
+		currentPos += actualRead
+		return actualRead
+	}
 }

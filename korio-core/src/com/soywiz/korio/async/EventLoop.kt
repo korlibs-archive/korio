@@ -6,10 +6,11 @@ import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.EmptyCoroutineContext
 import com.soywiz.korio.coroutine.korioStartCoroutine
+import com.soywiz.korio.service.Services
 import java.io.Closeable
 
 // @TODO: Check CoroutineDispatcher
-abstract class EventLoop {
+abstract class EventLoop : Services.Impl() {
 	companion object {
 		var _impl: EventLoop? = null
 		var impl: EventLoop
@@ -74,8 +75,6 @@ abstract class EventLoop {
 		//}
 	}
 
-	open val available: Boolean = true
-	open val priority: Int = 5000
 	open fun init(): Unit = Unit
 	abstract fun setTimeout(ms: Int, callback: () -> Unit): Closeable
 
