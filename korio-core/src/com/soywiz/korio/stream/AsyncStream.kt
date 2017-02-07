@@ -494,30 +494,6 @@ fun InputStream.toAsync(): AsyncInputStream {
 	}
 }
 
-class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int = 0x2000) : AsyncInputStream {
-	private val buf = SyncProduceConsumerByteBuffer()
-
-	suspend fun require(len: Int = 1) {
-		while (buf.available < len) buf.produce(base.readBytes(bufferSize))
-	}
-
-	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-		require(1)
-		return buf.consume(buffer, offset, len)
-	}
-
-	suspend fun readBufferedUntil(end: Byte, including: Boolean = true): ByteArray {
-		val out = ByteArrayOutputStream()
-		while (true) {
-			require(1)
-			val chunk = buf.consumeUntil(end, including)
-			out.write(chunk)
-			if (chunk.isNotEmpty() && chunk.last() == end) break
-		}
-		return out.toByteArray()
-	}
-}
-
 fun SyncInputStream.toAsyncInputStream() = object : AsyncInputStream {
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		return this@toAsyncInputStream.read(buffer, offset, len)

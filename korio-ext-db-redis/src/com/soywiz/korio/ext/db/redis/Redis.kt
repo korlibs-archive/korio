@@ -9,7 +9,7 @@ import java.nio.charset.Charset
 
 // https://redis.io/topics/protocol
 class Redis(reader: AsyncInputStream, val writer: AsyncOutputStream, val close: AsyncCloseable, val charset: Charset = Charsets.UTF_8) {
-	private val reader = AsyncBufferedInputStream(reader, bufferSize = 0x100)
+	private val reader = reader.toBuffered(bufferSize = 0x100)
 	//private val reader = reader
 
 	companion object {
@@ -26,11 +26,9 @@ class Redis(reader: AsyncInputStream, val writer: AsyncOutputStream, val close: 
 
 	suspend fun close() = this.close.close()
 
-	private val ioQueue = AsyncThread()
+	private val commandQueue = AsyncThread()
 
-	suspend private fun readValue(): Any? = ioQueue { _readValue() }
-
-	suspend private fun _readValue(): Any? {
+	suspend private fun readValue(): Any? {
 		val line = reader.readBufferedUntil(LF).toString(charset).trim()
 		//val line = reader.readLine(charset = charset).trim()
 		//println(line)
@@ -51,7 +49,7 @@ class Redis(reader: AsyncInputStream, val writer: AsyncOutputStream, val close: 
 			}
 			'*' -> { // Array reply
 				val arraySize = line.substr(1).toLong()
-				(0 until arraySize).map { _readValue() }
+				(0 until arraySize).map { readValue() }
 			}
 			else -> throw ResponseException("Unknown param type '" + line[0] + "'")
 		}
@@ -70,11 +68,11 @@ class Redis(reader: AsyncInputStream, val writer: AsyncOutputStream, val close: 
 			cmd += "\r\n"
 		}
 
-		// Queue just required for reading since Redis support pipelining : https://redis.io/topics/pipelining
-		//ioQueue { }
-		writer.writeBytes(cmd.toByteArray(charset))
-
-		return readValue()
+		// Common queue is not required align reading because Redis support pipelining : https://redis.io/topics/pipelining
+		return commandQueue {
+			writer.writeBytes(cmd.toByteArray(charset))
+			readValue()
+		}
 	}
 
 	suspend fun commandArray(vararg args: Any?): List<String> = (commandAny(*args) as List<String>?) ?: listOf()

@@ -50,13 +50,13 @@ class Promise<T : Any?> {
 	private fun flush() {
 		if (!done) return
 		if (error != null) {
-			while (rejectedHandlers.isNotEmpty()) {
-				val handler = rejectedHandlers.removeFirst()
+			while (true) {
+				val handler = synchronized(rejectedHandlers) { if (rejectedHandlers.isNotEmpty()) rejectedHandlers.removeFirst() else null } ?: break
 				EventLoop.queue { handler(error ?: RuntimeException()) }
 			}
 		} else {
-			while (resolvedHandlers.isNotEmpty()) {
-				val handler = resolvedHandlers.removeFirst()
+			while (true) {
+				val handler = synchronized(resolvedHandlers) { if (resolvedHandlers.isNotEmpty()) resolvedHandlers.removeFirst() else null } ?: break
 				EventLoop.queue { handler(value as T) }
 			}
 		}
@@ -68,7 +68,7 @@ class Promise<T : Any?> {
 			this.error = error
 			this.done = true
 
-			if (error != null && this.rejectedHandlers.isEmpty() && error !is CancellationException) {
+			if (error != null && synchronized(resolvedHandlers) { this.rejectedHandlers.isEmpty() } && error !is CancellationException) {
 				System.err.println("## Not handled Promise exception:")
 				error.printStackTrace()
 			}
@@ -79,13 +79,13 @@ class Promise<T : Any?> {
 	}
 
 	fun then(resolved: (T) -> Unit) {
-		resolvedHandlers += resolved
+		synchronized(resolvedHandlers) { resolvedHandlers += resolved }
 		flush()
 	}
 
 	fun then(resolved: (T) -> Unit, rejected: (Throwable) -> Unit) {
-		resolvedHandlers += resolved
-		rejectedHandlers += rejected
+		synchronized(resolvedHandlers) { resolvedHandlers += resolved }
+		synchronized(rejectedHandlers) { rejectedHandlers += rejected }
 		flush()
 	}
 
