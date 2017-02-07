@@ -14,6 +14,7 @@ fun UrlVfs(url: String): VfsFile = UrlVfsImpl(url).root
 fun UrlVfs(url: URL): VfsFile = UrlVfs(url.toString())
 
 private class UrlVfsImpl(val url: String) : Vfs() {
+	override val absolutePath: String = url
 	val client = createHttpClient()
 
 	private fun getFullUrl(path: String) = url.trim('/') + '/' + path.trim('/')

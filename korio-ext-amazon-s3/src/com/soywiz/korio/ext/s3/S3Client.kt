@@ -1,38 +1,46 @@
 package com.soywiz.korio.ext.s3
 
+import com.soywiz.korio.crypto.toBase64
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.net.http.HttpClient
-import com.soywiz.korio.net.http.createHttpClient
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.toAsyncStream
-import com.soywiz.korio.vfs.*
+import com.soywiz.korio.util.TimeProvider
+import com.soywiz.korio.vfs.LocalVfs
+import com.soywiz.korio.vfs.Vfs
+import com.soywiz.korio.vfs.VfsOpenMode
+import com.soywiz.korio.vfs.VfsStat
 import java.util.*
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
-suspend fun S3Vfs(region: String = System.getenv("AWS_DEFAULT_REGION") ?: "eu-west-1") = S3Client(region).root
+suspend fun S3Vfs(region: String = System.getenv("AWS_DEFAULT_REGION") ?: "eu-west-1", accessKey: String? = null, secretKey: String? = null, httpClient: HttpClient = HttpClient(), timeProvider: TimeProvider = TimeProvider()) = S3Client(region, accessKey, secretKey, httpClient, timeProvider).root
 
-class S3Client(val accessKey: String, val secretKey: String, val endpoint: String) : Vfs() {
+class S3Client(val accessKey: String, val secretKey: String, val endpoint: String, val httpClient: HttpClient, val timeProvider: TimeProvider) : Vfs() {
 	override val absolutePath: String = "https://$endpoint"
-	val httpClient = createHttpClient()
 	//val httpVfs = UrlVfs(absolutePath)
 
 	//suspend fun get(bucket: String) = S3Bucket(this, bucket)
 
 	companion object {
-		suspend operator fun invoke(region: String = System.getenv("AWS_DEFAULT_REGION") ?: "eu-west-1"): S3Client {
-			var accessKey = System.getenv("AWS_ACCESS_KEY_ID")?.trim()
-			var secretKey = System.getenv("AWS_SECRET_KEY")?.trim()
-			val userHome = System.getProperty("user.home")
+		suspend operator fun invoke(region: String = System.getenv("AWS_DEFAULT_REGION") ?: "eu-west-1", accessKey: String? = null, secretKey: String? = null, httpClient: HttpClient = HttpClient(), timeProvider: TimeProvider = TimeProvider()): S3Client {
+			var finalAccessKey = accessKey
+			var finalSecretKey = secretKey
 
-			if (accessKey.isNullOrEmpty()) {
-				val credentials = LocalVfs("$userHome/.aws")["credentials"].readString()
-				accessKey = (Regex("aws_access_key_id\\s+=\\s+(.*)").find(credentials)?.groupValues?.getOrElse(1) { "" } ?: "").trim()
-				secretKey = (Regex("aws_secret_access_key\\s+=\\s+(.*)").find(credentials)?.groupValues?.getOrElse(1) { "" } ?: "").trim()
+			if (finalAccessKey.isNullOrEmpty()) {
+				finalAccessKey = System.getenv("AWS_ACCESS_KEY_ID")?.trim()
+				finalSecretKey = System.getenv("AWS_SECRET_KEY")?.trim()
 			}
 
-			return S3Client(accessKey ?: "", secretKey ?: "", "s3-$region.amazonaws.com")
+			if (accessKey.isNullOrEmpty()) {
+				val userHome = System.getProperty("user.home")
+				val credentials = LocalVfs("$userHome/.aws")["credentials"].readString()
+				finalAccessKey = (Regex("aws_access_key_id\\s+=\\s+(.*)").find(credentials)?.groupValues?.getOrElse(1) { "" } ?: "").trim()
+				finalSecretKey = (Regex("aws_secret_access_key\\s+=\\s+(.*)").find(credentials)?.groupValues?.getOrElse(1) { "" } ?: "").trim()
+			}
+
+			return S3Client(finalAccessKey ?: "", finalSecretKey ?: "", "s3-$region.amazonaws.com", httpClient, timeProvider)
 		}
 	}
 
@@ -44,6 +52,7 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 			val PUBLIC_READ = ACCESS("public-read")
 		}
 	}
+
 	class CONTENT_TYPE(var text: String) : Vfs.Attribute {
 		companion object {
 			val TEXT_PLAIN = CONTENT_TYPE("text/plain")
@@ -107,7 +116,7 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 			if (k.startsWith("x-amz")) amzHeaders[k] = v
 		}
 
-		val date = java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.ENGLISH).format(java.util.Date())
+		val date = java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.ENGLISH).format(java.util.Date(timeProvider.currentTimeMillis()))
 		for (header in headers) addHeader(header.key, header.value)
 		if (contentType.isNotEmpty()) addHeader("content-type", contentType)
 		if (contentMd5.isNotEmpty()) addHeader("content-md5", contentMd5)
@@ -125,6 +134,6 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 
 	private fun b64SignHmacSha1(awsSecretKey: String, canonicalString: String): String {
 		val signingKey = SecretKeySpec(awsSecretKey.toByteArray(Charsets.UTF_8), "HmacSHA1")
-		return String(Base64.getEncoder().encode(Mac.getInstance("HmacSHA1").apply { init(signingKey) }.doFinal(canonicalString.toByteArray(Charsets.UTF_8))))
+		return Mac.getInstance("HmacSHA1").apply { init(signingKey) }.doFinal(canonicalString.toByteArray(Charsets.UTF_8)).toBase64()
 	}
 }

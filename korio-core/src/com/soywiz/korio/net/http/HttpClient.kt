@@ -1,9 +1,7 @@
 package com.soywiz.korio.net.http
 
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.stream.AsyncInputStream
-import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.readAll
+import com.soywiz.korio.stream.*
 import java.util.*
 
 open class HttpClient protected constructor() {
@@ -55,6 +53,17 @@ open class HttpClient protected constructor() {
 
 	companion object {
 		operator fun invoke() = httpClientFactory.create()
+	}
+}
+
+class LogHttpClient : HttpClient() {
+	val log = arrayListOf<String>()
+	var response = HttpClient.Response(200, "OK", Headers(), "LogHttpClient.response".toByteArray(Charsets.UTF_8).openAsync())
+
+	suspend override fun request(method: Method, url: String, headers: Headers, content: AsyncStream?): Response {
+		val contentString = content?.readAll()?.toString(Charsets.UTF_8)
+		log += "$method, $url, $headers, $contentString"
+		return response
 	}
 }
 
