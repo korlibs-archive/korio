@@ -136,7 +136,7 @@ class LocalVfsProviderAndroid : LocalVfsProvider() {
 			}
 		}
 
-		suspend override fun mkdir(path: String): Boolean = executeInWorker {
+		suspend override fun mkdir(path: String, attributes: List<Attribute>): Boolean = executeInWorker {
 			resolveFile(path).mkdir()
 		}
 

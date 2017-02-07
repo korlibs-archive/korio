@@ -18,4 +18,5 @@ class PathInfo(val fullpath: String) {
 	fun basenameWithExtension(ext: String): String = if (ext.isEmpty()) pathWithoutExtension else "$pathWithoutExtension.$ext"
 	val extension: String by lazy { basename.substringAfterLast('.', "") }
 	val extensionLC: String by lazy { extension.toLowerCase() }
+	val mimeTypeByExtension get() = MimeType.getByExtension(extensionLC)
 }

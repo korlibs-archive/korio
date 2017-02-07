@@ -31,3 +31,8 @@ fun ByteArray.indexOfElse(element: Byte, default: Int = this.size): Int {
 	val idx = this.indexOf(element)
 	return if (idx >= 0) idx else default
 }
+
+fun ByteArray.indexOf(startOffset: Int, v: Byte): Int {
+	for (n in startOffset until this.size) if (this[n] == v) return n
+	return -1
+}

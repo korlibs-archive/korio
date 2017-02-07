@@ -128,7 +128,7 @@ open class NodeVfs : Vfs() {
 		return true
 	}
 
-	suspend override fun mkdir(path: String): Boolean {
+	suspend override fun mkdir(path: String, attributes: List<Attribute>): Boolean {
 		val pathInfo = PathInfo(path)
 		val out = rootNode.access(pathInfo.folder).mkdir(pathInfo.basename)
 		events(VfsFileEvent(VfsFileEvent.Kind.CREATED, this[path]))

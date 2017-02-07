@@ -12,8 +12,8 @@ import java.io.Closeable
 import java.nio.charset.Charset
 
 class VfsFile(
-	val vfs: Vfs,
-	path: String
+		val vfs: Vfs,
+		path: String
 //) : VfsNamed(VfsFile.normalize(path)) {
 ) : VfsNamed(path) {
 	operator fun get(path: String): VfsFile = VfsFile(vfs, VfsUtil.combine(this.path, path))
@@ -25,11 +25,12 @@ class VfsFile(
 
 	suspend fun put(content: AsyncStream, attributes: List<Vfs.Attribute> = listOf()): Unit = vfs.put(path, content, attributes)
 	suspend fun put(content: AsyncStream, vararg attributes: Vfs.Attribute): Unit = vfs.put(path, content, attributes.toList())
+	suspend fun write(data: ByteArray, vararg attributes: Vfs.Attribute): Unit = put(data.openAsync(), *attributes)
 
-	suspend fun writeStream(src: AsyncStream): Long = run { put(src); src.getLength() }
-	suspend fun writeFile(file: VfsFile): Long = file.copyTo(this)
+	suspend fun writeStream(src: AsyncStream, vararg attributes: Vfs.Attribute): Long = run { put(src, *attributes); src.getLength() }
+	suspend fun writeFile(file: VfsFile, vararg attributes: Vfs.Attribute): Long = file.copyTo(this, *attributes)
 
-	suspend fun copyTo(target: VfsFile): Long = this.openUse(VfsOpenMode.READ) { target.writeStream(this) }
+	suspend fun copyTo(target: VfsFile, vararg attributes: Vfs.Attribute): Long = this.openUse(VfsOpenMode.READ) { target.writeStream(this, *attributes) }
 
 	val parent: VfsFile by lazy { VfsFile(vfs, pathInfo.folder) }
 	val root: VfsFile get() = vfs.root
@@ -48,10 +49,9 @@ class VfsFile(
 
 	suspend fun readAsSyncStream(): SyncStream = read().openSync()
 
-	suspend fun write(data: ByteArray): Unit = openUse(VfsOpenMode.CREATE_OR_TRUNCATE) { this.writeBytes(data) }
-
 	suspend fun readString(charset: Charset = Charsets.UTF_8): String = read().toString(charset)
-	suspend fun writeString(data: String, charset: Charset = Charsets.UTF_8): Unit = write(data.toByteArray(charset))
+	suspend fun writeString(data: String, vararg attributes: Vfs.Attribute): Unit = write(data.toByteArray(Charsets.UTF_8), *attributes)
+	suspend fun writeString(data: String, charset: Charset, vararg attributes: Vfs.Attribute): Unit = write(data.toByteArray(charset), *attributes)
 
 	suspend fun readChunk(offset: Long, size: Int): ByteArray = vfs.readChunk(path, offset, size)
 	suspend fun writeChunk(data: ByteArray, offset: Long, resize: Boolean = false): Unit = vfs.writeChunk(path, data, offset, resize)
@@ -72,22 +72,28 @@ class VfsFile(
 
 	suspend fun delete() = vfs.delete(path)
 
-	suspend fun mkdir() = vfs.mkdir(path)
-	suspend fun mkdirs() {
+	suspend fun setAttributes(attributes: List<Vfs.Attribute>) = vfs.setAttributes(path, attributes)
+	suspend fun setAttributes(vararg attributes: Vfs.Attribute) = vfs.setAttributes(path, attributes.toList())
+
+	suspend fun mkdir(attributes: List<Vfs.Attribute>) = vfs.mkdir(path, attributes)
+	suspend fun mkdirs(attributes: List<Vfs.Attribute>) {
 		// @TODO: Create tree up to this
-		mkdir()
+		mkdir(attributes)
 	}
 
-	suspend fun copyToTree(target: VfsFile, notify: (Pair<VfsFile, VfsFile>) -> Unit = {}): Unit {
+	suspend fun mkdir(vararg attributes: Vfs.Attribute) = mkdir(attributes.toList())
+	suspend fun mkdirs(vararg attributes: Vfs.Attribute) = mkdirs(attributes.toList())
+
+	suspend fun copyToTree(target: VfsFile, vararg attributes: Vfs.Attribute, notify: (Pair<VfsFile, VfsFile>) -> Unit = {}): Unit {
 		notify(this to target)
 		if (this.isDirectory()) {
 			target.mkdir()
 			for (file in list()) {
-				file.copyToTree(target[file.basename], notify)
+				file.copyToTree(target[file.basename], *attributes, notify = notify)
 			}
 		} else {
 			//println("copyToTree: $this -> $target")
-			this.copyTo(target)
+			this.copyTo(target, *attributes)
 		}
 	}
 

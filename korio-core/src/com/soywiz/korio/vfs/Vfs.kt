@@ -6,13 +6,18 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.spawn
 import com.soywiz.korio.error.unsupported
-import com.soywiz.korio.stream.*
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.copyTo
+import com.soywiz.korio.stream.readBytes
+import com.soywiz.korio.stream.writeBytes
 import com.soywiz.korio.util.use
 import java.io.Closeable
 
 abstract class Vfs {
 	open val absolutePath: String = ""
 	val root by lazy { VfsFile(this, "") }
+
+	open val supportedAttributeTypes = listOf<Class<out Attribute>>()
 
 	operator fun get(path: String) = root[path]
 
@@ -61,9 +66,11 @@ abstract class Vfs {
 		open(path, mode = VfsOpenMode.WRITE).setLength(size)
 	}
 
+	suspend open fun setAttributes(path: String, attributes: List<Attribute>): Unit = Unit
+
 	suspend open fun stat(path: String): VfsStat = createNonExistsStat(path)
 	suspend open fun list(path: String): AsyncSequence<VfsFile> = asyncGenerate { }
-	suspend open fun mkdir(path: String): Boolean = unsupported()
+	suspend open fun mkdir(path: String, attributes: List<Attribute>): Boolean = unsupported()
 	suspend open fun delete(path: String): Boolean = unsupported()
 	suspend open fun rename(src: String, dst: String): Boolean = unsupported()
 	suspend open fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = Closeable { }
@@ -93,7 +100,8 @@ abstract class Vfs {
 		suspend override fun stat(path: String): VfsStat = initOnce().access(path).stat().copy(file = file(path))
 		suspend override fun list(path: String) = asyncGenerate { initOnce(); for (it in access(path).list()) yield(transform(it)) }
 		suspend override fun delete(path: String): Boolean = initOnce().access(path).delete()
-		suspend override fun mkdir(path: String): Boolean = initOnce().access(path).mkdir()
+		suspend override fun setAttributes(path: String, attributes: List<Attribute>) = initOnce().access(path).setAttributes(*attributes.toTypedArray())
+		suspend override fun mkdir(path: String, attributes: List<Attribute>): Boolean = initOnce().access(path).mkdir(*attributes.toTypedArray())
 		suspend override fun rename(src: String, dst: String): Boolean {
 			initOnce()
 			val srcFile = access(src)

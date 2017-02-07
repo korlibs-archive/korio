@@ -75,6 +75,15 @@ Korio includes a TCP client (implementing AsyncStream) and a TCP server with a l
 Korio includes a WebSocket client. It has two implementations: one simple and generic for targets supporting AsyncClient and other for browser javascript.
 So this is supported on all targets.
 
+### HttpClient
+
+Korio includes a HttpClient client that uses available native implementations. UrlVfs uses HttpClient.
+
+### Databases
+
+Korio includes as an extension database/cache clients. At this point, there is a Redis client implementation,
+but will provide more. 
+
 ### VFS
 
 Korio provides an asynchronous Virtual File System extensible engine.
@@ -131,6 +140,10 @@ val mem = MemoryVfs(mapOf(
 
 Korio includes an open base NodeVfs to support node based vfs like in-memory vfs.
 
+### S3Vfs (Amazon S3 Vfs)
+
+In the korio-ext-amazon-s3 submodule, there is a Amazon S3 Client without external dependencies that is implemented as a VFS for convenience. 
+
 ### PathInfo
 
 Korio includes a PathInfo utility integrated with VfsFile in order to obtain path information (folder, basename, extension...)
@@ -146,7 +159,7 @@ ssh or ftp commands as an example.
 There are several filesystems included and you can find examples of usage in the test folder:
 
 ```kotlin
-LocalVfs, UrlVfs, ZipVfs, IsoVfs, ResourcesVfs, JailVfs, MountableVfs, MemoryVfs
+LocalVfs, UrlVfs, ZipVfs, IsoVfs, ResourcesVfs, JailVfs, MountableVfs, MemoryVfs, S3Vfs
 ```
 
 For Vfs implementations:

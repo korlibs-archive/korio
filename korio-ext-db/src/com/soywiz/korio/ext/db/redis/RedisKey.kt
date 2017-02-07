@@ -1,5 +1,7 @@
 package com.soywiz.korio.ext.db.redis
 
+// @TODO: Missing commands
+
 fun Redis.key(key: String) = RedisKey(this, key)
 
 class RedisKey(val client: Redis, val key: String)

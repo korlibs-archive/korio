@@ -1,7 +1,11 @@
 package com.soywiz.korio.net.http
 
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.stream.*
+import com.soywiz.korio.stream.AsyncInputStream
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.openAsync
+import com.soywiz.korio.stream.readAll
+import java.nio.charset.Charset
 import java.util.*
 
 open class HttpClient protected constructor() {
@@ -37,7 +41,7 @@ open class HttpClient protected constructor() {
 		override fun toString(): String = "Headers(${items.joinToString(", ")})"
 	}
 
-	class Response(
+	data class Response(
 			val status: Int,
 			val statusText: String,
 			val headers: Headers,
@@ -45,6 +49,8 @@ open class HttpClient protected constructor() {
 	) {
 		val success = status < 400
 		suspend fun readAllBytes() = content.readAll()
+
+		fun withStringResponse(str: String, charset: Charset = Charsets.UTF_8) = this.copy(content = str.toByteArray(charset).openAsync())
 	}
 
 	suspend open fun request(method: Method, url: String, headers: Headers = Headers(), content: AsyncStream? = null): Response {
@@ -65,6 +71,8 @@ class LogHttpClient : HttpClient() {
 		log += "$method, $url, $headers, $contentString"
 		return response
 	}
+
+	fun getAndClearLog() = log.toList().apply { log.clear() }
 }
 
 open class HttpClientFactory {

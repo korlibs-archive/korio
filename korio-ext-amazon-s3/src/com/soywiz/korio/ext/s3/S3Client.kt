@@ -7,10 +7,8 @@ import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.toAsyncStream
 import com.soywiz.korio.util.TimeProvider
-import com.soywiz.korio.vfs.LocalVfs
-import com.soywiz.korio.vfs.Vfs
-import com.soywiz.korio.vfs.VfsOpenMode
-import com.soywiz.korio.vfs.VfsStat
+import com.soywiz.korio.vfs.*
+import com.soywiz.korio.vfs.MimeType
 import java.util.*
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -19,6 +17,9 @@ suspend fun S3Vfs(region: String = System.getenv("AWS_DEFAULT_REGION") ?: "eu-we
 
 class S3Client(val accessKey: String, val secretKey: String, val endpoint: String, val httpClient: HttpClient, val timeProvider: TimeProvider) : Vfs() {
 	override val absolutePath: String = "https://$endpoint"
+
+	override val supportedAttributeTypes = listOf(ACL::class.java, MimeType::class.java)
+
 	//val httpVfs = UrlVfs(absolutePath)
 
 	//suspend fun get(bucket: String) = S3Bucket(this, bucket)
@@ -46,17 +47,16 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 
 	private fun normalizePath(path: String) = "/" + path.trim('/')
 
-	class ACCESS(var text: String) : Vfs.Attribute {
+	class ACL(var text: String) : Vfs.Attribute {
 		companion object {
-			val PRIVATE = ACCESS("private")
-			val PUBLIC_READ = ACCESS("public-read")
-		}
-	}
-
-	class CONTENT_TYPE(var text: String) : Vfs.Attribute {
-		companion object {
-			val TEXT_PLAIN = CONTENT_TYPE("text/plain")
-			val APPLICATION_OCTET_STREAM = CONTENT_TYPE("application/octet-stream")
+			val PRIVATE = ACL("private")
+			val PUBLIC_READ = ACL("public-read")
+			val PUBLIC_READ_WRITE = ACL("public-read-write")
+			val AWS_EXEC_READ = ACL("aws-exec-read")
+			val AUTHENTICATED_READ = ACL("authenticated-read")
+			val BUCKET_OWNER_READ = ACL("bucket-owner-read")
+			val BUCKET_OWNER_FULL_CONTROL = ACL("bucket-owner-full-control")
+			val LOG_DELIVERY_WRITE = ACL("log-delivery-write")
 		}
 	}
 
@@ -72,22 +72,19 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 
 	suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
 		if (mode.write) invalidOp("Use put for writing")
-		return request(
-				HttpClient.Method.GET,
-				path
-		).content.toAsyncStream()
+		return request(HttpClient.Method.GET, path).content.toAsyncStream()
 	}
 
 	suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) {
-		val access = attributes.get<ACCESS>()
-		val contentType = attributes.get<CONTENT_TYPE>()
+		val access = attributes.get<ACL>() ?: ACL.PRIVATE
+		val contentType = attributes.get<MimeType>() ?: PathInfo(path).mimeTypeByExtension
 
 		request(
 				HttpClient.Method.PUT,
 				path,
-				contentType = contentType?.text ?: "application/octet-stream",
+				contentType = contentType.mime,
 				headers = mapOf(
-						"x-amz-acl" to (access?.text ?: "private")
+						"x-amz-acl" to access.text
 				)
 		)
 	}
@@ -116,7 +113,7 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 			if (k.startsWith("x-amz")) amzHeaders[k] = v
 		}
 
-		val date = java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.ENGLISH).format(java.util.Date(timeProvider.currentTimeMillis()))
+		val date = java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.ENGLISH).apply { timeZone = TimeZone.getTimeZone("UTC") }.format(java.util.Date(timeProvider.currentTimeMillis()))
 		for (header in headers) addHeader(header.key, header.value)
 		if (contentType.isNotEmpty()) addHeader("content-type", contentType)
 		if (contentMd5.isNotEmpty()) addHeader("content-md5", contentMd5)

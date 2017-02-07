@@ -3,6 +3,7 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.util.*
 import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.VfsOpenMode
@@ -479,3 +480,62 @@ fun InputStream.toAsync(): AsyncInputStream {
 		}
 	}
 }
+
+/*
+class AsyncBufferedInputStream(val base: AsyncInputStream, val BUFFER_CHUNK_SIZE: Int = 0x2000) : AsyncInputStream {
+	private var currentBufferPos = 0
+	private var currentBuffer = byteArrayOf()
+	private val queuedBuffers = LinkedList<ByteArray>()
+	private var availableInQueued: Int = 0
+
+	private val currentBufferAvailable: Int get() = currentBuffer.size - currentBufferPos
+
+	private val totalAvailable: Int get() = availableInQueued + currentBufferAvailable
+
+	suspend fun require(len: Int = 1) {
+		while (totalAvailable < len) {
+			val buffer = base.readBytes(BUFFER_CHUNK_SIZE)
+			queuedBuffers += buffer
+			availableInQueued += buffer.size
+		}
+	}
+
+	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+		require(len)
+		var coffset = offset
+		var remaining = len
+		readChunk()
+		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+	}
+
+	private fun syncReadU8(): Int {
+		if (available < 0) invalidOp("Not enough bytes available")
+		if (currentBufferAvailable <= 0) {
+			currentBuffer = queuedBuffers.removeFirst()
+			currentBufferPos = 0
+		}
+		currentBuffer[currentBufferPos]
+		currentBufferPos++
+	}
+
+	suspend fun readBufferedUntil(byte: Byte): ByteArray {
+		val out = ByteArrayOutputStream()
+		while (true) {
+			if (currentBufferAvailable <= 0) {
+				require(1)
+			}
+			val pos = currentBuffer.indexOf(currentBufferPos, byte)
+			val rpos = if (pos >= 0) pos else currentBuffer.size
+			out.write(currentBuffer, currentBufferPos, rpos - currentBufferPos)
+			if (pos < 0) {
+				currentBufferPos = currentBuffer.size
+			} else {
+				break
+			}
+		}
+		//return out.toByteArray().toString(Charsets.UTF_8)
+		return out.toByteArray()
+	}
+}
+*/
+

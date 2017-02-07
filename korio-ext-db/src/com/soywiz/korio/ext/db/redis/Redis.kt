@@ -10,6 +10,9 @@ import com.soywiz.korio.util.substr
 import java.nio.charset.Charset
 
 class Redis(val client: AsyncClient, val charset: Charset = Charsets.UTF_8) {
+	//private val reader = AsyncBufferedInputStream(client)
+	private val reader = client
+
 	companion object {
 		operator suspend fun invoke(host: String = "127.0.0.1", port: Int = 6379, charset: Charset = Charsets.UTF_8, password: String? = null): Redis {
 			val client = Redis(AsyncClient(host, port), charset)
@@ -25,7 +28,7 @@ class Redis(val client: AsyncClient, val charset: Charset = Charsets.UTF_8) {
 	suspend fun readValue(): Any? = ioQueue { _readValue() }
 
 	suspend private fun _readValue(): Any? {
-		val line = client.readLine().trim()
+		val line = reader.readLine().trim()
 
 		return when (line[0]) {
 			'+' -> line.substr(1) // Status reply
@@ -36,8 +39,8 @@ class Redis(val client: AsyncClient, val charset: Charset = Charsets.UTF_8) {
 				if (BytesToRead == -1) {
 					null
 				} else {
-					val Data = client.readBytes(BytesToRead)
-					client.readBytes(2)
+					val Data = reader.readBytes(BytesToRead)
+					reader.readBytes(2)
 					Data.toString(charset)
 				}
 			}
@@ -73,6 +76,8 @@ class Redis(val client: AsyncClient, val charset: Charset = Charsets.UTF_8) {
 
 	class ResponseException(message: String) : Exception(message)
 }
+
+// @TODO: Missing commands
 
 suspend fun Redis.append(key: String, value: String) = commandString("append", key.quote(), value.quote())
 suspend fun Redis.auth(password: String) = commandString("auth", password.quote())
