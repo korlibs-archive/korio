@@ -25,17 +25,9 @@ class HttpClientFactoryJvm : HttpClientFactory() {
 				if (content != null) {
 					con.doOutput = true
 
-					//val data = content.readAll()
-					//con.addRequestProperty("content-length", "${data.size}")
-					//val os = con.outputStream
-					//os.write(data)
-					//os.flush()
-					//os.close()
-
 					val len = content.getAvailable()
 					var left = len
 					val temp = ByteArray(1024)
-					con.addRequestProperty("content-length", "$len")
 					//println("HEADER:content-length, $len")
 
 					con.connect()

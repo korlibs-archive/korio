@@ -6,7 +6,6 @@ import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.buffered
 import com.soywiz.korio.stream.toAsyncStream
-import com.soywiz.korio.util.AsyncCacheItem
 import java.io.FileNotFoundException
 import java.net.URL
 
@@ -52,7 +51,14 @@ private class UrlVfsImpl(val url: String) : Vfs() {
 
 	suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) {
 		val headers = attributes.get<HttpHeaders>()
-		client.request(HttpClient.Method.PUT, getFullUrl(path), headers?.headers ?: HttpClient.Headers(), content)
+		val mimeType = attributes.get<MimeType>() ?: MimeType.APPLICATION_JSON
+		val hheaders = headers?.headers ?: HttpClient.Headers()
+		val contentLength = content.getLength()
+
+		client.request(HttpClient.Method.PUT, getFullUrl(path), hheaders.withReplaceHeaders(
+				"content-length" to "$contentLength",
+				"content-type" to mimeType.mime
+		), content)
 	}
 
 	suspend override fun stat(path: String): VfsStat {

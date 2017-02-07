@@ -22,10 +22,6 @@ class HttpClientNodeJs : HttpClient() {
 
 		for (header in headers) reqHeaders[header.first] = header.second
 
-		if (content != null) {
-			reqHeaders["content-length"] = content.getLength().toString()
-		}
-
 		val r = http.call("request", jsObject(
 				"method" to method.name,
 				"host" to info["hostname"],
@@ -96,7 +92,6 @@ class HttpClientBrowserJs : HttpClient() {
 		deferred.onCancel { xhr.call("abort") }
 
 		if (content != null) {
-			xhr.call("setRequestHeader", "Content-Length", content.getLength())
 			xhr.call("send", content.readAll().toJsTypedArray())
 		} else {
 			xhr.call("send")

@@ -76,7 +76,7 @@ class S3(val accessKey: String, val secretKey: String, val endpoint: String, val
 	suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) {
 		val access = attributes.get<ACL>() ?: ACL.PRIVATE
 		val contentType = attributes.get<MimeType>() ?: PathInfo(path).mimeTypeByExtension
-		//val contentLength = content.getLength()
+		val contentLength = content.getAvailable()
 
 		request(
 				HttpClient.Method.PUT,
@@ -84,7 +84,7 @@ class S3(val accessKey: String, val secretKey: String, val endpoint: String, val
 				contentType = contentType.mime,
 				headers = mapOf(
 						//"content-length" to "${content.getLength()}", // @Kotlin error: java.lang.VerifyError: Bad type on operand stack
-						//"content-length" to "$contentLength",
+						"content-length" to "$contentLength",
 						"x-amz-acl" to access.text
 				),
 				content = content
@@ -132,7 +132,7 @@ class S3(val accessKey: String, val secretKey: String, val endpoint: String, val
 
 		addHeader("date", date)
 
-		val canonicalizedAmzHeaders = amzHeaders.entries.sortedBy { it.key }.map { "${it.key}: ${it.value}\n" }.joinToString()
+		val canonicalizedAmzHeaders = amzHeaders.entries.sortedBy { it.key }.map { "${it.key}:${it.value}\n" }.joinToString()
 		val canonicalizedResource = path.cannonical
 		val toSign = method.name + "\n" + contentMd5 + "\n" + contentType + "\n" + date + "\n" + canonicalizedAmzHeaders + canonicalizedResource
 		val signature = b64SignHmacSha1(awsSecretKey, toSign)
