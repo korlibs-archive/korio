@@ -30,7 +30,7 @@ class AsyncThread {
 
 	operator suspend fun <T> invoke(func: suspend () -> T): T {
 		val newDeferred = Promise.Deferred<T>()
-		lastPromise.then {
+		lastPromise.always {
 			func.korioStartCoroutine(newDeferred.toContinuation())
 		}
 		lastPromise = newDeferred.promise

@@ -83,6 +83,13 @@ class Promise<T : Any?> {
 		flush()
 	}
 
+	fun always(resolved: () -> Unit) {
+		then(
+				resolved = { resolved() },
+				rejected = { resolved() }
+		)
+	}
+
 	fun then(resolved: (T) -> Unit, rejected: (Throwable) -> Unit) {
 		synchronized(resolvedHandlers) { resolvedHandlers += resolved }
 		synchronized(rejectedHandlers) { rejectedHandlers += rejected }
