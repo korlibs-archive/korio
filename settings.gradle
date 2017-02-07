@@ -6,6 +6,6 @@ include(
 		'korio-android',
 		'korio-vertx',
 		'korio-jtransc-example',
-		'korio-ext-db',
+		'korio-ext-db-redis',
 		'korio-ext-amazon-s3',
 )

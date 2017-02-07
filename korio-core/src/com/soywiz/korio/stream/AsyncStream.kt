@@ -3,7 +3,6 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.executeInWorker
-import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.util.*
 import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.VfsOpenMode
@@ -345,6 +344,20 @@ suspend fun AsyncInputStream.readAll(): ByteArray {
 // readAll alias
 suspend fun AsyncInputStream.readAvailable(): ByteArray = readAll()
 
+suspend fun AsyncInputStream.skip(count: Int) {
+	if (this is AsyncPositionLengthStream) {
+		this.setPosition(this.getPosition() + count)
+	} else {
+		val temp = BYTES_TEMP
+		var remaining = count
+		while (remaining > 0) {
+			val toRead = Math.min(remaining, count)
+			readTempExact(toRead, temp)
+			remaining -= toRead
+		}
+	}
+}
+
 suspend fun AsyncInputStream.readUByteArray(count: Int): UByteArray = UByteArray(readBytesExact(count))
 
 suspend fun AsyncInputStream.readShortArray_le(count: Int): ShortArray = readBytesExact(count * 2).readShortArray_le(0, count)
@@ -459,7 +472,7 @@ suspend fun AsyncOutputStream.writeLongArray_be(array: LongArray) = writeBytes(B
 suspend fun AsyncOutputStream.writeFloatArray_be(array: FloatArray) = writeBytes(ByteArray(array.size * 4).apply { writeArray_be(0, array) })
 suspend fun AsyncOutputStream.writeDoubleArray_be(array: DoubleArray) = writeBytes(ByteArray(array.size * 8).apply { writeArray_be(0, array) })
 
-suspend fun AsyncInputStream.readLine(eol: Char = '\n'): String {
+suspend fun AsyncInputStream.readLine(eol: Char = '\n', charset: Charset = Charsets.UTF_8): String {
 	val out = ByteArrayOutputStream()
 	try {
 		while (true) {
@@ -469,7 +482,7 @@ suspend fun AsyncInputStream.readLine(eol: Char = '\n'): String {
 		}
 	} catch (e: EOFException) {
 	}
-	return out.toByteArray().toString(Charsets.UTF_8)
+	return out.toByteArray().toString(charset)
 }
 
 fun InputStream.toAsync(): AsyncInputStream {
@@ -481,61 +494,38 @@ fun InputStream.toAsync(): AsyncInputStream {
 	}
 }
 
-/*
-class AsyncBufferedInputStream(val base: AsyncInputStream, val BUFFER_CHUNK_SIZE: Int = 0x2000) : AsyncInputStream {
-	private var currentBufferPos = 0
-	private var currentBuffer = byteArrayOf()
-	private val queuedBuffers = LinkedList<ByteArray>()
-	private var availableInQueued: Int = 0
-
-	private val currentBufferAvailable: Int get() = currentBuffer.size - currentBufferPos
-
-	private val totalAvailable: Int get() = availableInQueued + currentBufferAvailable
+class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int = 0x2000) : AsyncInputStream {
+	private val buf = SyncProduceConsumerByteBuffer()
 
 	suspend fun require(len: Int = 1) {
-		while (totalAvailable < len) {
-			val buffer = base.readBytes(BUFFER_CHUNK_SIZE)
-			queuedBuffers += buffer
-			availableInQueued += buffer.size
-		}
+		while (buf.available < len) buf.produce(base.readBytes(bufferSize))
 	}
 
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-		require(len)
-		var coffset = offset
-		var remaining = len
-		readChunk()
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+		require(1)
+		return buf.consume(buffer, offset, len)
 	}
 
-	private fun syncReadU8(): Int {
-		if (available < 0) invalidOp("Not enough bytes available")
-		if (currentBufferAvailable <= 0) {
-			currentBuffer = queuedBuffers.removeFirst()
-			currentBufferPos = 0
-		}
-		currentBuffer[currentBufferPos]
-		currentBufferPos++
-	}
-
-	suspend fun readBufferedUntil(byte: Byte): ByteArray {
+	suspend fun readBufferedUntil(end: Byte, including: Boolean = true): ByteArray {
 		val out = ByteArrayOutputStream()
 		while (true) {
-			if (currentBufferAvailable <= 0) {
-				require(1)
-			}
-			val pos = currentBuffer.indexOf(currentBufferPos, byte)
-			val rpos = if (pos >= 0) pos else currentBuffer.size
-			out.write(currentBuffer, currentBufferPos, rpos - currentBufferPos)
-			if (pos < 0) {
-				currentBufferPos = currentBuffer.size
-			} else {
-				break
-			}
+			require(1)
+			val chunk = buf.consumeUntil(end, including)
+			out.write(chunk)
+			if (chunk.isNotEmpty() && chunk.last() == end) break
 		}
-		//return out.toByteArray().toString(Charsets.UTF_8)
 		return out.toByteArray()
 	}
 }
-*/
 
+fun SyncInputStream.toAsyncInputStream() = object : AsyncInputStream {
+	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+		return this@toAsyncInputStream.read(buffer, offset, len)
+	}
+}
+
+fun SyncOutputStream.toAsyncOutputStream() = object : AsyncOutputStream {
+	suspend override fun write(buffer: ByteArray, offset: Int, len: Int) {
+		this@toAsyncOutputStream.write(buffer, offset, len)
+	}
+}

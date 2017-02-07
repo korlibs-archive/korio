@@ -14,7 +14,10 @@ import com.soywiz.korio.util.use
 import java.io.Closeable
 
 abstract class Vfs {
-	open val absolutePath: String = ""
+	open protected val absolutePath: String = ""
+
+	open fun getAbsolutePath(path: String) = VfsUtil.lightCombine(absolutePath, path)
+
 	val root by lazy { VfsFile(this, "") }
 
 	open val supportedAttributeTypes = listOf<Class<out Attribute>>()

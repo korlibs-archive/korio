@@ -29,22 +29,31 @@ class AndroidHttpClientFactory : HttpClientFactory() {
 				}
 				if (content != null) {
 					con.doOutput = true
+
+					//val data = content.readAll()
+					//con.addRequestProperty("content-length", "${data.size}")
+					//val os = con.outputStream
+					//os.write(data)
+					//os.flush()
+					//os.close()
+
 					val len = content.getAvailable()
 					var left = len
 					val temp = ByteArray(1024)
 					con.addRequestProperty("content-length", "$len")
 					//println("HEADER:content-length, $len")
-					con.connect()
+					val os = con.outputStream
 					while (left > 0) {
 						val read = content.read(temp, 0, Math.min(temp.size, left.toUintClamp()))
 						if (read <= 0) invalidOp("Problem reading")
 						left -= read
-						con.outputStream.write(temp, 0, read)
+						os.write(temp, 0, read)
 					}
-					con.outputStream.close()
-				} else {
-					con.connect()
+					os.flush()
+					os.close()
 				}
+
+				con.connect()
 
 				Response(
 						status = con.responseCode,

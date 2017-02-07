@@ -2,10 +2,7 @@ package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.openAsync
-import com.soywiz.korio.stream.toAsync
-import com.soywiz.korio.stream.toAsyncStream
+import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.toUintClamp
 import java.io.FileNotFoundException
 import java.net.HttpURLConnection
@@ -27,19 +24,31 @@ class HttpClientFactoryJvm : HttpClientFactory() {
 				}
 				if (content != null) {
 					con.doOutput = true
+
+					//val data = content.readAll()
+					//con.addRequestProperty("content-length", "${data.size}")
+					//val os = con.outputStream
+					//os.write(data)
+					//os.flush()
+					//os.close()
+
 					val len = content.getAvailable()
 					var left = len
 					val temp = ByteArray(1024)
 					con.addRequestProperty("content-length", "$len")
 					//println("HEADER:content-length, $len")
+
 					con.connect()
+
+					val os = con.outputStream
 					while (left > 0) {
 						val read = content.read(temp, 0, Math.min(temp.size, left.toUintClamp()))
 						if (read <= 0) invalidOp("Problem reading")
 						left -= read
-						con.outputStream.write(temp, 0, read)
+						os.write(temp, 0, read)
 					}
-					con.outputStream.close()
+					os.flush()
+					os.close()
 				} else {
 					con.connect()
 				}

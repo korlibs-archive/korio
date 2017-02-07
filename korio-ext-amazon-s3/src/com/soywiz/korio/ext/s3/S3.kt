@@ -4,7 +4,6 @@ import com.soywiz.korio.crypto.toBase64
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.toAsyncStream
 import com.soywiz.korio.util.TimeProvider
 import com.soywiz.korio.vfs.*
@@ -13,10 +12,9 @@ import java.util.*
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
-suspend fun S3Vfs(region: String = System.getenv("AWS_DEFAULT_REGION") ?: "eu-west-1", accessKey: String? = null, secretKey: String? = null, httpClient: HttpClient = HttpClient(), timeProvider: TimeProvider = TimeProvider()) = S3Client(region, accessKey, secretKey, httpClient, timeProvider).root
-
-class S3Client(val accessKey: String, val secretKey: String, val endpoint: String, val httpClient: HttpClient, val timeProvider: TimeProvider) : Vfs() {
-	override val absolutePath: String = "https://$endpoint"
+// http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html#ConstructingTheAuthenticationHeader
+class S3(val accessKey: String, val secretKey: String, val endpoint: String, val httpClient: HttpClient, val timeProvider: TimeProvider) : Vfs() {
+	override fun getAbsolutePath(path: String) = parsePath(path).absolutePath
 
 	override val supportedAttributeTypes = listOf(ACL::class.java, MimeType::class.java)
 
@@ -25,7 +23,7 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 	//suspend fun get(bucket: String) = S3Bucket(this, bucket)
 
 	companion object {
-		suspend operator fun invoke(region: String = System.getenv("AWS_DEFAULT_REGION") ?: "eu-west-1", accessKey: String? = null, secretKey: String? = null, httpClient: HttpClient = HttpClient(), timeProvider: TimeProvider = TimeProvider()): S3Client {
+		suspend operator fun invoke(region: String = System.getenv("AWS_DEFAULT_REGION") ?: "eu-west-1", accessKey: String? = null, secretKey: String? = null, httpClient: HttpClient = HttpClient(), timeProvider: TimeProvider = TimeProvider()): S3 {
 			var finalAccessKey = accessKey
 			var finalSecretKey = secretKey
 
@@ -41,7 +39,7 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 				finalSecretKey = (Regex("aws_secret_access_key\\s+=\\s+(.*)").find(credentials)?.groupValues?.getOrElse(1) { "" } ?: "").trim()
 			}
 
-			return S3Client(finalAccessKey ?: "", finalSecretKey ?: "", "s3-$region.amazonaws.com", httpClient, timeProvider)
+			return S3(finalAccessKey ?: "", finalSecretKey ?: "", "s3-$region.amazonaws.com", httpClient, timeProvider)
 		}
 	}
 
@@ -78,28 +76,42 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 	suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) {
 		val access = attributes.get<ACL>() ?: ACL.PRIVATE
 		val contentType = attributes.get<MimeType>() ?: PathInfo(path).mimeTypeByExtension
+		//val contentLength = content.getLength()
 
 		request(
 				HttpClient.Method.PUT,
 				path,
 				contentType = contentType.mime,
 				headers = mapOf(
+						//"content-length" to "${content.getLength()}", // @Kotlin error: java.lang.VerifyError: Bad type on operand stack
+						//"content-length" to "$contentLength",
 						"x-amz-acl" to access.text
-				)
+				),
+				content = content
 		)
 	}
 
-	suspend fun request(method: HttpClient.Method, path: String, contentType: String = "", contentMd5: String = "", headers: Map<String, String> = mapOf(), content: ByteArray? = null): HttpClient.Response {
-		val npath = normalizePath(path)
+	suspend fun request(method: HttpClient.Method, path: String, contentType: String = "", contentMd5: String = "", headers: Map<String, String> = mapOf(), content: AsyncStream? = null): HttpClient.Response {
+		val npath = parsePath(path)
 		return httpClient.request(
-				method, absolutePath + npath,
+				method, npath.absolutePath,
 				headers = genHeaders(method, npath, contentType, contentMd5, headers),
-				content = content?.openAsync()
+				content = content
 		)
 	}
 
-	// http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html#ConstructingTheAuthenticationHeader
-	private fun genHeaders(method: HttpClient.Method, path: String, contentType: String = "", contentMd5: String = "", headers: Map<String, String> = kotlin.collections.mapOf()): HttpClient.Headers {
+	data class ParsedPath(val bucket: String, val key: String) {
+		val absolutePath = "https://$bucket.s3.amazonaws.com/$key"
+		val cannonical = "/$bucket/$key"
+	}
+
+	private fun parsePath(path: String): ParsedPath {
+		val npath = path.trim('/')
+		val parts = npath.split('/', limit = 2)
+		return ParsedPath(parts[0].trim('/'), parts[1].trim('/'))
+	}
+
+	private fun genHeaders(method: HttpClient.Method, path: ParsedPath, contentType: String = "", contentMd5: String = "", headers: Map<String, String> = kotlin.collections.mapOf()): HttpClient.Headers {
 		val awsAccessKey = accessKey
 		val awsSecretKey = secretKey
 
@@ -121,7 +133,7 @@ class S3Client(val accessKey: String, val secretKey: String, val endpoint: Strin
 		addHeader("date", date)
 
 		val canonicalizedAmzHeaders = amzHeaders.entries.sortedBy { it.key }.map { "${it.key}: ${it.value}\n" }.joinToString()
-		val canonicalizedResource = path
+		val canonicalizedResource = path.cannonical
 		val toSign = method.name + "\n" + contentMd5 + "\n" + contentType + "\n" + date + "\n" + canonicalizedAmzHeaders + canonicalizedResource
 		val signature = b64SignHmacSha1(awsSecretKey, toSign)
 		val authorization = "AWS $awsAccessKey:$signature"
