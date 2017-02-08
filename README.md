@@ -81,9 +81,16 @@ Korio includes a HttpClient client that uses available native implementations. U
 
 ### Databases
 
-Korio includes as an extension database/cache clients. At this point, there is a Redis client implementation,
-but will provide more. 
+#### Redis
 
+Korio includes an extension with some database/cache clients. At this point, there is a Redis client implementation,
+but will provide more soon.
+
+#### DynamoDB
+
+Korio includes a pure Kotlin DynamoDB asynchronous simple and fast implementation using Korio's HttpClient implementations, which leverages:
+jvm, android, js (browser and nodejs) + pure asynchronous http clients from vertx when including korio-vertx. 
+ 
 ### VFS
 
 Korio provides an asynchronous Virtual File System extensible engine.

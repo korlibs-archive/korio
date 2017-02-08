@@ -6,7 +6,6 @@ import com.soywiz.korio.util.TimeProvider
 import org.junit.Assert
 import org.junit.Test
 import java.net.URL
-import kotlin.system.measureTimeMillis
 
 class DynamoDBTest {
 	val httpClient = LogHttpClient()
@@ -33,18 +32,32 @@ class DynamoDBTest {
 		), httpClient.getAndClearLog())
 	}
 
-	@Test
-	fun createTableTest() = syncTest {
-		val db = DynamoDB("eu-west-1", endpoint = URL("http://127.0.0.1:8000"))
-		//val db = DynamoDB("eu-west-1")
-		//db.deleteTableIfExists("Test1")
-		//db.createTable("Test1", mapOf("test" to DynamoDB.Kind.STRING), mapOf("test" to DynamoDB.KeyType.HASH))
-		//db.putItems("Test1", mapOf("test" to "hello"), mapOf("test1" to "hello"), mapOf("test2" to "hello"), mapOf("test3" to "hello"))
-		db.putItem("Test1", mapOf("test" to "hello"))
-		for (n in 0 until 100) {
-			println(measureTimeMillis {
-				db.putItem("Test1", mapOf("test" to "hello"))
-			})
-		}
-	}
+	//@Test
+	//fun createTableTest() = syncTest {
+	//	val db = DynamoDB("eu-west-1", endpoint = URL("http://127.0.0.1:8000"))
+	//	//val db = DynamoDB("eu-west-1")
+	//	//db.deleteTableIfExists("Test2")
+	//	//db.createTable("Test2", mapOf("test" to DynamoDB.Kind.STRING, "demo" to DynamoDB.Kind.STRING), hashKey = "test", rangeKey = "demo")
+	//	//db.putItems("Test1", mapOf("test" to "hello"), mapOf("test1" to "hello"), mapOf("test2" to "hello"), mapOf("test3" to "hello"))
+	//	/*
+	//	db.putItem("Test1", mapOf("test" to "hello"))
+	//	for (n in 0 until 100) {
+	//		println(measureTimeMillis {
+	//			db.putItem("Test1", mapOf("test" to "hello"))
+	//		})
+	//	}
+	//	*/
+	//	/*
+	//	db.putItem("Test2", mapOf("test" to "hello", "demo" to "world"))
+	//	db.putItem("Test2", mapOf("test" to "hello", "demo" to "world2"))
+	//	db.putItem("Test2", mapOf("test" to "hello1", "demo" to "world"))
+	//	db.putItem("Test2", mapOf("test" to "hello1", "demo" to "world2"))
+	//	*/
+//
+	//	val items = db.query("Test2") { "test" eq "hello" }
+	//	for (item in items) {
+	//		println(item)
+	//	}
+	//	//println(db.deleteItem("Test1", mapOf("test" to "hello")))
+	//}
 }
