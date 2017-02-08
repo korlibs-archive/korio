@@ -1,23 +1,62 @@
 package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.Promise
-import com.soywiz.korio.ds.MapList
 import com.soywiz.korio.service.Services
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.readAll
-import com.soywiz.korio.util.Cancellable
 import java.io.IOException
 import java.nio.charset.Charset
 
 interface Http {
-	enum class Method {
-		//HEAD, POST, GET, PUT, DELETE, OPTIONS, TRACE
-		OPTIONS,
-		GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH, OTHER
+	enum class Method { OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH, OTHER }
+
+	data class Headers(val items: List<Pair<String, String>>) : Iterable<Pair<String, String>> {
+		constructor(vararg items: Pair<String, String>) : this(items.toList())
+		constructor(map: Map<String, String>) : this(map.map { it.key to it.value })
+		constructor(str: String?) : this(parse(str).items)
+
+		override fun iterator(): Iterator<Pair<String, String>> = items.iterator()
+
+		operator fun get(key: String): String? = getFirst(key)
+		fun getAll(key: String): List<String> = items.filter { it.first.equals(key, ignoreCase = true) }.map { it.second }
+		fun getFirst(key: String): String? = items.firstOrNull { it.first.equals(key, ignoreCase = true) }?.second
+
+		fun toListGrouped(): List<Pair<String, List<String>>> {
+			return this.items.groupBy { it.first.toLowerCase() }.map { it.value.first().first to it.value.map { it.second } }.sortedBy { it.first.toLowerCase() }
+		}
+
+		fun withAppendedHeaders(newHeaders: List<Pair<String, String>>): Headers = Headers(this.items + newHeaders.toList())
+		fun withReplaceHeaders(newHeaders: List<Pair<String, String>>): Headers {
+			val replaceKeys = newHeaders.map { it.first.toLowerCase() }.toSet()
+
+			return Headers(this.items.filter { it.first.toLowerCase() !in replaceKeys } + newHeaders.toList())
+		}
+
+		fun withAppendedHeaders(vararg newHeaders: Pair<String, String>): Headers = withAppendedHeaders(newHeaders.toList())
+		fun withReplaceHeaders(vararg newHeaders: Pair<String, String>): Headers = withReplaceHeaders(newHeaders.toList())
+
+		operator fun plus(that: Headers): Headers = withAppendedHeaders(this.items + that.items)
+
+		override fun toString(): String = "Headers(${toListGrouped().joinToString(", ")})"
+
+		companion object {
+			fun fromListMap(map: Map<String?, List<String>>): Headers {
+				return Headers(map.flatMap { pair -> if (pair.key == null) listOf() else pair.value.map { value -> pair.key!! to value } })
+			}
+
+			fun parse(str: String?): Headers {
+				if (str == null) return Headers()
+				return Headers(str.split("\n").map {
+					val parts = it.trim().split(':', limit = 2)
+					if (parts.size >= 2) parts[0].trim() to parts[1].trim() else null
+				}.filterNotNull())
+			}
+		}
 	}
 
+	/*
 	data class Headers(val items: MapList<String, String> = MapList()) : Iterable<Pair<String, String>> {
 		val itemsCI = MapList<String, String>(items.toList().flatMap { (key, values) -> values.map { key.toLowerCase() to it } })
 
@@ -47,8 +86,13 @@ interface Http {
 		fun withAppendedHeaders(vararg newHeaders: Pair<String, String>): Headers = Headers(MapList(this.items).appendAll(*newHeaders))
 		fun withReplaceHeaders(vararg newHeaders: Pair<String, String>): Headers = Headers(MapList(this.items).replaceAll(*newHeaders))
 
+		operator fun plus(that: Headers): Headers {
+			return Headers(*that.items, )
+		}
+
 		override fun toString(): String = "Headers(${items.joinToString(", ")})"
 	}
+	*/
 }
 
 open class HttpClient protected constructor() {

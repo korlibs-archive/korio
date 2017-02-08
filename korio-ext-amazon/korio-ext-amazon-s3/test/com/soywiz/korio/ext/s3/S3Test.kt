@@ -25,7 +25,7 @@ class S3Test {
 
 		Assert.assertEquals("hello", s3["test/hello.txt"].readString())
 		Assert.assertEquals(
-				listOf("GET, https://test.s3.amazonaws.com/hello.txt, Headers((date, [Tue, 07 Feb 2017 00:15:48 UTC]), (authorization, [AWS myaccesskey:I/jL9Lkq+n6DT0ZuLmK71B/wABQ=])), null"),
+				listOf("GET, https://test.s3.amazonaws.com/hello.txt, Headers((Authorization, [AWS myaccesskey:I/jL9Lkq+n6DT0ZuLmK71B/wABQ=]), (date, [Tue, 07 Feb 2017 00:15:48 UTC])), null"),
 				httpClient.getAndClearLog()
 		)
 	}
@@ -34,7 +34,7 @@ class S3Test {
 	fun checkPut() = syncTest {
 		s3["test/hello.json"].writeString("hello")
 		Assert.assertEquals(
-				listOf("PUT, https://test.s3.amazonaws.com/hello.json, Headers((date, [Tue, 07 Feb 2017 00:15:48 UTC]), (authorization, [AWS myaccesskey:lzucas2uhwPa2vsVJoRzta6RAtg=]), (content-length, [5]), (x-amz-acl, [private]), (content-type, [application/json])), hello"),
+				listOf("PUT, https://test.s3.amazonaws.com/hello.json, Headers((Authorization, [AWS myaccesskey:lzucas2uhwPa2vsVJoRzta6RAtg=]), (content-length, [5]), (content-type, [application/json]), (date, [Tue, 07 Feb 2017 00:15:48 UTC]), (x-amz-acl, [private])), hello"),
 				httpClient.getAndClearLog()
 		)
 	}
@@ -43,7 +43,7 @@ class S3Test {
 	fun checkPut2() = syncTest {
 		s3["test/hello.txt"].writeString("hello", MimeType.IMAGE_JPEG, S3.ACL.PUBLIC_READ)
 		Assert.assertEquals(
-				listOf("PUT, https://test.s3.amazonaws.com/hello.txt, Headers((date, [Tue, 07 Feb 2017 00:15:48 UTC]), (authorization, [AWS myaccesskey:DceOjup5BapxMUuh6Ww07viLyxg=]), (content-length, [5]), (x-amz-acl, [public-read]), (content-type, [image/jpeg])), hello"),
+				listOf("PUT, https://test.s3.amazonaws.com/hello.txt, Headers((Authorization, [AWS myaccesskey:DceOjup5BapxMUuh6Ww07viLyxg=]), (content-length, [5]), (content-type, [image/jpeg]), (date, [Tue, 07 Feb 2017 00:15:48 UTC]), (x-amz-acl, [public-read])), hello"),
 				httpClient.getAndClearLog()
 		)
 	}

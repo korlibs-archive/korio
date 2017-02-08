@@ -1,7 +1,5 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.vfs.Vfs
-
 class MimeType(val mime: String, val exts: List<String>) : Vfs.Attribute {
 	companion object {
 		val APPLICATION_OCTET_STREAM = MimeType("application/octet-stream", listOf("bin"))

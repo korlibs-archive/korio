@@ -4,33 +4,70 @@ import com.soywiz.korio.crypto.toBase64
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.util.substr
 import com.soywiz.korio.util.toHexStringLower
+import com.soywiz.korio.vfs.LocalVfs
 import java.net.URL
 import java.security.MessageDigest
+import java.util.*
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
 object AmazonAuth {
-	private fun macProcess(key: ByteArray, algo: String, data: ByteArray): ByteArray {
-		return Mac.getInstance(algo).apply { init(SecretKeySpec(key, algo)) }.doFinal(data)
+	class Credentials(val accessKey: String, val secretKey: String)
+
+	suspend fun getCredentials(accessKey: String? = null, secretKey: String? = null): Credentials? {
+		var finalAccessKey = accessKey
+		var finalSecretKey = secretKey
+
+		if (finalAccessKey.isNullOrEmpty()) {
+			finalAccessKey = System.getenv("AWS_ACCESS_KEY_ID")?.trim()
+			finalSecretKey = System.getenv("AWS_SECRET_KEY")?.trim()
+		}
+
+		if (accessKey.isNullOrEmpty()) {
+			val userHome = System.getProperty("user.home")
+			val credentials = LocalVfs("$userHome/.aws")["credentials"].readString()
+			finalAccessKey = (Regex("aws_access_key_id\\s+=\\s+(.*)").find(credentials)?.groupValues?.getOrElse(1) { "" } ?: "").trim()
+			finalSecretKey = (Regex("aws_secret_access_key\\s+=\\s+(.*)").find(credentials)?.groupValues?.getOrElse(1) { "" } ?: "").trim()
+		}
+		return if (finalAccessKey != null && finalSecretKey != null) Credentials(finalAccessKey, finalSecretKey) else null
 	}
 
-	fun macProcessStringsB64(key: String, algo: String, data: String): String {
-		return macProcess(key.toByteArray(), algo, data.toByteArray()).toBase64()
-	}
+	object V1 {
+		val DATE_FORMAT = java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.ENGLISH).apply { timeZone = TimeZone.getTimeZone("UTC") }
 
-	fun genAwsAuthorization(accessKey: String, secretKey: String, canonicalString: String): String {
-		val signature = macProcessStringsB64(secretKey, "HmacSHA1", canonicalString)
-		return "AWS $accessKey:$signature"
-	}
+		private fun macProcess(key: ByteArray, algo: String, data: ByteArray): ByteArray {
+			return Mac.getInstance(algo).apply { init(SecretKeySpec(key, algo)) }.doFinal(data)
+		}
 
-	fun genAwsSign4Sha256() {
+		fun macProcessStringsB64(key: String, algo: String, data: String): String {
+			return macProcess(key.toByteArray(), algo, data.toByteArray()).toBase64()
+		}
 
+		fun getAuthorization(accessKey: String, secretKey: String, method: Http.Method, cannonicalPath: String, headers: Http.Headers): String {
+			val contentType = headers["content-type"] ?: ""
+			val contentMd5 = headers["content-md5"] ?: ""
+			val date = headers["date"] ?: ""
+
+			val amzHeaders = hashMapOf<String, String>()
+
+			for ((key, value) in headers) {
+				val k = key.toLowerCase()
+				val v = value.trim()
+				if (k.startsWith("x-amz")) amzHeaders[k] = v
+			}
+
+			val canonicalizedAmzHeaders = amzHeaders.entries.sortedBy { it.key }.map { "${it.key}:${it.value}\n" }.joinToString()
+			val canonicalizedResource = cannonicalPath
+			val toSign = method.name + "\n" + contentMd5 + "\n" + contentType + "\n" + date + "\n" + canonicalizedAmzHeaders + canonicalizedResource
+			val signature = macProcessStringsB64(secretKey, "HmacSHA1", toSign)
+			return "AWS $accessKey:$signature"
+		}
 	}
 
 	// http://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html
 	object V4 {
 		fun getSignedHeaders(headers: Http.Headers): String {
-			return headers.items.toList().map { it.first.toLowerCase() to it.second.map(String::trim).joinToString(",") }.sortedBy { it.first }.map { it.first }.joinToString(";")
+			return headers.toListGrouped().map { it.first.toLowerCase() to it.second.map(String::trim).joinToString(",") }.sortedBy { it.first }.map { it.first }.joinToString(";")
 		}
 
 		fun getCannonicalRequest(method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray): String {
@@ -38,7 +75,7 @@ object AmazonAuth {
 			CanonicalRequest += method.name + "\n"
 			CanonicalRequest += url.path + "\n"
 			CanonicalRequest += url.query + "\n"
-			for ((k, v) in headers.items.toList().map { it.first.toLowerCase() to it.second.map(String::trim).joinToString(",") }.sortedBy { it.first }) {
+			for ((k, v) in headers.toListGrouped().map { it.first.toLowerCase() to it.second.map(String::trim).joinToString(",") }.sortedBy { it.first }) {
 				CanonicalRequest += "$k:$v\n"
 			}
 			CanonicalRequest += "\n"
