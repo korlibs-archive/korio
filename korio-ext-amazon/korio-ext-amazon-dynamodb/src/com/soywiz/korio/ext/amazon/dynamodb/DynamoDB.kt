@@ -12,13 +12,14 @@ import java.net.URL
 import java.util.*
 
 // http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Programming.LowLevelAPI.html
-class DynamoDB(val credentials: AmazonAuth.Credentials, val region: String, val client: HttpClient, val timeProvider: TimeProvider = TimeProvider()) {
+class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val region: String, val client: HttpClient, val timeProvider: TimeProvider = TimeProvider()) {
 	companion object {
-		operator suspend fun invoke(region: String, accessKey: String? = null, secretKey: String? = null, httpClient: HttpClient = createHttpClient(), timeProvider: TimeProvider = TimeProvider()): DynamoDB {
-			return DynamoDB(AmazonAuth.getCredentials(accessKey, secretKey)!!, region, httpClient, timeProvider)
+		operator suspend fun invoke(region: String, endpoint: URL? = null, accessKey: String? = null, secretKey: String? = null, httpClient: HttpClient = createHttpClient(), timeProvider: TimeProvider = TimeProvider()): DynamoDB {
+			return DynamoDB(AmazonAuth.getCredentials(accessKey, secretKey)!!, endpoint, region, httpClient, timeProvider)
 		}
 	}
 
+	// http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Operations.html
 	suspend fun listTables(): List<String> {
 		//val res = request("ListTables", mapOf("ExclusiveStartTableName" to prefix, "Limit" to limit))
 		val res = request("ListTables", mapOf())
@@ -43,24 +44,23 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val region: String, val 
 
 		val content = Json.encode(payload).toByteArray()
 
-		val host = "dynamodb.$region.amazonaws.com"
 
-		val res = client.request(Http.Method.POST, "https://$host",
+		val url = endpoint ?: URL("https://dynamodb.$region.amazonaws.com")
+
+		val res = client.request(Http.Method.POST, url.toString(),
 				headers = AmazonAuth.V4.signHeaders(
 						credentials.accessKey,
 						credentials.secretKey,
 						Http.Method.POST,
-						URL("https://$host"),
+						url,
 						Http.Headers(
 								"Content-Type" to "application/x-amz-json-1.0",
 								"x-amz-date" to AmazonAuth.V4.DATE_FORMAT.format(Date(timeProvider.currentTimeMillis())),
 								"x-amz-target" to "DynamoDB_20120810.$target",
-								"host" to host,
+								"host" to url.host,
 								"content-length" to "${content.size}"
 						),
-						content,
-						region,
-						"dynamodb"
+						content, region, "dynamodb"
 				),
 				content = content.openAsync()
 		)
