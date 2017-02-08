@@ -157,8 +157,9 @@ class LogHttpClient(val redirect: HttpClient? = null) : HttpClient() {
 		}
 	}
 
-	fun setTextResponse(text: String, status: Int = 200, statusText: String = "OK", headers: Http.Headers = Http.Headers()) {
+	fun setTextResponse(text: String, status: Int = 200, statusText: String = "OK", headers: Http.Headers = Http.Headers()): LogHttpClient {
 		response = HttpClient.Response(status, statusText, headers, text.toByteArray(Charsets.UTF_8).openAsync())
+		return this
 	}
 
 	fun getAndClearLog() = log.toList().apply { log.clear() }
