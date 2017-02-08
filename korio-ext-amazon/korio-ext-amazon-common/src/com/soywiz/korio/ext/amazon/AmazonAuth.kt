@@ -7,6 +7,7 @@ import com.soywiz.korio.util.toHexStringLower
 import com.soywiz.korio.vfs.LocalVfs
 import java.net.URL
 import java.security.MessageDigest
+import java.text.SimpleDateFormat
 import java.util.*
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
@@ -66,6 +67,8 @@ object AmazonAuth {
 
 	// http://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html
 	object V4 {
+		val DATE_FORMAT = SimpleDateFormat("YYYYMMdd'T'HHmmss'Z'", Locale.ENGLISH).apply { timeZone = TimeZone.getTimeZone("UTC") }
+
 		fun getSignedHeaders(headers: Http.Headers): String {
 			return headers.toListGrouped().map { it.first.toLowerCase() to it.second.map(String::trim).joinToString(",") }.sortedBy { it.first }.map { it.first }.joinToString(";")
 		}
@@ -73,8 +76,8 @@ object AmazonAuth {
 		fun getCannonicalRequest(method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray): String {
 			var CanonicalRequest = ""
 			CanonicalRequest += method.name + "\n"
-			CanonicalRequest += url.path + "\n"
-			CanonicalRequest += url.query + "\n"
+			CanonicalRequest += "/" + url.path.trim('/') + "\n"
+			CanonicalRequest += (url.query ?: "") + "\n"
 			for ((k, v) in headers.toListGrouped().map { it.first.toLowerCase() to it.second.map(String::trim).joinToString(",") }.sortedBy { it.first }) {
 				CanonicalRequest += "$k:$v\n"
 			}
@@ -131,6 +134,9 @@ object AmazonAuth {
 			val ddate = date.substr(0, 8)
 			val derivedSigningKey = getSignatureKey(key, ddate, region, service)
 			val stringToSign = getStringToSign(method, url, headers, payload, region, service)
+			//println("cannonicalRequest=${getCannonicalRequest(method, url, headers, payload)}")
+			//println("derivedSigningKey=$derivedSigningKey")
+			//println("stringToSign=$stringToSign")
 			return HMAC(derivedSigningKey, stringToSign.toByteArray(Charsets.UTF_8)).toHexStringLower()
 		}
 
@@ -142,6 +148,12 @@ object AmazonAuth {
 			//AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20150830/us-east-1/iam/aws4_request, SignedHeaders=content-type;host;x-amz-date, Signature=5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7
 			val signature = getSignature(secretKey, method, url, headers, payload, region, service)
 			return "AWS4-HMAC-SHA256 Credential=$accessKey/$ddate/$region/$service/aws4_request, SignedHeaders=$signedHeaders, Signature=$signature"
+		}
+
+		fun signHeaders(accessKey: String, secretKey: String, method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray, region: String, service: String): Http.Headers {
+			return headers.withReplaceHeaders(
+					"Authorization" to getAuthorization(accessKey, secretKey, method, url, headers, payload, region, service)
+			)
 		}
 	}
 }

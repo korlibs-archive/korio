@@ -52,7 +52,7 @@ class AndroidHttpClientFactory : HttpFactory() {
 						status = con.responseCode,
 						statusText = con.responseMessage,
 						headers = Http.Headers.fromListMap(con.headerFields),
-						content = con.inputStream.toAsync().toAsyncStream()
+						content = if (con.responseCode < 400) con.inputStream.toAsync().toAsyncStream() else con.errorStream.toAsync().toAsyncStream()
 				)
 			} catch (e: FileNotFoundException) {
 				Response(

@@ -2,10 +2,7 @@ package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.service.Services
-import com.soywiz.korio.stream.AsyncInputStream
-import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.openAsync
-import com.soywiz.korio.stream.readAll
+import com.soywiz.korio.stream.*
 import java.io.IOException
 import java.nio.charset.Charset
 
@@ -146,14 +143,22 @@ open class HttpServer protected constructor() {
 	}
 }
 
-class LogHttpClient : HttpClient() {
+class LogHttpClient(val redirect: HttpClient? = null) : HttpClient() {
 	val log = arrayListOf<String>()
 	var response = HttpClient.Response(200, "OK", Http.Headers(), "LogHttpClient.response".toByteArray(Charsets.UTF_8).openAsync())
 
 	suspend override fun request(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
-		val contentString = content?.readAll()?.toString(Charsets.UTF_8)
+		val contentString = content?.slice()?.readAll()?.toString(Charsets.UTF_8)
 		log += "$method, $url, $headers, $contentString"
-		return response
+		if (redirect != null) {
+			return redirect.request(method, url, headers, content)
+		} else {
+			return response
+		}
+	}
+
+	fun setTextResponse(text: String, status: Int = 200, statusText: String = "OK", headers: Http.Headers = Http.Headers()) {
+		response = HttpClient.Response(status, statusText, headers, text.toByteArray(Charsets.UTF_8).openAsync())
 	}
 
 	fun getAndClearLog() = log.toList().apply { log.clear() }
