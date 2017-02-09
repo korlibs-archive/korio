@@ -11,6 +11,7 @@ import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.net.http.createHttpClient
 import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.stream.openAsync
+import com.soywiz.korio.util.ClassFactory
 import com.soywiz.korio.util.Dynamic
 import com.soywiz.korio.util.TimeProvider
 import java.net.URL
@@ -20,6 +21,10 @@ import java.util.*
 // http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Operations.html
 // @TODO: Retry + Scale Capacity Units
 class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val region: String, val client: HttpClient, val timeProvider: TimeProvider = TimeProvider()) {
+	// @TODO: Add createTable for Class<T>
+	//annotation class HashKey
+	//annotation class RangeKey
+
 	enum class Kind(val type: String) {
 		STRING("S"), NUMBER("N"), BINARY("B"), BOOL("BOOL"),
 		NULL("NULL"), MAP("M"), LIST("L"),
@@ -35,6 +40,23 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 			return DynamoDB(AmazonAuth.getCredentials(accessKey, secretKey)!!, endpoint, region, httpClient, timeProvider)
 		}
 	}
+
+	class Typed<T>(val db: DynamoDB, val clazz: Class<T>, val tableName: String) {
+		val classFactory = ClassFactory(clazz)
+
+		suspend fun query(limit: Int? = null, expr: QExpr.TypedBuilder<T>.() -> QExpr): List<T> {
+			return db.query(tableName, limit = limit, expr = {
+				expr(QExpr.TypedBuilder())
+			}).filterNotNull().map { classFactory.create(it) }
+		}
+
+		suspend fun put(vararg items: T) {
+			db.putItems(tableName, *items.map { classFactory.toMap(it) }.toTypedArray())
+		}
+	}
+
+	inline fun <reified T> typed(tableName: String) = Typed(this, T::class.java, tableName)
+	fun <T> typed(clazz: Class<T>, tableName: String) = Typed(this, clazz, tableName)
 
 	private fun serializeItem(obj: Any?): Any? = when (obj) {
 		null -> mapOf(Kind.NULL.type to null)
@@ -93,10 +115,10 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 											)
 									)
 								}
-						),
-						"ReturnConsumedCapacity" to "TOTAL"
+						)
+						//,"ReturnConsumedCapacity" to "TOTAL"
 				))
-				println(res)
+				//println(res)
 			}
 		}
 	}
@@ -108,10 +130,10 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 
 	fun QExpr.build(ctx: Ctx): String {
 		when (this) {
-			is QExpr.EQ -> {
+			is QExpr.BINOP -> {
 				val id = ctx.lastId++
 				ctx.args[":v$id"] = value
-				return "$key = :v$id"
+				return "$key ${this.op} :v$id"
 			}
 			is QExpr.AND -> {
 				val ls = l.build(ctx)
@@ -157,12 +179,12 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 	}
 
 	suspend fun putItem(tableName: String, item: Map<String, Any?>) {
-		val res = request("PutItem ", mapOf(
+		request("PutItem ", mapOf(
 				"TableName" to tableName,
-				"Item" to serializeObject(item),
-				"ReturnConsumedCapacity" to "TOTAL"
+				"Item" to serializeObject(item)
+				//,"ReturnConsumedCapacity" to "TOTAL"
 		))
-		println(res)
+		//println(res)
 	}
 
 	suspend fun deleteTableIfExists(name: String) {
@@ -170,29 +192,36 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 	}
 
 	suspend fun deleteTable(name: String) {
-		val res = request("DeleteTable", mapOf(
+		request("DeleteTable", mapOf(
 				"TableName" to name
 		))
-		println(res)
+		//println(res)
 	}
 
-	suspend fun createTable(name: String, types: Map<String, Kind>, hashKey: String, rangeKey: String? = null, readCapacityUnits: Int = 5, writeCapacityUnits: Int = 5) {
-		val KeySchema = arrayListOf(
-				mapOf("AttributeName" to hashKey, "KeyType" to "HASH")
-		)
+	suspend fun createTableIfNotExists(name: String, hashKey: Pair<String, Kind>, rangeKey: Pair<String, Kind>? = null, readCapacityUnits: Int = 5, writeCapacityUnits: Int = 5) {
+		try {
+			createTable(name, hashKey, rangeKey, readCapacityUnits, writeCapacityUnits)
+		} catch (e: ResourceInUseException) {
+		}
+	}
+
+	suspend fun createTable(name: String, hashKey: Pair<String, Kind>, rangeKey: Pair<String, Kind>? = null, readCapacityUnits: Int = 5, writeCapacityUnits: Int = 5) {
+		val AttributeDefinitions = arrayListOf(mapOf("AttributeName" to hashKey.first, "AttributeType" to hashKey.second.type))
+		val KeySchema = arrayListOf(mapOf("AttributeName" to hashKey.first, "KeyType" to "HASH"))
 
 		if (rangeKey != null) {
-			KeySchema += mapOf("AttributeName" to rangeKey, "KeyType" to "RANGE")
+			AttributeDefinitions += mapOf("AttributeName" to rangeKey.first, "AttributeType" to rangeKey.second.type)
+			KeySchema += mapOf("AttributeName" to rangeKey.first, "KeyType" to "RANGE")
 		}
 
-		val res = request("CreateTable", mapOf(
+		request("CreateTable", mapOf(
 				"TableName" to name,
-				"AttributeDefinitions" to types.map { mapOf("AttributeName" to it.key, "AttributeType" to it.value.type) },
+				"AttributeDefinitions" to AttributeDefinitions,
 				"KeySchema" to KeySchema,
 				//"LocalSecondaryIndexes" to listOf<Any>(),
 				"ProvisionedThroughput" to mapOf("ReadCapacityUnits" to readCapacityUnits, "WriteCapacityUnits" to writeCapacityUnits)
 		))
-		println(res)
+		//println(res)
 	}
 
 	suspend fun listTables(): List<String> {
@@ -202,7 +231,9 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 	}
 
 	suspend private fun request(target: String, payload: Map<String, Any?>): Map<String, Any?> {
-		val content = Json.encode(payload).toByteArray()
+		val contentJson = Json.encode(payload)
+		val content = contentJson.toByteArray()
+		//println(contentJson)
 
 		val url = endpoint ?: URL("https://dynamodb.$region.amazonaws.com")
 
@@ -234,9 +265,20 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 			} catch (e: Throwable) {
 				throw RuntimeException(resText)
 			}
+			val type = info["__type"] ?: "RuntimeException"
 			val message = info.entries.firstOrNull { it.key.equals("message", ignoreCase = true) }?.value
-			//println(info["__type"])
-			throw RuntimeException("$message : " + resText)
+			val msg = "$message : " + resText
+			//println()
+
+			when (type) {
+				"com.amazonaws.dynamodb.v20120810#ResourceInUseException" -> throw ResourceInUseException(msg)
+				"com.amazonaws.dynamodb.v20120810#ProvisionedThroughputExceededException" -> throw ProvisionedThroughputExceededException(msg)
+				else -> throw RuntimeException(msg)
+			}
 		}
 	}
+
+	open class AmazonException(msg: String) : RuntimeException(msg)
+	class ProvisionedThroughputExceededException(msg: String) : AmazonException(msg)
+	class ResourceInUseException(msg: String) : AmazonException(msg)
 }
