@@ -90,7 +90,7 @@ class S3(val credentials: AmazonAuth.Credentials?, val endpoint: String, val htt
 	private fun parsePath(path: String): ParsedPath {
 		val npath = path.trim('/')
 		val parts = npath.split('/', limit = 2)
-		return ParsedPath(parts[0].trim('/'), parts[1].trim('/'))
+		return ParsedPath(parts[0].trim('/'), parts.getOrElse(1) { "" }.trim('/'))
 	}
 
 	private fun genHeaders(method: Http.Method, path: ParsedPath, headers: Http.Headers = Http.Headers()): Http.Headers {

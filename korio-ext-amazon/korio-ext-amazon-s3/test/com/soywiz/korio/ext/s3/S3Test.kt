@@ -47,4 +47,11 @@ class S3Test {
 				httpClient.getAndClearLog()
 		)
 	}
+
+	@Test
+	fun checkAbsoluteUrl() = syncTest {
+		Assert.assertEquals("https://.s3.amazonaws.com/", s3.absolutePath)
+		Assert.assertEquals("https://test.s3.amazonaws.com/", s3["test"].absolutePath)
+		Assert.assertEquals("https://hello.s3.amazonaws.com/world", s3["hello/world"].absolutePath)
+	}
 }
