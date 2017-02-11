@@ -8,7 +8,7 @@ import com.soywiz.korio.vfs.*
 import java.io.File
 import java.net.URLClassLoader
 
-class ResourcesVfsProviderJvm : ResourcesVfsProvider {
+class ResourcesVfsProviderJvm : ResourcesVfsProvider() {
 	override fun invoke(): Vfs {
 		val classLoader: ClassLoader = ClassLoader.getSystemClassLoader()
 		val merged = MergedVfs()

@@ -44,6 +44,7 @@ abstract class EventLoop : Services.Impl() {
 					}
 				})
 			}
+			impl.loop()
 		}
 
 		fun queue(handler: () -> Unit): Unit = impl.setImmediate(handler)
@@ -76,6 +77,7 @@ abstract class EventLoop : Services.Impl() {
 	}
 
 	open fun init(): Unit = Unit
+	open fun loop(): Unit = Unit
 	abstract fun setTimeout(ms: Int, callback: () -> Unit): Closeable
 
 	open fun setInterval(ms: Int, callback: () -> Unit): Closeable {

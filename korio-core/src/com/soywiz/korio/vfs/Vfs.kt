@@ -66,7 +66,7 @@ abstract class Vfs {
 	}
 
 	suspend open fun setSize(path: String, size: Long): Unit {
-		open(path, mode = VfsOpenMode.WRITE).setLength(size)
+		open(path, mode = VfsOpenMode.WRITE).use { this.setLength(size) }
 	}
 
 	suspend open fun setAttributes(path: String, attributes: List<Attribute>): Unit = Unit

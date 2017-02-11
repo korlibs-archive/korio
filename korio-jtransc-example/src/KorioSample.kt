@@ -1,14 +1,16 @@
 @file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
 
 import com.soywiz.korio.async.EventLoop
-import com.soywiz.korio.async.map
-import com.soywiz.korio.async.spawn
-import com.soywiz.korio.async.toList
-import com.soywiz.korio.stream.readU8
-import com.soywiz.korio.vfs.ResourcesVfs
-import com.soywiz.korio.vfs.UrlVfs
-import com.soywiz.korio.vfs.openAsIso
+import com.soywiz.korio.vfs.LocalVfs
 
+fun main(args: Array<String>) = EventLoop.main {
+	val url = LocalVfs("""C:\projects\kor\korio\korio-jtransc-example\build\jtransc-cs""")
+	println(url["demo"].mkdir())
+	println(url["hello.txt"].stat())
+	println(url["hello.txt"].readString())
+}
+
+/*
 fun main(args: Array<String>) = EventLoop.main {
 	//println(LocalVfs("/").list().toList())
 
@@ -76,3 +78,4 @@ fun main(args: Array<String>) = EventLoop.main {
 	//resources["program.js"].read()
 	//println("Hello world!")
 }
+*/

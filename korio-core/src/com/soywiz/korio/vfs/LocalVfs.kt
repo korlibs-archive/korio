@@ -1,5 +1,6 @@
 package com.soywiz.korio.vfs
 
+import com.soywiz.korio.service.Services
 import java.io.File
 
 fun LocalVfs(base: String): VfsFile = LocalVfs()[base]
@@ -14,7 +15,7 @@ fun ExternalStorageVfs() = LocalVfs()[localVfsProvider.getExternalStorageFolder(
 
 fun LocalVfs(): VfsFile = localVfsProvider().root
 
-abstract class LocalVfsProvider {
+abstract class LocalVfsProvider : Services.Impl() {
 	abstract operator fun invoke(): Vfs
 	open fun getCacheFolder(): String = System.getProperty("java.io.tmpdir")
 	open fun getExternalStorageFolder(): String = System.getProperty("java.io.tmpdir")

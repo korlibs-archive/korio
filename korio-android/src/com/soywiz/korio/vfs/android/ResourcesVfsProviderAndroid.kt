@@ -56,7 +56,7 @@ val AndroidAssetsVfs by lazy {
 	}.root
 }
 
-class ResourcesVfsProviderAndroid : ResourcesVfsProvider {
+class ResourcesVfsProviderAndroid : ResourcesVfsProvider() {
 	val merged = object : MergedVfs() {
 		override fun toString(): String = "ResourcesVfs"
 	}

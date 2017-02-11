@@ -6,7 +6,7 @@ import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.util.OS
 import com.soywiz.korio.vfs.*
 
-class ResourcesVfsProviderJs : ResourcesVfsProvider {
+class ResourcesVfsProviderJs : ResourcesVfsProvider() {
 	override fun invoke(): Vfs {
 		return EmbededResourceListing(if (OS.isNodejs) {
 			LocalVfs(getCWD())
