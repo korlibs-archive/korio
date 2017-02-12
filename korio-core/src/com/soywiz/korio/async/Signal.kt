@@ -2,42 +2,40 @@
 
 package com.soywiz.korio.async
 
+import com.soywiz.korio.ds.LinkedList2
 import java.io.Closeable
-import java.util.*
 import java.util.concurrent.ConcurrentLinkedQueue
 
 class Signal<T>(val onRegister: () -> Unit = {}) : AsyncSequence<T> {
 	internal val onceHandlers = ConcurrentLinkedQueue<(T) -> Unit>()
-	internal val handlers = arrayListOf<(T) -> Unit>()
 
-	fun once(handler: (T) -> Unit): Closeable {
-		onceHandlers += handler
-		return Closeable {
-			onceHandlers -= handler
+	inner class Node(val once: Boolean, val item: (T) -> Unit) : LinkedList2.Node<Node>(), Closeable {
+		override fun close() {
+			handlers.remove(this)
 		}
 	}
 
-	fun add(handler: (T) -> Unit): Closeable {
+	private var handlers = LinkedList2<Node>()
+
+	fun once(handler: (T) -> Unit): Closeable = _add(true, handler)
+	fun add(handler: (T) -> Unit): Closeable = _add(false, handler)
+
+	private fun _add(once: Boolean, handler: (T) -> Unit): Closeable {
 		onRegister()
-		synchronized(handlers) { handlers += handler }
-		return Closeable { synchronized(handlers) { handlers -= handler } }
+		val node = Node(once, handler)
+		handlers.add(node)
+		return node
 	}
 
 	operator fun invoke(value: T) {
 		EventLoop.queue {
-			while (onceHandlers.isNotEmpty()) {
-				val handler = onceHandlers.remove()
-				handler(value)
-			}
-
-			for (handler in synchronized(handlers) { handlers.toList() }) {
-				handler(value)
+			val it = handlers.iterator()
+			while (it.hasNext()) {
+				val node = it.next()
+				if (node.once) it.remove()
+				node.item(value)
 			}
 		}
-		//while (handlers.isNotEmpty()) {
-		//	val handler = handlers.remove()
-		//	handler.invoke(value)
-		//}
 	}
 
 	operator fun invoke(value: (T) -> Unit): Closeable = add(value)
@@ -53,7 +51,7 @@ operator fun Signal<Unit>.invoke() = invoke(Unit)
 
 suspend fun <T> Signal<T>.waitOne(): T = suspendCancellableCoroutine { c ->
 	var close: Closeable? = null
-	close = add {
+	close = once {
 		close?.close()
 		c.resume(it)
 	}
