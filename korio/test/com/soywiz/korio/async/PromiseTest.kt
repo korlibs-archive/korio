@@ -19,7 +19,7 @@ class PromiseTest {
 	}
 
 	@Test
-	fun name() = sync {
+	fun name() = syncTest {
 		var out = ""
 		val p = spawn {
 			try {
