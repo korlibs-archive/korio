@@ -9,7 +9,7 @@ import org.junit.Test
 
 class HttpTest {
 	@Test
-	fun name() = syncTest {
+	fun testClient() = syncTest {
 		val server = vx<HttpServer> {
 			vertx.createHttpServer().requestHandler { req ->
 				val res = req.response()

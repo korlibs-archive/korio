@@ -1,12 +1,12 @@
 package com.soywiz.korio.vertx
 
-import com.soywiz.korio.async.AsyncQueue
 import com.soywiz.korio.async.ProduceConsumer
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.toAsyncInputStream
-import com.soywiz.korio.ds.MapList
+import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.net.http.HttpFactory
+import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.readBytes
 import io.vertx.core.buffer.Buffer
@@ -16,20 +16,19 @@ import io.vertx.core.http.HttpMethod
 import java.net.URL
 
 class VertxHttpClientFactory : HttpFactory() {
-	override val available: Boolean = false
+	override val available: Boolean = true
 	override val priority: Int = 500
 
-	//override fun create(): HttpClient = VertxHttpClient()
-	override fun createClient(): HttpClient = TODO()
+	override fun createClient(): HttpClient = VertxHttpClient()
+	override fun createServer(): HttpServer = TODO()
 }
 
-/*
 class VertxHttpClient : HttpClient() {
 	val vxMethods = HttpMethod.values().map { it.name to it }.toMap()
-	val krMethods = HttpClient.Method.values().map { it.name to it }.toMap()
+	val krMethods = Http.Method.values().map { it.name to it }.toMap()
 	val convertMethod = krMethods.values.map { it to vxMethods[it.name] }.toMap()
 
-	suspend override fun request(method: Method, url: String, headers: Headers, content: AsyncStream?): Response {
+	suspend override fun request(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
 		val urlUrl = URL(url)
 		val ssl = when (urlUrl.protocol) {
 			"https", "wss" -> true
@@ -48,11 +47,25 @@ class VertxHttpClient : HttpClient() {
 
 		val p = ProduceConsumer<ByteArray>()
 
+		var resolved = false
 		val deferred = Promise.Deferred<HttpClientResponse>()
 
 		req.handler { res ->
-			res.handler { p.produce(it.bytes) }
-			res.endHandler { deferred.resolve(res) }
+			fun checkSent() {
+				if (!resolved) {
+					resolved = true
+					deferred.resolve(res)
+				}
+			}
+
+			res.handler {
+				checkSent()
+				p.produce(it.bytes)
+			}
+			res.endHandler {
+				checkSent()
+				p.close(byteArrayOf())
+			}
 		}
 
 		req.end()
@@ -62,9 +75,8 @@ class VertxHttpClient : HttpClient() {
 		return Response(
 				status = res.statusCode(),
 				statusText = res.statusMessage(),
-				headers = HttpClient.Headers(MapList(res.headers().map { it.key to it.value })),
+				headers = Http.Headers(res.headers().map { it.key to it.value }),
 				content = p.toAsyncInputStream()
 		)
 	}
 }
-*/

@@ -11,8 +11,7 @@ import java.util.concurrent.CancellationException
 typealias CancelHandler = Signal<Unit>
 
 interface Consumer<T> {
-	suspend fun consume(): T
-	suspend fun consumeWithCancelHandler(cancel: CancelHandler): T
+	suspend fun consume(cancel: CancelHandler? = null): T?
 }
 
 interface Producer<T> {
@@ -21,10 +20,17 @@ interface Producer<T> {
 
 class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 	val items = LinkedList<T>()
-	val consumers = LinkedList<(T) -> Unit>()
+	val consumers = LinkedList<(T?) -> Unit>()
+	private var closed = false
 
 	override fun produce(v: T) {
 		items.addLast(v)
+		flush()
+	}
+
+	fun close(v: T) {
+		closed = true
+		items.addLast(null)
 		flush()
 	}
 
@@ -36,21 +42,20 @@ class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 		}
 	}
 
-	suspend override fun consume(): T = korioSuspendCoroutine { c ->
-		consumers += { c.resume(it) }
-		flush()
-	}
-
-	suspend override fun consumeWithCancelHandler(cancel: CancelHandler): T = korioSuspendCoroutine { c ->
-		val consumer: (T) -> Unit = { c.resume(it) }
-		cancel {
-			consumers -= consumer
-			c.resumeWithException(CancellationException())
+	suspend override fun consume(cancel: CancelHandler?): T? = korioSuspendCoroutine { c ->
+		val consumer: (T?) -> Unit = {
+			c.resume(it)
+			//if (it != null) c.resume(it) else c.resumeWithException(EOFException())
+		}
+		if (cancel != null) {
+			cancel {
+				consumers -= consumer
+				c.resumeWithException(CancellationException())
+			}
 		}
 		consumers += consumer
 		flush()
 	}
-
 }
 
 fun <T> asyncProducer(callback: suspend Producer<T>.() -> Unit): Consumer<T> {
@@ -70,6 +75,7 @@ class AsyncProducerStream(val producer: Producer<ByteArray>) : AsyncOutputStream
 }
 
 class AsyncConsumerStream(val consumer: Consumer<ByteArray>) : AsyncInputStream {
+	var eof = false
 	var current = BYTES_EMPTY
 	var currentPos = 0
 	val available get() = current.size - currentPos
@@ -77,12 +83,20 @@ class AsyncConsumerStream(val consumer: Consumer<ByteArray>) : AsyncInputStream 
 	suspend private fun ensureNonEmptyBuffer() {
 		while (available == 0) {
 			currentPos = 0
-			current = consumer.consume()
+			val item = consumer.consume()
+			if (item != null) {
+				current = item
+			} else {
+				current = BYTES_EMPTY
+				eof = true
+				break
+			}
 		}
 	}
 
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		ensureNonEmptyBuffer()
+		if (eof) return -1
 		val actualRead = Math.min(len, available)
 		System.arraycopy(current, currentPos, buffer, offset, actualRead)
 		currentPos += actualRead
