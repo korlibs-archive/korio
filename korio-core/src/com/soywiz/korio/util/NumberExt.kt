@@ -78,3 +78,13 @@ infix fun Int.umod(other: Int): Int {
 		else -> remainder
 	}
 }
+
+fun Double.convertRange(srcMin: Double, srcMax: Double, dstMin: Double, dstMax: Double): Double {
+	val ratio = (this - srcMin) / (srcMax - srcMin)
+	return (dstMin + (dstMax - dstMin) * ratio)
+}
+
+fun Long.convertRange(srcMin: Long, srcMax: Long, dstMin: Long, dstMax: Long): Long {
+	val ratio = (this - srcMin).toDouble() / (srcMax - srcMin).toDouble()
+	return (dstMin + (dstMax - dstMin) * ratio).toLong()
+}

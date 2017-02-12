@@ -30,6 +30,8 @@ private fun toHexStringBase(data: ByteArray, digits: String = HEX_DIGITS): Strin
 	return String(out)
 }
 
+val ByteArray.hexString: String get() = toHexStringBase(this, HEX_DIGITS_LOWER)
+
 fun ByteArray.toHexString() = toHexStringBase(this, HEX_DIGITS_UPPER)
 fun ByteArray.toHexStringLower() = toHexStringBase(this, HEX_DIGITS_LOWER)
 fun ByteArray.toHexStringUpper() = toHexStringBase(this, HEX_DIGITS_UPPER)
