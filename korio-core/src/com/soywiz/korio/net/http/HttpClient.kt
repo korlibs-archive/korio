@@ -3,6 +3,7 @@ package com.soywiz.korio.net.http
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.service.Services
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.AsyncCloseable
 import java.io.IOException
 import java.nio.charset.Charset
 
@@ -105,9 +106,19 @@ open class HttpClient protected constructor() {
 		fun withStringResponse(str: String, charset: Charset = Charsets.UTF_8) = this.copy(content = str.toByteArray(charset).openAsync())
 	}
 
-	suspend open fun request(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null): Response {
+	suspend open protected fun requestInternal(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null): Response {
 		TODO()
 	}
+
+	suspend fun request(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null): Response {
+		val contentLength = content?.getLength() ?: 0L
+		var actualHeaders = headers
+		if (content != null && !headers.any { it.first.equals("content-length", ignoreCase = true) }) {
+			actualHeaders = actualHeaders.withReplaceHeaders("content-length" to "$contentLength")
+		}
+		return requestInternal(method, url, actualHeaders, content)
+	}
+
 
 	class HttpException(val msg: String) : IOException(msg)
 
@@ -126,7 +137,7 @@ open class HttpClient protected constructor() {
 	}
 }
 
-open class HttpServer protected constructor() {
+open class HttpServer protected constructor() : AsyncCloseable {
 	companion object {
 		operator fun invoke() = httpFactory.createServer()
 	}
@@ -134,12 +145,26 @@ open class HttpServer protected constructor() {
 	class Request {
 	}
 
-	suspend open fun listen(port: Int, host: String = "127.0.0.1", handler: suspend (Request) -> Unit) {
+	suspend open protected fun listenInternal(port: Int, host: String = "127.0.0.1", handler: suspend (Request) -> Unit) {
 		val deferred = Promise.Deferred<Unit>()
 		deferred.onCancel {
 
 		}
 		deferred.promise.await()
+	}
+
+	open val actualPort: Int = 0
+
+	suspend open protected fun closeInternal() {
+	}
+
+	suspend fun listen(port: Int, host: String = "127.0.0.1", handler: suspend (Request) -> Unit): HttpServer {
+		listenInternal(port, host, handler)
+		return this
+	}
+
+	suspend override fun close() {
+		closeInternal()
 	}
 }
 
@@ -147,7 +172,7 @@ class LogHttpClient(val redirect: HttpClient? = null) : HttpClient() {
 	val log = arrayListOf<String>()
 	var response = HttpClient.Response(200, "OK", Http.Headers(), "LogHttpClient.response".toByteArray(Charsets.UTF_8).openAsync())
 
-	suspend override fun request(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
+	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
 		val contentString = content?.slice()?.readAll()?.toString(Charsets.UTF_8)
 		log += "$method, $url, $headers, $contentString"
 		if (redirect != null) {

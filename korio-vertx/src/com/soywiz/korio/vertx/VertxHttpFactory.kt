@@ -20,7 +20,31 @@ class VertxHttpClientFactory : HttpFactory() {
 	override val priority: Int = 500
 
 	override fun createClient(): HttpClient = VertxHttpClient()
-	override fun createServer(): HttpServer = TODO()
+	override fun createServer(): HttpServer = VertxHttpServer()
+}
+
+class VertxHttpServer : HttpServer() {
+	val vxServer = vertx.createHttpServer()
+
+	override val actualPort: Int get() = vxServer.actualPort()
+
+	suspend override fun listenInternal(port: Int, host: String, handler: suspend (Request) -> Unit) {
+		vxServer.requestHandler { req ->
+			TODO()
+			//var content = ""
+			//req.handler {
+			//	content += it
+			//}
+			//req.endHandler {
+			//	val res = req.response()
+			//	res.end("hello ${req.method()} ${req.path()} : '$content'")
+			//}
+		}.listen(port, host)
+	}
+
+	suspend override fun closeInternal() {
+		vxServer.close()
+	}
 }
 
 class VertxHttpClient : HttpClient() {
@@ -28,7 +52,7 @@ class VertxHttpClient : HttpClient() {
 	val krMethods = Http.Method.values().map { it.name to it }.toMap()
 	val convertMethod = krMethods.values.map { it to vxMethods[it.name] }.toMap()
 
-	suspend override fun request(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
+	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
 		val urlUrl = URL(url)
 		val ssl = when (urlUrl.protocol) {
 			"https", "wss" -> true
@@ -38,12 +62,6 @@ class VertxHttpClient : HttpClient() {
 		val vxclient = vertx.createHttpClient(HttpClientOptions().setSsl(ssl))
 		val req = vxclient.requestAbs(vxMethod, url)
 		for ((k, v) in headers) req.putHeader(k, v)
-		if (content != null) {
-			while (!content.eof()) {
-				val data = content.readBytes(0x1000)
-				req.write(Buffer.buffer(data))
-			}
-		}
 
 		val p = ProduceConsumer<ByteArray>()
 
@@ -68,6 +86,12 @@ class VertxHttpClient : HttpClient() {
 			}
 		}
 
+		if (content != null) {
+			while (!content.eof()) {
+				val data = content.readBytes(0x1000)
+				req.write(Buffer.buffer(data))
+			}
+		}
 		req.end()
 
 		val res = deferred.promise.await()

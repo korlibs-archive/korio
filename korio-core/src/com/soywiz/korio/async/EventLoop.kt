@@ -51,6 +51,10 @@ abstract class EventLoop : Services.Impl() {
 		fun setImmediate(handler: () -> Unit): Unit = impl.setImmediate(handler)
 		fun setTimeout(ms: Int, callback: () -> Unit): Closeable = impl.setTimeout(ms, callback)
 		fun setInterval(ms: Int, callback: () -> Unit): Closeable = impl.setInterval(ms, callback)
+		fun setIntervalImmediate(ms: Int, callback: () -> Unit): Closeable {
+			impl.setImmediate(callback)
+			return impl.setInterval(ms, callback)
+		}
 		fun requestAnimationFrame(handler: () -> Unit): Unit = impl.requestAnimationFrame(handler)
 
 		suspend fun sleep(ms: Int): Unit = suspendCancellableCoroutine { c ->

@@ -2,9 +2,9 @@ package com.soywiz.korio.ext.db.redis
 
 // @TODO: Missing commands
 
-fun Redis.key(key: String) = RedisKey(this, key)
+fun RedisCommand.key(key: String) = RedisKey(this, key)
 
-class RedisKey(val client: Redis, val key: String)
+class RedisKey(val client: RedisCommand, val key: String)
 
 suspend fun RedisKey.hset(member: String, value: String): Long = client.hset(key, member, value)
 

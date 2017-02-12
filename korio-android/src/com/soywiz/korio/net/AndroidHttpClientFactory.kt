@@ -16,7 +16,7 @@ import java.net.URL
 
 class AndroidHttpClientFactory : HttpFactory() {
 	override fun createClient(): HttpClient = object : HttpClient() {
-		suspend override fun request(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = executeInWorker {
+		suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = executeInWorker {
 			try {
 				val aurl = URL(url)
 				HttpURLConnection.setFollowRedirects(false)

@@ -1,85 +1,127 @@
 package com.soywiz.korio.ext.db.redis
 
 import com.soywiz.korio.async.AsyncThread
+import com.soywiz.korio.ds.AsyncPool
 import com.soywiz.korio.net.AsyncClient
+import com.soywiz.korio.net.HostWithPort
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.AsyncCloseable
 import com.soywiz.korio.util.substr
 import java.nio.charset.Charset
 
 // https://redis.io/topics/protocol
-class Redis(reader: AsyncInputStream, val writer: AsyncOutputStream, val close: AsyncCloseable, val charset: Charset = Charsets.UTF_8) {
-	private val reader = reader.toBuffered(bufferSize = 0x100)
-	//private val reader = reader
-
+class Redis(val maxConnections: Int = 50, private val clientFactory: suspend () -> Client) : RedisCommand {
 	companion object {
-		operator suspend fun invoke(host: String = "127.0.0.1", port: Int = 6379, charset: Charset = Charsets.UTF_8, password: String? = null): Redis {
-			val tcpClient = AsyncClient(host, port)
-			val client = Redis(tcpClient, tcpClient, tcpClient, charset)
-			if (password != null) client.auth(password)
-			return client
+		operator suspend fun invoke(hosts: List<String> = listOf("127.0.0.1:6379"), maxConnections: Int = 50, charset: Charset = Charsets.UTF_8, password: String? = null): Redis {
+			val hostsWithPorts = hosts.map { HostWithPort.parse(it, 6379) }
+
+			var index: Int = 0
+
+			return Redis(maxConnections) {
+				val host = hostsWithPorts[index++ % hostsWithPorts.size] // Round Robin
+				val tcpClient = AsyncClient(host.host, host.port)
+				val client = Client(tcpClient, tcpClient, tcpClient, charset)
+				if (password != null) client.auth(password)
+				client
+			}
 		}
 
 		private const val CR = '\r'.toByte()
 		private const val LF = '\n'.toByte()
 	}
 
-	suspend fun close() = this.close.close()
+	class Client(reader: AsyncInputStream, val writer: AsyncOutputStream, val close: AsyncCloseable, val charset: Charset = Charsets.UTF_8) : RedisCommand {
+		private val reader = reader.toBuffered(bufferSize = 0x100)
 
-	private val commandQueue = AsyncThread()
+		suspend fun close() = this.close.close()
 
-	suspend private fun readValue(): Any? {
-		val line = reader.readBufferedUntil(LF).toString(charset).trim()
-		//val line = reader.readLine(charset = charset).trim()
-		//println(line)
+		private val commandQueue = AsyncThread()
 
-		return when (line[0]) {
-			'+' -> line.substr(1) // Status reply
-			'-' -> throw ResponseException(line.substr(1)) // Error reply
-			':' -> line.substr(1).toLong() // Integer reply
-			'$' -> { // Bulk replies
-				val bytesToRead = line.substr(1).toInt()
-				if (bytesToRead == -1) {
-					null
-				} else {
-					val data = reader.readBytes(bytesToRead)
-					reader.skip(2) // CR LF
-					data.toString(charset)
+		suspend private fun readValue(): Any? {
+			val line = reader.readBufferedUntil(LF).toString(charset).trim()
+			//val line = reader.readLine(charset = charset).trim()
+			//println(line)
+
+			return when (line[0]) {
+				'+' -> line.substr(1) // Status reply
+				'-' -> throw ResponseException(line.substr(1)) // Error reply
+				':' -> line.substr(1).toLong() // Integer reply
+				'$' -> { // Bulk replies
+					val bytesToRead = line.substr(1).toInt()
+					if (bytesToRead == -1) {
+						null
+					} else {
+						val data = reader.readBytes(bytesToRead)
+						reader.skip(2) // CR LF
+						data.toString(charset)
+					}
 				}
+				'*' -> { // Array reply
+					val arraySize = line.substr(1).toLong()
+					(0 until arraySize).map { readValue() }
+				}
+				else -> throw ResponseException("Unknown param type '" + line[0] + "'")
 			}
-			'*' -> { // Array reply
-				val arraySize = line.substr(1).toLong()
-				(0 until arraySize).map { readValue() }
-			}
-			else -> throw ResponseException("Unknown param type '" + line[0] + "'")
-		}
-	}
-
-	suspend fun commandAny(vararg args: Any?): Any? {
-		var cmd = "*${args.size}\r\n"
-		for (arg in args) {
-			val sarg = "$arg"
-			// Length of the argument.
-			val size = sarg.toByteArray(charset).size
-			cmd += '$'
-			cmd += Integer.toString(size)
-			cmd += "\r\n"
-			cmd += sarg
-			cmd += "\r\n"
 		}
 
-		// Common queue is not required align reading because Redis support pipelining : https://redis.io/topics/pipelining
-		return commandQueue {
-			writer.writeBytes(cmd.toByteArray(charset))
+		suspend override fun commandAny(vararg args: Any?): Any? = commandQueue {
+			// @TODO: SLOWER:
+			//val cmd = ByteArrayOutputStream()
+			//val ps = PrintStream(cmd, true, Charsets.UTF_8.name())
+			//
+			//ps.print('*')
+			//ps.print(args.size)
+			//ps.print("\r\n")
+			//for (arg in args) {
+			//	val data = "$arg".toByteArray(charset)
+			//	ps.print('$')
+			//	ps.print(data.size)
+			//	ps.print("\r\n")
+			//	ps.write(data)
+			//	ps.print("\r\n")
+			//}
+			//
+			//// Common queue is not required align reading because Redis support pipelining : https://redis.io/topics/pipelining
+			//return commandQueue {
+			//	writer.writeBytes(cmd.toByteArray())
+			//	readValue()
+			//}
+
+			val cmd = StringBuilder()
+			cmd.append('*')
+			cmd.append(args.size)
+			cmd.append("\r\n")
+			for (arg in args) {
+				val sarg = "$arg"
+				// Length of the argument.
+				val size = sarg.toByteArray(charset).size
+				cmd.append('$')
+				cmd.append(size)
+				cmd.append("\r\n")
+				cmd.append(sarg)
+				cmd.append("\r\n")
+			}
+
+			// Common queue is not required align reading because Redis support pipelining : https://redis.io/topics/pipelining
+			writer.writeBytes(cmd.toString().toByteArray(charset))
 			readValue()
 		}
 	}
 
-	suspend fun commandArray(vararg args: Any?): List<String> = (commandAny(*args) as List<String>?) ?: listOf()
-	suspend fun commandString(vararg args: Any?): String? = commandAny(*args)?.toString()
-	suspend fun commandLong(vararg args: Any?): Long = commandAny(*args)?.toString()?.toLong() ?: 0L
-	suspend fun commandUnit(vararg args: Any?): Unit = run { commandAny(*args) }
+	private val clientPool = AsyncPool(maxItems = maxConnections) { clientFactory() }
+
+	suspend override fun commandAny(vararg args: Any?): Any? = clientPool.tempAlloc { it.commandAny(*args) }
 
 	class ResponseException(message: String) : Exception(message)
 }
 
+interface RedisCommand {
+	suspend fun commandAny(vararg args: Any?): Any?
+}
+
+@Suppress("UNCHECKED_CAST")
+suspend fun RedisCommand.commandArray(vararg args: Any?): List<String> = (commandAny(*args) as List<String>?) ?: listOf()
+
+suspend fun RedisCommand.commandString(vararg args: Any?): String? = commandAny(*args)?.toString()
+suspend fun RedisCommand.commandLong(vararg args: Any?): Long = commandAny(*args)?.toString()?.toLong() ?: 0L
+suspend fun RedisCommand.commandUnit(vararg args: Any?): Unit = run { commandAny(*args) }

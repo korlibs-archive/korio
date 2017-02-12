@@ -10,35 +10,47 @@ class EventLoopJvmAndCSharp : EventLoop() {
 
 	class Task(val time: Long, val callback: () -> Unit)
 
-	val tasks = PriorityQueue<Task>(128, { a, b ->
+	val lock = Object()
+
+	val timedTasks = PriorityQueue<Task>(128, { a, b ->
 		if (a == b) 0 else a.time.compareTo(b.time).compareToChain { if (a == b) 0 else -1 }
 	})
+
+	val immediateTasks = LinkedList<() -> Unit>()
 
 	override fun init(): Unit = Unit
 
 	override fun setImmediate(handler: () -> Unit) {
-		synchronized(tasks) { tasks += Task(0L, handler) }
+		synchronized(lock) { immediateTasks += handler }
 	}
 
 	override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
 		val task = Task(System.currentTimeMillis() + ms, callback)
-		synchronized(tasks) { tasks += task }
-		return Closeable { synchronized(tasks) { tasks -= task } }
+		synchronized(lock) { timedTasks += task }
+		return Closeable { synchronized(timedTasks) { timedTasks -= task } }
 	}
 
 	override fun step(ms: Int) {
-		val currentTime = System.currentTimeMillis()
-		while (true) {
-			val item = synchronized(tasks) { if (tasks.isNotEmpty()) tasks.peek() else null } ?: break
-			if (currentTime < item.time) break
-			synchronized(tasks) { tasks.remove() }
-			item.callback()
-			continue
+		timer@ while (true) {
+			val startTime = System.currentTimeMillis()
+			while (true) {
+				val currentTime = System.currentTimeMillis()
+				val item = synchronized(lock) { if (timedTasks.isNotEmpty() && currentTime >= timedTasks.peek().time) timedTasks.remove() else null } ?: break
+				item.callback()
+			}
+			while (true) {
+				if ((System.currentTimeMillis() - startTime) >= 50) {
+					continue@timer
+				}
+				val task = synchronized(lock) { if (immediateTasks.isNotEmpty()) immediateTasks.removeFirst() else null } ?: break
+				task()
+			}
+			break
 		}
 	}
 
 	override fun loop() {
-		while (synchronized(tasks) { tasks.isNotEmpty() } || (tasksInProgress.get() != 0)) {
+		while (synchronized(lock) { immediateTasks.isNotEmpty() || timedTasks.isNotEmpty() } || (tasksInProgress.get() != 0)) {
 			step(1)
 			Thread.sleep(1L)
 		}

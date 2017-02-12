@@ -343,6 +343,7 @@ fun SyncStreamBase.toSyncStream(position: Long = 0L) = SyncStream(this, position
 
 fun ByteArray.openSync(mode: String = "r"): SyncStream = MemorySyncStreamBase(ByteArrayBuffer(this)).toSyncStream(0L)
 fun ByteArray.openAsync(mode: String = "r"): AsyncStream = openSync(mode).toAsync()
+fun String.openAsync(charset: Charset = Charsets.UTF_8): AsyncStream = toByteArray(charset).openSync("r").toAsync()
 fun File.openSync(mode: String = "r"): SyncStream = FileSyncStreamBase(this, mode).toSyncStream()
 
 fun SyncStream.writeStream(source: SyncStream): Unit = source.copyTo(this)

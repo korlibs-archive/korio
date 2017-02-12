@@ -17,14 +17,14 @@ class RedisTest {
 
 		val server = serverToClient.toAsyncOutputStream()
 
-		server.writeString("+OK\r\n")
-		server.writeString("\$5\r\nworld\r\n")
-		server.writeString("\$5\r\nworld\r\n")
+		for (n in 0 until 10) {
+			server.writeString("+OK\r\n\$5\r\nworld\r\n\$5\r\nworld\r\n")
 
-		val redis = Redis(reader = serverToClient.toAsyncInputStream(), writer = clientToServer.toAsyncOutputStream(), close = AsyncCloseable.DUMMY)
-		//val redis = Redis()
-		redis.set("hello", "world")
-		assertEquals("world", redis.get("hello"))
-		assertEquals("world", redis.echo("world"))
+			val redis = Redis.Client(reader = serverToClient.toAsyncInputStream(), writer = clientToServer.toAsyncOutputStream(), close = AsyncCloseable.DUMMY)
+			//val redis = Redis()
+			redis.set("hello", "world")
+			assertEquals("world", redis.get("hello"))
+			assertEquals("world", redis.echo("world"))
+		}
 	}
 }

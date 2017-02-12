@@ -25,6 +25,7 @@ repositories {
 dependencies {
 	compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 	compile project(":korio")
+	compile project(":korio-ext-db-redis")
 	testCompile "junit:junit:4.11"
 }
 

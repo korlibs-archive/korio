@@ -3,17 +3,18 @@
 package com.soywiz.korio.async
 
 import java.io.Closeable
+import java.util.*
+import java.util.concurrent.ConcurrentLinkedQueue
 
 class Signal<T>(val onRegister: () -> Unit = {}) : AsyncSequence<T> {
+	internal val onceHandlers = ConcurrentLinkedQueue<(T) -> Unit>()
 	internal val handlers = arrayListOf<(T) -> Unit>()
 
 	fun once(handler: (T) -> Unit): Closeable {
-		var c: Closeable? = null
-		c = add {
-			c!!.close()
-			handler(it)
+		onceHandlers += handler
+		return Closeable {
+			onceHandlers -= handler
 		}
-		return c
 	}
 
 	fun add(handler: (T) -> Unit): Closeable {
@@ -24,6 +25,11 @@ class Signal<T>(val onRegister: () -> Unit = {}) : AsyncSequence<T> {
 
 	operator fun invoke(value: T) {
 		EventLoop.queue {
+			while (onceHandlers.isNotEmpty()) {
+				val handler = onceHandlers.remove()
+				handler(value)
+			}
+
 			for (handler in synchronized(handlers) { handlers.toList() }) {
 				handler(value)
 			}
