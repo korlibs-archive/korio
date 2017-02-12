@@ -8,19 +8,20 @@ import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.AsyncCloseable
 import com.soywiz.korio.util.substr
 import java.nio.charset.Charset
+import java.util.concurrent.atomic.AtomicLong
 
 // https://redis.io/topics/protocol
-class Redis(val maxConnections: Int = 50, private val clientFactory: suspend () -> Client) : RedisCommand {
+class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private val clientFactory: suspend () -> Client) : RedisCommand {
 	companion object {
-		operator suspend fun invoke(hosts: List<String> = listOf("127.0.0.1:6379"), maxConnections: Int = 50, charset: Charset = Charsets.UTF_8, password: String? = null): Redis {
+		operator suspend fun invoke(hosts: List<String> = listOf("127.0.0.1:6379"), maxConnections: Int = 50, charset: Charset = Charsets.UTF_8, password: String? = null, stats: Stats = Stats()): Redis {
 			val hostsWithPorts = hosts.map { HostWithPort.parse(it, 6379) }
 
 			var index: Int = 0
 
-			return Redis(maxConnections) {
+			return Redis(maxConnections, stats) {
 				val host = hostsWithPorts[index++ % hostsWithPorts.size] // Round Robin
 				val tcpClient = AsyncClient(host.host, host.port)
-				val client = Client(tcpClient, tcpClient, tcpClient, charset)
+				val client = Client(tcpClient, tcpClient, tcpClient, charset, stats)
 				if (password != null) client.auth(password)
 				client
 			}
@@ -30,7 +31,20 @@ class Redis(val maxConnections: Int = 50, private val clientFactory: suspend () 
 		private const val LF = '\n'.toByte()
 	}
 
-	class Client(reader: AsyncInputStream, val writer: AsyncOutputStream, val close: AsyncCloseable, val charset: Charset = Charsets.UTF_8) : RedisCommand {
+	class Stats {
+		val commandsQueued = AtomicLong()
+		val commandsStarted = AtomicLong()
+		val commandsPreWritten = AtomicLong()
+		val commandsWritten = AtomicLong()
+		val commandsErrored = AtomicLong()
+		val commandsFinished = AtomicLong()
+
+		override fun toString(): String {
+			return "Stats(commandsQueued=$commandsQueued, commandsStarted=$commandsStarted, commandsPreWritten=$commandsPreWritten, commandsWritten=$commandsWritten, commandsErrored=$commandsErrored, commandsFinished=$commandsFinished)"
+		}
+	}
+
+	class Client(reader: AsyncInputStream, val writer: AsyncOutputStream, val close: AsyncCloseable, val charset: Charset = Charsets.UTF_8, val stats: Stats = Stats()) : RedisCommand {
 		private val reader = reader.toBuffered(bufferSize = 0x100)
 
 		suspend fun close() = this.close.close()
@@ -64,47 +78,40 @@ class Redis(val maxConnections: Int = 50, private val clientFactory: suspend () 
 			}
 		}
 
-		suspend override fun commandAny(vararg args: Any?): Any? = commandQueue {
-			// @TODO: SLOWER:
-			//val cmd = ByteArrayOutputStream()
-			//val ps = PrintStream(cmd, true, Charsets.UTF_8.name())
-			//
-			//ps.print('*')
-			//ps.print(args.size)
-			//ps.print("\r\n")
-			//for (arg in args) {
-			//	val data = "$arg".toByteArray(charset)
-			//	ps.print('$')
-			//	ps.print(data.size)
-			//	ps.print("\r\n")
-			//	ps.write(data)
-			//	ps.print("\r\n")
-			//}
-			//
-			//// Common queue is not required align reading because Redis support pipelining : https://redis.io/topics/pipelining
-			//return commandQueue {
-			//	writer.writeBytes(cmd.toByteArray())
-			//	readValue()
-			//}
+		suspend override fun commandAny(vararg args: Any?): Any? {
+			stats.commandsQueued.incrementAndGet()
+			return commandQueue {
+				stats.commandsStarted.incrementAndGet()
+				try {
+					val cmd = StringBuilder()
+					cmd.append('*')
+					cmd.append(args.size)
+					cmd.append("\r\n")
+					for (arg in args) {
+						val sarg = "$arg"
+						// Length of the argument.
+						val size = sarg.toByteArray(charset).size
+						cmd.append('$')
+						cmd.append(size)
+						cmd.append("\r\n")
+						cmd.append(sarg)
+						cmd.append("\r\n")
+					}
 
-			val cmd = StringBuilder()
-			cmd.append('*')
-			cmd.append(args.size)
-			cmd.append("\r\n")
-			for (arg in args) {
-				val sarg = "$arg"
-				// Length of the argument.
-				val size = sarg.toByteArray(charset).size
-				cmd.append('$')
-				cmd.append(size)
-				cmd.append("\r\n")
-				cmd.append(sarg)
-				cmd.append("\r\n")
+					// Common queue is not required align reading because Redis support pipelining : https://redis.io/topics/pipelining
+					val data = cmd.toString().toByteArray(charset)
+					stats.commandsPreWritten.incrementAndGet()
+					writer.writeBytes(data)
+					stats.commandsWritten.incrementAndGet()
+					val res = readValue()
+					stats.commandsFinished.incrementAndGet()
+					res
+				} catch (t: Throwable) {
+					stats.commandsErrored.incrementAndGet()
+					println(t)
+					throw t
+				}
 			}
-
-			// Common queue is not required align reading because Redis support pipelining : https://redis.io/topics/pipelining
-			writer.writeBytes(cmd.toString().toByteArray(charset))
-			readValue()
 		}
 	}
 
@@ -125,3 +132,25 @@ suspend fun RedisCommand.commandArray(vararg args: Any?): List<String> = (comman
 suspend fun RedisCommand.commandString(vararg args: Any?): String? = commandAny(*args)?.toString()
 suspend fun RedisCommand.commandLong(vararg args: Any?): Long = commandAny(*args)?.toString()?.toLong() ?: 0L
 suspend fun RedisCommand.commandUnit(vararg args: Any?): Unit = run { commandAny(*args) }
+
+// @TODO: SLOWER:
+//val cmd = ByteArrayOutputStream()
+//val ps = PrintStream(cmd, true, Charsets.UTF_8.name())
+//
+//ps.print('*')
+//ps.print(args.size)
+//ps.print("\r\n")
+//for (arg in args) {
+//	val data = "$arg".toByteArray(charset)
+//	ps.print('$')
+//	ps.print(data.size)
+//	ps.print("\r\n")
+//	ps.write(data)
+//	ps.print("\r\n")
+//}
+//
+//// Common queue is not required align reading because Redis support pipelining : https://redis.io/topics/pipelining
+//return commandQueue {
+//	writer.writeBytes(cmd.toByteArray())
+//	readValue()
+//}

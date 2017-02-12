@@ -2,6 +2,7 @@ import com.soywiz.korio.async.EventLoop
 import com.soywiz.korio.async.spawnAndForget
 import com.soywiz.korio.ext.db.redis.Redis
 import com.soywiz.korio.ext.db.redis.hset
+import com.soywiz.korio.net.AsyncClient
 import java.util.concurrent.atomic.AtomicInteger
 
 fun main(args: Array<String>) = EventLoop.main {
@@ -12,9 +13,10 @@ fun main(args: Array<String>) = EventLoop.main {
 		val start = System.currentTimeMillis()
 		EventLoop.setIntervalImmediate(500) {
 			val elapsed = System.currentTimeMillis() - start
-			println("$elapsed: $completedCount/$startedCount")
+			println("$elapsed: $completedCount/$startedCount : ${redis.stats} : ${AsyncClient.Stats}")
 		}
-		for (n in 0 until 1000000) {
+		//for (n in 0 until 1000000) {
+		for (n in 0 until 100000) {
 			spawnAndForget {
 				try {
 					startedCount.incrementAndGet()

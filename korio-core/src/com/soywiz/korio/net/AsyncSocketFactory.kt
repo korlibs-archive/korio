@@ -4,6 +4,7 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.util.AsyncCloseable
+import java.util.concurrent.atomic.AtomicLong
 
 interface AsyncSocketFactory {
 	suspend fun createClient(): AsyncClient
@@ -17,7 +18,16 @@ interface AsyncClient : AsyncInputStream, AsyncOutputStream, AsyncCloseable {
 	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit
 	suspend override fun close(): Unit
 
+	object Stats {
+		val writeCountStart = AtomicLong()
+		val writeCountEnd = AtomicLong()
+		val writeCountError = AtomicLong()
+
+		override fun toString(): String = "AsyncClient.Stats($writeCountStart/$writeCountEnd/$writeCountError)"
+	}
+
 	companion object {
+
 		suspend operator fun invoke(host: String, port: Int) = createAndConnect(host, port)
 
 		suspend fun createAndConnect(host: String, port: Int): AsyncClient {

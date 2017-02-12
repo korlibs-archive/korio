@@ -1,5 +1,7 @@
 package com.soywiz.korio.coroutine
 
+import com.soywiz.korio.async.suspendCoroutineEL
+import com.soywiz.korio.async.toEventLoop
 import kotlin.coroutines.experimental.Continuation
 import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.createCoroutine
@@ -16,14 +18,18 @@ typealias EmptyCoroutineContext = kotlin.coroutines.experimental.EmptyCoroutineC
 typealias AbstractCoroutineContextElement = kotlin.coroutines.experimental.AbstractCoroutineContextElement
 
 //inline suspend fun <T> korioSuspendCoroutine(crossinline block: (Continuation<T>) -> Unit): T = kotlin.coroutines.experimental.suspendCoroutine(block)
-inline suspend fun <T> korioSuspendCoroutine(crossinline block: (Continuation<T>) -> Unit): T {
+
+inline suspend fun <T> korioSuspendCoroutine(crossinline block: (Continuation<T>) -> Unit): T = _korioSuspendCoroutine { c ->
+	block(c.toEventLoop())
+}
+
+inline suspend fun <T> _korioSuspendCoroutine(crossinline block: (Continuation<T>) -> Unit): T {
 	return kotlin.coroutines.experimental.intrinsics.suspendCoroutineOrReturn { c: Continuation<T> ->
 		val safe = UnsafeContinuation(c)
 		block(safe)
 		safe.getResult()
 	}
 }
-
 
 fun <R, T> (suspend R.() -> T).korioStartCoroutine(receiver: R, completion: Continuation<T>) = this.startCoroutine(receiver, completion)
 fun <T> (suspend () -> T).korioStartCoroutine(completion: Continuation<T>) = this.startCoroutine(completion)

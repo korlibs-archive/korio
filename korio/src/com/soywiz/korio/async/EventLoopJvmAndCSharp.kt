@@ -10,13 +10,13 @@ class EventLoopJvmAndCSharp : EventLoop() {
 
 	class Task(val time: Long, val callback: () -> Unit)
 
-	val lock = Object()
+	private val lock = Object()
 
-	val timedTasks = PriorityQueue<Task>(128, { a, b ->
+	private val timedTasks = PriorityQueue<Task>(128, { a, b ->
 		if (a == b) 0 else a.time.compareTo(b.time).compareToChain { if (a == b) 0 else -1 }
 	})
 
-	val immediateTasks = LinkedList<() -> Unit>()
+	private val immediateTasks = LinkedList<() -> Unit>()
 
 	override fun init(): Unit = Unit
 
@@ -57,32 +57,31 @@ class EventLoopJvmAndCSharp : EventLoop() {
 	}
 }
 
-/*
-class EventLoopJvm : EventLoop() {
-	override val priority: Int = 1000
-	override val available: Boolean get() = true
 
-	val tasksExecutor = Executors.newSingleThreadExecutor()
-
-	val timer = Timer(true)
-
-	override fun init(): Unit = Unit
-
-	override fun setImmediate(handler: () -> Unit) {
-		tasksExecutor { handler() }
-	}
-
-	override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
-		val tt = timerTask { tasksExecutor { callback() } }
-		timer.schedule(tt, ms.toLong())
-		return Closeable { tt.cancel() }
-	}
-
-
-	override fun setInterval(ms: Int, callback: () -> Unit): Closeable {
-		val tt = timerTask { tasksExecutor { callback() } }
-		timer.schedule(tt, ms.toLong(), ms.toLong())
-		return Closeable { tt.cancel() }
-	}
-}
-*/
+//class EventLoopJvmAndCSharp : EventLoop() {
+//	override val priority: Int = 1000
+//	override val available: Boolean get() = true
+//
+//	val tasksExecutor = Executors.newSingleThreadExecutor()
+//
+//	val timer = Timer(true)
+//
+//	override fun init(): Unit = Unit
+//
+//	override fun setImmediate(handler: () -> Unit) {
+//		tasksExecutor { handler() }
+//	}
+//
+//	override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
+//		val tt = timerTask { tasksExecutor { callback() } }
+//		timer.schedule(tt, ms.toLong())
+//		return Closeable { tt.cancel() }
+//	}
+//
+//
+//	override fun setInterval(ms: Int, callback: () -> Unit): Closeable {
+//		val tt = timerTask { tasksExecutor { callback() } }
+//		timer.schedule(tt, ms.toLong(), ms.toLong())
+//		return Closeable { tt.cancel() }
+//	}
+//}

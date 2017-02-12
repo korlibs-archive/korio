@@ -10,9 +10,9 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 
 val workerLazyPool by lazy { Executors.newFixedThreadPool(4) }
-var tasksInProgress = AtomicInteger(0)
+val tasksInProgress = AtomicInteger(0)
 
-inline suspend fun <T> suspendCoroutineEL(crossinline block: (Continuation<T>) -> Unit): T = korioSuspendCoroutine { c ->
+inline suspend fun <T> suspendCoroutineEL(crossinline block: (Continuation<T>) -> Unit): T = _korioSuspendCoroutine { c ->
 	block(c.toEventLoop())
 }
 
@@ -31,6 +31,7 @@ interface CheckRunning {
 }
 
 suspend fun <T> executeInWorker(task: suspend CheckRunning.() -> T): T = suspendCancellableCoroutine<T> { c ->
+	//println("executeInWorker")
 	tasksInProgress.incrementAndGet()
 	workerLazyPool.execute {
 		val checkRunning = object : CheckRunning {
