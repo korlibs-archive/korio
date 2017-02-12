@@ -5,11 +5,11 @@ import org.junit.Test
 
 class SleepTest {
 	@Test
-	fun name() = sync {
-		val start = System.currentTimeMillis()
+	fun name() = syncTest {
+		val start = time
 		sleep(10)
 		sleep(20)
-		val end = System.currentTimeMillis()
+		val end = time
 		Assert.assertTrue((end - start) > 25L)
 	}
 }

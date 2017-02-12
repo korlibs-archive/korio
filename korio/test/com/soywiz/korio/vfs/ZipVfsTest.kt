@@ -1,6 +1,6 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.async.sync
+import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.async.toList
 import com.soywiz.korio.stream.readAvailable
 import org.junit.Assert
@@ -10,58 +10,58 @@ import java.text.SimpleDateFormat
 @Suppress("EXPERIMENTAL_FEATURE_WARNING")
 class ZipVfsTest {
 	@Test
-	fun testZipUncompressed() = sync {
+	fun testZipUncompressed() = syncTest {
 		val helloZip = ResourcesVfs["hello.zip"].openAsZip()
 
 		Assert.assertEquals(
-			"[VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello], exists=true, isDirectory=true, size=0, device=-1, inode=0, mode=511, owner=nobody, group=nobody, createTime=1482776692000, modifiedTime=1482776692000, lastAccessTime=1482776692000, extraInfo=null)]",
-			helloZip.list().toList().map { it.stat() }.toString()
+				"[VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello], exists=true, isDirectory=true, size=0, device=-1, inode=0, mode=511, owner=nobody, group=nobody, createTime=1482776692000, modifiedTime=1482776692000, lastAccessTime=1482776692000, extraInfo=null)]",
+				helloZip.list().toList().map { it.stat() }.toString()
 		)
 
 		Assert.assertEquals(
-			"[VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello/world.txt], exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=1482776692000, modifiedTime=1482776692000, lastAccessTime=1482776692000, extraInfo=null)]",
-			helloZip["hello"].list().toList().map { it.stat() }.toString()
+				"[VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello/world.txt], exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=1482776692000, modifiedTime=1482776692000, lastAccessTime=1482776692000, extraInfo=null)]",
+				helloZip["hello"].list().toList().map { it.stat() }.toString()
 		)
 
 		Assert.assertEquals(
-			"VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello/world.txt], exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=1482776692000, modifiedTime=1482776692000, lastAccessTime=1482776692000, extraInfo=null)",
-			helloZip["hello/world.txt"].stat().toString()
+				"VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello/world.txt], exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=1482776692000, modifiedTime=1482776692000, lastAccessTime=1482776692000, extraInfo=null)",
+				helloZip["hello/world.txt"].stat().toString()
 		)
 		Assert.assertEquals(
-			"HELLO WORLD!",
-			helloZip["hello/world.txt"].readString()
+				"HELLO WORLD!",
+				helloZip["hello/world.txt"].readString()
 		)
 
 		Assert.assertEquals(
-			"2016-12-26 18:24:52",
-			SimpleDateFormat("YYYY-MM-dd HH:mm:ss").format(helloZip["hello/world.txt"].stat().createDate)
+				"2016-12-26 18:24:52",
+				SimpleDateFormat("YYYY-MM-dd HH:mm:ss").format(helloZip["hello/world.txt"].stat().createDate)
 		)
 	}
 
 	@Test
-	fun testZipCompressed() = sync {
+	fun testZipCompressed() = syncTest {
 		val helloZip = ResourcesVfs["compressedHello.zip"].openAsZip()
 
 		val contents = "HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO WORLD!"
 
 		Assert.assertEquals(
-			contents,
-			helloZip["hello/compressedWorld.txt"].readString()
+				contents,
+				helloZip["hello/compressedWorld.txt"].readString()
 		)
 
 		Assert.assertEquals(
-			contents,
-			helloZip["hello/compressedWorld.txt"].openUse { readAvailable() }.toString(Charsets.UTF_8)
+				contents,
+				helloZip["hello/compressedWorld.txt"].openUse { readAvailable() }.toString(Charsets.UTF_8)
 		)
 
 		Assert.assertEquals(
-			contents.toByteArray().size.toLong(),
-			helloZip["hello/compressedWorld.txt"].openUse { getLength() }
+				contents.toByteArray().size.toLong(),
+				helloZip["hello/compressedWorld.txt"].openUse { getLength() }
 		)
 
 		Assert.assertEquals(
-			"[/hello, /hello/compressedWorld.txt, /hello/world.txt]",
-			helloZip.listRecursive().toList().map { it.fullname }.toString()
+				"[/hello, /hello/compressedWorld.txt, /hello/world.txt]",
+				helloZip.listRecursive().toList().map { it.fullname }.toString()
 		)
 	}
 }

@@ -1,6 +1,7 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.sync
+import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.expectException
 import org.junit.Assert
 import org.junit.Test
@@ -8,7 +9,7 @@ import java.io.FileNotFoundException
 
 class MountableVfsTest {
 	@Test
-	fun testMountable() = sync {
+	fun testMountable() = syncTest {
 		val root = MountableVfs({
 			mount("/zip/demo2", ResourcesVfs["hello.zip"].openAsZip())
 			mount("/zip", ResourcesVfs["hello.zip"].openAsZip())

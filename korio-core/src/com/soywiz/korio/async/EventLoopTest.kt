@@ -55,7 +55,7 @@ class EventLoopTest : EventLoop() {
 						val item = timers.firstEntry()
 						if (time >= item.key) {
 							timers.remove(item.key)
-							item.value
+							item.value.toList()
 						} else {
 							checkTimers = false
 							null

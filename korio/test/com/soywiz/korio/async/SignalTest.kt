@@ -23,7 +23,7 @@ class SignalTest {
 	}
 
 	@Test
-	fun name2() = sync {
+	fun name2() = syncTest {
 		var out = ""
 		val s = Signal<Int>()
 		spawn {

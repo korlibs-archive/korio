@@ -1,6 +1,7 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.sync
+import com.soywiz.korio.async.syncTest
 import org.junit.Assert
 import org.junit.Test
 
@@ -18,7 +19,7 @@ class ReadSpecialTest {
 	}
 
 	@Test
-	fun testReadSpecial2() = sync {
+	fun testReadSpecial2() = syncTest {
 		val temp = MemoryVfs()
 		val f2 = temp["korio.chararray2"]
 		f2.writeString("123456789")

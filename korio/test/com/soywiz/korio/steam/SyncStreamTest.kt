@@ -1,6 +1,7 @@
 package com.soywiz.korio.steam
 
 import com.soywiz.korio.async.sync
+import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.ByteArrayBuffer
 import org.junit.Assert
@@ -29,7 +30,7 @@ class SyncStreamTest {
 	}
 
 	@Test
-	fun testArrays() = sync {
+	fun testArrays() = syncTest {
 		val out = MemorySyncStream()
 		for (n in 0 until 6) out.write32_le(n * n)
 		out.position = 0L
@@ -46,7 +47,7 @@ class SyncStreamTest {
 	}
 
 	@Test
-	fun test2() = sync {
+	fun test2() = syncTest {
 		val out = MemorySyncStream()
 		out.write16_be(0x1234)
 		val bb = out.toByteArray()

@@ -1,13 +1,14 @@
 package com.soywiz.korio.steam
 
 import com.soywiz.korio.async.sync
+import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.stream.*
 import org.junit.Assert
 import org.junit.Test
 
 class BufferedStreamTest {
 	@Test
-	fun name() = sync {
+	fun name() = syncTest {
 		val mem = MemorySyncStream().toAsync()
 		val write = mem.clone()
 		val read = mem.clone().buffered()

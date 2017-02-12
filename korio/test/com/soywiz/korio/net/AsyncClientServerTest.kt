@@ -1,7 +1,7 @@
 package com.soywiz.korio.net
 
 import com.soywiz.korio.async.spawn
-import com.soywiz.korio.async.sync
+import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.stream.readString
 import com.soywiz.korio.stream.writeString
 import org.junit.Assert
@@ -10,7 +10,7 @@ import java.util.*
 
 class AsyncClientServerTest {
 	@Test
-	fun testClientServer() = sync {
+	fun testClientServer() = syncTest {
 		val server = AsyncServer(port = 0)
 		val events = LinkedList<String>()
 
@@ -30,8 +30,8 @@ class AsyncClientServerTest {
 		client1.await()
 
 		Assert.assertEquals(
-			"[[C] CLIENT1: HELLO, [S] CLIENT: THIS IS GREAT!]",
-			events.toList().toString()
+				"[[C] CLIENT1: HELLO, [S] CLIENT: THIS IS GREAT!]",
+				events.toList().toString()
 		)
 	}
 }

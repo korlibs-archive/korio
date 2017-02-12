@@ -7,7 +7,7 @@ import java.util.concurrent.CancellationException
 
 class withTimeoutTest {
 	@Test
-	fun simple() = sync {
+	fun simple() = syncTest {
 		var out = ""
 		try {
 			withTimeout(100, name = "timeout2") {
@@ -28,7 +28,7 @@ class withTimeoutTest {
 	}
 
 	@Test
-	fun name() = sync {
+	fun name() = syncTest {
 		var out = ""
 		try {
 			out += "0"
@@ -56,7 +56,7 @@ class withTimeoutTest {
 	}
 
 	@Test
-	fun name2() = sync {
+	fun name2() = syncTest {
 		var out = ""
 		try {
 			withTimeout(200) {
