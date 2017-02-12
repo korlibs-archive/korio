@@ -22,8 +22,11 @@ import java.util.*
 // @TODO: Retry + Scale Capacity Units
 class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val region: String, val client: HttpClient, val timeProvider: TimeProvider = TimeProvider()) {
 	// @TODO: Add createTable for Class<T>
-	//annotation class HashKey
-	//annotation class RangeKey
+	@Target(AnnotationTarget.FIELD)
+	annotation class HashKey
+
+	@Target(AnnotationTarget.FIELD)
+	annotation class RangeKey
 
 	enum class Kind(val type: String) {
 		STRING("S"), NUMBER("N"), BINARY("B"), BOOL("BOOL"),
@@ -32,8 +35,27 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 
 		companion object {
 			val BY_TYPE = values().map { it.type to it }.toMap()
+
+			fun fromType(clazz: Class<*>?): Kind {
+				return when (clazz) {
+					null -> Kind.NULL
+					java.lang.String::class.java -> Kind.STRING
+					java.lang.Boolean.TYPE, java.lang.Boolean::class.java -> Kind.BOOL
+					java.lang.Double.TYPE, java.lang.Double::class.java -> Kind.NUMBER
+					java.lang.Float.TYPE, java.lang.Float::class.java -> Kind.NUMBER
+					java.lang.Integer.TYPE, java.lang.Integer::class.java -> Kind.NUMBER
+					java.lang.Long.TYPE, java.lang.Long::class.java -> Kind.NUMBER
+					ByteArray::class.java -> Kind.BINARY
+					else -> when {
+						clazz.isAssignableFrom(Map::class.java) -> Kind.MAP
+						clazz.isAssignableFrom(List::class.java) -> Kind.LIST
+						else -> invalidOp("Unsupported type $clazz")
+					}
+				}
+			}
 		}
 	}
+
 
 	companion object {
 		operator suspend fun invoke(region: String, endpoint: URL? = null, accessKey: String? = null, secretKey: String? = null, httpClient: HttpClient = createHttpClient(), timeProvider: TimeProvider = TimeProvider()): DynamoDB {
@@ -43,6 +65,22 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 
 	class Typed<T>(val db: DynamoDB, val clazz: Class<T>, val tableName: String) {
 		val classFactory = ClassFactory(clazz)
+
+		suspend fun createIfNotExists(readCapacityUnits: Int = 5, writeCapacityUnits: Int = 5) {
+			val hashKeyField = classFactory.fields.firstOrNull { it.getAnnotation(HashKey::class.java) != null } ?: invalidOp("No fields from $clazz contain @HashKey")
+			val rangeKeyField = classFactory.fields.firstOrNull { it.getAnnotation(RangeKey::class.java) != null }
+
+			val hashKey = hashKeyField.name to Kind.fromType(hashKeyField.type)
+			val rangeKey = if (rangeKeyField != null) rangeKeyField.name to Kind.fromType(rangeKeyField.type) else null
+
+			db.createTableIfNotExists(
+					tableName,
+					hashKey = hashKey,
+					rangeKey = rangeKey,
+					readCapacityUnits = readCapacityUnits,
+					writeCapacityUnits = writeCapacityUnits
+			)
+		}
 
 		suspend fun query(limit: Int? = null, expr: QExpr.TypedBuilder<T>.() -> QExpr): List<T> {
 			return db.query(tableName, limit = limit, expr = {
