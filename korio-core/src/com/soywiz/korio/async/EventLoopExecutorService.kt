@@ -6,8 +6,11 @@ import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
 object EventLoopExecutorService : ExecutorService {
-	override fun shutdown() {
-	}
+	var shutdown = false
+
+	override fun shutdown() = run { shutdown = true }
+	override fun shutdownNow(): MutableList<Runnable> = arrayListOf<Runnable>().apply { shutdown() }
+	override fun isShutdown(): Boolean = shutdown
 
 	override fun <T : Any?> submit(task: Callable<T>?): Future<T> {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -17,21 +20,8 @@ object EventLoopExecutorService : ExecutorService {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 	}
 
-	override fun submit(task: Runnable?): Future<*> {
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-	}
-
-	override fun shutdownNow(): MutableList<Runnable> {
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-	}
-
-	override fun isShutdown(): Boolean {
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-	}
-
-	override fun awaitTermination(timeout: Long, unit: TimeUnit?): Boolean {
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-	}
+	override fun submit(task: Runnable?): Future<*> = submit(task, Unit)
+	override fun awaitTermination(timeout: Long, unit: TimeUnit?): Boolean = true
 
 	override fun <T : Any?> invokeAny(tasks: MutableCollection<out Callable<T>>?): T {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
@@ -41,9 +31,7 @@ object EventLoopExecutorService : ExecutorService {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 	}
 
-	override fun isTerminated(): Boolean {
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-	}
+	override fun isTerminated(): Boolean = true
 
 	override fun <T : Any?> invokeAll(tasks: MutableCollection<out Callable<T>>?): MutableList<Future<T>> {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.

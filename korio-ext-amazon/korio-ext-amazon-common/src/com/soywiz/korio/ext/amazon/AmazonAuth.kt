@@ -5,6 +5,7 @@ import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.util.substr
 import com.soywiz.korio.util.toHexStringLower
 import com.soywiz.korio.vfs.LocalVfs
+import java.io.IOException
 import java.net.URL
 import java.security.MessageDigest
 import java.text.SimpleDateFormat
@@ -24,11 +25,14 @@ object AmazonAuth {
 			finalSecretKey = System.getenv("AWS_SECRET_KEY")?.trim()
 		}
 
-		if (accessKey.isNullOrEmpty()) {
-			val userHome = System.getProperty("user.home")
-			val credentials = LocalVfs("$userHome/.aws")["credentials"].readString()
-			finalAccessKey = (Regex("aws_access_key_id\\s+=\\s+(.*)").find(credentials)?.groupValues?.getOrElse(1) { "" } ?: "").trim()
-			finalSecretKey = (Regex("aws_secret_access_key\\s+=\\s+(.*)").find(credentials)?.groupValues?.getOrElse(1) { "" } ?: "").trim()
+		if (finalAccessKey.isNullOrEmpty()) {
+			try {
+				val userHome = System.getProperty("user.home")
+				val credentials = LocalVfs("$userHome/.aws")["credentials"].readString()
+				finalAccessKey = (Regex("aws_access_key_id\\s+=\\s+(.*)").find(credentials)?.groupValues?.getOrElse(1) { "" } ?: "").trim()
+				finalSecretKey = (Regex("aws_secret_access_key\\s+=\\s+(.*)").find(credentials)?.groupValues?.getOrElse(1) { "" } ?: "").trim()
+			} catch (e: IOException) {
+			}
 		}
 		return if (finalAccessKey != null && finalSecretKey != null) Credentials(finalAccessKey, finalSecretKey) else null
 	}
