@@ -18,33 +18,34 @@ class JsJvmAsyncSocketFactory : AsyncSocketFactory {
 //private val group by lazy { AsynchronousChannelGroup.withThreadPool(newPool) }
 private val group by lazy { AsynchronousChannelGroup.withThreadPool(EventLoopExecutorService) }
 
-class JsJvmAsyncClient(private val sc: AsynchronousSocketChannel = AsynchronousSocketChannel.open(group)) : AsyncClient {
+class JsJvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : AsyncClient {
 	private var _connected = false
 
 	//suspend override fun connect(host: String, port: Int): Unit = suspendCoroutineEL { c ->
 	suspend override fun connect(host: String, port: Int): Unit = korioSuspendCoroutine { c ->
-		sc.connect(InetSocketAddress(host, port), this, object : CompletionHandler<Void, AsyncClient> {
+		sc = AsynchronousSocketChannel.open(group)
+		sc?.connect(InetSocketAddress(host, port), this, object : CompletionHandler<Void, AsyncClient> {
 			override fun completed(result: Void?, attachment: AsyncClient): Unit = run { _connected = true; c.resume(Unit) }
 			override fun failed(exc: Throwable, attachment: AsyncClient): Unit = run { _connected = false; c.resumeWithException(exc) }
 		})
 	}
 
-	override val connected: Boolean get() = sc.isOpen
+	override val connected: Boolean get() = sc?.isOpen ?: false
 
 	//suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = suspendCoroutineEL { c ->
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = korioSuspendCoroutine { c ->
 		val bb = ByteBuffer.wrap(buffer, offset, len)
-		sc.read(bb, this, object : CompletionHandler<Int, AsyncClient> {
+		sc?.read(bb, this, object : CompletionHandler<Int, AsyncClient> {
 			override fun completed(result: Int, attachment: AsyncClient): Unit = c.resume(result)
 			override fun failed(exc: Throwable, attachment: AsyncClient): Unit = c.resumeWithException(exc)
-		})
+		}) ?: -1
 	}
 
 	//suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = suspendCoroutineEL { c ->
 	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = korioSuspendCoroutine { c ->
 		val bb = ByteBuffer.wrap(buffer, offset, len)
 		AsyncClient.Stats.writeCountStart.incrementAndGet()
-		sc.write(bb, this, object : CompletionHandler<Int, AsyncClient> {
+		sc?.write(bb, this, object : CompletionHandler<Int, AsyncClient> {
 			override fun completed(result: Int, attachment: AsyncClient): Unit {
 				AsyncClient.Stats.writeCountEnd.incrementAndGet()
 				c.resume(Unit)
@@ -58,7 +59,7 @@ class JsJvmAsyncClient(private val sc: AsynchronousSocketChannel = AsynchronousS
 	}
 
 	suspend override fun close(): Unit {
-		sc.close()
+		sc?.close()
 	}
 }
 

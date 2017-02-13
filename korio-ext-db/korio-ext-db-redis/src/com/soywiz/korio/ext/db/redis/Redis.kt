@@ -7,6 +7,7 @@ import com.soywiz.korio.net.HostWithPort
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.AsyncCloseable
 import com.soywiz.korio.util.substr
+import java.io.IOException
 import java.nio.charset.Charset
 import java.util.concurrent.atomic.AtomicLong
 
@@ -21,7 +22,13 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 			return Redis(maxConnections, stats) {
 				val host = hostsWithPorts[index++ % hostsWithPorts.size] // Round Robin
 				val tcpClient = AsyncClient(host.host, host.port)
-				val client = Client(tcpClient, tcpClient, tcpClient, charset, stats)
+				val client = Client(
+						reader = tcpClient,
+						reconnect = { tcpClient.connect(host.host, host.port) },
+						writer = tcpClient,
+						close = tcpClient,
+						charset = charset,
+						stats = stats)
 				if (password != null) client.auth(password)
 				client
 			}
@@ -44,7 +51,14 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 		}
 	}
 
-	class Client(reader: AsyncInputStream, val writer: AsyncOutputStream, val close: AsyncCloseable, val charset: Charset = Charsets.UTF_8, val stats: Stats = Stats()) : RedisCommand {
+	class Client(
+			reader: AsyncInputStream,
+			val writer: AsyncOutputStream,
+			val close: AsyncCloseable,
+			val charset: Charset = Charsets.UTF_8,
+			val stats: Stats = Stats(),
+			val reconnect: suspend () -> Unit = {}
+	) : RedisCommand {
 		private val reader = reader.toBuffered(bufferSize = 0x100)
 
 		suspend fun close() = this.close.close()
@@ -106,6 +120,8 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 					val res = readValue()
 					stats.commandsFinished.incrementAndGet()
 					res
+				} catch (t: IOException) {
+					reconnect()
 				} catch (t: Throwable) {
 					stats.commandsErrored.incrementAndGet()
 					println(t)

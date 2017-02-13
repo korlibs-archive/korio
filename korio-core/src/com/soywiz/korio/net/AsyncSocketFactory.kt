@@ -18,6 +18,8 @@ interface AsyncClient : AsyncInputStream, AsyncOutputStream, AsyncCloseable {
 	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit
 	suspend override fun close(): Unit
 
+	//suspend open fun reconnect() = Unit
+
 	object Stats {
 		val writeCountStart = AtomicLong()
 		val writeCountEnd = AtomicLong()
