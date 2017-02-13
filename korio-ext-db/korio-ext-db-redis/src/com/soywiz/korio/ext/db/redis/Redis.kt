@@ -1,6 +1,7 @@
 package com.soywiz.korio.ext.db.redis
 
 import com.soywiz.korio.async.AsyncThread
+import com.soywiz.korio.async.sleep
 import com.soywiz.korio.ds.AsyncPool
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.net.HostWithPort
@@ -20,16 +21,20 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 			var index: Int = 0
 
 			return Redis(maxConnections, stats) {
-				val host = hostsWithPorts[index++ % hostsWithPorts.size] // Round Robin
-				val tcpClient = AsyncClient(host.host, host.port)
+				val tcpClient = AsyncClient.create()
 				val client = Client(
 						reader = tcpClient,
-						reconnect = { tcpClient.connect(host.host, host.port) },
+						reconnect = { client ->
+							index = (index + 1) % hostsWithPorts.size
+							val host = hostsWithPorts[index] // Round Robin
+							tcpClient.connect(host.host, host.port)
+							if (password != null) client.auth(password)
+						},
 						writer = tcpClient,
 						close = tcpClient,
 						charset = charset,
-						stats = stats)
-				if (password != null) client.auth(password)
+						stats = stats
+				)
 				client
 			}
 		}
@@ -57,7 +62,7 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 			val close: AsyncCloseable,
 			val charset: Charset = Charsets.UTF_8,
 			val stats: Stats = Stats(),
-			val reconnect: suspend () -> Unit = {}
+			val reconnect: suspend (Client) -> Unit = {}
 	) : RedisCommand {
 		private val reader = reader.toBuffered(bufferSize = 0x100)
 
@@ -92,40 +97,57 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 			}
 		}
 
+		val maxRetries = 10
+
 		suspend override fun commandAny(vararg args: Any?): Any? {
 			stats.commandsQueued.incrementAndGet()
 			return commandQueue {
-				stats.commandsStarted.incrementAndGet()
-				try {
-					val cmd = StringBuilder()
-					cmd.append('*')
-					cmd.append(args.size)
+				val cmd = StringBuilder()
+				cmd.append('*')
+				cmd.append(args.size)
+				cmd.append("\r\n")
+				for (arg in args) {
+					val sarg = "$arg"
+					// Length of the argument.
+					val size = sarg.toByteArray(charset).size
+					cmd.append('$')
+					cmd.append(size)
 					cmd.append("\r\n")
-					for (arg in args) {
-						val sarg = "$arg"
-						// Length of the argument.
-						val size = sarg.toByteArray(charset).size
-						cmd.append('$')
-						cmd.append(size)
-						cmd.append("\r\n")
-						cmd.append(sarg)
-						cmd.append("\r\n")
-					}
+					cmd.append(sarg)
+					cmd.append("\r\n")
+				}
 
-					// Common queue is not required align reading because Redis support pipelining : https://redis.io/topics/pipelining
-					val data = cmd.toString().toByteArray(charset)
-					stats.commandsPreWritten.incrementAndGet()
-					writer.writeBytes(data)
-					stats.commandsWritten.incrementAndGet()
-					val res = readValue()
-					stats.commandsFinished.incrementAndGet()
-					res
-				} catch (t: IOException) {
-					reconnect()
-				} catch (t: Throwable) {
-					stats.commandsErrored.incrementAndGet()
-					println(t)
-					throw t
+				// Common queue is not required align reading because Redis support pipelining : https://redis.io/topics/pipelining
+				val data = cmd.toString().toByteArray(charset)
+				var retryCount = 0
+
+				retry@ while (true) {
+					stats.commandsStarted.incrementAndGet()
+					try {
+						stats.commandsPreWritten.incrementAndGet()
+						writer.writeBytes(data)
+						stats.commandsWritten.incrementAndGet()
+						val res = readValue()
+						stats.commandsFinished.incrementAndGet()
+						return@commandQueue res
+					} catch (t: IOException) {
+						stats.commandsErrored.incrementAndGet()
+						try {
+							reconnect(this@Client)
+						} catch (e: Throwable) {
+						}
+						sleep(50 + 500 * retryCount)
+						retryCount++
+						if (retryCount < maxRetries) {
+							continue@retry
+						} else {
+							throw RuntimeException("Giving Up with this redis request max retries $maxRetries")
+						}
+					} catch (t: Throwable) {
+						stats.commandsErrored.incrementAndGet()
+						println(t)
+						throw t
+					}
 				}
 			}
 		}
@@ -146,7 +168,7 @@ interface RedisCommand {
 suspend fun RedisCommand.commandArray(vararg args: Any?): List<String> = (commandAny(*args) as List<String>?) ?: listOf()
 
 suspend fun RedisCommand.commandString(vararg args: Any?): String? = commandAny(*args)?.toString()
-suspend fun RedisCommand.commandLong(vararg args: Any?): Long = commandAny(*args)?.toString()?.toLong() ?: 0L
+suspend fun RedisCommand.commandLong(vararg args: Any?): Long = commandAny(*args)?.toString()?.toLongOrNull() ?: 0L
 suspend fun RedisCommand.commandUnit(vararg args: Any?): Unit = run { commandAny(*args) }
 
 // @TODO: SLOWER:

@@ -29,8 +29,11 @@ interface AsyncClient : AsyncInputStream, AsyncOutputStream, AsyncCloseable {
 	}
 
 	companion object {
-
 		suspend operator fun invoke(host: String, port: Int) = createAndConnect(host, port)
+
+		suspend fun create(): AsyncClient {
+			return asyncSocketFactory.createClient()
+		}
 
 		suspend fun createAndConnect(host: String, port: Int): AsyncClient {
 			val socket = asyncSocketFactory.createClient()

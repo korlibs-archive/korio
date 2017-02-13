@@ -2,6 +2,7 @@ package com.soywiz.korio.net
 
 import com.soywiz.korio.async.*
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
+import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
 import java.nio.channels.AsynchronousChannelGroup
@@ -34,8 +35,9 @@ class JsJvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : Asyn
 
 	//suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = suspendCoroutineEL { c ->
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = korioSuspendCoroutine { c ->
+		if (sc == null) throw IOException("Not connected")
 		val bb = ByteBuffer.wrap(buffer, offset, len)
-		sc?.read(bb, this, object : CompletionHandler<Int, AsyncClient> {
+		sc!!.read(bb, this, object : CompletionHandler<Int, AsyncClient> {
 			override fun completed(result: Int, attachment: AsyncClient): Unit = c.resume(result)
 			override fun failed(exc: Throwable, attachment: AsyncClient): Unit = c.resumeWithException(exc)
 		}) ?: -1
@@ -43,9 +45,10 @@ class JsJvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : Asyn
 
 	//suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = suspendCoroutineEL { c ->
 	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = korioSuspendCoroutine { c ->
+		if (sc == null) throw IOException("Not connected")
 		val bb = ByteBuffer.wrap(buffer, offset, len)
 		AsyncClient.Stats.writeCountStart.incrementAndGet()
-		sc?.write(bb, this, object : CompletionHandler<Int, AsyncClient> {
+		sc!!.write(bb, this, object : CompletionHandler<Int, AsyncClient> {
 			override fun completed(result: Int, attachment: AsyncClient): Unit {
 				AsyncClient.Stats.writeCountEnd.incrementAndGet()
 				c.resume(Unit)
@@ -60,6 +63,7 @@ class JsJvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : Asyn
 
 	suspend override fun close(): Unit {
 		sc?.close()
+		sc = null
 	}
 }
 

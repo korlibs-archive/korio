@@ -7,8 +7,8 @@ import java.util.concurrent.atomic.AtomicInteger
 
 fun main(args: Array<String>) = EventLoop.main {
 	try {
-		//val redis = Redis(maxConnections = 100)
-		val redis = Redis(maxConnections = 1)
+		val redis = Redis(maxConnections = 100)
+		//val redis = Redis(maxConnections = 1)
 		val startedCount = AtomicInteger(0)
 		val completedCount = AtomicInteger(0)
 		val start = System.currentTimeMillis()
