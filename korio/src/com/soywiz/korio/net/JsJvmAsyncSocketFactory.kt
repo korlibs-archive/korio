@@ -24,6 +24,7 @@ class JsJvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : Asyn
 
 	//suspend override fun connect(host: String, port: Int): Unit = suspendCoroutineEL { c ->
 	suspend override fun connect(host: String, port: Int): Unit = korioSuspendCoroutine { c ->
+		sc?.close()
 		sc = AsynchronousSocketChannel.open(group)
 		sc?.connect(InetSocketAddress(host, port), this, object : CompletionHandler<Void, AsyncClient> {
 			override fun completed(result: Void?, attachment: AsyncClient): Unit = run { _connected = true; c.resume(Unit) }

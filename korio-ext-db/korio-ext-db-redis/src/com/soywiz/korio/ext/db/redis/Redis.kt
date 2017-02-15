@@ -136,7 +136,7 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 							reconnect(this@Client)
 						} catch (e: Throwable) {
 						}
-						sleep(50 + 500 * retryCount)
+						sleep(500 * retryCount)
 						retryCount++
 						if (retryCount < maxRetries) {
 							continue@retry
