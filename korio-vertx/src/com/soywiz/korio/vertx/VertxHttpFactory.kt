@@ -82,7 +82,8 @@ class VertxHttpClient : HttpClient() {
 			}
 			res.endHandler {
 				checkSent()
-				p.close(byteArrayOf())
+				p.close()
+				vxclient.close()
 			}
 		}
 

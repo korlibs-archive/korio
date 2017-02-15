@@ -27,6 +27,10 @@ class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int =
 		}
 		return out.toByteArray()
 	}
+
+	suspend override fun close() {
+		base.close()
+	}
 }
 
 fun AsyncInputStream.toBuffered(bufferSize: Int = 0x2000): AsyncBufferedInputStream = AsyncBufferedInputStream(this, bufferSize)

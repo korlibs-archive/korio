@@ -102,6 +102,7 @@ open class HttpClient protected constructor() {
 	) {
 		val success = status < 400
 		suspend fun readAllBytes() = content.readAll()
+		suspend fun readAllString(charset: Charset = Charsets.UTF_8) = readAllBytes().toString(charset) // Detect charset from headers
 
 		fun withStringResponse(str: String, charset: Charset = Charsets.UTF_8) = this.copy(content = str.toByteArray(charset).openAsync())
 	}

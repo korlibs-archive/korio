@@ -5,40 +5,53 @@ import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.util.BYTES_EMPTY
+import java.io.Closeable
 import java.util.*
 import java.util.concurrent.CancellationException
 
 typealias CancelHandler = Signal<Unit>
 
-interface Consumer<T> {
+interface Consumer<T> : Closeable {
 	suspend fun consume(cancel: CancelHandler? = null): T?
 }
 
-interface Producer<T> {
+interface Producer<T> : Closeable {
 	fun produce(v: T): Unit
 }
 
-class ProduceConsumer<T> : Consumer<T>, Producer<T> {
+open class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 	val items = LinkedList<T>()
 	val consumers = LinkedList<(T?) -> Unit>()
 	private var closed = false
 
 	override fun produce(v: T) {
-		items.addLast(v)
+		synchronized(this) { items.addLast(v) }
 		flush()
 	}
 
-	fun close(v: T) {
-		closed = true
-		items.addLast(null)
+	override fun close() {
+		synchronized(this) {
+			items.addLast(null)
+			closed = true
+		}
 		flush()
 	}
 
 	private fun flush() {
-		while (items.isNotEmpty() && consumers.isNotEmpty()) {
-			val consumer = consumers.removeFirst()
-			val item = items.removeFirst()
-			consumer(item)
+		while (true) {
+			var done = false
+			var consumer: ((T?) -> Unit)? = null
+			var item: T? = null
+			synchronized(this) {
+				if (consumers.isNotEmpty() && items.isNotEmpty()) {
+					consumer = consumers.removeFirst()
+					item = items.removeFirst()
+				} else {
+					done = true
+				}
+			}
+			if (done) break
+			consumer!!(item)
 		}
 	}
 
@@ -49,11 +62,15 @@ class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 		}
 		if (cancel != null) {
 			cancel {
-				consumers -= consumer
+				synchronized(this) {
+					consumers -= consumer
+				}
 				c.resumeWithException(CancellationException())
 			}
 		}
-		consumers += consumer
+		synchronized(this) {
+			consumers += consumer
+		}
 		flush()
 	}
 }
@@ -70,7 +87,11 @@ fun Consumer<ByteArray>.toAsyncInputStream() = AsyncConsumerStream(this)
 
 class AsyncProducerStream(val producer: Producer<ByteArray>) : AsyncOutputStream {
 	suspend override fun write(buffer: ByteArray, offset: Int, len: Int) {
-		TODO()
+		producer.produce(Arrays.copyOfRange(buffer, offset, offset + len))
+	}
+
+	suspend override fun close() {
+		producer.close()
 	}
 }
 
@@ -101,5 +122,9 @@ class AsyncConsumerStream(val consumer: Consumer<ByteArray>) : AsyncInputStream 
 		System.arraycopy(current, currentPos, buffer, offset, actualRead)
 		currentPos += actualRead
 		return actualRead
+	}
+
+	suspend override fun close() {
+		consumer.close()
 	}
 }

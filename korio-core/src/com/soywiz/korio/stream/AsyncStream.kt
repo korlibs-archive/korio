@@ -7,12 +7,13 @@ import com.soywiz.korio.util.*
 import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.VfsOpenMode
 import java.io.ByteArrayOutputStream
+import java.io.Closeable
 import java.io.EOFException
 import java.io.InputStream
 import java.nio.charset.Charset
 import java.util.*
 
-interface AsyncBaseStream {
+interface AsyncBaseStream : AsyncCloseable {
 }
 
 interface AsyncInputStream : AsyncBaseStream {
@@ -491,6 +492,9 @@ fun InputStream.toAsync(): AsyncInputStream {
 		suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker {
 			syncIS.read(buffer, offset, len)
 		}
+
+		suspend override fun close() {
+		}
 	}
 }
 
@@ -498,10 +502,18 @@ fun SyncInputStream.toAsyncInputStream() = object : AsyncInputStream {
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		return this@toAsyncInputStream.read(buffer, offset, len)
 	}
+
+	suspend override fun close() {
+		(this@toAsyncInputStream as? Closeable)?.close()
+	}
 }
 
 fun SyncOutputStream.toAsyncOutputStream() = object : AsyncOutputStream {
 	suspend override fun write(buffer: ByteArray, offset: Int, len: Int) {
 		this@toAsyncOutputStream.write(buffer, offset, len)
+	}
+
+	suspend override fun close() {
+		(this@toAsyncOutputStream as? Closeable)?.close()
 	}
 }
