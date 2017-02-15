@@ -320,6 +320,8 @@ class DynamoDB(
 		if (res.success) {
 			return Json.decode(resText) as Map<String, Any?>
 		} else {
+			System.err.println("### Errored DynamoDB: $target : $contentJson")
+			System.err.println("    - ${res.status} : '${res.statusText}' : ${res.content}")
 			val info = try {
 				Json.decode(resText) as Map<String, Any?>
 			} catch (e: Throwable) {

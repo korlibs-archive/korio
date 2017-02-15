@@ -6,6 +6,7 @@ import com.soywiz.korio.async.invokeSuspend
 import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.util.Dynamic
 import io.netty.handler.codec.http.QueryStringDecoder
+import io.vertx.core.buffer.Buffer
 import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServerRequest
 import io.vertx.core.json.Json
@@ -21,6 +22,8 @@ suspend inline fun <reified T : Any> KorRouter.registerRouter() = this.registerR
 suspend fun KorRouter.registerInterceptor(interceptor: suspend (HttpServerRequest, Map<String, String>) -> Unit) {
 	interceptors.add(interceptor)
 }
+
+private val MAX_BODY_SIZE = 16 * 1024
 
 suspend fun KorRouter.registerRouter(clazz: Class<*>) {
 	val router = this
@@ -45,24 +48,48 @@ suspend fun KorRouter.registerRouter(clazz: Class<*>) {
 		if (route != null) {
 			//object : Continuation<Any>
 			//router.route(route.path).handler { rreq ->
+			//router.router.route(route.method, route.path).handler(BodyHandler.create().setBodyLimit(16 * 1024)).handler { rreq ->
 			router.router.route(route.method, route.path).handler { rreq ->
 				val res = rreq.response()
 
 				val req = rreq.request()
 				val contentType = req.headers().get("Content-Type")
 
-				val bodyHandler = Promise.Deferred<Map<String, List<String>>>()
+				val bodyHandler = Promise.Deferred<Unit>()
 
-				req.bodyHandler { buf ->
-					if ("application/x-www-form-urlencoded" == contentType) {
-						val qsd = QueryStringDecoder(buf.toString(), false)
-						val params = qsd.parameters()
-						bodyHandler.resolve(params)
+				var postParams = mapOf<String, List<String>>()
+				var totalRequestSize = 0L
+				var bodyOverflow = false
+				val bodyContent = Buffer.buffer()
+
+				req.handler {
+					totalRequestSize += it.length()
+					if (it.length() + bodyContent.length() < MAX_BODY_SIZE) {
+						bodyContent.appendBuffer(it)
+					} else {
+						bodyOverflow = true
+					}
+				}
+
+				req.endHandler {
+					try {
+						if ("application/x-www-form-urlencoded" == contentType) {
+							if (!bodyOverflow) {
+								val qsd = QueryStringDecoder(bodyContent.toString(), false)
+								postParams = qsd.parameters()
+							}
+						}
+					} finally {
+						bodyHandler.resolve(Unit)
 					}
 				}
 
 				async {
 					try {
+						bodyHandler.promise.await()
+
+						if (bodyOverflow) throw RuntimeException("Too big request payload: $totalRequestSize")
+
 						//var deferred: Promise.Deferred<Any>? = null
 						val args = arrayListOf<Any?>()
 						val mapArgs = hashMapOf<String, String>()
@@ -72,7 +99,6 @@ suspend fun KorRouter.registerRouter(clazz: Class<*>) {
 							if (get != null) {
 								args += Dynamic.dynamicCast(rreq.pathParam(get.name), paramType)
 							} else if (post != null) {
-								val postParams = bodyHandler.promise.await()
 								val result = postParams[post.name]?.firstOrNull()
 								mapArgs[post.name] = result ?: ""
 								args += Dynamic.dynamicCast(result, paramType)
@@ -97,6 +123,8 @@ suspend fun KorRouter.registerRouter(clazz: Class<*>) {
 							else -> res.end(Json.encode(finalResult))
 						}
 					} catch (t: Throwable) {
+						System.err.println("${req.absoluteURI()} : $postParams")
+						t.printStackTrace()
 						res.statusCode = 500
 						val t2 = when (t) {
 							is InvocationTargetException -> t.cause ?: t
