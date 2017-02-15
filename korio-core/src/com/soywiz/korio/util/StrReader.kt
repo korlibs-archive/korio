@@ -208,6 +208,8 @@ fun StrReader.readStringLit(reportErrors: Boolean = true): String {
 			out.append(c)
 		}
 	}
-	if (!closed && reportErrors) throw RuntimeException("String literal not closed!")
+	if (!closed && reportErrors) {
+		throw RuntimeException("String literal not closed! '${this.str}'")
+	}
 	return out.toString()
 }

@@ -1,14 +1,19 @@
 package com.soywiz.korio.net.http
 
+import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.Promise
+import com.soywiz.korio.async.sleep
 import com.soywiz.korio.service.Services
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.AsyncCloseable
 import java.io.IOException
 import java.nio.charset.Charset
+import java.util.concurrent.atomic.AtomicLong
 
 interface Http {
 	enum class Method { OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH, OTHER }
+
+	class HttpException(val status: Int, val statusText: String, val msg: String) : IOException(msg)
 
 	data class Headers(val items: List<Pair<String, String>>) : Iterable<Pair<String, String>> {
 		constructor(vararg items: Pair<String, String>) : this(items.toList())
@@ -104,39 +109,66 @@ open class HttpClient protected constructor() {
 		suspend fun readAllBytes() = content.readAll()
 		suspend fun readAllString(charset: Charset = Charsets.UTF_8) = readAllBytes().toString(charset) // Detect charset from headers
 
+		suspend fun checkErrors(): Response = this.apply {
+			if (!success) throw Http.HttpException(status, statusText, readAllString())
+		}
+
 		fun withStringResponse(str: String, charset: Charset = Charsets.UTF_8) = this.copy(content = str.toByteArray(charset).openAsync())
+
+		fun <T> toCompletedResponse(content: T) = CompletedResponse(status, statusText, headers, content)
+	}
+
+	data class CompletedResponse<T>(
+			val status: Int,
+			val statusText: String,
+			val headers: Http.Headers,
+			val content: T
+	) {
+		val success = status < 400
 	}
 
 	suspend open protected fun requestInternal(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null): Response {
 		TODO()
 	}
 
-	suspend fun request(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null): Response {
+	suspend fun request(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null, throwErrors: Boolean = false): Response {
 		val contentLength = content?.getLength() ?: 0L
 		var actualHeaders = headers
 		if (content != null && !headers.any { it.first.equals("content-length", ignoreCase = true) }) {
 			actualHeaders = actualHeaders.withReplaceHeaders("content-length" to "$contentLength")
 		}
-		return requestInternal(method, url, actualHeaders, content)
+		return requestInternal(method, url, actualHeaders, content).apply { if (throwErrors) checkErrors() }
 	}
 
-
-	class HttpException(val msg: String) : IOException(msg)
-
-	suspend fun readBytes(url: String): ByteArray {
-		val res = request(Http.Method.GET, url)
-		if (!res.success) throw HttpException("Http error: " + res.status + " " + res.statusText)
-		return res.content.readAll()
+	suspend fun requestAsString(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null, throwErrors: Boolean = false): CompletedResponse<String> {
+		val res = request(method, url, headers, content, throwErrors = throwErrors)
+		return res.toCompletedResponse(res.readAllString())
 	}
 
-	suspend fun readString(url: String, charset: Charset = Charsets.UTF_8): String {
-		return readBytes(url).toString(charset)
+	suspend fun requestAsBytes(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null, throwErrors: Boolean = false): CompletedResponse<ByteArray> {
+		val res = request(method, url, headers, content, throwErrors = throwErrors)
+		return res.toCompletedResponse(res.readAllBytes())
 	}
+
+	suspend fun readBytes(url: String): ByteArray = requestAsBytes(Http.Method.GET, url, throwErrors = true).content
+	suspend fun readString(url: String, charset: Charset = Charsets.UTF_8): String = requestAsString(Http.Method.GET, url, throwErrors = true).content
 
 	companion object {
 		operator fun invoke() = httpFactory.createClient()
 	}
 }
+
+open class DelayedHttpClient(val delayMs: Int, val parent: HttpClient) : HttpClient() {
+	private val queue = AsyncThread()
+
+	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = queue {
+		println("Waiting $delayMs milliseconds for $url...")
+		sleep(delayMs)
+		parent.request(method, url, headers, content)
+	}
+}
+
+fun HttpClient.delayed(ms: Int) = DelayedHttpClient(ms, this)
 
 open class HttpServer protected constructor() : AsyncCloseable {
 	companion object {
@@ -189,6 +221,13 @@ class LogHttpClient(val redirect: HttpClient? = null) : HttpClient() {
 	}
 
 	fun getAndClearLog() = log.toList().apply { log.clear() }
+}
+
+object HttpStats {
+	val connections = AtomicLong()
+	val disconnections = AtomicLong()
+
+	override fun toString(): String = "HttpStats(connections=$connections, Disconnections=$disconnections)"
 }
 
 open class HttpFactory : Services.Impl() {

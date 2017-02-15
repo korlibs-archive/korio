@@ -2,6 +2,7 @@ package com.soywiz.korio.ext.amazon.dynamodb
 
 import com.soywiz.korio.crypto.fromBase64
 import com.soywiz.korio.crypto.toBase64
+import com.soywiz.korio.ds.AsyncPool
 import com.soywiz.korio.error.ignoreErrors
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.expr.QExpr
@@ -20,7 +21,13 @@ import java.util.*
 // http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Programming.LowLevelAPI.html
 // http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Operations.html
 // @TODO: Retry + Scale Capacity Units
-class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val region: String, val client: HttpClient, val timeProvider: TimeProvider = TimeProvider()) {
+class DynamoDB(
+		val credentials: AmazonAuth.Credentials,
+		val endpoint: URL?, val region: String,
+		val clientFactory: () -> HttpClient,
+		val timeProvider: TimeProvider = TimeProvider(),
+		val maxConnections: Int = 50
+) {
 	// @TODO: Add createTable for Class<T>
 	@Target(AnnotationTarget.FIELD)
 	annotation class HashKey
@@ -58,15 +65,24 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 
 
 	companion object {
-		operator suspend fun invoke(region: String, endpoint: URL? = null, accessKey: String? = null, secretKey: String? = null, httpClient: HttpClient = createHttpClient(), timeProvider: TimeProvider = TimeProvider()): DynamoDB {
-			return DynamoDB(AmazonAuth.getCredentials(accessKey, secretKey)!!, endpoint, region, httpClient, timeProvider)
+		operator suspend fun invoke(
+				region: String, endpoint: URL? = null,
+				accessKey: String? = null, secretKey: String? = null,
+				httpClientFactory: () -> HttpClient = { createHttpClient() },
+				timeProvider: TimeProvider = TimeProvider(),
+				maxConnections: Int = 50
+		): DynamoDB {
+			return DynamoDB(AmazonAuth.getCredentials(accessKey, secretKey), endpoint, region, httpClientFactory, timeProvider = timeProvider, maxConnections = maxConnections)
 		}
 	}
 
 	class Typed<T>(val db: DynamoDB, val clazz: Class<T>, val tableName: String) {
 		val classFactory = ClassFactory(clazz)
 
-		suspend fun createIfNotExists(readCapacityUnits: Int = 5, writeCapacityUnits: Int = 5) {
+		suspend fun deleteTable() = this.apply { db.deleteTable(tableName) }
+		suspend fun deleteTableIfExists() = this.apply { db.deleteTableIfExists(tableName) }
+
+		suspend fun createIfNotExists(readCapacityUnits: Int = 5, writeCapacityUnits: Int = 5): Typed<T> = this.apply {
 			val hashKeyField = classFactory.fields.firstOrNull { it.getAnnotation(HashKey::class.java) != null } ?: invalidOp("No fields from $clazz contain @HashKey")
 			val rangeKeyField = classFactory.fields.firstOrNull { it.getAnnotation(RangeKey::class.java) != null }
 
@@ -156,7 +172,6 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 						)
 						//,"ReturnConsumedCapacity" to "TOTAL"
 				))
-				//println(res)
 			}
 		}
 	}
@@ -204,7 +219,9 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 
 		val res = request("Query", info)
 
-		return (res["Items"] as List<Any?>).map { deserializeObject(it as Map<String, Any?>?) }
+		//println(res)
+
+		return (res["Items"] as? List<Any?>)?.map { deserializeObject(it as Map<String, Any?>?) } ?: listOf()
 	}
 
 	suspend fun deleteItem(tableName: String, item: Map<String, Any?>): Map<String, Any?>? {
@@ -268,6 +285,8 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 		return Dynamic.toList(Dynamic.getAny(res, "TableNames")).map { "$it" }
 	}
 
+	private val clientPool = AsyncPool(maxItems = maxConnections) { clientFactory() }
+
 	suspend private fun request(target: String, payload: Map<String, Any?>): Map<String, Any?> {
 		val contentJson = Json.encode(payload)
 		val content = contentJson.toByteArray()
@@ -275,25 +294,28 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 
 		val url = endpoint ?: URL("https://dynamodb.$region.amazonaws.com")
 
-		val res = client.request(Http.Method.POST, url.toString(),
-				headers = AmazonAuth.V4.signHeaders(
-						credentials.accessKey,
-						credentials.secretKey,
-						Http.Method.POST,
-						url,
-						Http.Headers(
-								"Content-Type" to "application/x-amz-json-1.0",
-								"x-amz-date" to AmazonAuth.V4.DATE_FORMAT.format(Date(timeProvider.currentTimeMillis())),
-								"x-amz-target" to "DynamoDB_20120810.$target",
-								"host" to url.host,
-								"content-length" to "${content.size}"
-						),
-						content, region, "dynamodb"
-				),
-				content = content.openAsync()
-		)
+		val res = clientPool.tempAlloc { client ->
+			//println(client)
+			client.requestAsString(Http.Method.POST, url.toString(),
+					headers = AmazonAuth.V4.signHeaders(
+							credentials.accessKey,
+							credentials.secretKey,
+							Http.Method.POST,
+							url,
+							Http.Headers(
+									"Content-Type" to "application/x-amz-json-1.0",
+									"x-amz-date" to AmazonAuth.V4.DATE_FORMAT.format(Date(timeProvider.currentTimeMillis())),
+									"x-amz-target" to "DynamoDB_20120810.$target",
+									"host" to url.host,
+									"content-length" to "${content.size}"
+							),
+							content, region, "dynamodb"
+					),
+					content = content.openAsync()
+			)
+		}
 
-		val resText = res.readAllBytes().toString(Charsets.UTF_8)
+		val resText = res.content
 
 		if (res.success) {
 			return Json.decode(resText) as Map<String, Any?>
@@ -303,6 +325,7 @@ class DynamoDB(val credentials: AmazonAuth.Credentials, val endpoint: URL?, val 
 			} catch (e: Throwable) {
 				throw RuntimeException(resText)
 			}
+
 			val type = info["__type"] ?: "RuntimeException"
 			val message = info.entries.firstOrNull { it.key.equals("message", ignoreCase = true) }?.value
 			val msg = "$message : " + resText

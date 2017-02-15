@@ -20,9 +20,11 @@ interface Producer<T> : Closeable {
 }
 
 open class ProduceConsumer<T> : Consumer<T>, Producer<T> {
-	val items = LinkedList<T>()
-	val consumers = LinkedList<(T?) -> Unit>()
+	private val items = LinkedList<T>()
+	private val consumers = LinkedList<(T?) -> Unit>()
 	private var closed = false
+
+	val availableCount get() = synchronized(this) { items.size }
 
 	override fun produce(v: T) {
 		synchronized(this) { items.addLast(v) }

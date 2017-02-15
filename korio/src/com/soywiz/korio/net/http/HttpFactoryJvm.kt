@@ -1,125 +1,117 @@
 package com.soywiz.korio.net.http
 
-import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.async.*
+import com.soywiz.korio.error.ignoreErrors
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.toUintClamp
 import java.io.FileNotFoundException
+import java.net.BindException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.util.*
 
 class HttpFactoryJvm : HttpFactory() {
-	override fun createClient(): HttpClient = object : HttpClient() {
-		suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = executeInWorker {
-			try {
-				val aurl = URL(url)
-				HttpURLConnection.setFollowRedirects(false)
-				val con = aurl.openConnection() as HttpURLConnection
-				con.requestMethod = method.name
-				//println("URL:$url")
-				//println("METHOD:${method.name}")
-				for (header in headers) {
-					//println("HEADER:$header")
-					con.addRequestProperty(header.first, header.second)
-				}
-				if (content != null) {
-					con.doOutput = true
-
-					val ccontent = content.slice()
-					val len = ccontent.getAvailable()
-					var left = len
-					val temp = ByteArray(1024)
-					//println("HEADER:content-length, $len")
-
-					con.connect()
-
-					val os = con.outputStream
-					while (left > 0) {
-						val read = ccontent.read(temp, 0, Math.min(temp.size, left.toUintClamp()))
-						if (read <= 0) invalidOp("Problem reading")
-						left -= read
-						os.write(temp, 0, read)
-					}
-					os.flush()
-					os.close()
-				} else {
-					con.connect()
-				}
-
-				Response(
-						status = con.responseCode,
-						statusText = con.responseMessage,
-						headers = Http.Headers.fromListMap(con.headerFields),
-						content = if (con.responseCode < 400) con.inputStream.toAsync().toAsyncStream() else con.errorStream.toAsync().toAsyncStream()
-				)
-			} catch (e: FileNotFoundException) {
-				Response(
-						status = 404,
-						statusText = "NotFound",
-						headers = Http.Headers(),
-						content = byteArrayOf().openAsync()
-				)
-			}
-		}
+	init {
+		System.setProperty("http.keepAlive", "false")
 	}
+
+	override fun createClient(): HttpClient = HttpClientJvm()
 }
 
-/*
-class UrlVfsProviderJvm : UrlVfsProvider {
-	override fun invoke(): Vfs = object : Vfs() {
-		val statCache = AsyncCache()
+class HttpClientJvm : HttpClient() {
+	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = executeInWorker {
+		try {
+			val aurl = URL(url)
+			HttpURLConnection.setFollowRedirects(false)
+			val con = aurl.openConnection() as HttpURLConnection
+			con.requestMethod = method.name
+			//println("URL:$url")
+			//println("METHOD:${method.name}")
+			for (header in headers) {
+				//println("HEADER:$header")
+				con.addRequestProperty(header.first, header.second)
+			}
+			if (content != null) {
+				con.doOutput = true
 
-		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
-			var info: VfsStat? = null
+				val ccontent = content.slice()
+				val len = ccontent.getAvailable()
+				var left = len
+				val temp = ByteArray(1024)
+				//println("HEADER:content-length, $len")
 
-			return object : AsyncStreamBase() {
-				suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker {
-					val conn = URL(path).openConnection() as HttpURLConnection
-					conn.setRequestProperty("Range", "bytes=$position-${(position + len) - 1}")
-					conn.connect()
-					val bis = BufferedInputStream(conn.inputStream)
-					var cpos = offset
-					var pending = len
-					var totalRead = 0
-					while (pending > 0) {
-						checkCancelled()
-						val read = bis.read(buffer, cpos, Math.max(pending, 0x4000))
-						if (read == 0) break
-						if (read <= 0) throw IOException("Read: $read")
-						cpos += read
-						pending -= read
-						totalRead += read
+				while (true) {
+					try {
+						con.connect()
+						HttpStats.connections.incrementAndGet()
+						break
+					} catch (e: BindException) {
+						// Potentially no more ports available. Too many pending connections.
+						e.printStackTrace()
+						sleep(1000)
+						continue
 					}
-					totalRead
 				}
 
-				suspend override fun getLength(): Long {
-					if (info == null) info = stat(path)
-					return info!!.size
+				val os = con.outputStream
+				while (left > 0) {
+					val read = ccontent.read(temp, 0, Math.min(temp.size, left.toUintClamp()))
+					if (read <= 0) invalidOp("Problem reading")
+					left -= read
+					os.write(temp, 0, read)
 				}
-			}.toAsyncStream().buffered()
-		}
+				os.flush()
+				os.close()
+			} else {
+				con.connect()
+			}
 
-		//suspend override fun readFully(path: String): ByteArray = executeInWorker {
-		//	val s = URL(path).openStream()
-		//	s.readBytes()
-		//}
+			val produceConsumer = ProduceConsumer<ByteArray>()
 
-		suspend override fun stat(path: String): VfsStat = statCache(path) {
-			executeInWorker {
-				val s = URL(path)
+			spawnAndForget {
+				val syncStream = if (con.responseCode < 400) con.inputStream else con.errorStream
 				try {
-					HttpURLConnection.setFollowRedirects(false)
-					val con = (s.openConnection() as HttpURLConnection).apply {
-						requestMethod = "HEAD"
+					val stream = syncStream.toAsync().toAsyncStream()
+					val temp = ByteArray(0x1000)
+					while (true) {
+						// @TODO: Totally cancel reading if nobody is consuming this. Think about the best way of doing this.
+						// node.js pause equivalent?
+						while (produceConsumer.availableCount > 4) { // Prevent filling the memory if nobody is consuming data
+							sleep(100)
+						}
+						val read = stream.read(temp)
+						if (read <= 0) break
+						produceConsumer.produce(Arrays.copyOf(temp, read))
 					}
-					if (con.responseCode != HttpURLConnection.HTTP_OK) throw RuntimeException("Http error")
-					createExistsStat(path, isDirectory = true, size = con.getHeaderField("Content-Length").toLongOrNull() ?: 0L)
-				} catch (e: Exception) {
-					createNonExistsStat(path)
+				} finally {
+					ignoreErrors { syncStream.close() }
+					ignoreErrors { produceConsumer.close() }
+					ignoreErrors { con.disconnect() }
+					HttpStats.disconnections.incrementAndGet()
 				}
 			}
+
+			//Response(
+			//		status = con.responseCode,
+			//		statusText = con.responseMessage,
+			//		headers = Http.Headers.fromListMap(con.headerFields),
+			//		content = if (con.responseCode < 400) con.inputStream.readBytes().openAsync() else con.errorStream.toAsync().toAsyncStream()
+			//)
+
+			Response(
+					status = con.responseCode,
+					statusText = con.responseMessage,
+					headers = Http.Headers.fromListMap(con.headerFields),
+					content = produceConsumer.toAsyncInputStream()
+			)
+		} catch (e: FileNotFoundException) {
+			Response(
+					status = 404,
+					statusText = "NotFound",
+					headers = Http.Headers(),
+					content = byteArrayOf().openAsync()
+			)
 		}
 	}
 }
-*/

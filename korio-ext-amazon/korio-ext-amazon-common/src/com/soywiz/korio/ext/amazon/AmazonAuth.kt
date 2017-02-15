@@ -16,7 +16,7 @@ import javax.crypto.spec.SecretKeySpec
 object AmazonAuth {
 	class Credentials(val accessKey: String, val secretKey: String)
 
-	suspend fun getCredentials(accessKey: String? = null, secretKey: String? = null): Credentials? {
+	suspend fun getCredentials(accessKey: String? = null, secretKey: String? = null): Credentials {
 		var finalAccessKey = accessKey
 		var finalSecretKey = secretKey
 
@@ -34,7 +34,7 @@ object AmazonAuth {
 			} catch (e: IOException) {
 			}
 		}
-		return if (finalAccessKey != null && finalSecretKey != null) Credentials(finalAccessKey, finalSecretKey) else null
+		return if (finalAccessKey != null && finalSecretKey != null) Credentials(finalAccessKey, finalSecretKey) else Credentials("", "")
 	}
 
 	object V1 {

@@ -26,6 +26,8 @@ dependencies {
 	compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
 	compile project(":korio")
 	compile project(":korio-ext-db-redis")
+	compile project(":korio-ext-amazon-dynamodb")
+	//compile project(":korio-vertx")
 	testCompile "junit:junit:4.11"
 }
 

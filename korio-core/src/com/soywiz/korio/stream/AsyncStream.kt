@@ -49,37 +49,38 @@ fun AsyncBaseStream.toAsyncStream(): AsyncStream {
 	val input = this as? AsyncInputStream
 	val output = this as? AsyncOutputStream
 	val len = this as? AsyncLengthStream
-	val closeable = this as? AsyncCloseable
+	val closeable = this
+
 	return object : AsyncStreamBase() {
 		var expectedPosition: Long = 0L
+		//val events = arrayListOf<String>()
 
 		suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 			if (input == null) throw UnsupportedOperationException()
-			if (position != expectedPosition) throw UnsupportedOperationException("Seeking not supported!")
+			//events += "before_read:actualPosition=$position,position=$expectedPosition"
+			checkPosition(position)
 			val read = input.read(buffer, offset, len)
-			expectedPosition += read
+			//events += "read:$read"
+			if (read > 0) expectedPosition += read
 			return read
 		}
 
 		suspend override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
 			if (output == null) throw UnsupportedOperationException()
-			if (position != expectedPosition) throw UnsupportedOperationException("Seeking not supported!")
+			checkPosition(position)
 			output.write(buffer, offset, len)
 			expectedPosition += len
 		}
 
-		suspend override fun setLength(value: Long) {
-			if (len == null) throw UnsupportedOperationException()
-			len.setLength(value)
+		private fun checkPosition(position: Long) {
+			if (position != expectedPosition) {
+				throw UnsupportedOperationException("Seeking not supported!")
+			}
 		}
 
-		suspend override fun getLength(): Long {
-			return len?.getLength() ?: throw UnsupportedOperationException()
-		}
-
-		suspend override fun close() {
-			closeable?.close()
-		}
+		suspend override fun setLength(value: Long) = len?.setLength(value) ?: throw UnsupportedOperationException()
+		suspend override fun getLength(): Long = len?.getLength() ?: throw UnsupportedOperationException()
+		suspend override fun close() = closeable.close()
 	}.toAsyncStream()
 }
 
@@ -98,7 +99,7 @@ fun AsyncStreamBase.toAsyncStream(position: Long = 0L): AsyncStream = AsyncStrea
 class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : AsyncInputStream, AsyncOutputStream, AsyncPositionLengthStream, AsyncCloseable {
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		val read = base.read(position, buffer, offset, len)
-		position += read
+		if (read >= 0) position += read
 		return read
 	}
 
@@ -327,18 +328,22 @@ suspend fun AsyncStream.hasAvailable(): Boolean = try {
 }
 
 suspend fun AsyncInputStream.readAll(): ByteArray {
-	return if (this is AsyncStream && this.hasAvailable()) {
-		val available = this.getAvailable().toInt()
-		readBytes(available)
-	} else {
-		val out = ByteArrayOutputStream()
-		val temp = BYTES_TEMP
-		while (true) {
-			val r = read(temp, 0, temp.size)
-			if (r <= 0) break
-			out.write(temp, 0, r)
+	return try {
+		if (this is AsyncStream && this.hasAvailable()) {
+			val available = this.getAvailable().toInt()
+			return this.readBytes(available)
+		} else {
+			val out = ByteArrayOutputStream()
+			val temp = BYTES_TEMP
+			while (true) {
+				val r = this.read(temp, 0, temp.size)
+				if (r <= 0) break
+				out.write(temp, 0, r)
+			}
+			out.toByteArray()
 		}
-		out.toByteArray()
+	} finally {
+		this.close()
 	}
 }
 
@@ -493,7 +498,8 @@ fun InputStream.toAsync(): AsyncInputStream {
 			syncIS.read(buffer, offset, len)
 		}
 
-		suspend override fun close() {
+		override suspend fun close() {
+			syncIS.close()
 		}
 	}
 }
