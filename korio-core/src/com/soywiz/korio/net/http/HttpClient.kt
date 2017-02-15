@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.AtomicLong
 interface Http {
 	enum class Method { OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH, OTHER }
 
-	class HttpException(val status: Int, val statusText: String, val msg: String) : IOException(msg)
+	class HttpException(val statusCode: Int, val msg: String = "Error$statusCode", val statusText: String = HttpStatusMessage.CODES[statusCode] ?: "Error$statusCode") : IOException(msg)
 
 	data class Headers(val items: List<Pair<String, String>>) : Iterable<Pair<String, String>> {
 		constructor(vararg items: Pair<String, String>) : this(items.toList())
@@ -110,7 +110,7 @@ open class HttpClient protected constructor() {
 		suspend fun readAllString(charset: Charset = Charsets.UTF_8) = readAllBytes().toString(charset) // Detect charset from headers
 
 		suspend fun checkErrors(): Response = this.apply {
-			if (!success) throw Http.HttpException(status, statusText, readAllString())
+			if (!success) throw Http.HttpException(status, readAllString(), statusText)
 		}
 
 		fun withStringResponse(str: String, charset: Charset = Charsets.UTF_8) = this.copy(content = str.toByteArray(charset).openAsync())
@@ -223,6 +223,69 @@ class LogHttpClient(val redirect: HttpClient? = null) : HttpClient() {
 	fun getAndClearLog() = log.toList().apply { log.clear() }
 }
 
+object HttpStatusMessage {
+	val CODES = mapOf(
+			100 to "Continue",
+			101 to "Switching Protocols",
+			200 to "OK",
+			201 to "Created",
+			202 to "Accepted",
+			203 to "Non-Authoritative Information",
+			204 to "No Content",
+			205 to "Reset Content",
+			206 to "Partial Content",
+			300 to "Multiple Choices",
+			301 to "Moved Permanently",
+			302 to "Found",
+			303 to "See Other",
+			304 to "Not Modified",
+			305 to "Use Proxy",
+			307 to "Temporary Redirect",
+			400 to "Bad Request",
+			401 to "Unauthorized",
+			402 to "Payment Required",
+			403 to "Forbidden",
+			404 to "Not Found",
+			405 to "Method Not Allowed",
+			406 to "Not Acceptable",
+			407 to "Proxy Authentication Required",
+			408 to "Request Timeout",
+			409 to "Conflict",
+			410 to "Gone",
+			411 to "Length Required",
+			412 to "Precondition Failed",
+			413 to "Request Entity Too Large",
+			414 to "Request-URI Too Long",
+			415 to "Unsupported Media Type",
+			416 to "Requested Range Not Satisfiable",
+			417 to "Expectation Failed",
+			418 to "I'm a teapot",
+			422 to "Unprocessable Entity (WebDAV - RFC 4918)",
+			423 to "Locked (WebDAV - RFC 4918)",
+			424 to "Failed Dependency (WebDAV) (RFC 4918)",
+			425 to "Unassigned",
+			426 to "Upgrade Required (RFC 7231)",
+			428 to "Precondition Required",
+			429 to "Too Many Requests",
+			431 to "Request Header Fileds Too Large)",
+			449 to "Error449",
+			451 to "Unavailable for Legal Reasons",
+			500 to "Internal Server Error",
+			501 to "Not Implemented",
+			502 to "Bad Gateway",
+			503 to "Service Unavailable",
+			504 to "Gateway Timeout",
+			505 to "HTTP Version Not Supported",
+			506 to "Variant Also Negotiates (RFC 2295)",
+			507 to "Insufficient Storage (WebDAV - RFC 4918)",
+			508 to "Loop Detected (WebDAV)",
+			509 to "Bandwidth Limit Exceeded",
+			510 to "Not Extended (RFC 2774)",
+			511 to "Network Authentication Required"
+	)
+
+}
+
 object HttpStats {
 	val connections = AtomicLong()
 	val disconnections = AtomicLong()
@@ -239,3 +302,5 @@ val httpFactory by lazy { Services.load<HttpFactory>() }
 
 fun createHttpClient() = httpFactory.createClient()
 fun createHttpServer() = httpFactory.createServer()
+
+fun httpError(code: Int, msg: String): Nothing = throw Http.HttpException(code, msg)

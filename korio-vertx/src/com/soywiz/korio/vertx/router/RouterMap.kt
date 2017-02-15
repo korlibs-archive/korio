@@ -4,6 +4,9 @@ import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.async
 import com.soywiz.korio.async.invokeSuspend
 import com.soywiz.korio.coroutine.Continuation
+import com.soywiz.korio.error.InvalidOperationException
+import com.soywiz.korio.net.http.Http
+import com.soywiz.korio.net.http.httpError
 import com.soywiz.korio.util.Dynamic
 import io.netty.handler.codec.http.QueryStringDecoder
 import io.vertx.core.buffer.Buffer
@@ -93,7 +96,8 @@ suspend fun KorRouter.registerRouter(clazz: Class<*>) {
 						//var deferred: Promise.Deferred<Any>? = null
 						val args = arrayListOf<Any?>()
 						val mapArgs = hashMapOf<String, String>()
-						for ((paramType, annotations) in method.parameterTypes.zip(method.parameterAnnotations)) {
+						for ((indexedParamType, annotations) in method.parameterTypes.withIndex().zip(method.parameterAnnotations)) {
+							val (index, paramType) = indexedParamType
 							val get = annotations.filterIsInstance<Param>().firstOrNull()
 							val post = annotations.filterIsInstance<Post>().firstOrNull()
 							if (get != null) {
@@ -106,7 +110,7 @@ suspend fun KorRouter.registerRouter(clazz: Class<*>) {
 								//deferred = Promise.Deferred<Any>()
 								//args += deferred.toContinuation()
 							} else {
-								throw RuntimeException("Expected @Get annotation")
+								httpError(500, "Route $route expected @Get or @Post annotation for parameter $index in method ${method.name}")
 							}
 						}
 
@@ -123,18 +127,25 @@ suspend fun KorRouter.registerRouter(clazz: Class<*>) {
 							else -> res.end(Json.encode(finalResult))
 						}
 					} catch (t: Throwable) {
-						System.err.println("${req.absoluteURI()} : $postParams")
-						t.printStackTrace()
-						res.statusCode = 500
 						val t2 = when (t) {
 							is InvocationTargetException -> t.cause ?: t
-							else -> {
-								//println("Router.registerRouterAsync (${t.message}):")
-								//t.printStackTrace()
-								t
-							}
+							else -> t
 						}
-						res.end("${t2.message}")
+						val ft = when (t2) {
+							is NoSuchElementException -> Http.HttpException(404, t2.message ?: "")
+							is InvalidOperationException -> Http.HttpException(400, t2.message ?: "")
+							else -> t2
+						}
+						if (ft is Http.HttpException) {
+							System.err.println("+++ ${req.absoluteURI()} : $postParams")
+							res.statusCode = ft.statusCode
+							res.statusMessage = ft.statusText
+						} else {
+							System.err.println("### ${req.absoluteURI()} : $postParams")
+							t.printStackTrace()
+							res.statusCode = 500
+						}
+						res.end("${ft.message}")
 					}
 				}
 			}
