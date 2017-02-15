@@ -64,14 +64,23 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 			val stats: Stats = Stats(),
 			val reconnect: suspend (Client) -> Unit = {}
 	) : RedisCommand {
-		private val reader = reader.toBuffered(bufferSize = 0x100)
+		//private val reader = reader.toBuffered(bufferSize = 1)
+		private val reader = reader.toBuffered(bufferSize = 0x1000)
+		//private val reader = reader
 
 		suspend fun close() = this.close.close()
 
 		private val commandQueue = AsyncThread()
 
+		companion object {
+			//const val DEBUG = true
+			const val DEBUG = false
+		}
+
 		suspend private fun readValue(): Any? {
 			val line = reader.readBufferedUntil(LF).toString(charset).trim()
+			//val line = reader.readUntil(LF).toString(charset).trim()
+			if (DEBUG) println("Redis[RECV]: $line")
 			//val line = reader.readLine(charset = charset).trim()
 			//println(line)
 
@@ -84,9 +93,11 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 					if (bytesToRead == -1) {
 						null
 					} else {
-						val data = reader.readBytes(bytesToRead)
+						val data = reader.readBytesExact(bytesToRead)
 						reader.skip(2) // CR LF
-						data.toString(charset)
+						val out = data.toString(charset)
+						if (DEBUG) println("Redis[RECV][data]: $out")
+						out
 					}
 				}
 				'*' -> { // Array reply
@@ -118,8 +129,11 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 				}
 
 				// Common queue is not required align reading because Redis support pipelining : https://redis.io/topics/pipelining
-				val data = cmd.toString().toByteArray(charset)
+				val dataString = cmd.toString()
+				val data = dataString.toByteArray(charset)
 				var retryCount = 0
+
+				if (DEBUG) println("Redis[SEND]: $dataString")
 
 				retry@ while (true) {
 					stats.commandsStarted.incrementAndGet()

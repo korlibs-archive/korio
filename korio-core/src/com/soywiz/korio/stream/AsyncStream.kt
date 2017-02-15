@@ -478,6 +478,19 @@ suspend fun AsyncOutputStream.writeLongArray_be(array: LongArray) = writeBytes(B
 suspend fun AsyncOutputStream.writeFloatArray_be(array: FloatArray) = writeBytes(ByteArray(array.size * 4).apply { writeArray_be(0, array) })
 suspend fun AsyncOutputStream.writeDoubleArray_be(array: DoubleArray) = writeBytes(ByteArray(array.size * 8).apply { writeArray_be(0, array) })
 
+suspend fun AsyncInputStream.readUntil(endByte: Byte): ByteArray {
+	val out = ByteArrayOutputStream()
+	try {
+		while (true) {
+			val c = readU8()
+			if (c.toByte() == endByte) break
+			out.write(c)
+		}
+	} catch (e: EOFException) {
+	}
+	return out.toByteArray()
+}
+
 suspend fun AsyncInputStream.readLine(eol: Char = '\n', charset: Charset = Charsets.UTF_8): String {
 	val out = ByteArrayOutputStream()
 	try {
