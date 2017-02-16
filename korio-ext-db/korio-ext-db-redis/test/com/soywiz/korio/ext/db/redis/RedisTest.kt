@@ -20,7 +20,7 @@ class RedisTest {
 		for (n in 0 until 10) {
 			server.writeString("+OK\r\n\$5\r\nworld\r\n\$5\r\nworld\r\n")
 
-			val redis = Redis.Client(reader = serverToClient.toAsyncInputStream(), writer = clientToServer.toAsyncOutputStream(), close = AsyncCloseable.DUMMY)
+			val redis = Redis.Client(reader = serverToClient.toAsyncInputStream(), writer = clientToServer.toAsyncOutputStream(), close = AsyncCloseable.DUMMY, bufferSize = 1)
 			//val redis = Redis()
 			redis.set("hello", "world")
 			assertEquals("world", redis.get("hello"))

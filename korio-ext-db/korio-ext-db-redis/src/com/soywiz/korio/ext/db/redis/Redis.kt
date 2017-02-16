@@ -15,7 +15,7 @@ import java.util.concurrent.atomic.AtomicLong
 // https://redis.io/topics/protocol
 class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private val clientFactory: suspend () -> Client) : RedisCommand {
 	companion object {
-		operator suspend fun invoke(hosts: List<String> = listOf("127.0.0.1:6379"), maxConnections: Int = 50, charset: Charset = Charsets.UTF_8, password: String? = null, stats: Stats = Stats()): Redis {
+		operator suspend fun invoke(hosts: List<String> = listOf("127.0.0.1:6379"), maxConnections: Int = 50, charset: Charset = Charsets.UTF_8, password: String? = null, stats: Stats = Stats(), bufferSize: Int = 0x1000): Redis {
 			val hostsWithPorts = hosts.map { HostWithPort.parse(it, 6379) }
 
 			var index: Int = 0
@@ -33,7 +33,8 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 						writer = tcpClient,
 						close = tcpClient,
 						charset = charset,
-						stats = stats
+						stats = stats,
+						bufferSize = bufferSize
 				)
 				client
 			}
@@ -62,11 +63,10 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 			val close: AsyncCloseable,
 			val charset: Charset = Charsets.UTF_8,
 			val stats: Stats = Stats(),
+			val bufferSize: Int = 0x1000,
 			val reconnect: suspend (Client) -> Unit = {}
 	) : RedisCommand {
-		//private val reader = reader.toBuffered(bufferSize = 1)
-		private val reader = reader.toBuffered(bufferSize = 0x1000)
-		//private val reader = reader
+		private val reader = reader.toBuffered(bufferSize = bufferSize)
 
 		suspend fun close() = this.close.close()
 
