@@ -21,10 +21,9 @@ import java.util.concurrent.TimeUnit
 class LocalVfsProviderJvm : LocalVfsProvider() {
 	override fun invoke(): Vfs = object : Vfs() {
 		val that = this
-		val baseAbsolutePath = ""
-		override val absolutePath: String = baseAbsolutePath
+		override val absolutePath: String = ""
 
-		fun resolve(path: String) = VfsUtil.lightCombine(baseAbsolutePath, path)
+		fun resolve(path: String) = path
 		fun resolvePath(path: String) = Paths.get(resolve(path))
 		fun resolveFile(path: String) = File(resolve(path))
 
@@ -113,9 +112,9 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 			val fullpath = "$path/${file.name}"
 			if (file.exists()) {
 				createExistsStat(
-					fullpath,
-					isDirectory = file.isDirectory,
-					size = file.length()
+						fullpath,
+						isDirectory = file.isDirectory,
+						size = file.length()
 				)
 			} else {
 				createNonExistsStat(fullpath)

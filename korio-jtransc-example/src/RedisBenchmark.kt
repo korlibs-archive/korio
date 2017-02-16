@@ -19,8 +19,8 @@ fun main(args: Array<String>) = EventLoop.main {
 			val elapsed = System.currentTimeMillis() - start
 			println("$elapsed: $completedCount/$startedCount : ${redis.stats} : ${AsyncClient.Stats}")
 		}
-		//for (n in 0 until 1000000) {
-			for (n in 0 until 100000) {
+		for (n in 0 until 1000000) {
+			//for (n in 0 until 100000) {
 			spawnAndForget {
 				try {
 					startedCount.incrementAndGet()
