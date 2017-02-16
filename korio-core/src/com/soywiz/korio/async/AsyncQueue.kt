@@ -36,6 +36,15 @@ class AsyncThread {
 		lastPromise = newDeferred.promise
 		return newDeferred.promise.await() as T
 	}
+
+	fun <T> sync(func: suspend () -> T): Promise<T> {
+		val newDeferred = Promise.Deferred<T>()
+		lastPromise.always {
+			func.korioStartCoroutine(newDeferred.toContinuation())
+		}
+		lastPromise = newDeferred.promise
+		return newDeferred.promise
+	}
 }
 
 @Deprecated("AsyncQueue", ReplaceWith("AsyncQueue"))

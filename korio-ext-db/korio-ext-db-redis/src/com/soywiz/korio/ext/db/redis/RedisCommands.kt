@@ -1,11 +1,9 @@
 package com.soywiz.korio.ext.db.redis
 
-import com.soywiz.korio.util.quote
-
 // @TODO: Missing commands
 
-suspend fun RedisCommand.append(key: String, value: String) = commandString("append", key.quote(), value.quote())
-suspend fun RedisCommand.auth(password: String) = commandString("auth", password.quote())
+suspend fun RedisCommand.append(key: String, value: String) = commandString("append", key, value)
+suspend fun RedisCommand.auth(password: String) = commandString("auth", password)
 suspend fun RedisCommand.bgrewriteaof() = commandString("bgrewriteaof")
 suspend fun RedisCommand.bgsave() = commandString("bgsave")
 suspend fun RedisCommand.bitcount(key: String) = commandString("bitcount", key)
@@ -25,19 +23,19 @@ suspend fun RedisCommand.zadd(key: String, vararg scores: Pair<String, Double>):
 	val args = arrayListOf<Any?>()
 	for (score in scores) {
 		args += score.second
-		args += score.first.quote()
+		args += score.first
 	}
 	return commandLong("zadd", key, *args.toArray())
 }
 
-suspend fun RedisCommand.zadd(key: String, member: String, score: Double): Long = commandLong("zadd", key, score, member.quote())
+suspend fun RedisCommand.zadd(key: String, member: String, score: Double): Long = commandLong("zadd", key, score, member)
 suspend fun RedisCommand.sadd(key: String, member: String): Long = commandLong("sadd", key, member)
 suspend fun RedisCommand.smembers(key: String): List<String> = commandArray("smembers", key)
 
-suspend fun RedisCommand.zincrby(key: String, member: String, score: Double) = commandString("zincrby", key, score, member.quote())!!
+suspend fun RedisCommand.zincrby(key: String, member: String, score: Double) = commandString("zincrby", key, score, member)!!
 suspend fun RedisCommand.zcard(key: String): Long = commandLong("zcard", key)
-suspend fun RedisCommand.zrevrank(key: String, member: String): Long = commandLong("zrevrank", key, member.quote())
-suspend fun RedisCommand.zscore(key: String, member: String): Long = commandLong("zscore", key, member.quote())
+suspend fun RedisCommand.zrevrank(key: String, member: String): Long = commandLong("zrevrank", key, member)
+suspend fun RedisCommand.zscore(key: String, member: String): Long = commandLong("zscore", key, member)
 
 private fun List<Any?>.listOfPairsToMap(): Map<String, String> {
 	val list = this

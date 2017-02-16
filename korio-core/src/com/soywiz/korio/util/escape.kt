@@ -75,5 +75,5 @@ fun String.isQuoted(): Boolean = this.startsWith('"') && this.endsWith('"')
 fun String.unquote(): String = if (isQuoted()) {
 	this.substring(1, this.length - 1).unescape()
 } else {
-	"$this"
+	this
 }
