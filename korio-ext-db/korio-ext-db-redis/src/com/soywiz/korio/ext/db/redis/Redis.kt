@@ -7,9 +7,7 @@ import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.net.HostWithPort
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.AsyncCloseable
-import com.soywiz.korio.util.quote
 import com.soywiz.korio.util.substr
-import com.soywiz.korio.util.unquote
 import java.io.IOException
 import java.nio.charset.Charset
 import java.util.concurrent.atomic.AtomicLong
@@ -106,7 +104,7 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 					} else {
 						val data = reader.readBytesExact(bytesToRead)
 						reader.skip(2) // CR LF
-						val out = data.toString(charset).redisUnquoteIfRequired()
+						val out = data.toString(charset)
 						if (DEBUG) println("Redis[RECV][data]: $out")
 						out
 					}
@@ -178,37 +176,6 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 				}
 			}
 		}
-
-		private fun String.redisUnquoteIfRequired(): String {
-			if (this.startsWith('"')) {
-				return this.unquote()
-			} else {
-				return this
-			}
-		}
-
-		//private fun String.redisQuoteIfRequired(): String {
-		//	return this.redisQuote()
-		//}
-//
-		//private fun String.redisQuote(): String {
-		//	val out = StringBuilder(this.length + 2)
-		//	//kotlin.text.StringBuilder() // @TODO: Kotlin bug <- typealias not completing
-		//	//java.lang.StringBuilder()
-		//	out.append('"')
-		//	for (c in this) {
-		//		when (c) {
-		//			'"' -> out.append("\\\"")
-		//			'\'' -> out.append("\\\'")
-		//			'\n' -> out.append("\\\n")
-		//			'\r' -> out.append("\\\r")
-		//			'\t' -> out.append("\\\t")
-		//			else -> out.append(c)
-		//		}
-		//	}
-		//	out.append('"')
-		//	return out.toString()
-		//}
 	}
 
 	private val clientPool = AsyncPool(maxItems = maxConnections) { clientFactory() }
