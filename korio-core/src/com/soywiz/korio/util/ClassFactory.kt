@@ -10,12 +10,13 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.Modifier
 
 // @TODO: This should use ASM library to create a class per class to be as fast as possible
-class ClassFactory<T> private constructor(val clazz: Class<T>, internal: kotlin.Boolean) {
+class ClassFactory<T> private constructor(val clazz: Class<out T>, internal: kotlin.Boolean) {
 	companion object {
 		val cache = hashMapOf<Class<*>, ClassFactory<*>>()
 		@Suppress("UNCHECKED_CAST")
-		operator fun <T> get(clazz: Class<T>): ClassFactory<T> = cache.getOrPut(clazz) { ClassFactory(clazz, true) } as ClassFactory<T>
-		operator fun <T> invoke(clazz: Class<T>): ClassFactory<T> = ClassFactory[clazz]
+		operator fun <T> get(clazz: Class<out T>): ClassFactory<T> = cache.getOrPut(clazz) { ClassFactory(clazz, true) } as ClassFactory<T>
+
+		operator fun <T> invoke(clazz: Class<out T>): ClassFactory<T> = ClassFactory[clazz]
 
 		fun createDummyUnchecked(clazz: Class<*>): Any {
 			when (clazz) {
@@ -39,7 +40,7 @@ class ClassFactory<T> private constructor(val clazz: Class<T>, internal: kotlin.
 	val constructor = clazz.declaredConstructors.first()
 	val dummyArgs = createDummyArgs(constructor)
 	val fields = clazz.declaredFields
-		.filter { !Modifier.isTransient(it.modifiers) }
+			.filter { !Modifier.isTransient(it.modifiers) }
 
 	init {
 		for (field in fields) {

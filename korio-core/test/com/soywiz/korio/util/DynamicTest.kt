@@ -27,12 +27,11 @@ class DynamicTest {
 	@Test
 	fun get() = syncTest {
 		class DynamicObj(val obj: Any?) {
-			suspend operator fun get(key: String) = DynamicObj(Dynamic.getAny(obj, key))
+			suspend fun get(key: String) = DynamicObj(Dynamic.getAny(obj, key))
 
 			fun <T> to(): T = obj as T
 		}
 
-		//Assert.assertEquals(10, DynamicObj(mapOf("a" to 10))["a"].to<Int>()) // FAILS: Wrong code generated
-		Assert.assertEquals(10, DynamicObj(mapOf("a" to 10)).get("a").to<Int>()) // WORKS
+		Assert.assertEquals(10, DynamicObj(mapOf("a" to 10)).get("a").to<Int>())
 	}
 }

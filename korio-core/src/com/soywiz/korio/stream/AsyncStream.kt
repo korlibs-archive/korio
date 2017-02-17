@@ -277,8 +277,7 @@ suspend fun AsyncInputStream.readExact(buffer: ByteArray, offset: Int, len: Int)
 	}
 }
 
-//suspend private fun AsyncInputStream.readTempExact(len: Int, temp: ByteArray = BYTES_TEMP): ByteArray = temp.apply { readExact(temp, 0, len) } // bug https://youtrack.jetbrains.com/issue/KT-15821
-suspend private fun AsyncInputStream.readTempExact(len: Int, temp: ByteArray = BYTES_TEMP): ByteArray = run { readExact(temp, 0, len); return temp }
+suspend private fun AsyncInputStream.readTempExact(len: Int, temp: ByteArray = BYTES_TEMP): ByteArray = temp.apply { readExact(temp, 0, len) }
 
 suspend fun AsyncInputStream.read(data: ByteArray): Int = read(data, 0, data.size)
 suspend fun AsyncInputStream.read(data: UByteArray): Int = read(data.data, 0, data.size)
@@ -288,12 +287,7 @@ suspend fun AsyncInputStream.readBytes(len: Int): ByteArray {
 	return Arrays.copyOf(ba, read(ba, 0, len))
 }
 
-//suspend fun AsyncInputStream.readBytesExact(len: Int): ByteArray = ByteArray(len).apply { readExact(this, 0, len) } // bug https://youtrack.jetbrains.com/issue/KT-15821
-suspend fun AsyncInputStream.readBytesExact(len: Int): ByteArray { // bug https://youtrack.jetbrains.com/issue/KT-15821
-	val out = ByteArray(len)
-	readExact(out, 0, len)
-	return out
-}
+suspend fun AsyncInputStream.readBytesExact(len: Int): ByteArray = ByteArray(len).apply { readExact(this, 0, len) }
 
 suspend fun AsyncInputStream.readU8(): Int = readTempExact(1).readU8(0)
 suspend fun AsyncInputStream.readS8(): Int = readTempExact(1).readS8(0)

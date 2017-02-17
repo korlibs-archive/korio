@@ -57,7 +57,7 @@ fun String.transform(transform: (Char) -> String): String {
 
 fun Any?.toBetterString(): String {
 	if (this == null) return "null"
-	val clazz = this.javaClass
+	val clazz = this::class.java
 	if (clazz.isArray) return "" + ReflectedArray(this).toList()
 	return "$this"
 }

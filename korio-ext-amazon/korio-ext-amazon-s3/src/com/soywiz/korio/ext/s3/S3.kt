@@ -54,7 +54,7 @@ class S3(val credentials: AmazonAuth.Credentials?, val endpoint: String, val htt
 	suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) {
 		val access = attributes.get<ACL>() ?: ACL.PRIVATE
 		val contentType = attributes.get<MimeType>() ?: PathInfo(path).mimeTypeByExtension
-		val contentLength = content.getAvailable()
+		//val contentLength = content.getAvailable()
 
 		request(
 				Http.Method.PUT,
@@ -62,8 +62,8 @@ class S3(val credentials: AmazonAuth.Credentials?, val endpoint: String, val htt
 				contentType = contentType.mime,
 				headers = Http.Headers(
 						"content-type" to contentType.mime,
-						//"content-length" to "${content.getLength()}", // @TODO: @KOTLIN @BUG error: java.lang.VerifyError: Bad type on operand stack
-						"content-length" to "$contentLength",
+						"content-length" to "${content.getLength()}", // @TODO: @KOTLIN @BUG error: java.lang.VerifyError: Bad type on operand stack
+						//"content-length" to "$contentLength",
 						"x-amz-acl" to access.text
 				),
 				content = content

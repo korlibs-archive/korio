@@ -7,7 +7,7 @@ inline fun <T : Throwable> expectException(ex: Class<T>, callback: () -> Unit) {
 		callback()
 		throw ExpectedException("Expected $ex")
 	} catch (e: Throwable) {
-		if (!e.javaClass.isAssignableFrom(ex)) {
+		if (!e::class.java.isAssignableFrom(ex)) {
 			throw e
 		}
 	}

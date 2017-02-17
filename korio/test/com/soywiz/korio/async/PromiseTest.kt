@@ -36,7 +36,7 @@ class PromiseTest {
 		try {
 			out += "" + p.await()
 		} catch(e: Throwable) {
-			out += e.javaClass.name
+			out += e::class.java.name
 		}
 
 		Assert.assertEquals(

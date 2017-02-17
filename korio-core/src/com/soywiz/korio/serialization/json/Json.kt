@@ -87,7 +87,7 @@ object Json {
 			}
 			is String -> encodeString(obj, b)
 			is Number -> b.append("$obj")
-			else -> encode(ClassFactory(obj.javaClass).toMap(obj), b)
+			else -> encode(ClassFactory(obj::class.java).toMap(obj), b)
 		}
 	}
 
@@ -127,7 +127,7 @@ object Json {
 			}
 			is String -> b.inline(encodeString(obj))
 			is Number -> b.inline("$obj")
-			else -> encodePretty(ClassFactory(obj.javaClass).toMap(obj), b)
+			else -> encodePretty(ClassFactory(obj::class.java).toMap(obj), b)
 		}
 	}
 

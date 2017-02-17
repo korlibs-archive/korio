@@ -18,10 +18,11 @@ class VfsFile(
 ) : VfsNamed(path) {
 	operator fun get(path: String): VfsFile = VfsFile(vfs, VfsUtil.combine(this.path, path))
 
-	suspend operator fun set(path: String, content: String): Unit = this[path].put(content.toByteArray(Charsets.UTF_8).openAsync())
-	suspend operator fun set(path: String, content: ByteArray): Unit = this[path].put(content.openAsync())
-	suspend operator fun set(path: String, content: AsyncStream): Unit = run { this[path].writeStream(content) }
-	suspend operator fun set(path: String, content: VfsFile): Unit = run { this[path].writeFile(content) }
+	// @TODO: Kotlin suspend operator not supported yet!
+	suspend fun set(path: String, content: String): Unit = this[path].put(content.toByteArray(Charsets.UTF_8).openAsync())
+	suspend fun set(path: String, content: ByteArray): Unit = this[path].put(content.openAsync())
+	suspend fun set(path: String, content: AsyncStream): Unit = run { this[path].writeStream(content) }
+	suspend fun set(path: String, content: VfsFile): Unit = run { this[path].writeFile(content) }
 
 	suspend fun put(content: AsyncStream, attributes: List<Vfs.Attribute> = listOf()): Unit = vfs.put(path, content, attributes)
 	suspend fun put(content: AsyncStream, vararg attributes: Vfs.Attribute): Unit = vfs.put(path, content, attributes.toList())

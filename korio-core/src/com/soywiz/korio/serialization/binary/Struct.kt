@@ -166,7 +166,7 @@ fun ByteArray.readStructElement(offset: Int, type: Struct.Type, littleEndian: Bo
 				else -> {
 
 					val al = (0 until count).map { readStructElement(offset + elementSize * it, elementType, littleEndian) }
-					val out = Array.newInstance(al.first().javaClass, al.size)
+					val out = Array.newInstance(al.first()::class.java, al.size)
 					for (n in 0 until count) Array.set(out, n, al[n])
 					out
 				}
@@ -218,7 +218,7 @@ fun ByteArray.writeStructElement(offset: Int, type: Struct.Type, value: Any, lit
 }
 
 fun <T : Struct> ByteArray.writeStruct(offset: Int, obj: T): ByteArray {
-	val sr = StructReflect[obj.javaClass]
+	val sr = StructReflect[obj::class.java]
 	val out = this
 
 	for ((field, o, type, littleEndian) in sr.fieldsWithAnnotation) {
@@ -228,7 +228,7 @@ fun <T : Struct> ByteArray.writeStruct(offset: Int, obj: T): ByteArray {
 	return out
 }
 
-fun <T : Struct> T.getStructBytes(): ByteArray = ByteArray(StructReflect[this.javaClass].size).writeStruct(0, this)
+fun <T : Struct> T.getStructBytes(): ByteArray = ByteArray(StructReflect[this::class.java].size).writeStruct(0, this)
 
 fun <T : Struct> SyncStream.writeStruct(obj: T) = this.writeBytes(obj.getStructBytes())
 

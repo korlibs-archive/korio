@@ -28,7 +28,7 @@ object Dynamic {
 	}
 
 	fun <T : Any> setField(instance: T, name: String, value: Any?) {
-		val field = instance.javaClass.declaredFields.find { it.name == name }
+		val field = instance::class.java.declaredFields.find { it.name == name }
 		//val field = instance.javaClass.getField(name)
 		field?.isAccessible = true
 		field?.set(instance, value)
@@ -44,7 +44,7 @@ object Dynamic {
 			//	val index = key.toIntOrNull()
 			//	if (index != null) return instance[index]
 			//}
-			val clazz = instance.javaClass
+			val clazz = instance::class.java
 			val dmethods = clazz.declaredMethods
 			val getterName = "get${key.capitalize()}"
 			val getter = ignoreErrors { dmethods.firstOrNull { it.name == getterName } }
@@ -115,7 +115,7 @@ object Dynamic {
 		}
 		val lc = toComparable(l)
 		val rc = toComparable(r)
-		if (lc.javaClass.isAssignableFrom(rc.javaClass)) {
+		if (lc::class.java.isAssignableFrom(rc::class.java)) {
 			return lc.compareTo(rc)
 		} else {
 			return -1
@@ -193,7 +193,7 @@ object Dynamic {
 			val map = value as Map<Any?, *>
 			val resultClass = target as Class<Any>
 			val result = createEmptyClass(resultClass)
-			for (field in result.javaClass.declaredFields) {
+			for (field in result::class.java.declaredFields) {
 				if (field.name in map) {
 					val v = map[field.name]
 					field.isAccessible = true
@@ -253,7 +253,7 @@ object Dynamic {
 			is Map<*, *> -> value
 			is Iterable<*> -> value
 			else -> {
-				val clazz = value.javaClass
+				val clazz = value::class.java
 				val out = hashMapOf<Any?, Any?>()
 				for (field in clazz.declaredFields) {
 					if (field.name.startsWith('$')) continue
@@ -342,7 +342,7 @@ object Dynamic {
 
 	suspend fun callAny(obj: Any?, key: Any?, args: List<Any?>): Any? {
 		if (obj == null || key == null) return null
-		val method = obj.javaClass.methods.first { it.name == key }
+		val method = obj::class.java.methods.first { it.name == key }
 		method.isAccessible = true
 		val result = method.invokeSuspend(obj, args)
 		return result
@@ -354,7 +354,7 @@ object Dynamic {
 
 	fun length(subject: Any?): Int {
 		if (subject == null) return 0
-		if (subject.javaClass.isArray) return Array.getLength(subject)
+		if (subject::class.java.isArray) return Array.getLength(subject)
 		if (subject is List<*>) return subject.size
 		if (subject is Map<*, *>) return subject.size
 		if (subject is Iterable<*>) return subject.count()
@@ -362,18 +362,17 @@ object Dynamic {
 	}
 
 	interface Context {
-		// @TODO: Bug with coroutines in Kotlin 1.1-M04. Can't use right now.
-		//fun Any?.toDynamicString() = Dynamic.toString(this)
-		//fun Any?.toDynamicBool() = Dynamic.toBool(this)
-		//fun Any?.toDynamicInt() = Dynamic.toInt(this)
-		//fun Any?.toDynamicList() = Dynamic.toList(this)
-		//fun Any?.toDynamicIterable() = Dynamic.toIterable(this)
-		//fun Any?.dynamicLength() = Dynamic.length(this)
-		//suspend fun Any?.dynamicGet(key: Any?) = Dynamic.accessAny(this, key)
-		//suspend fun Any?.dynamicSet(key: Any?, value: Any?) = Dynamic.setAny(this, key, value)
-		//suspend fun Any?.dynamicCall(vararg args: Any?) = Dynamic.callAny(this, args.toList())
-		//suspend fun Any?.dynamicCallMethod(methodName: Any?, vararg args: Any?) = Dynamic.callAny(this, methodName, args.toList())
-		//suspend fun Any?.dynamicCastTo(target: Class<*>) = Dynamic.dynamicCast(this, target)
+		fun Any?.toDynamicString() = Dynamic.toString(this)
+		fun Any?.toDynamicBool() = Dynamic.toBool(this)
+		fun Any?.toDynamicInt() = Dynamic.toInt(this)
+		fun Any?.toDynamicList() = Dynamic.toList(this)
+		fun Any?.toDynamicIterable() = Dynamic.toIterable(this)
+		fun Any?.dynamicLength() = Dynamic.length(this)
+		suspend fun Any?.dynamicGet(key: Any?) = Dynamic.accessAny(this, key)
+		suspend fun Any?.dynamicSet(key: Any?, value: Any?) = Dynamic.setAny(this, key, value)
+		suspend fun Any?.dynamicCall(vararg args: Any?) = Dynamic.callAny(this, args.toList())
+		suspend fun Any?.dynamicCallMethod(methodName: Any?, vararg args: Any?) = Dynamic.callAny(this, methodName, args.toList())
+		suspend fun Any?.dynamicCastTo(target: Class<*>) = Dynamic.dynamicCast(this, target)
 	}
 
 	val contextInstance: Context = object : Context {}
