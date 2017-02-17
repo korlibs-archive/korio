@@ -4,11 +4,8 @@ package com.soywiz.korio.async
 
 import com.soywiz.korio.ds.LinkedList2
 import java.io.Closeable
-import java.util.concurrent.ConcurrentLinkedQueue
 
 class Signal<T>(val onRegister: () -> Unit = {}) : AsyncSequence<T> {
-	internal val onceHandlers = ConcurrentLinkedQueue<(T) -> Unit>()
-
 	inner class Node(val once: Boolean, val item: (T) -> Unit) : LinkedList2.Node<Node>(), Closeable {
 		override fun close() {
 			handlers.remove(this)
