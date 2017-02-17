@@ -17,6 +17,9 @@ annotation class Singleton
 @JTranscKeep
 annotation class Inject
 
+@Target(AnnotationTarget.VALUE_PARAMETER)
+annotation class Optional
+
 class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 	private val instances = hashMapOf<Class<*>, Any?>()
 
@@ -47,6 +50,8 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 		}
 	}
 
+	suspend fun has(clazz: Class<*>): Boolean = instances.containsKey(clazz) || parent?.has(clazz) ?: false
+
 	@Suppress("UNCHECKED_CAST")
 	suspend fun <T : Any?> create(clazz: Class<T>): T {
 		try {
@@ -62,38 +67,30 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 			val out = arrayListOf<Any?>()
 
 			for ((paramType, annotations) in constructor.parameterTypes.zip(constructor.parameterAnnotations)) {
+				var isOptional = false
+
 				val i = if (annotations.isNotEmpty()) {
 					val i = this.child()
 					for (annotation in annotations) {
-						i.map(annotation.annotationClass.java as Class<Any>, annotation as Any)
+						when (annotation) {
+							is Optional -> isOptional = true
+							else -> i.map(annotation.annotationClass.java as Class<Any>, annotation as Any)
+						}
+
 					}
 					i
 				} else {
 					this
 				}
-				out += i.get(paramType)
+				if (isOptional) {
+					out += if (i.has(paramType)) i.get(paramType) else null
+				} else {
+					out += i.get(paramType)
+				}
 			}
 			val instance = constructor.newInstance(*out.toTypedArray())
 
-			//println("Inject.create(${clazz.name}):")
-			//for (field in clazz.fields) {
-			//	println("Inject.create(${clazz.name}): ${field.name} : ${field.type}")
-			//}
-//
-			//	// Injections based on @Inject to fields
-			//for (field in clazz.fields.filter { it.getAnnotation(Inject::class.java) != null }) {
-			//	println("Inject.create(YES)(${clazz.name}): ${field.name} : ${field.type}")
-			//	field.isAccessible = true
-			//	field.set(instance, this.get(field.type))
-			//}
-
 			val allDeclaredFields = clazz.allDeclaredFields
-
-			//for (field in allDeclaredFields) {
-			//	val annotation = field.getAnnotation(Inject::class.java)
-			//	val annotationCount = field.declaredAnnotations.size
-			//	println("Inject.create(${clazz.name}): ${field.name} : ${field.type} : ${annotation != null} : $annotationCount")
-			//}
 
 			// @TODO: Cache this!
 			for (field in allDeclaredFields.filter { it.getAnnotation(Inject::class.java) != null }) {
@@ -101,13 +98,8 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 				field.set(instance, this.get(field.type))
 			}
 
-			//for (method in clazz.methods) {
-			//	println(method.name + " : " + method.annotations.toList().count())
-			//}
+			if (instance is AsyncDependency) instance.init()
 
-			if (instance is AsyncDependency) {
-				instance.init()
-			}
 			if (loaderClass != null) {
 				return (instance as AsyncFactory<T>).create()
 			} else {
