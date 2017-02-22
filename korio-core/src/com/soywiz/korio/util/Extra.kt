@@ -8,9 +8,9 @@ interface Extra {
 	class Mixin(override var extra: HashMap<String, Any?>? = null) : Extra
 
 	@Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
-	class Property<T : Any?>(val name: String, val defaultGen: () -> T) {
+	class Property<T : Any?>(val name: String? = null, val defaultGen: () -> T) {
 		inline operator fun getValue(thisRef: Extra, property: KProperty<*>): T {
-			val res = (thisRef.extra?.get(name) as T?)
+			val res = (thisRef.extra?.get(name ?: property.name) as T?)
 			if (res == null) {
 				val r = defaultGen()
 				setValue(thisRef, property, r)
@@ -21,7 +21,7 @@ interface Extra {
 
 		inline operator fun setValue(thisRef: Extra, property: KProperty<*>, value: T): Unit = run {
 			if (thisRef.extra == null) thisRef.extra = hashMapOf()
-			thisRef.extra?.set(name, value as Any?)
+			thisRef.extra?.set(name ?: property.name, value as Any?)
 		}
 	}
 }
