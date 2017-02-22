@@ -8,6 +8,7 @@ import java.lang.Byte
 import java.lang.Enum
 import java.lang.Float
 import java.lang.reflect.Array
+import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.*
@@ -24,14 +25,17 @@ object Dynamic {
 		val args = constructor.parameterTypes.map {
 			dynamicCast(null, it)
 		}
+		constructor.isAccessible = true
 		return constructor.newInstance(*args.toTypedArray()) as T
 	}
 
 	fun <T : Any> setField(instance: T, name: String, value: Any?) {
 		val field = instance::class.java.declaredFields.find { it.name == name }
-		//val field = instance.javaClass.getField(name)
-		field?.isAccessible = true
-		field?.set(instance, value)
+		if (field != null && !Modifier.isStatic(field.modifiers)) {
+			//val field = instance.javaClass.getField(name)
+			field.isAccessible = true
+			field.set(instance, value)
+		}
 	}
 
 	suspend fun <T : Any> getField(instance: T?, key: String): Any? {
@@ -59,10 +63,13 @@ object Dynamic {
 				method.invokeSuspend(instance, listOf())
 			} else {
 				val field = clazz.declaredFields.find { it.name == key }
-
-				//val field = instance.javaClass.getField(name)
-				field?.isAccessible = true
-				field?.get(instance)
+				if (field != null && !Modifier.isStatic(field.modifiers)) {
+					//val field = instance.javaClass.getField(name)
+					field.isAccessible = true
+					field.get(instance)
+				} else {
+					null
+				}
 			}
 		}
 	}
@@ -194,6 +201,7 @@ object Dynamic {
 			val resultClass = target as Class<Any>
 			val result = createEmptyClass(resultClass)
 			for (field in result::class.java.declaredFields) {
+				if (Modifier.isStatic(field.modifiers)) continue
 				if (field.name in map) {
 					val v = map[field.name]
 					field.isAccessible = true
@@ -256,6 +264,7 @@ object Dynamic {
 				val clazz = value::class.java
 				val out = hashMapOf<Any?, Any?>()
 				for (field in clazz.declaredFields) {
+					if (Modifier.isStatic(field.modifiers)) continue
 					if (field.name.startsWith('$')) continue
 					field.isAccessible = true
 					out[field.name] = fromTyped(field.get(value))

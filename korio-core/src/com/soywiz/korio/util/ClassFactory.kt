@@ -1,5 +1,6 @@
 package com.soywiz.korio.util
 
+import com.soywiz.korio.error.invalidOp
 import java.lang.Boolean
 import java.lang.Byte
 import java.lang.Double
@@ -37,15 +38,14 @@ class ClassFactory<T> private constructor(val clazz: Class<out T>, internal: kot
 		}
 	}
 
-	val constructor = clazz.declaredConstructors.first()
+	val constructor = clazz.declaredConstructors.firstOrNull() ?: invalidOp("Can't find constructor for $clazz")
 	val dummyArgs = createDummyArgs(constructor)
 	val fields = clazz.declaredFields
 			.filter { !Modifier.isTransient(it.modifiers) }
 
 	init {
-		for (field in fields) {
-			field.isAccessible = true
-		}
+		constructor.isAccessible = true
+		for (field in fields) field.isAccessible = true
 	}
 
 	fun create(values: Map<String, Any?>): T {

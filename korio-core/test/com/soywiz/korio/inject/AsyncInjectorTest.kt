@@ -5,12 +5,66 @@ import com.soywiz.korio.error.invalidOp
 import org.junit.Assert
 import org.junit.Test
 
+
 class AsyncInjectorTest {
 	@Test
 	fun testSimple() = syncTest {
 		val inject = AsyncInjector()
 		inject.map(10)
 		Assert.assertEquals(10, inject.get<Int>())
+	}
+
+	@Test
+	fun testSingleton() = syncTest {
+		var lastId = 0
+
+		@Singleton class A {
+			val id: Int = lastId++
+		}
+
+		val inject = AsyncInjector()
+		val a0 = inject.get<A>()
+		val a1 = inject.child().child().get<A>()
+		Assert.assertEquals(0, a0.id)
+		Assert.assertEquals(0, a1.id)
+	}
+
+	companion object {
+		var lastId = 0
+	}
+
+	@Prototype class PrototypeA {
+		val id: Int = lastId++
+	}
+
+	@Singleton class SingletonS {
+		val id: Int = lastId++
+	}
+
+	@Prototype class SingletonA(val s: SingletonS) {
+		val id: Int = lastId++
+	}
+
+	@Test
+	fun testPrototype() = syncTest {
+		lastId = 0
+		val inject = AsyncInjector()
+		val a0 = inject.get<PrototypeA>()
+		val a1 = inject.child().child().get<PrototypeA>()
+		Assert.assertEquals(0, a0.id)
+		Assert.assertEquals(1, a1.id)
+	}
+
+	@Test
+	fun testPrototypeSingleton() = syncTest {
+		lastId = 0
+		val inject = AsyncInjector()
+		val a0 = inject.get<SingletonA>()
+		val a1 = inject.child().child().get<SingletonA>()
+		Assert.assertEquals(0, a0.s.id)
+		Assert.assertEquals(0, a1.s.id)
+		Assert.assertEquals(1, a0.id)
+		Assert.assertEquals(2, a1.id)
 	}
 
 	@Test
@@ -100,7 +154,7 @@ class AsyncInjectorTest {
 
 		@Singleton
 		class Demo(
-			val a: java.lang.Integer
+				val a: java.lang.Integer
 		) : Base() {
 			override suspend fun init() {
 				super.init()
