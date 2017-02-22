@@ -41,7 +41,7 @@ class ClassFactory<T> private constructor(val clazz: Class<out T>, internal: kot
 	val constructor = clazz.declaredConstructors.firstOrNull() ?: invalidOp("Can't find constructor for $clazz")
 	val dummyArgs = createDummyArgs(constructor)
 	val fields = clazz.declaredFields
-			.filter { !Modifier.isTransient(it.modifiers) }
+			.filter { !Modifier.isTransient(it.modifiers) && !Modifier.isStatic(it.modifiers) }
 
 	init {
 		constructor.isAccessible = true
