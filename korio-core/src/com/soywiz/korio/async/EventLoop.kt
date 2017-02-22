@@ -27,6 +27,8 @@ abstract class EventLoop : Services.Impl() {
 			main(entry)
 		}
 
+		operator fun invoke(entry: suspend () -> Unit): Unit = main(entry)
+
 		fun main(entry: suspend () -> Unit): Unit {
 			tasksInProgress.incrementAndGet()
 			impl.init()
