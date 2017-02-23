@@ -44,6 +44,12 @@ class Signal<T>(val onRegister: () -> Unit = {}) : AsyncSequence<T> {
 	}.iterator()
 }
 
+fun <TI, TO> Signal<TI>.mapSignal(transform: (TI) -> TO): Signal<TO> {
+	val out = Signal<TO>()
+	this.add { out(transform(it)) }
+	return out
+}
+
 operator fun Signal<Unit>.invoke() = invoke(Unit)
 
 suspend fun <T> Signal<T>.waitOne(): T = suspendCancellableCoroutine { c ->
