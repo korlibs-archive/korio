@@ -14,6 +14,8 @@ class Signal<T>(val onRegister: () -> Unit = {}) : AsyncSequence<T> {
 
 	private var handlers = LinkedList2<Node>()
 
+	val listenerCount: Int get() = handlers.size
+
 	fun once(handler: (T) -> Unit): Closeable = _add(true, handler)
 	fun add(handler: (T) -> Unit): Closeable = _add(false, handler)
 

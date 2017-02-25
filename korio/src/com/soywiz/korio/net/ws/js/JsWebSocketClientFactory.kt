@@ -27,7 +27,7 @@ class JsWebSocketClient(url: URI, protocols: List<String>?, val DEBUG: Boolean) 
 		})
 		this.call("addEventListener", "message", jsFunctionRaw1 { event ->
 			val data = event["data"]
-			if (DEBUG) println("[WS-RECV]: ${data.toJavaStringOrNull()}")
+			if (DEBUG) println("[WS-RECV]: ${data.toJavaStringOrNull()} :: stringListeners=${onStringMessage.listenerCount}, binaryListeners=${onBinaryMessage.listenerCount}, anyListeners=${onAnyMessage.listenerCount}")
 			if (data.jsIsString()) {
 				val js = data.toJavaString()
 				onStringMessage(js)

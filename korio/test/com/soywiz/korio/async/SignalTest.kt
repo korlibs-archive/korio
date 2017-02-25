@@ -9,16 +9,24 @@ class SignalTest {
 	fun name() = sync(EventLoopTest()) {
 		var out = ""
 		val s = Signal<Int>()
+		Assert.assertEquals(0, s.listenerCount)
 		val c1 = s.add { out += "[$it]"  }
+		Assert.assertEquals(1, s.listenerCount)
 		s(1)
 		val c2 = s.add { out += "{$it}"  }
+		Assert.assertEquals(2, s.listenerCount)
 		s(2)
 		s.once { out += "<$it>"  }
+		Assert.assertEquals(3, s.listenerCount)
 		s(3)
+		Assert.assertEquals(2, s.listenerCount)
 		c2.close()
+		Assert.assertEquals(1, s.listenerCount)
 		s(4)
 		c1.close()
+		Assert.assertEquals(0, s.listenerCount)
 		s(5)
+		Assert.assertEquals(0, s.listenerCount)
 		Assert.assertEquals("[1][2]{2}[3]{3}<3>[4]", out)
 	}
 

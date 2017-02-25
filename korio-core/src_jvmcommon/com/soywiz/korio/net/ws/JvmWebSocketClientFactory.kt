@@ -1,6 +1,7 @@
 package com.soywiz.korio.net.ws
 
 import com.jtransc.js.jsDebugger
+import com.soywiz.korio.async.ProduceConsumer
 import com.soywiz.korio.async.spawn
 import com.soywiz.korio.crypto.Base64
 import com.soywiz.korio.net.AsyncClient
@@ -8,6 +9,7 @@ import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import java.io.EOFException
 import java.net.URI
+import java.util.*
 import kotlin.experimental.xor
 
 class JvmWebSocketClientFactory : WebSocketClientFactory {
@@ -26,25 +28,37 @@ class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?
 		else -> throw IllegalArgumentException("Just supported ws:// and ws:// protocols but found '${url.scheme}'")
 	}
 	val port = url.portWithDefault(defaultPort)
+	private var handsakeDone = false
+
+	private val outputChunks = LinkedList<ByteArray>()
 
 	suspend fun init() {
 		socket = AsyncClient(url.host, port)
 		// Thread
 		val getRequest = prepareClientHandshake(url.toString(), url.host, port, wskey ?: "wskey", origin ?: "http://127.0.0.1/")
-		if (DEBUG) println(getRequest.toString(Charsets.UTF_8))
-		socket.writeBytes(getRequest)
-		socket.apply {
-			while (true) {
-				val line = socket.readLine().trim()
-				if (DEBUG) println(line)
-				if (line.isEmpty()) break
-			}
-		}
 		spawn {
+			if (DEBUG) println(getRequest.toString(Charsets.UTF_8))
+			socket.writeBytes(getRequest)
+			socket.apply {
+				while (true) {
+					val line = socket.readLine().trim()
+					if (DEBUG) println(line)
+					if (line.isEmpty()) break
+				}
+			}
+			handsakeDone = true
+			flush()
 			try {
 				while (true) readFrame(socket)
 			} catch (e: EOFException) {
 			}
+		}
+	}
+
+	suspend private fun flush() {
+		while (handsakeDone) {
+			val data = synchronized(this) { if (outputChunks.isNotEmpty()) outputChunks.removeFirst() else null } ?: break
+			socket.writeBytes(data)
 		}
 	}
 
@@ -87,6 +101,8 @@ class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?
 				chunks += payload
 				if (fin) {
 					val apayload = chunks.join()
+					if (DEBUG) println("[WS-RECV] ITEM:${apayload.toString(Charsets.UTF_8)} :: stringListeners=${onStringMessage.listenerCount}, binaryListeners=${onBinaryMessage.listenerCount}, anyListeners=${onAnyMessage.listenerCount}")
+
 					when (opcode) {
 						Opcode.TEXT -> {
 							val str = apayload.toString(Charsets.UTF_8)
@@ -156,7 +172,9 @@ class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?
 	suspend fun sendFrame(opcode: Opcode, payload: ByteArray, mask: Int = -1) {
 		if (DEBUG) println("[WS-SEND] Frame:$opcode:${payload.size}")
 
-		socket.writeBytes(prepareFrame(opcode, payload, mask))
+		val data = prepareFrame(opcode, payload, mask)
+		synchronized(this) { outputChunks += data }
+		flush()
 	}
 
 	override suspend fun send(message: String) {
