@@ -69,11 +69,9 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 			// Use: ClassFactory and stuff
 
 			val loaderClass = clazz.getAnnotation(AsyncFactoryClass::class.java)
-			val constructor = if (loaderClass != null) {
-				loaderClass.clazz.java.declaredConstructors.firstOrNull() ?: return null
-			} else {
-				clazz.declaredConstructors.firstOrNull() ?: return null
-			}
+			val actualClass = loaderClass?.clazz?.java ?: clazz
+			if (actualClass.isInterface || Modifier.isAbstract(actualClass.modifiers)) invalidOp("Can't instantiate abstract or interface: $actualClass")
+			val constructor = actualClass.declaredConstructors.firstOrNull() ?: return null
 			val out = arrayListOf<Any?>()
 
 			for ((paramType, annotations) in constructor.parameterTypes.zip(constructor.parameterAnnotations)) {

@@ -7,6 +7,7 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 	val nameLC: String = name.toLowerCase().trim()
 	val descendants: Iterable<Xml> get() = allChildren.flatMap { it.allChildren + it }
 	val allChildrenNoComments get() = allChildren.filter { it.type != Type.COMMENT }
+	val allNodeChildren get() = allChildren.filter { it.type == Type.NODE }
 
 	companion object {
 		fun Tag(tagName: String, attributes: Map<String, Any?>, children: List<Xml>): Xml {
