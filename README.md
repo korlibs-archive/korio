@@ -13,12 +13,6 @@ Use with gradle (uploaded to maven central):
 compile "com.soywiz:korio:$korVersion"
 ```
 
-I'm also uploading it to a personal bintray repository:
-
-```
-maven { url "https://dl.bintray.com/soywiz/soywiz-maven" }
-```
-
 This is a kotlin coroutine library that provides asynchronous non-blocking I/O and virtual filesystem operations
 for custom and extensible filesystems with an homogeneous API. This repository doesn't require any special library
 dependency and just requires Kotlin 1.1-M04 or greater.
