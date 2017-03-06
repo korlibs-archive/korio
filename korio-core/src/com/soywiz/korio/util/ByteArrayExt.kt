@@ -1,5 +1,7 @@
 package com.soywiz.korio.util
 
+import com.soywiz.korio.crypto.Hex
+
 operator fun ByteArray.set(o: Int, v: Int) = run { this[o] = v.toByte() }
 operator fun ByteArray.set(o: Int, v: Long) = run { this[o] = v.toByte() }
 
@@ -15,26 +17,11 @@ fun List<ByteArray>.join(): ByteArray {
 	return out
 }
 
-val HEX_DIGITS = "0123456789ABCDEF"
-val HEX_DIGITS_UPPER = HEX_DIGITS.toUpperCase()
-val HEX_DIGITS_LOWER = HEX_DIGITS.toLowerCase()
+val ByteArray.hexString: String get() = Hex.encodeLower(this)
 
-private fun toHexStringBase(data: ByteArray, digits: String = HEX_DIGITS): String {
-	val out = CharArray(data.size * 2)
-	var m = 0
-	for (n in data.indices) {
-		val v = data[n].toInt() and 0xFF
-		out[m++] = digits[(v ushr 4) and 0xF]
-		out[m++] = digits[(v ushr 0) and 0xF]
-	}
-	return String(out)
-}
-
-val ByteArray.hexString: String get() = toHexStringBase(this, HEX_DIGITS_LOWER)
-
-fun ByteArray.toHexString() = toHexStringBase(this, HEX_DIGITS_UPPER)
-fun ByteArray.toHexStringLower() = toHexStringBase(this, HEX_DIGITS_LOWER)
-fun ByteArray.toHexStringUpper() = toHexStringBase(this, HEX_DIGITS_UPPER)
+fun ByteArray.toHexString() = Hex.encode(this)
+fun ByteArray.toHexStringLower() = Hex.encodeLower(this)
+fun ByteArray.toHexStringUpper() = Hex.encodeUpper(this)
 
 fun ByteArray.indexOfElse(element: Byte, default: Int = this.size): Int {
 	val idx = this.indexOf(element)
@@ -45,3 +32,5 @@ fun ByteArray.indexOf(startOffset: Int, v: Byte): Int {
 	for (n in startOffset until this.size) if (this[n] == v) return n
 	return -1
 }
+
+fun String.fromHexString(): ByteArray = Hex.decode(this)

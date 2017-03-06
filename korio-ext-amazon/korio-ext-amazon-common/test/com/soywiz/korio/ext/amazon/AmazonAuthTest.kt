@@ -67,7 +67,7 @@ class AmazonAuthTest {
 	fun task3Test() {
 		Assert.assertEquals(
 				"f4780e2d9f65fa895f9c67b32ce1baf0b0d8a43505a000a1a9e090d414db404d",
-				AmazonAuth.V4.getSignatureKey(secretKey, "20120215", "us-east-1", "iam").toHexString().toLowerCase()
+				AmazonAuth.V4.getSignatureKey(secretKey, "20120215", "us-east-1", "iam").toHexStringLower()
 		)
 	}
 
