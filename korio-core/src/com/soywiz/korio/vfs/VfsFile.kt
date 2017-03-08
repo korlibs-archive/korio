@@ -85,7 +85,7 @@ class VfsFile(
 	suspend fun mkdir(vararg attributes: Vfs.Attribute) = mkdir(attributes.toList())
 	suspend fun mkdirs(vararg attributes: Vfs.Attribute) = mkdirs(attributes.toList())
 
-	suspend fun copyToTree(target: VfsFile, vararg attributes: Vfs.Attribute, notify: (Pair<VfsFile, VfsFile>) -> Unit = {}): Unit {
+	suspend fun copyToTree(target: VfsFile, vararg attributes: Vfs.Attribute, notify: suspend (Pair<VfsFile, VfsFile>) -> Unit = {}): Unit {
 		notify(this to target)
 		if (this.isDirectory()) {
 			target.mkdir()

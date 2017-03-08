@@ -216,10 +216,12 @@ fun SyncStream.readStream(length: Long): SyncStream = readSlice(length)
 
 fun SyncStream.readStringz(charset: Charset = Charsets.UTF_8): String {
 	val buf = ByteArrayOutputStream()
-	while (!eof) {
-		val b = readU8()
-		if (b == 0) break
-		buf.write(b.toInt())
+	val temp = BYTES_TEMP
+	while (true) {
+		val read = read(temp, 0, 1)
+		if (read <= 0) break
+		if (temp[0] == 0.toByte()) break
+		buf.write(temp[0].toInt())
 	}
 	return buf.toByteArray().toString(charset)
 }
@@ -371,6 +373,11 @@ fun SyncStream.writeToAlign(alignment: Int, value: Int = 0) {
 	val data = ByteArray((nextPosition - position).toInt())
 	Arrays.fill(data, value.toByte())
 	writeBytes(data)
+}
+
+fun SyncStream.skip(count: Int): SyncStream {
+	position += count
+	return this
 }
 
 fun SyncStream.skipToAlign(alignment: Int) {

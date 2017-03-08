@@ -14,6 +14,7 @@ class PathInfo(val fullpath: String) {
 	}
 
 	fun pathWithExtension(ext: String): String = if (ext.isEmpty()) pathWithoutExtension else "$pathWithoutExtension.$ext"
+	val fullnameWithoutExtension: String by lazy { fullpath.substringBeforeLast('.', fullpath) }
 	val basenameWithoutExtension: String by lazy { basename.substringBeforeLast('.', basename) }
 	fun basenameWithExtension(ext: String): String = if (ext.isEmpty()) pathWithoutExtension else "$pathWithoutExtension.$ext"
 	val extension: String by lazy { basename.substringAfterLast('.', "") }

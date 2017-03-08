@@ -247,6 +247,7 @@ suspend fun AsyncInputStream.readStringz(charset: Charset = Charsets.UTF_8): Str
 	while (true) {
 		val read = read(temp, 0, 1)
 		if (read <= 0) break
+		if (temp[0] == 0.toByte()) break
 		buf.write(temp[0].toInt())
 	}
 	return buf.toByteArray().toString(charset)
@@ -449,6 +450,11 @@ suspend fun AsyncStream.writeToAlign(alignment: Int, value: Int = 0) {
 	val data = ByteArray((nextPosition - getPosition()).toInt())
 	Arrays.fill(data, value.toByte())
 	writeBytes(data)
+}
+
+suspend fun AsyncStream.skip(count: Int): AsyncStream {
+	position += count
+	return this
 }
 
 suspend fun AsyncStream.skipToAlign(alignment: Int) {
