@@ -51,8 +51,8 @@ interface Http {
 			return false
 		}
 
-		fun checkBasic(realm: String = "Realm", check: Auth.() -> Boolean) {
-			if (!check(this)) Http.HttpException.unauthorizedBasic(realm = "Domain", msg = "Invalid auth")
+		suspend fun checkBasic(realm: String = "Realm", check: suspend Auth.() -> Boolean) {
+			if (user.isEmpty() || !check(this)) Http.HttpException.unauthorizedBasic(realm = "Domain", msg = "Invalid auth")
 		}
 	}
 
