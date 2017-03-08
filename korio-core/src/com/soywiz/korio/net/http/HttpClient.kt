@@ -3,6 +3,8 @@ package com.soywiz.korio.net.http
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.sleep
+import com.soywiz.korio.crypto.fromBase64
+import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.service.Services
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.AsyncCloseable
@@ -13,7 +15,54 @@ import java.util.concurrent.atomic.AtomicLong
 interface Http {
 	enum class Method { OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH, OTHER }
 
-	class HttpException(val statusCode: Int, val msg: String = "Error$statusCode", val statusText: String = HttpStatusMessage.CODES[statusCode] ?: "Error$statusCode") : IOException(msg)
+	class HttpException(
+			val statusCode: Int,
+			val msg: String = "Error$statusCode",
+			val statusText: String = HttpStatusMessage.CODES[statusCode] ?: "Error$statusCode",
+			val headers: Http.Headers = Http.Headers()
+	) : IOException(msg) {
+		companion object {
+			fun unauthorizedBasic(realm: String = "Realm", msg: String = "Unauthorized"): Nothing = throw Http.HttpException(401, msg = msg, headers = Http.Headers("WWW-Authenticate" to "Basic realm=\"$realm\""))
+			//fun unauthorizedDigest(realm: String = "My Domain", msg: String = "Unauthorized"): Nothing = throw Http.HttpException(401, msg = msg, headers = Http.Headers("WWW-Authenticate" to "Digest realm=\"$realm\""))
+		}
+	}
+
+	data class Auth(
+			val user: String,
+			val pass: String,
+			val digest: String
+	) {
+		companion object {
+			fun parse(auth: String): Auth {
+				val parts = auth.split(' ', limit = 2)
+				if (parts[0].equals("basic", ignoreCase = true)) {
+					val parts = parts[1].fromBase64().toString(Charsets.UTF_8).split(':', limit = 2)
+					return Auth(user = parts[0], pass = parts[1], digest = "")
+				} else if (parts[0].isEmpty()) {
+					return Auth(user = "", pass = "", digest = "")
+				} else {
+					invalidOp("Just supported basic auth")
+				}
+			}
+		}
+
+		fun validate(expectedUser: String, expectedPass: String, realm: String = "Realm"): Boolean {
+			if (this.user == expectedUser && this.pass == expectedPass) return true
+			return false
+		}
+
+		fun checkBasic(realm: String = "Realm", check: Auth.() -> Boolean) {
+			if (!check(this)) Http.HttpException.unauthorizedBasic(realm = "Domain", msg = "Invalid auth")
+		}
+	}
+
+	class Response {
+		val headers = arrayListOf<Pair<String, String>>()
+
+		fun header(key: String, value: String) {
+			headers += key to value
+		}
+	}
 
 	data class Headers(val items: List<Pair<String, String>>) : Iterable<Pair<String, String>> {
 		constructor(vararg items: Pair<String, String>) : this(items.toList())

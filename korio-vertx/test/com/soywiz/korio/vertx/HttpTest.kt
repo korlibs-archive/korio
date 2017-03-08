@@ -6,6 +6,10 @@ import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.net.http.createHttpServer
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.util.use
+import com.soywiz.korio.vertx.router.Header
+import com.soywiz.korio.vertx.router.Post
+import com.soywiz.korio.vertx.router.Route
+import io.vertx.core.http.HttpMethod
 import io.vertx.core.http.HttpServer
 import org.junit.Assert
 import org.junit.Test
