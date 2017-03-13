@@ -16,16 +16,26 @@ inline suspend fun <T> suspendCancellableCoroutine(crossinline block: (Cancellab
 
 class CoroutineCancelContext() : AbstractCoroutineContextElement(CoroutineCancelContext.Key) {
 	private val handlers = LinkedList<(Throwable) -> Unit>()
+	private var c: Throwable? = null
 
 	fun exec(c: Throwable) {
-		while (true) {
-			val f = synchronized(handlers) { if (handlers.isNotEmpty()) handlers.removeFirst() else null } ?: break
-			f.invoke(c)
-		}
+		this.c = c
+		flush()
 	}
 
 	fun add(handler: (Throwable) -> Unit) {
 		synchronized(handlers) { handlers += handler }
+		flush()
+	}
+
+	private fun flush() {
+		val c = this.c
+		if (c != null) {
+			while (true) {
+				val f = synchronized(handlers) { if (handlers.isNotEmpty()) handlers.removeFirst() else null } ?: break
+				f.invoke(c)
+			}
+		}
 	}
 
 	companion object Key : CoroutineContextKey<CoroutineCancelContext>
@@ -38,10 +48,19 @@ class CancellableContinuation<in T>(private val delegate: Continuation<T>) : Con
 	val cancelContext = context[CoroutineCancelContext.Key]!!
 
 	var completed = false
-	var cancelled = false
+
+	private var _cancelled: Boolean = false
+	private var _cancelledHandler: Boolean = false
+	val cancelled: Boolean get() {
+		if (!_cancelledHandler) {
+			cancelContext.add { _cancelled = true }
+			_cancelledHandler = true
+		}
+		return _cancelled
+	}
 
 	override fun resume(value: T) {
-		if (completed || cancelled) return
+		if (completed || _cancelled) return
 		completed = true
 		delegate.resume(value)
 	}
@@ -51,14 +70,14 @@ class CancellableContinuation<in T>(private val delegate: Continuation<T>) : Con
 	}
 
 	override fun cancel(e: Throwable) {
-		if (completed || cancelled) return
-		cancelled = true
+		if (completed || _cancelled) return
+		_cancelled = true
 		cancelContext.exec(e)
 		delegate.resumeWithException(e)
 	}
 
 	override fun resumeWithException(exception: Throwable) {
-		if (completed || cancelled) return
+		if (completed || _cancelled) return
 		completed = true
 		delegate.resumeWithException(exception)
 	}
