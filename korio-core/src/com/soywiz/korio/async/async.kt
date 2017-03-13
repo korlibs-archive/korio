@@ -8,6 +8,7 @@ import java.util.concurrent.CancellationException
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
+import kotlin.coroutines.experimental.startCoroutine
 
 val workerLazyPool by lazy { Executors.newFixedThreadPool(4) }
 val tasksInProgress = AtomicInteger(0)
@@ -28,6 +29,12 @@ fun <T> Continuation<T>.toEventLoop(): Continuation<T> {
 interface CheckRunning {
 	val cancelled: Boolean
 	fun checkCancelled(): Unit
+}
+
+suspend fun <T> executeInNewThread(task: suspend () -> T): T = suspendCancellableCoroutine<T> { c ->
+	Thread {
+		task.startCoroutine(c)
+	}.start()
 }
 
 suspend fun <T> executeInWorker(task: suspend CheckRunning.() -> T): T = suspendCancellableCoroutine<T> { c ->
