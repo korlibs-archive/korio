@@ -19,6 +19,8 @@ fun List<ByteArray>.join(): ByteArray {
 
 val ByteArray.hexString: String get() = Hex.encodeLower(this)
 
+fun ByteArray.toUtf8String() = this.toString(Charsets.UTF_8)
+
 fun ByteArray.toHexString() = Hex.encode(this)
 fun ByteArray.toHexStringLower() = Hex.encodeLower(this)
 fun ByteArray.toHexStringUpper() = Hex.encodeUpper(this)
