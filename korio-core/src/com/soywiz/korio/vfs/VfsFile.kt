@@ -47,6 +47,8 @@ class VfsFile(
 
 	//suspend fun read(): ByteArray = vfs.readFully(path)
 	suspend fun read(): ByteArray = openUse { this.readAll() }
+	suspend fun readAll(): ByteArray = openUse { this.readAll() }
+	suspend fun readBytes(): ByteArray = openUse { this.readAll() }
 
 	suspend fun readAsSyncStream(): SyncStream = read().openSync()
 

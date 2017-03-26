@@ -9,6 +9,12 @@ object BSON {
 	}
 
 	fun writeDocument(doc: Map<String, Any?>, out: SyncStream) {
+		for ((k, v) in doc) {
+
+		}
+
+		out.position = 0
+		out.write32_le(out.length)
 	}
 
 	fun decode(data: ByteArray) = readDocument(data.openSync())
