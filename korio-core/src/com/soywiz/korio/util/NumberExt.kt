@@ -88,3 +88,7 @@ fun Long.convertRange(srcMin: Long, srcMax: Long, dstMin: Long, dstMax: Long): L
 	val ratio = (this - srcMin).toDouble() / (srcMax - srcMin).toDouble()
 	return (dstMin + (dstMax - dstMin) * ratio).toLong()
 }
+
+fun Double.toIntCeil() = Math.ceil(this).toInt()
+fun Double.toIntFloor() = Math.floor(this).toInt()
+fun Double.toIntRound() = Math.round(this).toInt()
