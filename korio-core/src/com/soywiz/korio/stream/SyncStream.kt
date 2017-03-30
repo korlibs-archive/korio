@@ -283,6 +283,7 @@ fun SyncStream.readU24_le(): Int = readTempExact(3).readU24_le(0)
 fun SyncStream.readU32_le(): Long = readTempExact(4).readU32_le(0)
 
 fun SyncStream.readS16_le(): Int = readTempExact(2).readS16_le(0)
+fun SyncStream.readS24_le(): Int = readTempExact(3).readS24_le(0)
 fun SyncStream.readS32_le(): Int = readTempExact(4).readS32_le(0)
 fun SyncStream.readS64_le(): Long = readTempExact(8).readS64_le(0)
 
@@ -294,6 +295,7 @@ fun SyncStream.readU24_be(): Int = readTempExact(3).readU24_be(0)
 fun SyncStream.readU32_be(): Long = readTempExact(4).readU32_be(0)
 
 fun SyncStream.readS16_be(): Int = readTempExact(2).readS16_be(0)
+fun SyncStream.readS24_be(): Int = readTempExact(3).readS24_be(0)
 fun SyncStream.readS32_be(): Int = readTempExact(4).readS32_be(0)
 fun SyncStream.readS64_be(): Long = readTempExact(8).readS64_be(0)
 
