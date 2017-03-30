@@ -3,14 +3,11 @@ package com.soywiz.korio.ext.db.mysql
 import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.stream.openAsync
+import com.soywiz.korio.util.fromHexChunks
 import com.soywiz.korio.util.fromHexString
 import org.junit.Test
 
 class MysqlClientTest {
-	private fun List<String>.fromHexChunks(): ByteArray {
-		return joinToString("").replace(" ", "").fromHexString()
-	}
-
 	@Test
 	fun name() = syncTest {
 		MysqlClient().readHandshake(
