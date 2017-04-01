@@ -6,8 +6,8 @@ import java.util.*
 data class Xml(val type: Type, val name: String, val attributes: Map<String, String>, val allChildren: List<Xml>, val content: String) {
 	val nameLC: String = name.toLowerCase().trim()
 	val descendants: Iterable<Xml> get() = allChildren.flatMap { it.allChildren + it }
-	val allChildrenNoComments get() = allChildren.filter { it.type != Type.COMMENT }
-	val allNodeChildren get() = allChildren.filter { it.type == Type.NODE }
+	val allChildrenNoComments get() = allChildren.filter { !it.isComment }
+	val allNodeChildren get() = allChildren.filter { it.isNode }
 
 	companion object {
 		fun Tag(tagName: String, attributes: Map<String, Any?>, children: List<Xml>): Xml {
@@ -82,7 +82,7 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 			if (allChildren.isEmpty()) {
 				"<$name$attrs/>"
 			} else {
-				val children = this.allChildren.map { it.outerXml }.joinToString("")
+				val children = this.allChildren.map(Xml::outerXml).joinToString("")
 				"<$name$attrs>$children</$name>"
 			}
 		}
@@ -91,7 +91,7 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 	}
 
 	val innerXml: String get() = when (type) {
-		Type.NODE -> this.allChildren.map { it.outerXml }.joinToString("")
+		Type.NODE -> this.allChildren.map(Xml::outerXml).joinToString("")
 		Type.TEXT -> content
 		Type.COMMENT -> "<!--$content-->"
 	}
@@ -102,10 +102,19 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 	fun childText(name: String): String? = child(name)?.text
 
 	fun double(name: String, defaultValue: Double = 0.0): Double = this.attributes[name]?.toDoubleOrNull() ?: defaultValue
-	fun int(name: String, defaultValue: Int = 0): Int = this.attributes[name]?.toInt() ?: defaultValue
+	fun int(name: String, defaultValue: Int = 0): Int = this.attributes[name]?.toIntOrNull() ?: defaultValue
 	fun str(name: String, defaultValue: String = ""): String = this.attributes[name] ?: defaultValue
 
-	override fun toString(): String = innerXml
+	fun doubleNull(name: String): Double? = this.attributes[name]?.toDoubleOrNull()
+	fun intNull(name: String): Int? = this.attributes[name]?.toIntOrNull()
+	fun strNull(name: String): String? = this.attributes[name]
+
+	//override fun toString(): String = innerXml
+	override fun toString(): String = outerXml
 
 	enum class Type { NODE, TEXT, COMMENT }
 }
+
+val Xml.isText get() = this.type == Xml.Type.TEXT
+val Xml.isComment get() = this.type == Xml.Type.COMMENT
+val Xml.isNode get() = this.type == Xml.Type.NODE
