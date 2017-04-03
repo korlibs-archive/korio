@@ -36,7 +36,7 @@ open class SyncStreamBase : Closeable, SyncRAInputStream, SyncRAOutputStream, Sy
 }
 
 
-class SyncStream(val base: SyncStreamBase, var position: Long = 0L) : Closeable, SyncInputStream, SyncOutputStream, SyncLengthStream {
+class SyncStream(val base: SyncStreamBase, var position: Long = 0L) : Extra by Extra.Mixin(), Closeable, SyncInputStream, SyncOutputStream, SyncLengthStream {
 	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		val read = base.read(position, buffer, offset, len)
 		position += read
