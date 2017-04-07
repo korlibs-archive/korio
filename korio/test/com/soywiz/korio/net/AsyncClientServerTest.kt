@@ -1,7 +1,9 @@
 package com.soywiz.korio.net
 
+import com.soywiz.korio.async.await
 import com.soywiz.korio.async.spawn
 import com.soywiz.korio.async.syncTest
+import com.soywiz.korio.async.take
 import com.soywiz.korio.stream.readString
 import com.soywiz.korio.stream.writeString
 import org.junit.Assert
@@ -9,29 +11,47 @@ import org.junit.Test
 import java.util.*
 
 class AsyncClientServerTest {
+	companion object {
+		val UUIDLength = 36
+	}
+
 	@Test
 	fun testClientServer() = syncTest {
 		val server = AsyncServer(port = 0)
-		val events = LinkedList<String>()
 
-		val client1 = spawn {
-			val client = AsyncClient.createAndConnect("127.0.0.1", server.port)
-			val str = client.readString(5)
-			events += "[C] CLIENT1: $str"
-			client.writeString("THIS IS GREAT!")
+		val clientsCount = 2000
+		var counter = 0
+		val correctEchoes = LinkedList<Boolean>()
+
+		val clients = (0 until clientsCount).map { clientId ->
+			spawn {
+				try {
+					val client = AsyncClient.createAndConnect("127.0.0.1", server.port)
+
+					val msg = UUID.randomUUID().toString()
+					client.writeString(msg)
+					val echo = client.readString(UUIDLength)
+
+					correctEchoes.add(msg == echo)
+				} catch (e: Throwable) {
+					println("Client-$clientId failed")
+					e.printStackTrace()
+
+				}
+			}
 		}
 
-		for (client in server.listen()) {
-			client.writeString("HELLO")
-			events += "[S] CLIENT: " + client.readString(100)
-			break
+
+		for (client in server.listen().take(clientsCount)) {
+			val msg = client.readString(UUIDLength)
+			client.writeString(msg)
+			counter++
 		}
 
-		client1.await()
+		clients.await()
 
-		Assert.assertEquals(
-				"[[C] CLIENT1: HELLO, [S] CLIENT: THIS IS GREAT!]",
-				events.toList().toString()
-		)
+		Assert.assertEquals(clientsCount, counter)
+		Assert.assertEquals(clientsCount, correctEchoes.size)
+		Assert.assertTrue(correctEchoes.all { it })
 	}
 }

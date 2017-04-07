@@ -311,6 +311,15 @@ suspend fun <T : Any?> SuspendingSequence<T>.firstOrNull(): T? {
 	return result
 }
 
+suspend fun <T : Any?> SuspendingSequence<T>.take(count: Int): SuspendingSequence<T> = asyncGenerate {
+	var current = 0
+	val iterator = this@take.iterator()
+	while (current < count && iterator.hasNext()) {
+		yield(iterator.next())
+		current++
+	}
+}
+
 class AsyncSequenceEmitter<T : Any> : Extra by Extra.Mixin() {
 	private val signal = Signal<Unit>()
 	private var queuedElements = LinkedList<T>()

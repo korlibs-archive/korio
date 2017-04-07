@@ -25,9 +25,9 @@ inline suspend fun <T> korioSuspendCoroutine(crossinline block: (Continuation<T>
 
 inline suspend fun <T> _korioSuspendCoroutine(crossinline block: (Continuation<T>) -> Unit): T {
 	return kotlin.coroutines.experimental.intrinsics.suspendCoroutineOrReturn { c: Continuation<T> ->
-		val safe = UnsafeContinuation(c)
-		block(safe)
-		safe.getResult()
+		val unsafe = UnsafeContinuation(c)
+		block(unsafe)
+		unsafe.getResult()
 	}
 }
 

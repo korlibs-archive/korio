@@ -9,6 +9,7 @@ import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.AsynchronousServerSocketChannel
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.CompletionHandler
+import kotlin.coroutines.experimental.suspendCoroutine
 
 class JsJvmAsyncSocketFactory : AsyncSocketFactory {
 	override suspend fun createClient(): AsyncClient = JsJvmAsyncClient()
@@ -68,8 +69,9 @@ class JsJvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : Asyn
 	}
 }
 
-class JsJvmAsyncServer(override val requestPort: Int, override val host: String, override val backlog: Int = 128) : AsyncServer {
+class JsJvmAsyncServer(override val requestPort: Int, override val host: String, override val backlog: Int = -1) : AsyncServer {
 	val ssc = AsynchronousServerSocketChannel.open()
+	val pc = ProduceConsumer<JsJvmAsyncClient>()
 
 	suspend fun init() {
 		ssc.bind(InetSocketAddress(host, requestPort), backlog)
@@ -77,18 +79,26 @@ class JsJvmAsyncServer(override val requestPort: Int, override val host: String,
 			if (ssc.isOpen) break
 			sleep(50)
 		}
+
+		acceptStep()
+	}
+
+	fun acceptStep() {
+		ssc.accept(kotlin.Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
+			override fun completed(result: AsynchronousSocketChannel, attachment: Unit) = run {
+				pc.produce(JsJvmAsyncClient(result))
+				acceptStep()
+			}
+			override fun failed(exc: Throwable, attachment: Unit) = kotlin.Unit.apply {
+				println(exc)
+				acceptStep()
+			}
+		})
 	}
 
 	override val port: Int get() = (ssc.localAddress as? InetSocketAddress)?.port ?: -1
 
 	suspend override fun listen(): AsyncSequence<AsyncClient> = asyncGenerate {
-		while (true) yield(JsJvmAsyncClient(ssc.saccept()))
-	}
-
-	suspend fun AsynchronousServerSocketChannel.saccept(): AsynchronousSocketChannel = korioSuspendCoroutine { c ->
-		this.accept(kotlin.Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
-			override fun completed(result: AsynchronousSocketChannel, attachment: Unit) = kotlin.Unit.apply { c.resume(result) }
-			override fun failed(exc: Throwable, attachment: Unit) = kotlin.Unit.apply { c.resumeWithException(exc) }
-		})
+		while (true) yield(pc.consume()!!)
 	}
 }

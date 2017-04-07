@@ -50,7 +50,7 @@ interface AsyncServer {
 	val port: Int
 
 	companion object {
-		operator suspend fun invoke(port: Int, host: String = "127.0.0.1", backlog: Int = 128) = asyncSocketFactory.createServer(port, host, backlog)
+		operator suspend fun invoke(port: Int, host: String = "127.0.0.1", backlog: Int = -1) = asyncSocketFactory.createServer(port, host, backlog)
 	}
 
 	suspend fun listen(): AsyncSequence<AsyncClient>
