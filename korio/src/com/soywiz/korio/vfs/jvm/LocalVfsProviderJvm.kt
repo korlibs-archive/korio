@@ -122,6 +122,7 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 		}
 
 		suspend override fun list(path: String): AsyncSequence<VfsFile> {
+			/*
 			val emitter = AsyncSequenceEmitter<VfsFile>()
 			val files = executeInWorker { Files.newDirectoryStream(resolvePath(path)) }
 			spawnAndForget {
@@ -137,6 +138,14 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 				}
 			}
 			return emitter.toSequence()
+			*/
+			return executeInWorker {
+				asyncGenerate {
+					for (file in File(path).listFiles() ?: arrayOf()) {
+						yield(that.file("$path/${file.name}"))
+					}
+				}
+			}
 		}
 
 		suspend override fun mkdir(path: String, attributes: List<Attribute>): Boolean = executeInWorker {
