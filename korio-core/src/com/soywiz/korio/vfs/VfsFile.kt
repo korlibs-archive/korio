@@ -15,7 +15,7 @@ class VfsFile(
 		val vfs: Vfs,
 		path: String
 //) : VfsNamed(VfsFile.normalize(path)) {
-) : VfsNamed(path) {
+) : VfsNamed(path), AsyncInputOpenable {
 	operator fun get(path: String): VfsFile = VfsFile(vfs, VfsUtil.combine(this.path, path))
 
 	// @TODO: Kotlin suspend operator not supported yet!
@@ -40,6 +40,8 @@ class VfsFile(
 	fun appendExtension(ext: String): VfsFile = VfsFile(vfs, fullname + ".$ext")
 
 	suspend fun open(mode: VfsOpenMode = VfsOpenMode.READ): AsyncStream = vfs.open(path, mode)
+
+	suspend override fun openRead(): AsyncStream = open(VfsOpenMode.READ)
 
 	suspend inline fun <T> openUse(mode: VfsOpenMode = VfsOpenMode.READ, noinline callback: suspend AsyncStream.() -> T): T {
 		return open(mode).use { callback.await(this) }

@@ -18,3 +18,5 @@ abstract class LocalVfsProvider : Services.Impl() {
 	open fun getCacheFolder(): String = System.getProperty("java.io.tmpdir")
 	open fun getExternalStorageFolder(): String = System.getProperty("java.io.tmpdir")
 }
+
+fun File.toVfs() = LocalVfs(this)

@@ -53,4 +53,14 @@ class SyncStreamTest {
 		val bb = out.toByteArray()
 		Assert.assertArrayEquals(byteArrayOf(0x12, 0x34), bb)
 	}
+
+	@Test
+	fun testUVL() {
+		val values = listOf(0, 1, 33, 127, 128, 255, 256, 1985, 91234, 2131231, Int.MAX_VALUE)
+		val out = MemorySyncStream()
+		for (v in values) out.writeU_VL(v)
+		out.position = 0
+		val readValues = (0 until values.size).map { out.readU_VL() }
+		Assert.assertEquals(values, readValues)
+	}
 }

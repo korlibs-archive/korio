@@ -16,6 +16,10 @@ import java.util.*
 interface AsyncBaseStream : AsyncCloseable {
 }
 
+interface AsyncInputOpenable {
+	suspend fun openRead(): AsyncInputStream
+}
+
 interface AsyncInputStream : AsyncBaseStream {
 	suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int
 }

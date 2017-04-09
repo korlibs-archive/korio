@@ -86,6 +86,8 @@ fun Double.convertRange(srcMin: Double, srcMax: Double, dstMin: Double, dstMax: 
 	return (dstMin + (dstMax - dstMin) * ratio)
 }
 
+fun Double.convertRangeClamped(srcMin: Double, srcMax: Double, dstMin: Double, dstMax: Double): Double = convertRange(srcMin, srcMax, dstMin, dstMax).clamp(dstMin, dstMax)
+
 fun Long.convertRange(srcMin: Long, srcMax: Long, dstMin: Long, dstMax: Long): Long {
 	val ratio = (this - srcMin).toDouble() / (srcMax - srcMin).toDouble()
 	return (dstMin + (dstMax - dstMin) * ratio).toLong()

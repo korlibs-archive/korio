@@ -37,6 +37,6 @@ fun ByteArray.indexOf(startOffset: Int, v: Byte): Int {
 
 fun String.fromHexString(): ByteArray = Hex.decode(this)
 
-fun List<String>.fromHexChunks(): ByteArray {
-	return joinToString("").replace(" ", "").fromHexString()
-}
+fun String.fromHexStringIgnoreSpaces(): ByteArray = this.replace(" ", "").fromHexString()
+
+fun List<String>.fromHexChunks(): ByteArray = joinToString("").fromHexStringIgnoreSpaces()

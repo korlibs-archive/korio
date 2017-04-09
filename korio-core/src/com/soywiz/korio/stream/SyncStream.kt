@@ -1,6 +1,7 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.util.*
+import org.omg.IOP.Encoding
 import java.io.*
 import java.nio.charset.Charset
 import java.util.*
@@ -402,3 +403,52 @@ fun SyncStream.writeIntArray_be(array: IntArray) = writeBytes(ByteArray(array.si
 fun SyncStream.writeLongArray_be(array: LongArray) = writeBytes(ByteArray(array.size * 8).apply { writeArray_be(0, array) })
 fun SyncStream.writeFloatArray_be(array: FloatArray) = writeBytes(ByteArray(array.size * 4).apply { writeArray_be(0, array) })
 fun SyncStream.writeDoubleArray_be(array: DoubleArray) = writeBytes(ByteArray(array.size * 8).apply { writeArray_be(0, array) })
+
+// Variable Length
+
+fun SyncStream.read_VL(signed: Boolean): Int {
+	if (signed) TODO()
+	var result = readU8()
+	if ((result and 0x80) == 0) return result
+	result = (result and 0x7f) or (readU8() shl 7)
+	if ((result and 0x4000) == 0) return result
+	result = (result and 0x3fff) or (readU8() shl 14)
+	if ((result and 0x200000) == 0) return result
+	result = (result and 0x1fffff) or (readU8() shl 21)
+	if ((result and 0x10000000) == 0) return result
+	result = (result and 0xfffffff) or (readU8() shl 28)
+	return result
+}
+
+fun SyncStream.write_VL(v: Int, signed: Boolean): Unit {
+	if (signed) TODO()
+	var value = v
+	while (true) {
+		val c = value and 0x7f
+		value = value ushr 7
+		if (value == 0) {
+			write8(c)
+			break
+		}
+		write8(c or 0x80)
+	}
+}
+
+fun SyncStream.readU_VL(): Int = read_VL(signed = false)
+fun SyncStream.readS_VL(): Int = read_VL(signed = true)
+
+fun SyncStream.writeU_VL(v: Int): Unit = write_VL(v, signed = false)
+fun SyncStream.writeS_VL(v: Int): Unit = write_VL(v, signed = true)
+
+
+fun SyncStream.writeStringVL(str: String, charset: Charset = Charsets.UTF_8): Unit {
+	val bytes = str.toByteArray(charset)
+	writeU_VL(bytes.size)
+	writeBytes(bytes)
+}
+
+fun SyncStream.readStringVL(charset: Charset = Charsets.UTF_8): String {
+	val bytes = ByteArray(readU_VL())
+	readExact(bytes, 0, bytes.size)
+	return bytes.toString(charset)
+}
