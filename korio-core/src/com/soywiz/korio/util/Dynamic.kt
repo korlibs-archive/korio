@@ -74,6 +74,42 @@ object Dynamic {
 		}
 	}
 
+	fun <T : Any> getFieldSync(instance: T?, key: String): Any? {
+		return if (instance == null) {
+			null
+		} else {
+			// use getAny instead
+			//if (instance is Map<*, *>) return instance[key]
+			//if (instance is List<*>) {
+			//	val index = key.toIntOrNull()
+			//	if (index != null) return instance[index]
+			//}
+			val clazz = instance::class.java
+			val dmethods = clazz.declaredMethods
+			val getterName = "get${key.capitalize()}"
+			val getter = ignoreErrors { dmethods.firstOrNull { it.name == getterName } }
+			val method = ignoreErrors { dmethods.firstOrNull { it.name == key } }
+
+			if (getter != null) {
+				getter.isAccessible = true
+				getter.invoke(instance)
+			} else if (method != null) {
+				method.isAccessible = true
+				//method.invoke(instance)
+				method.invoke(instance)
+			} else {
+				val field = clazz.declaredFields.find { it.name == key }
+				if (field != null && !Modifier.isStatic(field.modifiers)) {
+					//val field = instance.javaClass.getField(name)
+					field.isAccessible = true
+					field.get(instance)
+				} else {
+					null
+				}
+			}
+		}
+	}
+
 	fun toNumber(it: Any?): Double {
 		return when (it) {
 			null -> 0.0
@@ -92,6 +128,15 @@ object Dynamic {
 			is Boolean -> it
 			is String -> it.isNotEmpty() && it != "0" && it != "false"
 			else -> toInt(it) != 0
+		}
+	}
+
+	fun toBoolOrNull(it: Any?): Boolean? {
+		return when (it) {
+			null -> null
+			is Boolean -> it
+			is String -> it.isNotEmpty() && it != "0" && it != "false"
+			else -> null
 		}
 	}
 
@@ -136,7 +181,16 @@ object Dynamic {
 		else -> getField(instance, key.toString())
 	}
 
+	fun accessAnySync(instance: Any?, key: Any?): Any? = when (instance) {
+		null -> null
+		is Map<*, *> -> instance[key]
+		is Iterable<*> -> instance.toList()[toInt(key)]
+		else -> getFieldSync(instance, key.toString())
+	}
+
 	suspend fun getAny(instance: Any?, key: Any?): Any? = accessAny(instance, key)
+
+	fun getAnySync(instance: Any?, key: Any?): Any? = accessAnySync(instance, key)
 
 	@Suppress("UNCHECKED_CAST")
 	fun setAny(instance: Any?, key: Any?, value: Any?): Any? {
@@ -147,6 +201,9 @@ object Dynamic {
 			else -> setField(instance, key.toString(), value)
 		}
 	}
+
+	@Suppress("UNCHECKED_CAST")
+	fun setAnySync(instance: Any?, key: Any?, value: Any?): Any? = setAny(instance, key, value)
 
 	fun hasField(javaClass: Class<Any>, name: String): Boolean {
 		return javaClass.declaredFields.any { it.name == name }
