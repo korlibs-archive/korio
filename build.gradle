@@ -15,7 +15,11 @@ configurations {
 	provided
 }
 
+def file = new File(".").absolutePath
+
 allprojects {
+	apply from: "$file/include.gradle"
+
 	configurations {
 		provided
 	}

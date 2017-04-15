@@ -1,5 +1,3 @@
-apply from: "../include.gradle"
-
 //apply plugin: 'kotlin2js'
 apply plugin: 'kotlin'
 

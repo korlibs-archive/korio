@@ -1,7 +1,5 @@
 //ext.useAndroid = true
 
-apply from: "../include.gradle"
-
 //apply plugin: 'com.android.library'
 //apply plugin: 'kotlin-android'
 //
