@@ -12,4 +12,9 @@ class XmlTest {
 		Assert.assertEquals("hello", xml.name)
 		Assert.assertEquals(7, xml["demo"].first().int("c"))
 	}
+
+	@Test
+	fun name2() {
+		val xml = Xml("<a_b />")
+	}
 }

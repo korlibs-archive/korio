@@ -79,7 +79,7 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 
 	fun skipSpaces() = this.apply { this.skipWhile { Character.isWhitespace(it) } }
 
-	fun matchIdentifier() = matchWhile { Character.isLetterOrDigit(it) || it == '-' || it == '~' || it == ':' }
+	fun matchIdentifier() = matchWhile { Character.isLetterOrDigit(it) || it == '-' || it == '~' || it == ':' || it == '_' }
 	fun matchSingleOrDoubleQuoteString(): String? {
 		when (this.peekChar()) {
 			'\'', '"' -> {
