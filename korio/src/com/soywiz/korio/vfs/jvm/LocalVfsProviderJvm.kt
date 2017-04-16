@@ -152,6 +152,10 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 			resolveFile(path).mkdir()
 		}
 
+		suspend override fun touch(path: String, time: Long, atime: Long) {
+			resolveFile(path).setLastModified(time)
+		}
+
 		suspend override fun delete(path: String): Boolean = executeInWorker {
 			resolveFile(path).delete()
 		}

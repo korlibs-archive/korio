@@ -11,7 +11,17 @@ import java.lang.reflect.Constructor
 import java.lang.reflect.Modifier
 
 // @TODO: This should use ASM library to create a class per class to be as fast as possible
-class ClassFactory<T> private constructor(val clazz: Class<out T>, internal: kotlin.Boolean) {
+class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin.Boolean) {
+	val clazz = when {
+		List::class.java.isAssignableFrom(iclazz) -> ArrayList::class.java
+		Map::class.java.isAssignableFrom(iclazz) -> HashMap::class.java
+		else -> iclazz
+	}
+
+	init {
+		//println("$iclazz -> $clazz")
+	}
+
 	companion object {
 		val cache = hashMapOf<Class<*>, ClassFactory<*>>()
 		@Suppress("UNCHECKED_CAST")
@@ -41,22 +51,29 @@ class ClassFactory<T> private constructor(val clazz: Class<out T>, internal: kot
 	val constructor = clazz.declaredConstructors.firstOrNull() ?: invalidOp("Can't find constructor for $clazz")
 	val dummyArgs = createDummyArgs(constructor)
 	val fields = clazz.declaredFields
-			.filter { !Modifier.isTransient(it.modifiers) && !Modifier.isStatic(it.modifiers) }
+		.filter { !Modifier.isTransient(it.modifiers) && !Modifier.isStatic(it.modifiers) }
 
 	init {
 		constructor.isAccessible = true
 		for (field in fields) field.isAccessible = true
 	}
 
-	fun create(values: Map<String, Any?>): T {
-		val instance = createDummy()
-		for (field in fields) {
-			if (values.containsKey(field.name)) {
-				field.isAccessible = true
-				field.set(instance, Dynamic.dynamicCast(values[field.name], field.type, field.genericType))
+	fun create(values: Any?): T {
+		when (values) {
+			is Map<*, *> -> {
+				val instance = createDummy()
+				for (field in fields) {
+					if (values.containsKey(field.name)) {
+						field.isAccessible = true
+						field.set(instance, Dynamic.dynamicCast(values[field.name], field.type, field.genericType))
+					}
+				}
+				return instance
+			}
+			else -> {
+				return Dynamic.dynamicCast(values, clazz as Class<*>) as T
 			}
 		}
-		return instance
 	}
 
 	fun toMap(instance: T): Map<String, Any?> {

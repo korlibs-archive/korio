@@ -11,7 +11,7 @@ object Json {
 
 	inline fun <reified T : Any> decodeToType(@Language("json") s: String): T = decodeToType(s, T::class.java)
 	@Suppress("UNCHECKED_CAST")
-	fun <T> decodeToType(@Language("json") s: String, clazz: Class<T>): T = ClassFactory(clazz).create(decode(s) as Map<String, Any?>)
+	fun <T> decodeToType(@Language("json") s: String, clazz: Class<T>): T = ClassFactory(clazz).create(decode(s))
 
 	fun StrReader.decode(): Any? {
 		val ic = skipSpaces().read()

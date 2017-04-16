@@ -13,8 +13,8 @@ class JsonTest {
 	@Test
 	fun decode2() {
 		Assert.assertEquals(
-				listOf("a", 1, -1, 0.125, 0, 11, true, false, null, listOf<Any?>(), mapOf<String, Any?>()),
-				Json.decode("""["a", 1, -1, 0.125, 0, 11, true, false, null, [], {}]""")
+			listOf("a", 1, -1, 0.125, 0, 11, true, false, null, listOf<Any?>(), mapOf<String, Any?>()),
+			Json.decode("""["a", 1, -1, 0.125, 0, 11, true, false, null, [], {}]""")
 		)
 	}
 
@@ -77,12 +77,22 @@ class JsonTest {
 	}
 
 	@Test
+	fun decodeToPrim() {
+		//val resultStr = Json.encode(mapOf("items" to listOf(1, 2, 3, 4, 5)))
+		Assert.assertEquals(listOf(1, 2, 3, 4, 5), Json.decodeToType<List<Int>>("""[1, 2, 3, 4, 5]"""))
+		Assert.assertEquals(1, Json.decodeToType<Int>("1"))
+		Assert.assertEquals(true, Json.decodeToType<Boolean>("true"))
+		Assert.assertEquals("a", Json.decodeToType<String>("\"a\""))
+	}
+
+	@Test
 	fun decodeWithStaticMembers() {
 		Assert.assertEquals("""{"a":10}""", Json.encode(Demo2()))
 	}
 
 	class Demo2 {
 		var a: Int = 10
+
 		companion object {
 			@JvmStatic var b: String = "test"
 		}

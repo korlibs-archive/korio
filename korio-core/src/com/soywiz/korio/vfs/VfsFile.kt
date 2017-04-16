@@ -62,6 +62,7 @@ class VfsFile(
 	suspend fun writeChunk(data: ByteArray, offset: Long, resize: Boolean = false): Unit = vfs.writeChunk(path, data, offset, resize)
 
 	suspend fun stat(): VfsStat = vfs.stat(path)
+	suspend fun touch(time: Long, atime: Long = time): Unit = vfs.touch(path, time, atime)
 	suspend fun size(): Long = vfs.stat(path).size
 	suspend fun exists(): Boolean = try {
 		vfs.stat(path).exists

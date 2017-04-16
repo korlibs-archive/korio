@@ -95,6 +95,7 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 					out += i.get(paramType, ctx)
 				}
 			}
+			constructor.isAccessible = true
 			val instance = constructor.newInstance(*out.toTypedArray())
 
 			val allDeclaredFields = clazz.allDeclaredFields

@@ -78,6 +78,9 @@ abstract class Vfs {
 	suspend open fun rename(src: String, dst: String): Boolean = unsupported()
 	suspend open fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = Closeable { }
 
+	suspend open fun touch(path: String, time: Long, atime: Long) {
+	}
+
 	abstract class Proxy : Vfs() {
 		abstract suspend protected fun access(path: String): VfsFile
 		suspend open protected fun transform(out: VfsFile): VfsFile = file(out.path)
@@ -105,6 +108,7 @@ abstract class Vfs {
 		suspend override fun delete(path: String): Boolean = initOnce().access(path).delete()
 		suspend override fun setAttributes(path: String, attributes: List<Attribute>) = initOnce().access(path).setAttributes(*attributes.toTypedArray())
 		suspend override fun mkdir(path: String, attributes: List<Attribute>): Boolean = initOnce().access(path).mkdir(*attributes.toTypedArray())
+		suspend override fun touch(path: String, time: Long, atime: Long): Unit = initOnce().access(path).touch(time, atime)
 		suspend override fun rename(src: String, dst: String): Boolean {
 			initOnce()
 			val srcFile = access(src)
