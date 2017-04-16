@@ -7,6 +7,7 @@ import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
+import com.soywiz.korio.util.OS
 import com.soywiz.korio.util.isAliveJre7
 import com.soywiz.korio.vfs.*
 import java.io.*
@@ -27,8 +28,13 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 		fun resolvePath(path: String) = Paths.get(resolve(path))
 		fun resolveFile(path: String) = File(resolve(path))
 
-		suspend override fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler): Int = executeInWorker {
-			val p = Runtime.getRuntime().exec(cmdAndArgs.toTypedArray(), arrayOf<String>(), resolveFile(path))
+		suspend override fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler): Int = executeInWorker {
+			val actualCmd = if (OS.isWindows) listOf("cmd", "/c") + cmdAndArgs else cmdAndArgs
+			val pb = ProcessBuilder(actualCmd)
+			pb.environment().putAll(mapOf())
+			pb.directory(resolveFile(path))
+
+			val p = pb.start()
 			var closing = false
 			while (true) {
 				val o = p.inputStream.readAvailableChunk(readRest = closing)
@@ -112,9 +118,9 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 			val fullpath = "$path/${file.name}"
 			if (file.exists()) {
 				createExistsStat(
-						fullpath,
-						isDirectory = file.isDirectory,
-						size = file.length()
+					fullpath,
+					isDirectory = file.isDirectory,
+					size = file.length()
 				)
 			} else {
 				createNonExistsStat(fullpath)

@@ -12,21 +12,27 @@ import com.soywiz.korio.async.sleep
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
+import com.soywiz.korio.util.OS
 import com.soywiz.korio.util.isAliveJre7
 import com.soywiz.korio.vfs.*
 import java.io.*
-
 
 // Do not use NIO since it is not available on android!
 class LocalVfsProviderAndroid : LocalVfsProvider() {
 	override fun invoke(): Vfs = object : Vfs() {
 		val that = this
 		override val absolutePath: String = ""
+
 		fun resolve(path: String) = VfsUtil.lightCombine("", path)
 		fun resolveFile(path: String) = File(resolve(path))
 
-		suspend override fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler): Int = executeInWorker {
-			val p = Runtime.getRuntime().exec(cmdAndArgs.toTypedArray(), arrayOf<String>(), resolveFile(path))
+		suspend override fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler): Int = executeInWorker {
+			val actualCmd = if (OS.isWindows) listOf("cmd", "/c") + cmdAndArgs else cmdAndArgs
+			val pb = ProcessBuilder(actualCmd)
+			pb.environment().putAll(mapOf())
+			pb.directory(resolveFile(path))
+
+			val p = pb.start()
 			var closing = false
 			while (true) {
 				val o = p.inputStream.readAvailableChunk(readRest = closing)

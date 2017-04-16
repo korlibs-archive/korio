@@ -7,6 +7,7 @@ import com.soywiz.korio.async.take
 import com.soywiz.korio.stream.readString
 import com.soywiz.korio.stream.writeString
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Test
 import java.util.*
 
@@ -15,11 +16,13 @@ class AsyncClientServerTest {
 		val UUIDLength = 36
 	}
 
+	@Ignore
 	@Test
 	fun testClientServer() = syncTest {
 		val server = AsyncServer(port = 0)
 
 		val clientsCount = 2000
+		//val clientsCount = 10
 		var counter = 0
 		val correctEchoes = LinkedList<Boolean>()
 

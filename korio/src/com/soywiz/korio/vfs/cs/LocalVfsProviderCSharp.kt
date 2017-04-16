@@ -51,7 +51,7 @@ class CSharpVisualVfs : Vfs() {
 
 	override val supportedAttributeTypes = listOf<Class<out Attribute>>()
 
-	suspend override fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler): Int {
+	suspend override fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler): Int {
 		TODO()
 	}
 

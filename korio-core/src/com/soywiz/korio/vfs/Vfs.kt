@@ -27,18 +27,19 @@ abstract class Vfs {
 	fun file(path: String) = root[path]
 
 	fun createExistsStat(
-			path: String, isDirectory: Boolean, size: Long, device: Long = -1, inode: Long = -1, mode: Int = 511,
-			owner: String = "nobody", group: String = "nobody", createTime: Long = 0L, modifiedTime: Long = createTime, lastAccessTime: Long = modifiedTime,
-			extraInfo: Any? = null
+		path: String, isDirectory: Boolean, size: Long, device: Long = -1, inode: Long = -1, mode: Int = 511,
+		owner: String = "nobody", group: String = "nobody", createTime: Long = 0L, modifiedTime: Long = createTime, lastAccessTime: Long = modifiedTime,
+		extraInfo: Any? = null
 	) = VfsStat(
-			file = file(path), exists = true, isDirectory = isDirectory, size = size, device = device, inode = inode, mode = mode,
-			owner = owner, group = group, createTime = createTime, modifiedTime = modifiedTime, lastAccessTime = lastAccessTime,
-			extraInfo = extraInfo
+		file = file(path), exists = true, isDirectory = isDirectory, size = size, device = device, inode = inode, mode = mode,
+		owner = owner, group = group, createTime = createTime, modifiedTime = modifiedTime, lastAccessTime = lastAccessTime,
+		extraInfo = extraInfo
 	)
 
 	fun createNonExistsStat(path: String, extraInfo: Any? = null) = VfsStat(file(path), exists = false, isDirectory = false, size = 0L, device = -1L, inode = -1L, mode = 511, owner = "nobody", group = "nobody", createTime = 0L, modifiedTime = 0L, lastAccessTime = 0L, extraInfo = extraInfo)
 
 	suspend open fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler = VfsProcessHandler()): Int = throw UnsupportedOperationException()
+	suspend open fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler = VfsProcessHandler()): Int = throw UnsupportedOperationException()
 
 	suspend open fun open(path: String, mode: VfsOpenMode): AsyncStream = throw UnsupportedOperationException()
 
@@ -99,7 +100,7 @@ abstract class Vfs {
 			return this
 		}
 
-		suspend override fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler): Int = initOnce().access(path).exec(cmdAndArgs, handler)
+		suspend override fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler): Int = initOnce().access(path).exec(cmdAndArgs, env, handler)
 		suspend override fun open(path: String, mode: VfsOpenMode) = initOnce().access(path).open(mode)
 		suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) = initOnce().access(path).put(content, attributes)
 		suspend override fun setSize(path: String, size: Long): Unit = initOnce().access(path).setSize(size)

@@ -1,5 +1,6 @@
 package com.soywiz.korio.serialization.xml
 
+import com.soywiz.korio.util.toTreeMap
 import org.intellij.lang.annotations.Language
 import java.util.*
 
@@ -11,7 +12,8 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 
 	companion object {
 		fun Tag(tagName: String, attributes: Map<String, Any?>, children: List<Xml>): Xml {
-			return Xml(Xml.Type.NODE, tagName, attributes.filter { it.value != null }.map { it.key to it.value.toString() }.toMap(), children, "")
+			val att = attributes.filter { it.value != null }.map { it.key to it.value.toString() }.toMap().toTreeMap(String.CASE_INSENSITIVE_ORDER)
+			return Xml(Xml.Type.NODE, tagName, att, children, "")
 		}
 
 		fun Text(text: String): Xml {
@@ -43,7 +45,7 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 							is XmlStream.Element.OpenTag -> {
 								val out = level()
 								if (out.close?.name != tag.name) throw IllegalArgumentException("Expected ${tag.name} but was ${out.close?.name}")
-								children += Xml(Xml.Type.NODE, tag.name, tag.attributes, out.children, "")
+								children += Xml(Xml.Type.NODE, tag.name, tag.attributes.toTreeMap(String.CASE_INSENSITIVE_ORDER), out.children, "")
 							}
 							is XmlStream.Element.CloseTag -> return Level(children, tag)
 							else -> throw IllegalArgumentException("Unhandled $tag")
@@ -97,7 +99,7 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 	}
 
 	operator fun get(name: String): Iterable<Xml> = children(name)
-	fun children(name: String): Iterable<Xml> = allChildren.filter { it.name == name }
+	fun children(name: String): Iterable<Xml> = allChildren.filter { it.name.equals(name, ignoreCase = true) }
 	fun child(name: String): Xml? = children(name).firstOrNull()
 	fun childText(name: String): String? = child(name)?.text
 

@@ -12,14 +12,15 @@ import java.io.Closeable
 import java.nio.charset.Charset
 
 class VfsFile(
-		val vfs: Vfs,
-		path: String
+	val vfs: Vfs,
+	path: String
 //) : VfsNamed(VfsFile.normalize(path)) {
 ) : VfsNamed(path), AsyncInputOpenable {
 	operator fun get(path: String): VfsFile = VfsFile(vfs, VfsUtil.combine(this.path, path))
 
 	// @TODO: Kotlin suspend operator not supported yet!
 	suspend fun set(path: String, content: String): Unit = this[path].put(content.toByteArray(Charsets.UTF_8).openAsync())
+
 	suspend fun set(path: String, content: ByteArray): Unit = this[path].put(content.openAsync())
 	suspend fun set(path: String, content: AsyncStream): Unit = run { this[path].writeStream(content) }
 	suspend fun set(path: String, content: VfsFile): Unit = run { this[path].writeFile(content) }
@@ -49,6 +50,7 @@ class VfsFile(
 
 	//suspend fun read(): ByteArray = vfs.readFully(path)
 	suspend fun read(): ByteArray = openUse { this.readAll() }
+
 	suspend fun readAll(): ByteArray = openUse { this.readAll() }
 	suspend fun readBytes(): ByteArray = openUse { this.readAll() }
 
@@ -120,11 +122,11 @@ class VfsFile(
 		}
 	}
 
-	suspend fun exec(cmdAndArgs: List<String>, handler: VfsProcessHandler = VfsProcessHandler()): Int = vfs.exec(path, cmdAndArgs, handler)
-	suspend fun execToString(cmdAndArgs: List<String>, charset: Charset = Charsets.UTF_8): String {
+	suspend fun exec(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), handler: VfsProcessHandler = VfsProcessHandler()): Int = vfs.exec(path, cmdAndArgs, env, handler)
+	suspend fun execToString(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), charset: Charset = Charsets.UTF_8): String {
 		val out = ByteArrayOutputStream()
 
-		val result = exec(cmdAndArgs, object : VfsProcessHandler() {
+		val result = exec(cmdAndArgs, env, object : VfsProcessHandler() {
 			suspend override fun onOut(data: ByteArray) {
 				out.write(data)
 			}
@@ -141,8 +143,8 @@ class VfsFile(
 
 	suspend fun execToString(vararg cmdAndArgs: String, charset: Charset = Charsets.UTF_8): String = execToString(cmdAndArgs.toList(), charset = charset)
 
-	suspend fun passthru(cmdAndArgs: List<String>, charset: Charset = Charsets.UTF_8): Int {
-		return exec(cmdAndArgs.toList(), object : VfsProcessHandler() {
+	suspend fun passthru(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), charset: Charset = Charsets.UTF_8): Int {
+		return exec(cmdAndArgs.toList(), env, object : VfsProcessHandler() {
 			suspend override fun onOut(data: ByteArray) {
 				System.out.print(data.toString(charset))
 			}
@@ -153,7 +155,7 @@ class VfsFile(
 		})
 	}
 
-	suspend fun passthru(vararg cmdAndArgs: String, charset: Charset = Charsets.UTF_8): Int = passthru(cmdAndArgs.toList(), charset)
+	suspend fun passthru(vararg cmdAndArgs: String, env: Map<String, String> = mapOf(), charset: Charset = Charsets.UTF_8): Int = passthru(cmdAndArgs.toList(), env, charset)
 
 	suspend fun watch(handler: (VfsFileEvent) -> Unit): Closeable = vfs.watch(path, handler)
 
