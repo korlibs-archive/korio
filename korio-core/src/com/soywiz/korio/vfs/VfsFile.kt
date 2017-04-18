@@ -159,6 +159,13 @@ class VfsFile(
 
 	suspend fun watch(handler: (VfsFileEvent) -> Unit): Closeable = vfs.watch(path, handler)
 
+	suspend fun redirect(pathRedirector: (String) -> String): VfsFile {
+		val actualFile = this
+		return VfsFile(object : Vfs.Proxy() {
+			suspend override fun access(path: String): VfsFile = actualFile[pathRedirector(path)]
+		}, path)
+	}
+
 	override fun toString(): String = "$vfs[$path]"
 
 	val absolutePath: String by lazy { vfs.getAbsolutePath(path) }
