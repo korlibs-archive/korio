@@ -137,3 +137,4 @@ suspend fun VfsFile.treeCreateZipTo(s: AsyncStream) {
 	s.write16_le(comment.size)
 	s.writeBytes(comment)
 }
+
