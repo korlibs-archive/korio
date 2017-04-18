@@ -28,7 +28,7 @@ class AsyncQueue {
 class AsyncThread {
 	private var lastPromise: Promise<*> = Promise.resolved(Unit)
 
-	suspend fun cancel(): AsyncThread {
+	fun cancel(): AsyncThread {
 		lastPromise.cancel()
 		lastPromise = Promise.resolved(Unit)
 		return this
