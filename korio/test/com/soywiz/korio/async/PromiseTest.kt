@@ -44,4 +44,12 @@ class PromiseTest {
 			out
 		)
 	}
+
+	@Test
+	fun jvmUnsafeAwait() = syncTest{
+		Assert.assertEquals(10, async {
+			sleep(20)
+			10
+		}.jvmSyncAwait())
+	}
 }

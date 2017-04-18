@@ -31,11 +31,46 @@ interface CheckRunning {
 	fun checkCancelled(): Unit
 }
 
-//suspend fun <T> executeInNewThread(task: suspend () -> T): T = suspendCancellableCoroutine<T> { c ->
-//	Thread {
-//		task.startCoroutine(c)
-//	}.start()
-//}
+suspend fun <T> executeInNewThread(task: suspend () -> T): T = suspendCancellableCoroutine<T> { c ->
+	Thread {
+		// @TODO: Check this
+		task.startCoroutine(c)
+	}.apply {
+		isDaemon = true
+	}.start()
+}
+
+
+fun <T> Promise<T>.jvmSyncAwait(): T {
+	var completed = false
+	val lock = Any()
+	var error: Throwable? = null
+	var result: T? = null
+
+	this.then(resolved = {
+		synchronized(lock) {
+			completed = true
+			result = it
+		}
+	}, rejected = {
+		synchronized(lock) {
+			completed = true
+			error = it
+		}
+	})
+
+	while (true) {
+		EventLoop.impl.step(10)
+		synchronized(lock) {
+			if (completed) {
+				if (error != null) throw error!!
+				if (result != null) return result!!
+				throw IllegalStateException()
+			}
+		}
+		Thread.sleep(10)
+	}
+}
 
 suspend fun <T> executeInWorkerSync(task: CheckRunning.() -> T): T = suspendCancellableCoroutine<T> { c ->
 	//println("executeInWorker")
