@@ -51,6 +51,16 @@ class VfsFile(
 	//suspend fun read(): ByteArray = vfs.readFully(path)
 	suspend fun read(): ByteArray = openUse { this.readAll() }
 
+	suspend fun readRangeBytes(range: LongRange): ByteArray = openUse {
+		this.position = range.start
+		this.readBytes((range.endInclusive - range.start + 1).toInt())
+	}
+
+	suspend fun readRangeBytes(range: IntRange): ByteArray = openUse {
+		this.position = range.start.toLong()
+		this.readBytes(range.endInclusive - range.start + 1)
+	}
+
 	suspend fun readAll(): ByteArray = openUse { this.readAll() }
 	suspend fun readBytes(): ByteArray = openUse { this.readAll() }
 
