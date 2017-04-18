@@ -12,14 +12,20 @@ class VfsFileTest {
 	}
 
 	@Test
-	fun redirector() = syncTest {
+	fun redirected() = syncTest {
+		var out = ""
 		val file = MemoryVfsMix(
 			"hello.txt" to "yay!",
 			"hello.bin" to "NEVER-HERE"
-		).redirect { PathInfo(it).pathWithExtension("txt") }
+		).redirected {
+			out += this[it].readString()
+			PathInfo(it).pathWithExtension("txt")
+		}
 
 		Assert.assertEquals("yay!", file["hello.txt"].readString())
+		Assert.assertEquals("yay!", out)
 		Assert.assertEquals("yay!", file["hello.bin"].readString())
+		Assert.assertEquals("yay!NEVER-HERE", out)
 	}
 
 }
