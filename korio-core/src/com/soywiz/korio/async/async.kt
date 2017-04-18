@@ -31,10 +31,38 @@ interface CheckRunning {
 	fun checkCancelled(): Unit
 }
 
-suspend fun <T> executeInNewThread(task: suspend () -> T): T = suspendCancellableCoroutine<T> { c ->
-	Thread {
-		task.startCoroutine(c)
-	}.start()
+//suspend fun <T> executeInNewThread(task: suspend () -> T): T = suspendCancellableCoroutine<T> { c ->
+//	Thread {
+//		task.startCoroutine(c)
+//	}.start()
+//}
+
+suspend fun <T> executeInWorkerSync(task: CheckRunning.() -> T): T = suspendCancellableCoroutine<T> { c ->
+	//println("executeInWorker")
+	tasksInProgress.incrementAndGet()
+	workerLazyPool.execute {
+		val checkRunning = object : CheckRunning {
+			override var cancelled = false
+
+			init {
+				c.onCancel {
+					cancelled = true
+				}
+			}
+
+			override fun checkCancelled() {
+				if (cancelled) throw CancellationException()
+			}
+		}
+
+		try {
+			c.resume(task(checkRunning))
+		} catch (t: Throwable) {
+			c.resumeWithException(t)
+		} finally {
+			tasksInProgress.decrementAndGet()
+		}
+	}
 }
 
 suspend fun <T> executeInWorker(task: suspend CheckRunning.() -> T): T = suspendCancellableCoroutine<T> { c ->
