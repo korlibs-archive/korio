@@ -28,6 +28,21 @@ class AsyncQueue {
 class AsyncThread {
 	private var lastPromise: Promise<*> = Promise.resolved(Unit)
 
+	suspend fun cancel(): AsyncThread {
+		lastPromise.cancel()
+		lastPromise = Promise.resolved(Unit)
+		return this
+	}
+
+	suspend fun <T> cancelAndQueue(func: suspend () -> T): T {
+		cancel()
+		return queue(func)
+	}
+
+	suspend fun <T> queue(func: suspend () -> T): T {
+		return invoke(func)
+	}
+
 	operator suspend fun <T> invoke(func: suspend () -> T): T {
 		val newDeferred = Promise.Deferred<T>()
 		lastPromise.always {
