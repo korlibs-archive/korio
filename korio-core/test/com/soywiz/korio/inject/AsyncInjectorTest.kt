@@ -73,13 +73,13 @@ class AsyncInjectorTest {
 
 		@Suppress("PLATFORM_CLASS_MAPPED_TO_KOTLIN")
 		@Prototype class B(
-				val path: Path,
-				val v: java.lang.Integer
+			val path: Path,
+			val v: java.lang.Integer
 		)
 
 		@Singleton class A(
-				@Path("mypath1") val b1: B,
-				@Path("mypath2") val b2: B
+			@Path("mypath1") val b1: B,
+			@Path("mypath2") val b2: B
 		)
 
 		val inject = AsyncInjector()
@@ -103,7 +103,7 @@ class AsyncInjectorTest {
 	fun testLoader() = syncTest {
 		@Singleton
 		class Demo(
-				@Path("path/to/font") val font: BitmapFont
+			@Path("path/to/font") val font: BitmapFont
 		)
 
 		val inject = AsyncInjector()
@@ -118,8 +118,8 @@ class AsyncInjectorTest {
 	@AsyncFactoryClass(BitmapFontLoader2::class) class BitmapFont2(val path: String)
 
 	class BitmapFontLoader2(
-			@Optional val pathA: Path2A?,
-			@Optional val pathB: Path2B?
+		@Optional val pathA: Path2A?,
+		@Optional val pathB: Path2B?
 	) : AsyncFactory<BitmapFont2> {
 		override suspend fun create() = if (pathA != null) BitmapFont2(pathA.path1) else if (pathB != null) BitmapFont2(pathB.path2) else invalidOp
 	}
@@ -128,8 +128,8 @@ class AsyncInjectorTest {
 	fun testLoader2() = syncTest {
 		@Singleton
 		class Demo2(
-				@Path2A("path/to/font/A") val fontA: BitmapFont2,
-				@Path2B("path/to/font/B") val fontB: BitmapFont2
+			@Path2A("path/to/font/A") val fontA: BitmapFont2,
+			@Path2B("path/to/font/B") val fontB: BitmapFont2
 		)
 
 		val inject = AsyncInjector()
@@ -154,7 +154,7 @@ class AsyncInjectorTest {
 
 		@Singleton
 		class Demo(
-				val a: java.lang.Integer
+			val a: java.lang.Integer
 		) : Base() {
 			override suspend fun init() {
 				super.init()
@@ -168,4 +168,15 @@ class AsyncInjectorTest {
 		Assert.assertEquals(10, demo.a)
 	}
 
+	@Test
+	fun testSingletonInChilds() = syncTest {
+		@Singleton
+		class MySingleton {
+			var a = 10
+		}
+
+		val injector = AsyncInjector()
+		injector.child().get<MySingleton>().a = 20
+		Assert.assertEquals(20, injector.get<MySingleton>().a)
+	}
 }

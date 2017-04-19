@@ -26,6 +26,8 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 
 	fun child() = AsyncInjector(this, level + 1)
 
+	val rootForSingleton: AsyncInjector = parent?.rootForSingleton ?: this
+
 	suspend inline fun <reified T : Any> get() = get(T::class.java)
 
 	inline fun <reified T : Any> map(instance: T): AsyncInjector = map(T::class.java, instance)
@@ -49,11 +51,15 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 			instancesByClass[clazz] = instance
 			instance
 		} else if (clazz.getAnnotation(Singleton::class.java) != null) {
+			val root = rootForSingleton
+			//val root = this
 			if (!has(clazz)) {
-				val instance = create(clazz, ctx) ?: return null
-				instancesByClass[clazz] = instance
+				val instance = root.create(clazz, ctx) ?: return null
+				root.instancesByClass[clazz] = instance
+				instance
+			} else {
+				(instancesByClass[clazz] ?: parent?.getOrNull(clazz, ctx)) as T?
 			}
-			(instancesByClass[clazz] ?: parent?.getOrNull(clazz, ctx)) as T?
 		} else {
 			(instancesByClass[clazz] ?: parent?.getOrNull(clazz, ctx)) as T?
 		}
