@@ -3,10 +3,11 @@ package com.soywiz.korio.async
 import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
+import com.soywiz.korio.util.Cancellable
 import java.util.*
 import java.util.concurrent.CancellationException
 
-class Promise<T : Any?> {
+class Promise<T : Any?> : Cancellable {
 	class Deferred<T : Any?> {
 		val promise = Promise<T>()
 		val onCancel = promise.onCancel
@@ -85,8 +86,8 @@ class Promise<T : Any?> {
 
 	fun always(resolved: () -> Unit) {
 		then(
-				resolved = { resolved() },
-				rejected = { resolved() }
+			resolved = { resolved() },
+			rejected = { resolved() }
 		)
 	}
 
@@ -103,10 +104,10 @@ class Promise<T : Any?> {
 		)
 	}
 
-	private val onCancel = Signal<Unit>()
+	private val onCancel = Signal<Throwable>()
 
-	fun cancel() {
-		onCancel()
+	override fun cancel(e: Throwable) {
+		onCancel(e)
 		complete(null, CancellationException())
 	}
 
