@@ -7,6 +7,11 @@ import org.junit.Test
 
 
 class AsyncInjectorTest {
+	class Holder {
+		var lastId = 0
+		var log = ""
+	}
+
 	@Test
 	fun testSimple() = syncTest {
 		val inject = AsyncInjector()
@@ -16,13 +21,13 @@ class AsyncInjectorTest {
 
 	@Test
 	fun testSingleton() = syncTest {
-		var lastId = 0
-
-		@Singleton class A {
-			val id: Int = lastId++
+		@Singleton class A(val holder: Holder) {
+			val id: Int = holder.lastId++
 		}
 
+		val holder = Holder()
 		val inject = AsyncInjector()
+		inject.map(holder)
 		val a0 = inject.get<A>()
 		val a1 = inject.child().child().get<A>()
 		Assert.assertEquals(0, a0.id)
@@ -142,13 +147,14 @@ class AsyncInjectorTest {
 
 	@Test
 	fun testInjectAnnotation() = syncTest {
-		var log = ""
+		val holder = Holder()
 
 		open class Base : AsyncDependency {
 			@Inject lateinit private var injector: AsyncInjector
+			@Inject lateinit private var holder: Holder
 
 			override suspend fun init() {
-				log += "Base.init<" + injector.get<Int>() + ">"
+				holder.log += "Base.init<" + injector.get<Int>() + ">"
 			}
 		}
 
@@ -158,11 +164,11 @@ class AsyncInjectorTest {
 		) : Base() {
 			override suspend fun init() {
 				super.init()
-				log += "Demo.init<$a>"
+				holder.log += "Demo.init<$a>"
 			}
 		}
 
-		val inject = AsyncInjector()
+		val inject = AsyncInjector().map(holder)
 		inject.map(10)
 		val demo = inject.get<Demo>()
 		Assert.assertEquals(10, demo.a)
@@ -178,5 +184,25 @@ class AsyncInjectorTest {
 		val injector = AsyncInjector()
 		injector.child().get<MySingleton>().a = 20
 		Assert.assertEquals(20, injector.get<MySingleton>().a)
+	}
+
+	@Test(expected = AsyncInjector.NotMappedException::class)
+	fun testNotMapped() = syncTest {
+		data class Unmapped(val name: String)
+		@Singleton
+		class MySingleton(val unmapped: Unmapped)
+		val injector = AsyncInjector()
+		injector.child().get<MySingleton>()
+	}
+
+	@Test
+	fun testMap1() = syncTest {
+		data class Mapped(val name: String)
+		@Singleton
+		class MySingleton(val mapped: Mapped)
+		val injector = AsyncInjector()
+		injector.child()
+			.map(Mapped("hello") as Any)
+			.get<MySingleton>()
 	}
 }

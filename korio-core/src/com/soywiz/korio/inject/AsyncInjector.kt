@@ -30,11 +30,11 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 
 	suspend inline fun <reified T : Any> get() = get(T::class.java)
 
-	inline fun <reified T : Any> map(instance: T): AsyncInjector = map(T::class.java, instance)
-	fun <T : Any?> map(clazz: Class<T>, instance: T): AsyncInjector = this.apply { instancesByClass[clazz] = instance as Any }
+	inline fun <reified T : Any> mapTyped(instance: T): AsyncInjector = map(instance, T::class.java)
+	fun <T : Any> map(instance: T, clazz: Class<T> = instance.javaClass): AsyncInjector = this.apply { instancesByClass[clazz] = instance as Any }
 
 	init {
-		map<AsyncInjector>(this)
+		mapTyped<AsyncInjector>(this)
 	}
 
 	@Suppress("UNCHECKED_CAST")
@@ -54,12 +54,14 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 			val root = rootForSingleton
 			//val root = this
 			if (!has(clazz)) {
-				val instance = root.create(clazz, ctx) ?: return null
+				val instance = create(clazz, ctx) ?: return null
 				root.instancesByClass[clazz] = instance
 				instance
 			} else {
 				(instancesByClass[clazz] ?: parent?.getOrNull(clazz, ctx)) as T?
 			}
+		} else if (clazz.getAnnotation(AsyncFactoryClass::class.java) != null) {
+			create(clazz, ctx)
 		} else {
 			(instancesByClass[clazz] ?: parent?.getOrNull(clazz, ctx)) as T?
 		}
@@ -76,7 +78,7 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 
 			val loaderClass = clazz.getAnnotation(AsyncFactoryClass::class.java)
 			val actualClass = loaderClass?.clazz?.java ?: clazz
-			if (actualClass.isInterface || Modifier.isAbstract(actualClass.modifiers)) invalidOp("Can't instantiate abstract or interface: $actualClass")
+			if (actualClass.isInterface || Modifier.isAbstract(actualClass.modifiers)) invalidOp("Can't instantiate abstract or interface: $actualClass in $ctx")
 			val constructor = actualClass.declaredConstructors.firstOrNull() ?: return null
 			val out = arrayListOf<Any?>()
 
@@ -88,7 +90,7 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 					for (annotation in annotations) {
 						when (annotation) {
 							is Optional -> isOptional = true
-							else -> i.map(annotation.annotationClass.java as Class<Any>, annotation as Any)
+							else -> i.map(annotation as Any, annotation.annotationClass.java as Class<Any>)
 						}
 					}
 					i
@@ -96,9 +98,9 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 					this
 				}
 				if (isOptional) {
-					out += if (i.has(paramType)) i.get(paramType, ctx) else null
+					out += if (i.has(paramType)) i.getOrNull(paramType, ctx) else null
 				} else {
-					out += i.get(paramType, ctx)
+					out += i.getOrNull(paramType, ctx) ?: throw NotMappedException(paramType, actualClass, ctx)
 				}
 			}
 			constructor.isAccessible = true
@@ -115,7 +117,7 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 					for (annotation in field.annotations) {
 						when (annotation) {
 							is Optional -> isOptional = true
-							else -> i.map(annotation.annotationClass.java as Class<Any>, annotation as Any)
+							else -> i.map(annotation as Any, annotation.annotationClass.java as Class<Any>)
 						}
 					}
 					i
@@ -144,6 +146,8 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 			throw e
 		}
 	}
+
+	class NotMappedException(val clazz: Class<*>, val requestedByClass: Class<*>, val ctx: RequestContext) : RuntimeException("Not mapped ${clazz.name} requested by ${requestedByClass.name} in $ctx")
 
 	override fun toString(): String = "AsyncInjector(level=$level, instances=${instancesByClass.size})"
 }
