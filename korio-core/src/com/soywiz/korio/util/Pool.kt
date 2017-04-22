@@ -2,12 +2,18 @@ package com.soywiz.korio.util
 
 import java.util.*
 
-class Pool<T>(val reset: (T) -> Unit = {}, val gen: () -> T) {
-	constructor(gen: () -> T) : this({}, gen)
+class Pool<T>(private val reset: (T) -> Unit = {}, preallocate: Int = 0, private val gen: () -> T) {
+	constructor(preallocate: Int = 0, gen: () -> T) : this({}, preallocate, gen)
 
-	val items = LinkedList<T>()
+	private val items = LinkedList<T>()
 
-	fun obtain(): T {
+	val itemsInPool: Int get() = items.size
+
+	init {
+		for (n in 0 until preallocate) items += gen()
+	}
+
+	fun alloc(): T {
 		if (items.isNotEmpty()) {
 			return items.removeLast()
 		} else {
@@ -20,13 +26,13 @@ class Pool<T>(val reset: (T) -> Unit = {}, val gen: () -> T) {
 		items.addFirst(v)
 	}
 
-	fun free(v: List<T>) {
+	fun free(v: Iterable<T>) {
 		for (it in v) reset(it)
 		items.addAll(v)
 	}
 
-	inline fun <T2> temp(crossinline callback: (T) -> T2): T2 {
-		val temp = obtain()
+	inline fun <T2> alloc(crossinline callback: (T) -> T2): T2 {
+		val temp = alloc()
 		try {
 			return callback(temp)
 		} finally {
