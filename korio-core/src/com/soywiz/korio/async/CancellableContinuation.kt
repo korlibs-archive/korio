@@ -23,9 +23,15 @@ class CoroutineCancelContext() : AbstractCoroutineContextElement(CoroutineCancel
 		flush()
 	}
 
-	fun add(handler: (Throwable) -> Unit) {
+	fun add(handler: (Throwable) -> Unit): (Throwable) -> Unit {
 		synchronized(handlers) { handlers += handler }
 		flush()
+		return handler
+	}
+
+	fun remove(handler: (Throwable) -> Unit): (Throwable) -> Unit {
+		synchronized(handlers) { handlers -= handler }
+		return handler
 	}
 
 	private fun flush() {
@@ -47,6 +53,8 @@ class CancellableContinuation<in T>(private val delegate: Continuation<T>) : Con
 	override val context: CoroutineContext = if (delegate.context[CoroutineCancelContext.Key] != null) delegate.context else CoroutineCancelContext() + delegate.context
 	val cancelContext = context[CoroutineCancelContext.Key]!!
 
+	private val cancells = arrayListOf<(Throwable) -> Unit>()
+
 	var completed = false
 
 	private var _cancelled: Boolean = false
@@ -62,11 +70,17 @@ class CancellableContinuation<in T>(private val delegate: Continuation<T>) : Con
 	override fun resume(value: T) {
 		if (completed || _cancelled) return
 		completed = true
+		cancelHandlers()
 		delegate.resume(value)
 	}
 
+	private fun cancelHandlers() {
+		for (c in cancells) cancelContext.remove(c)
+		cancells.clear()
+	}
+
 	override fun onCancel(handler: (Throwable) -> Unit) {
-		cancelContext.add(handler)
+		cancells += cancelContext.add(handler)
 	}
 
 	override fun cancel(e: Throwable) {
@@ -74,11 +88,13 @@ class CancellableContinuation<in T>(private val delegate: Continuation<T>) : Con
 		_cancelled = true
 		cancelContext.exec(e)
 		delegate.resumeWithException(e)
+		cancelHandlers()
 	}
 
 	override fun resumeWithException(exception: Throwable) {
 		if (completed || _cancelled) return
 		completed = true
+		cancelHandlers()
 		delegate.resumeWithException(exception)
 	}
 }
