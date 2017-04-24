@@ -1,5 +1,6 @@
 package com.soywiz.korio.serialization.xml
 
+import com.soywiz.korio.util.Indenter
 import com.soywiz.korio.util.toTreeMap
 import org.intellij.lang.annotations.Language
 import java.util.*
@@ -78,14 +79,33 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 		Type.COMMENT -> ""
 	}
 
+	fun toOuterXmlIndented(indenter: Indenter = Indenter()): Indenter = indenter.apply {
+		when (type) {
+			Type.NODE -> {
+				if (allChildren.isEmpty()) {
+					line("<$name$attributesStr/>")
+				} else {
+					line("<$name$attributesStr>")
+					indent {
+						for (child in allChildren) child.toOuterXmlIndented(indenter)
+					}
+					line("</$name>")
+				}
+			}
+			Type.TEXT -> line(content)
+			Type.COMMENT -> line("<!--$content-->")
+		}
+	}
+
+	val attributesStr: String get() = attributes.toList().map { " ${it.first}=\"${it.second}\"" }.joinToString("")
+
 	val outerXml: String get() = when (type) {
 		Type.NODE -> {
-			val attrs = attributes.toList().map { " ${it.first}=\"${it.second}\"" }.joinToString("")
 			if (allChildren.isEmpty()) {
-				"<$name$attrs/>"
+				"<$name$attributesStr/>"
 			} else {
 				val children = this.allChildren.map(Xml::outerXml).joinToString("")
-				"<$name$attrs>$children</$name>"
+				"<$name$attributesStr>$children</$name>"
 			}
 		}
 		Type.TEXT -> content
