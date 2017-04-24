@@ -20,4 +20,11 @@ class XmlTest {
 	fun name2() {
 		val xml = Xml("<a_b />")
 	}
+
+	@Test
+	fun name3() {
+		Assert.assertEquals("""<test z="1" b="2"/>""", Xml.Tag("test", mapOf("z" to 1, "b" to 2), listOf()).outerXml)
+
+	}
+
 }

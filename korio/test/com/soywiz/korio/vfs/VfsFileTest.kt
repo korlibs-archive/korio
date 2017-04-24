@@ -12,6 +12,12 @@ class VfsFileTest {
 	}
 
 	@Test
+	fun memoryNonExists() = syncTest {
+		val file = MemoryVfs()
+		Assert.assertEquals(false, file["test"].exists())
+	}
+
+	@Test
 	fun redirected() = syncTest {
 		var out = ""
 		val file = MemoryVfsMix(

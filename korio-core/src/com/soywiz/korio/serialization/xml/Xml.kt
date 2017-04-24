@@ -6,6 +6,7 @@ import org.intellij.lang.annotations.Language
 import java.util.*
 
 data class Xml(val type: Type, val name: String, val attributes: Map<String, String>, val allChildren: List<Xml>, val content: String) {
+	val attributesLC = attributes.toTreeMap(String.CASE_INSENSITIVE_ORDER)
 	val nameLC: String = name.toLowerCase().trim()
 	val descendants: Iterable<Xml> get() = allChildren.flatMap { it.allChildren + it }
 	val allChildrenNoComments get() = allChildren.filter { !it.isComment }
@@ -13,7 +14,7 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 
 	companion object {
 		fun Tag(tagName: String, attributes: Map<String, Any?>, children: List<Xml>): Xml {
-			val att = attributes.filter { it.value != null }.map { it.key to it.value.toString() }.toMap().toTreeMap(String.CASE_INSENSITIVE_ORDER)
+			val att = attributes.filter { it.value != null }.map { it.key to it.value.toString() }.toMap()
 			return Xml(Xml.Type.NODE, tagName, att, children, "")
 		}
 
@@ -46,7 +47,7 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 							is XmlStream.Element.OpenTag -> {
 								val out = level()
 								if (out.close?.name != tag.name) throw IllegalArgumentException("Expected ${tag.name} but was ${out.close?.name}")
-								children += Xml(Xml.Type.NODE, tag.name, tag.attributes.toTreeMap(String.CASE_INSENSITIVE_ORDER), out.children, "")
+								children += Xml(Xml.Type.NODE, tag.name, tag.attributes, out.children, "")
 							}
 							is XmlStream.Element.CloseTag -> return Level(children, tag)
 							else -> throw IllegalArgumentException("Unhandled $tag")
@@ -66,12 +67,6 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 			}
 		}
 	}
-
-	fun hasAttribute(key: String): Boolean = this.attributes.containsKey(key)
-	fun attribute(name: String): String? = this.attributes[name]
-	fun getString(name: String): String? = this.attributes[name]?.toString()
-	fun getInt(name: String): Int? = this.attributes[name]?.toInt()
-	fun getDouble(name: String): Double? = this.attributes[name]?.toDouble()
 
 	val text: String get() = when (type) {
 		Type.NODE -> allChildren.map { it.text }.joinToString("")
@@ -119,17 +114,31 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 	}
 
 	operator fun get(name: String): Iterable<Xml> = children(name)
+
 	fun children(name: String): Iterable<Xml> = allChildren.filter { it.name.equals(name, ignoreCase = true) }
 	fun child(name: String): Xml? = children(name).firstOrNull()
 	fun childText(name: String): String? = child(name)?.text
 
-	fun double(name: String, defaultValue: Double = 0.0): Double = this.attributes[name]?.toDoubleOrNull() ?: defaultValue
-	fun int(name: String, defaultValue: Int = 0): Int = this.attributes[name]?.toIntOrNull() ?: defaultValue
-	fun str(name: String, defaultValue: String = ""): String = this.attributes[name] ?: defaultValue
+	fun hasAttribute(key: String): Boolean = this.attributesLC.containsKey(key)
+	fun attribute(name: String): String? = this.attributesLC[name]
 
-	fun doubleNull(name: String): Double? = this.attributes[name]?.toDoubleOrNull()
-	fun intNull(name: String): Int? = this.attributes[name]?.toIntOrNull()
-	fun strNull(name: String): String? = this.attributes[name]
+	fun getString(name: String): String? = this.attributesLC[name]
+	fun getInt(name: String): Int? = this.attributesLC[name]?.toInt()
+	fun getLong(name: String): Long? = this.attributesLC[name]?.toLong()
+	fun getDouble(name: String): Double? = this.attributesLC[name]?.toDouble()
+	fun getFloat(name: String): Float? = this.attributesLC[name]?.toFloat()
+
+	fun double(name: String, defaultValue: Double = 0.0): Double = this.attributesLC[name]?.toDoubleOrNull() ?: defaultValue
+	fun float(name: String, defaultValue: Float = 0f): Float = this.attributesLC[name]?.toFloatOrNull() ?: defaultValue
+	fun int(name: String, defaultValue: Int = 0): Int = this.attributesLC[name]?.toIntOrNull() ?: defaultValue
+	fun long(name: String, defaultValue: Long = 0): Long = this.attributesLC[name]?.toLongOrNull() ?: defaultValue
+	fun str(name: String, defaultValue: String = ""): String = this.attributesLC[name] ?: defaultValue
+
+	fun doubleNull(name: String): Double? = this.attributesLC[name]?.toDoubleOrNull()
+	fun floatNull(name: String): Float? = this.attributesLC[name]?.toFloatOrNull()
+	fun intNull(name: String): Int? = this.attributesLC[name]?.toIntOrNull()
+	fun longNull(name: String): Long? = this.attributesLC[name]?.toLongOrNull()
+	fun strNull(name: String): String? = this.attributesLC[name]
 
 	//override fun toString(): String = innerXml
 	override fun toString(): String = outerXml
