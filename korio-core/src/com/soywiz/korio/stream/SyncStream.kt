@@ -27,6 +27,11 @@ interface SyncRAOutputStream {
 }
 
 open class SyncStreamBase : Closeable, SyncRAInputStream, SyncRAOutputStream, SyncLengthStream {
+	val smallTemp = ByteArray(16)
+	fun read(position: Long): Int {
+		val count = read(position, smallTemp, 0, 1)
+		return if (count >= 1) smallTemp[0].toInt() and 0xFF else -1
+	}
 	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = throw UnsupportedOperationException()
 	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int): Unit = throw UnsupportedOperationException()
 	override var length: Long
@@ -38,6 +43,13 @@ open class SyncStreamBase : Closeable, SyncRAInputStream, SyncRAOutputStream, Sy
 
 
 class SyncStream(val base: SyncStreamBase, var position: Long = 0L) : Extra by Extra.Mixin(), Closeable, SyncInputStream, SyncOutputStream, SyncLengthStream {
+	val smallTemp = ByteArray(16)
+
+	fun read(): Int {
+		val count = read(smallTemp, 0, 1)
+		return if (count < 0) -1 else smallTemp[0].toInt() and 0xFF
+	}
+
 	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		val read = base.read(position, buffer, offset, len)
 		position += read
@@ -266,6 +278,12 @@ fun SyncStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
 fun SyncStream.writeBytes(data: ByteArraySlice): Unit = write(data.data, data.position, data.length)
 
 val SyncStream.eof: Boolean get () = this.available <= 0L
+private fun SyncStream.readSmallTempExact(count: Int): ByteArray {
+	val t = this.smallTemp
+	readExact(t, 0, count)
+	return t
+}
+
 private fun SyncStream.readTempExact(count: Int): ByteArray {
 	val temp = BYTES_TEMP
 	return temp.apply { readExact(temp, 0, count) }
@@ -276,32 +294,35 @@ private fun SyncStream.readTemp(count: Int): ByteArray {
 	return temp.apply { read(temp, 0, count) }
 }
 
-fun SyncStream.readU8(): Int = readTempExact(1).readU8(0)
-fun SyncStream.readS8(): Int = readTempExact(1).readS8(0)
+fun SyncStream.fastReadU8(): Int = this.read() and 0xFF
+fun SyncStream.fastReadS8(): Int = this.read().toByte().toInt()
 
-fun SyncStream.readU16_le(): Int = readTempExact(2).readU16_le(0)
-fun SyncStream.readU24_le(): Int = readTempExact(3).readU24_le(0)
-fun SyncStream.readU32_le(): Long = readTempExact(4).readU32_le(0)
+fun SyncStream.readU8(): Int = readSmallTempExact(1).readU8(0)
+fun SyncStream.readS8(): Int = readSmallTempExact(1).readS8(0)
 
-fun SyncStream.readS16_le(): Int = readTempExact(2).readS16_le(0)
-fun SyncStream.readS24_le(): Int = readTempExact(3).readS24_le(0)
-fun SyncStream.readS32_le(): Int = readTempExact(4).readS32_le(0)
-fun SyncStream.readS64_le(): Long = readTempExact(8).readS64_le(0)
+fun SyncStream.readU16_le(): Int = readSmallTempExact(2).readU16_le(0)
+fun SyncStream.readU24_le(): Int = readSmallTempExact(3).readU24_le(0)
+fun SyncStream.readU32_le(): Long = readSmallTempExact(4).readU32_le(0)
 
-fun SyncStream.readF32_le(): Float = readTempExact(4).readF32_le(0)
-fun SyncStream.readF64_le(): Double = readTempExact(8).readF64_le(0)
+fun SyncStream.readS16_le(): Int = readSmallTempExact(2).readS16_le(0)
+fun SyncStream.readS24_le(): Int = readSmallTempExact(3).readS24_le(0)
+fun SyncStream.readS32_le(): Int = readSmallTempExact(4).readS32_le(0)
+fun SyncStream.readS64_le(): Long = readSmallTempExact(8).readS64_le(0)
 
-fun SyncStream.readU16_be(): Int = readTempExact(2).readU16_be(0)
-fun SyncStream.readU24_be(): Int = readTempExact(3).readU24_be(0)
-fun SyncStream.readU32_be(): Long = readTempExact(4).readU32_be(0)
+fun SyncStream.readF32_le(): Float = readSmallTempExact(4).readF32_le(0)
+fun SyncStream.readF64_le(): Double = readSmallTempExact(8).readF64_le(0)
 
-fun SyncStream.readS16_be(): Int = readTempExact(2).readS16_be(0)
-fun SyncStream.readS24_be(): Int = readTempExact(3).readS24_be(0)
-fun SyncStream.readS32_be(): Int = readTempExact(4).readS32_be(0)
-fun SyncStream.readS64_be(): Long = readTempExact(8).readS64_be(0)
+fun SyncStream.readU16_be(): Int = readSmallTempExact(2).readU16_be(0)
+fun SyncStream.readU24_be(): Int = readSmallTempExact(3).readU24_be(0)
+fun SyncStream.readU32_be(): Long = readSmallTempExact(4).readU32_be(0)
 
-fun SyncStream.readF32_be(): Float = readTempExact(4).readF32_be(0)
-fun SyncStream.readF64_be(): Double = readTempExact(8).readF64_be(0)
+fun SyncStream.readS16_be(): Int = readSmallTempExact(2).readS16_be(0)
+fun SyncStream.readS24_be(): Int = readSmallTempExact(3).readS24_be(0)
+fun SyncStream.readS32_be(): Int = readSmallTempExact(4).readS32_be(0)
+fun SyncStream.readS64_be(): Long = readSmallTempExact(8).readS64_be(0)
+
+fun SyncStream.readF32_be(): Float = readSmallTempExact(4).readF32_be(0)
+fun SyncStream.readF64_be(): Double = readSmallTempExact(8).readF64_be(0)
 
 fun SyncStream.readAvailable(): ByteArray = readBytes(available.toInt())
 fun SyncStream.readAll(): ByteArray = readBytes(available.toInt())

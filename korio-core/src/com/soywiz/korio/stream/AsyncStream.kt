@@ -13,6 +13,11 @@ import java.io.InputStream
 import java.nio.charset.Charset
 import java.util.*
 
+//interface SmallTemp {
+//	val smallTemp: ByteArray
+//}
+
+//interface AsyncBaseStream : AsyncCloseable, SmallTemp {
 interface AsyncBaseStream : AsyncCloseable {
 }
 
@@ -282,6 +287,11 @@ suspend fun AsyncInputStream.readExact(buffer: ByteArray, offset: Int, len: Int)
 	}
 }
 
+suspend private fun AsyncInputStream.readSmallTempExact(len: Int): ByteArray {
+	val t = BYTES_TEMP
+	readExact(t, 0, len)
+	return t
+}
 suspend private fun AsyncInputStream.readTempExact(len: Int, temp: ByteArray = BYTES_TEMP): ByteArray = temp.apply { readExact(temp, 0, len) }
 
 suspend fun AsyncInputStream.read(data: ByteArray): Int = read(data, 0, data.size)
@@ -294,26 +304,26 @@ suspend fun AsyncInputStream.readBytes(len: Int): ByteArray {
 
 suspend fun AsyncInputStream.readBytesExact(len: Int): ByteArray = ByteArray(len).apply { readExact(this, 0, len) }
 
-suspend fun AsyncInputStream.readU8(): Int = readTempExact(1).readU8(0)
-suspend fun AsyncInputStream.readS8(): Int = readTempExact(1).readS8(0)
-suspend fun AsyncInputStream.readU16_le(): Int = readTempExact(2).readU16_le(0)
-suspend fun AsyncInputStream.readU24_le(): Int = readTempExact(3).readU24_le(0)
-suspend fun AsyncInputStream.readU32_le(): Long = readTempExact(4).readU32_le(0)
-suspend fun AsyncInputStream.readS16_le(): Int = readTempExact(2).readS16_le(0)
-suspend fun AsyncInputStream.readS24_le(): Int = readTempExact(3).readS24_le(0)
-suspend fun AsyncInputStream.readS32_le(): Int = readTempExact(4).readS32_le(0)
-suspend fun AsyncInputStream.readS64_le(): Long = readTempExact(8).readS64_le(0)
-suspend fun AsyncInputStream.readF32_le(): Float = readTempExact(4).readF32_le(0)
-suspend fun AsyncInputStream.readF64_le(): Double = readTempExact(8).readF64_le(0)
-suspend fun AsyncInputStream.readU16_be(): Int = readTempExact(2).readU16_be(0)
-suspend fun AsyncInputStream.readU24_be(): Int = readTempExact(3).readU24_be(0)
-suspend fun AsyncInputStream.readU32_be(): Long = readTempExact(4).readU32_be(0)
-suspend fun AsyncInputStream.readS16_be(): Int = readTempExact(2).readS16_be(0)
-suspend fun AsyncInputStream.readS24_be(): Int = readTempExact(3).readS24_be(0)
-suspend fun AsyncInputStream.readS32_be(): Int = readTempExact(4).readS32_be(0)
-suspend fun AsyncInputStream.readS64_be(): Long = readTempExact(8).readS64_be(0)
-suspend fun AsyncInputStream.readF32_be(): Float = readTempExact(4).readF32_be(0)
-suspend fun AsyncInputStream.readF64_be(): Double = readTempExact(8).readF64_be(0)
+suspend fun AsyncInputStream.readU8(): Int = readSmallTempExact(1).readU8(0)
+suspend fun AsyncInputStream.readS8(): Int = readSmallTempExact(1).readS8(0)
+suspend fun AsyncInputStream.readU16_le(): Int = readSmallTempExact(2).readU16_le(0)
+suspend fun AsyncInputStream.readU24_le(): Int = readSmallTempExact(3).readU24_le(0)
+suspend fun AsyncInputStream.readU32_le(): Long = readSmallTempExact(4).readU32_le(0)
+suspend fun AsyncInputStream.readS16_le(): Int = readSmallTempExact(2).readS16_le(0)
+suspend fun AsyncInputStream.readS24_le(): Int = readSmallTempExact(3).readS24_le(0)
+suspend fun AsyncInputStream.readS32_le(): Int = readSmallTempExact(4).readS32_le(0)
+suspend fun AsyncInputStream.readS64_le(): Long = readSmallTempExact(8).readS64_le(0)
+suspend fun AsyncInputStream.readF32_le(): Float = readSmallTempExact(4).readF32_le(0)
+suspend fun AsyncInputStream.readF64_le(): Double = readSmallTempExact(8).readF64_le(0)
+suspend fun AsyncInputStream.readU16_be(): Int = readSmallTempExact(2).readU16_be(0)
+suspend fun AsyncInputStream.readU24_be(): Int = readSmallTempExact(3).readU24_be(0)
+suspend fun AsyncInputStream.readU32_be(): Long = readSmallTempExact(4).readU32_be(0)
+suspend fun AsyncInputStream.readS16_be(): Int = readSmallTempExact(2).readS16_be(0)
+suspend fun AsyncInputStream.readS24_be(): Int = readSmallTempExact(3).readS24_be(0)
+suspend fun AsyncInputStream.readS32_be(): Int = readSmallTempExact(4).readS32_be(0)
+suspend fun AsyncInputStream.readS64_be(): Long = readSmallTempExact(8).readS64_be(0)
+suspend fun AsyncInputStream.readF32_be(): Float = readSmallTempExact(4).readF32_be(0)
+suspend fun AsyncInputStream.readF64_be(): Double = readSmallTempExact(8).readF64_be(0)
 suspend fun AsyncStream.hasLength(): Boolean = try {
 	getLength(); true
 } catch (t: Throwable) {

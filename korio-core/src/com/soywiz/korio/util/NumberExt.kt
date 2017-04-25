@@ -40,6 +40,12 @@ fun Int.insertScaled(value: Int, offset: Int, count: Int, scale: Int): Int {
 
 fun Int.insertScaledFF(value: Int, offset: Int, count: Int): Int = if (count == 0) this else this.insertScaled(value, offset, count, 0xFF)
 
+fun Int.nextAlignedTo(align: Int) = if (this % align == 0) {
+	this
+} else {
+	(((this / align) + 1) * align)
+}
+
 fun Long.nextAlignedTo(align: Long) = if (this % align == 0L) {
 	this
 } else {

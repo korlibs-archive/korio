@@ -19,7 +19,7 @@ private inline fun ByteArray._read64_be(o: Int): Long = (_read32_be(o + 4).toUns
 
 // Unsigned
 
-fun ByteArray.readU8(o: Int): Int = _read8(o) and 0xFF
+fun ByteArray.readU8(o: Int): Int = this[o].toInt() and 0xFF
 // LE
 fun ByteArray.readU16_le(o: Int): Int = _read16_le(o)
 
@@ -33,7 +33,7 @@ fun ByteArray.readU32_be(o: Int): Long = _read32_be(o).toUnsigned()
 
 // Signed
 
-fun ByteArray.readS8(o: Int): Int = _read8(o)
+fun ByteArray.readS8(o: Int): Int = this[o].toInt()
 // LE
 fun ByteArray.readS16_le(o: Int): Int = _read16_le(o).signExtend(16)
 
