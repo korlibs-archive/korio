@@ -68,7 +68,7 @@ class HttpClientNodeJs : HttpClient() {
 class HttpClientBrowserJs : HttpClient() {
 	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = Promise.create { deferred ->
 		val xhr = jsNew("XMLHttpRequest")
-		xhr.call("open", "GET", url, true)
+		xhr.call("open", method.name, url, true)
 		xhr["responseType"] = "arraybuffer"
 
 		xhr["onload"] = jsFunctionRaw1 { e ->

@@ -43,6 +43,21 @@ abstract class Vfs {
 
 	suspend open fun open(path: String, mode: VfsOpenMode): AsyncStream = throw UnsupportedOperationException()
 
+	suspend open fun readRange(path: String, range: LongRange): ByteArray {
+		val s = open(path, VfsOpenMode.READ)
+		try {
+			s.position = range.start
+			val readCount = Math.min(
+				Int.MAX_VALUE.toLong() - 1,
+				(range.endInclusive - range.start)
+			).toInt() + 1
+
+			return s.readBytes(readCount)
+		} finally {
+			s.close()
+		}
+	}
+
 	interface Attribute
 
 	inline fun <reified T> Iterable<Attribute>.get(): T? = this.firstOrNull { it is T } as T?
@@ -102,6 +117,9 @@ abstract class Vfs {
 
 		suspend override fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler): Int = initOnce().access(path).exec(cmdAndArgs, env, handler)
 		suspend override fun open(path: String, mode: VfsOpenMode) = initOnce().access(path).open(mode)
+
+		suspend override fun readRange(path: String, range: LongRange): ByteArray = initOnce().access(path).readRangeBytes(range)
+
 		suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) = initOnce().access(path).put(content, attributes)
 		suspend override fun setSize(path: String, size: Long): Unit = initOnce().access(path).setSize(size)
 		suspend override fun stat(path: String): VfsStat = initOnce().access(path).stat().copy(file = file(path))

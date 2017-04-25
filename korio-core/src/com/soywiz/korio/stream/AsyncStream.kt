@@ -292,14 +292,37 @@ suspend private fun AsyncInputStream.readSmallTempExact(len: Int): ByteArray {
 	readExact(t, 0, len)
 	return t
 }
+
 suspend private fun AsyncInputStream.readTempExact(len: Int, temp: ByteArray = BYTES_TEMP): ByteArray = temp.apply { readExact(temp, 0, len) }
 
 suspend fun AsyncInputStream.read(data: ByteArray): Int = read(data, 0, data.size)
 suspend fun AsyncInputStream.read(data: UByteArray): Int = read(data.data, 0, data.size)
 
 suspend fun AsyncInputStream.readBytes(len: Int): ByteArray {
-	val ba = ByteArray(len)
-	return Arrays.copyOf(ba, read(ba, 0, len))
+	if (len > BYTES_TEMP_SIZE) {
+		if (this is AsyncPositionLengthStream) {
+			val alen = Math.min(len, this.getAvailable().toIntClamp())
+			val ba = ByteArray(alen)
+			val alen2 = read(ba, 0, alen)
+			return if (ba.size == alen2) ba else Arrays.copyOf(ba, alen2)
+		} else {
+			var pending = len
+			val temp = BYTES_TEMP
+			val bout = ByteArrayOutputStream()
+			while (pending > 0) {
+				val read = this.read(temp, 0, Math.min(temp.size, pending))
+				if (read <= 0) break
+				bout.write(temp, 0, read)
+				pending -= read
+			}
+			return bout.toByteArray()
+		}
+	} else {
+		val ba = ByteArray(len)
+		val alen = read(ba, 0, len)
+		return if (ba.size == alen) ba else Arrays.copyOf(ba, alen)
+	}
+
 }
 
 suspend fun AsyncInputStream.readBytesExact(len: Int): ByteArray = ByteArray(len).apply { readExact(this, 0, len) }

@@ -6,6 +6,7 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.await
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.toLongRange
 import com.soywiz.korio.util.use
 import java.io.ByteArrayOutputStream
 import java.io.Closeable
@@ -48,21 +49,13 @@ class VfsFile(
 		return open(mode).use { callback.await(this) }
 	}
 
-	//suspend fun read(): ByteArray = vfs.readFully(path)
-	suspend fun read(): ByteArray = openUse { this.readAll() }
+	suspend fun readRangeBytes(range: LongRange): ByteArray = vfs.readRange(path, range)
+	suspend fun readRangeBytes(range: IntRange): ByteArray = vfs.readRange(path, range.toLongRange())
 
-	suspend fun readRangeBytes(range: LongRange): ByteArray = openUse {
-		this.position = range.start
-		this.readBytes((range.endInclusive - range.start + 1).toInt())
-	}
-
-	suspend fun readRangeBytes(range: IntRange): ByteArray = openUse {
-		this.position = range.start.toLong()
-		this.readBytes(range.endInclusive - range.start + 1)
-	}
-
-	suspend fun readAll(): ByteArray = openUse { this.readAll() }
-	suspend fun readBytes(): ByteArray = openUse { this.readAll() }
+	// Aliases
+	suspend fun read(): ByteArray = vfs.readRange(path, 0L..Long.MAX_VALUE)
+	suspend fun readAll(): ByteArray = vfs.readRange(path, 0L..Long.MAX_VALUE)
+	suspend fun readBytes(): ByteArray = vfs.readRange(path, 0L..Long.MAX_VALUE)
 
 	suspend fun readAsSyncStream(): SyncStream = read().openSync()
 

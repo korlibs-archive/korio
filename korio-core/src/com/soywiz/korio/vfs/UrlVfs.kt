@@ -35,9 +35,11 @@ private class UrlVfsImpl(val url: String) : Vfs() {
 		return object : AsyncStreamBase() {
 			suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 				if (len == 0) return 0
-				val res = client.request(Http.Method.GET, fullUrl, Http.Headers(mapOf(
-						"range" to "bytes=$position-${position + len - 1}"
-				)))
+				val res = client.request(
+					Http.Method.GET,
+					fullUrl,
+					Http.Headers(mapOf("range" to "bytes=$position-${position + len - 1}"))
+				)
 				val out = res.content.read(buffer, offset, len)
 				return out
 			}
@@ -46,6 +48,12 @@ private class UrlVfsImpl(val url: String) : Vfs() {
 		}.toAsyncStream().buffered()
 		//}.toAsyncStream()
 	}
+
+	suspend override fun readRange(path: String, range: LongRange): ByteArray = client.requestAsBytes(
+		Http.Method.GET,
+		getFullUrl(path),
+		Http.Headers(mapOf("range" to "bytes=${range.start}-${range.endInclusive}"))
+	).content
 
 	class HttpHeaders(val headers: Http.Headers) : Attribute
 
@@ -56,8 +64,8 @@ private class UrlVfsImpl(val url: String) : Vfs() {
 		val contentLength = content.getLength()
 
 		client.request(Http.Method.PUT, getFullUrl(path), hheaders.withReplaceHeaders(
-				"content-length" to "$contentLength",
-				"content-type" to mimeType.mime
+			"content-length" to "$contentLength",
+			"content-type" to mimeType.mime
 		), content)
 	}
 
