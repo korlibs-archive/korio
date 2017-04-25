@@ -8,7 +8,13 @@ import java.io.FileNotFoundException
 open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
 	val vfsList = ArrayList(vfsList)
 
-	suspend override fun access(path: String): VfsFile = vfsList.map { it[path] }.firstOrNull { it.exists() } ?: vfsList.first()[path]
+	suspend override fun access(path: String): VfsFile {
+		if (vfsList.size == 1) {
+			return vfsList.first()[path]
+		} else {
+			return vfsList.map { it[path] }.firstOrNull { it.exists() } ?: vfsList.first()[path]
+		}
+	}
 
 	suspend override fun stat(path: String): VfsStat {
 		for (vfs in vfsList) {

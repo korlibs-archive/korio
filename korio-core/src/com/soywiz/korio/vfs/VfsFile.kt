@@ -49,6 +49,8 @@ class VfsFile(
 		return open(mode).use { callback.await(this) }
 	}
 
+	inline suspend fun <reified T> readSpecial(): T = vfs.readSpecial(path, T::class.java)
+	suspend fun <T> readSpecial(clazz: Class<T>): T = vfs.readSpecial(path, clazz)
 	suspend fun readRangeBytes(range: LongRange): ByteArray = vfs.readRange(path, range)
 	suspend fun readRangeBytes(range: IntRange): ByteArray = vfs.readRange(path, range.toLongRange())
 

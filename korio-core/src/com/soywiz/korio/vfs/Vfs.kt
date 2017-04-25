@@ -5,6 +5,7 @@ package com.soywiz.korio.vfs
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.spawn
+import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.error.unsupported
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.copyTo
@@ -37,6 +38,10 @@ abstract class Vfs {
 	)
 
 	fun createNonExistsStat(path: String, extraInfo: Any? = null) = VfsStat(file(path), exists = false, isDirectory = false, size = 0L, device = -1L, inode = -1L, mode = 511, owner = "nobody", group = "nobody", createTime = 0L, modifiedTime = 0L, lastAccessTime = 0L, extraInfo = extraInfo)
+
+	suspend open fun <T> readSpecial(path: String, clazz: Class<T>): T {
+		return (vfsSpecialReaders[clazz]?.readSpecial(this, path) as T) ?: invalidOp("Don't know how to readSpecial $clazz")
+	}
 
 	suspend open fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler = VfsProcessHandler()): Int = throw UnsupportedOperationException()
 	suspend open fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler = VfsProcessHandler()): Int = throw UnsupportedOperationException()
@@ -119,6 +124,8 @@ abstract class Vfs {
 		suspend override fun open(path: String, mode: VfsOpenMode) = initOnce().access(path).open(mode)
 
 		suspend override fun readRange(path: String, range: LongRange): ByteArray = initOnce().access(path).readRangeBytes(range)
+
+		suspend override fun <T> readSpecial(path: String, clazz: Class<T>): T = initOnce().access(path).readSpecial(clazz)
 
 		suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) = initOnce().access(path).put(content, attributes)
 		suspend override fun setSize(path: String, size: Long): Unit = initOnce().access(path).setSize(size)
