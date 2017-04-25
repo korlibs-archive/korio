@@ -49,7 +49,7 @@ class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin
 		}
 	}
 
-	val constructor = clazz.declaredConstructors.sortedBy { it.parameterCount }.firstOrNull() ?: invalidOp("Can't find constructor for $clazz")
+	val constructor = clazz.declaredConstructors.sortedBy { it.parameterTypes.size }.firstOrNull() ?: invalidOp("Can't find constructor for $clazz")
 	val dummyArgs = createDummyArgs(constructor)
 	val fields = clazz.declaredFields
 		.filter { !Modifier.isTransient(it.modifiers) && !Modifier.isStatic(it.modifiers) }
