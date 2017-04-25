@@ -15,7 +15,7 @@ import com.soywiz.korio.vfs.*
 import java.io.Closeable
 
 class LocalVfsProviderJs : LocalVfsProvider() {
-	override fun invoke(): Vfs = object : Vfs() {
+	override fun invoke(): LocalVfs = object : LocalVfs() {
 		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
 			val stat = fstat(path)
 			val handle = open(path, "r")

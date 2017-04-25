@@ -4,11 +4,9 @@ import java.util.*
 
 abstract class VfsSpecialReader<T>(val clazz: Class<T>) {
 	open val isAvailable: Boolean = true
-	open fun readSpecial(vfs: Vfs, path: String): T = TODO()
+	open suspend fun readSpecial(vfs: Vfs, path: String): T = TODO()
 }
 
 val vfsSpecialReaders by lazy {
-	ServiceLoader.load(VfsSpecialReader::class.java).map {
-		it.clazz to it
-	}.toMap()
+	ServiceLoader.load(VfsSpecialReader::class.java).filter { it.isAvailable }.map { it.clazz to it }.toMap()
 }

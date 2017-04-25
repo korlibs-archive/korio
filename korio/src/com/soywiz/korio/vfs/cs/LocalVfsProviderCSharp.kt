@@ -12,7 +12,7 @@ import com.soywiz.korio.vfs.*
 import java.io.Closeable
 
 class LocalVfsProviderCSharp : LocalVfsProvider() {
-	override fun invoke(): Vfs = CSharpVisualVfs()
+	override fun invoke(): LocalVfs = CSharpVisualVfs()
 }
 
 @JTranscAddMembers(target = "cs", value = """
@@ -46,7 +46,7 @@ class CSharpFileAsyncStream(val path: String, val mode: VfsOpenMode) : AsyncStre
 	suspend override fun close() = CSharp.runTaskAsync { _close() }
 }
 
-class CSharpVisualVfs : Vfs() {
+class CSharpVisualVfs : LocalVfs() {
 	override fun getAbsolutePath(path: String): String = path
 
 	override val supportedAttributeTypes = listOf<Class<out Attribute>>()

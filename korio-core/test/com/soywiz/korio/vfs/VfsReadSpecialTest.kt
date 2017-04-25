@@ -8,7 +8,7 @@ data class MySpecialClass(val vfs: Vfs, val path: String)
 data class MySpecialClass2(val vfs: Vfs, val path: String)
 
 class MySpecialClass_VfsSpecialReader : VfsSpecialReader<MySpecialClass>(MySpecialClass::class.java) {
-	override fun readSpecial(vfs: Vfs, path: String): MySpecialClass = MySpecialClass(vfs, path)
+	override suspend fun readSpecial(vfs: Vfs, path: String): MySpecialClass = MySpecialClass(vfs, path)
 }
 
 class VfsReadSpecialTest {

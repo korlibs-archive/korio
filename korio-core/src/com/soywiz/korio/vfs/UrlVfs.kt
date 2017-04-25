@@ -9,10 +9,10 @@ import com.soywiz.korio.stream.toAsyncStream
 import java.io.FileNotFoundException
 import java.net.URL
 
-fun UrlVfs(url: String): VfsFile = UrlVfsImpl(url).root
-fun UrlVfs(url: URL): VfsFile = UrlVfs(url.toString())
+fun UrlVfs(url: String): VfsFile = UrlVfs(url, Unit).root
+fun UrlVfs(url: URL): VfsFile = UrlVfs(url.toString(), Unit).root
 
-private class UrlVfsImpl(val url: String) : Vfs() {
+class UrlVfs(val url: String, val dummy: Unit) : Vfs() {
 	override val absolutePath: String = url
 	val client = createHttpClient()
 

@@ -33,6 +33,7 @@ sourceSets {
 
 dependencies {
 	compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
+	compile "com.jtransc:jtransc-rt-core:$jtranscVersion"
 	compile "com.jtransc:jtransc-rt-core-kotlin:$jtranscVersion"
 	//compile "com.jtransc:jtransc-annotations:$jtranscVersion"
 	testCompile "junit:junit:4.11"

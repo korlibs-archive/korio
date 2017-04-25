@@ -20,7 +20,7 @@ import java.util.concurrent.TimeUnit
 
 
 class LocalVfsProviderJvm : LocalVfsProvider() {
-	override fun invoke(): Vfs = object : Vfs() {
+	override fun invoke(): LocalVfs = object : LocalVfs() {
 		val that = this
 		override val absolutePath: String = ""
 

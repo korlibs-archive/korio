@@ -19,7 +19,7 @@ import java.io.*
 
 // Do not use NIO since it is not available on android!
 class LocalVfsProviderAndroid : LocalVfsProvider() {
-	override fun invoke(): Vfs = object : Vfs() {
+	override fun invoke(): LocalVfs = object : LocalVfs() {
 		val that = this
 		override val absolutePath: String = ""
 
