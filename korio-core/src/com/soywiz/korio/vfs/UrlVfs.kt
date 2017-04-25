@@ -17,7 +17,7 @@ class UrlVfs(val url: String, val dummy: Unit) : Vfs() {
 	override val absolutePath: String = url
 	val client = createHttpClient()
 
-	private fun getFullUrl(path: String) = url.trim('/') + '/' + path.trim('/')
+	fun getFullUrl(path: String) = url.trim('/') + '/' + path.trim('/')
 
 	//suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
 	//	return if (mode.write) {
