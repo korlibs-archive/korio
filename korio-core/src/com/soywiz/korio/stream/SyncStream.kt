@@ -427,8 +427,7 @@ fun SyncStream.writeDoubleArray_be(array: DoubleArray) = writeBytes(ByteArray(ar
 
 // Variable Length
 
-fun SyncStream.read_VL(signed: Boolean): Int {
-	if (signed) TODO()
+fun SyncStream.readU_VL(): Int {
 	var result = readU8()
 	if ((result and 0x80) == 0) return result
 	result = (result and 0x7f) or (readU8() shl 7)
@@ -440,9 +439,14 @@ fun SyncStream.read_VL(signed: Boolean): Int {
 	result = (result and 0xfffffff) or (readU8() shl 28)
 	return result
 }
+fun SyncStream.readS_VL(): Int {
+	val v = readU_VL()
+	val sign = ((v and 1) != 0)
+	val uvalue = v ushr 1
+	return if (sign) -uvalue - 1 else uvalue
+}
 
-fun SyncStream.write_VL(v: Int, signed: Boolean): Unit {
-	if (signed) TODO()
+fun SyncStream.writeU_VL(v: Int): Unit {
 	var value = v
 	while (true) {
 		val c = value and 0x7f
@@ -454,13 +458,10 @@ fun SyncStream.write_VL(v: Int, signed: Boolean): Unit {
 		write8(c or 0x80)
 	}
 }
-
-fun SyncStream.readU_VL(): Int = read_VL(signed = false)
-fun SyncStream.readS_VL(): Int = read_VL(signed = true)
-
-fun SyncStream.writeU_VL(v: Int): Unit = write_VL(v, signed = false)
-fun SyncStream.writeS_VL(v: Int): Unit = write_VL(v, signed = true)
-
+fun SyncStream.writeS_VL(v: Int): Unit {
+	val sign = if (v < 0) 1 else 0
+	writeU_VL(sign or ((if (v < 0) -v - 1 else v) shl 1))
+}
 
 fun SyncStream.writeStringVL(str: String, charset: Charset = Charsets.UTF_8): Unit {
 	val bytes = str.toByteArray(charset)
