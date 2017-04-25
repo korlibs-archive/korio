@@ -23,13 +23,13 @@ class HttpClientNodeJs : HttpClient() {
 		for (header in headers) reqHeaders[header.first] = header.second
 
 		val r = http.call("request", jsObject(
-				"method" to method.name,
-				"host" to info["hostname"],
-				"port" to info["port"],
-				"path" to info["path"],
-				"agent" to false,
-				"encoding" to null,
-				"headers" to reqHeaders
+			"method" to method.name,
+			"host" to info["hostname"],
+			"port" to info["port"],
+			"path" to info["path"],
+			"agent" to false,
+			"encoding" to null,
+			"headers" to reqHeaders
 		), jsFunctionRaw1 { res ->
 			val statusCode = res["statusCode"].toInt()
 			val statusMessage = res["statusMessage"].toJavaStringOrNull() ?: ""
@@ -42,10 +42,10 @@ class HttpClientNodeJs : HttpClient() {
 				val out = u8array.toByteArray()
 
 				deferred.resolve(Response(
-						status = statusCode,
-						statusText = statusMessage,
-						headers = Http.Headers((jsHeadersObj?.toObjectMap() ?: mapOf()).mapValues { it.value.toJavaStringOrNull() ?: "" }),
-						content = out.openAsync()
+					status = statusCode,
+					statusText = statusMessage,
+					headers = Http.Headers((jsHeadersObj?.toObjectMap() ?: mapOf()).mapValues { it.value.toJavaStringOrNull() ?: "" }),
+					content = out.openAsync()
 				))
 			})
 		}).call("on", "error", jsFunctionRaw1 { e ->
@@ -74,12 +74,12 @@ class HttpClientBrowserJs : HttpClient() {
 		xhr["onload"] = jsFunctionRaw1 { e ->
 			val u8array = jsNew("Uint8Array", xhr["response"])
 			val out = ByteArray(u8array["length"].toInt())
-			(out.asJsDynamic()).call("setArraySlice", 0, u8array)
+			out.asJsDynamic()["data"].call("set", u8array)
 			deferred.resolve(HttpClient.Response(
-					status = xhr["status"].toInt(),
-					statusText = xhr["statusText"].toJavaStringOrNull() ?: "",
-					headers = Http.Headers(xhr.call("getAllResponseHeaders").toJavaStringOrNull()),
-					content = out.openAsync()
+				status = xhr["status"].toInt(),
+				statusText = xhr["statusText"].toJavaStringOrNull() ?: "",
+				headers = Http.Headers(xhr.call("getAllResponseHeaders").toJavaStringOrNull()),
+				content = out.openAsync()
 			))
 		}
 
