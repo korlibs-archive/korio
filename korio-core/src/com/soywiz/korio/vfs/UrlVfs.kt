@@ -6,6 +6,7 @@ import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.buffered
 import com.soywiz.korio.stream.toAsyncStream
+import com.soywiz.korio.util.LONG_ZERO_TO_MAX_RANGE
 import java.io.FileNotFoundException
 import java.net.URL
 
@@ -52,7 +53,7 @@ class UrlVfs(val url: String, val dummy: Unit) : Vfs() {
 	suspend override fun readRange(path: String, range: LongRange): ByteArray = client.requestAsBytes(
 		Http.Method.GET,
 		getFullUrl(path),
-		Http.Headers(mapOf("range" to "bytes=${range.start}-${range.endInclusive}"))
+		Http.Headers(if (range == LONG_ZERO_TO_MAX_RANGE) mapOf() else mapOf("range" to "bytes=${range.start}-${range.endInclusive}"))
 	).content
 
 	class HttpHeaders(val headers: Http.Headers) : Attribute

@@ -306,6 +306,8 @@ suspend fun AsyncInputStream.readBytes(len: Int): ByteArray {
 			val alen2 = read(ba, 0, alen)
 			return if (ba.size == alen2) ba else Arrays.copyOf(ba, alen2)
 		} else {
+			// @TODO: We can read chunks of data in preallocated byte arrays, then join them all.
+			// @TODO: That would prevent resizing issues with the trade-off of more allocations.
 			var pending = len
 			val temp = BYTES_TEMP
 			val bout = ByteArrayOutputStream()

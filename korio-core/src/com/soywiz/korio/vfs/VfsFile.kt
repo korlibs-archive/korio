@@ -6,6 +6,7 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.await
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.LONG_ZERO_TO_MAX_RANGE
 import com.soywiz.korio.util.toLongRange
 import com.soywiz.korio.util.use
 import java.io.ByteArrayOutputStream
@@ -55,9 +56,9 @@ class VfsFile(
 	suspend fun readRangeBytes(range: IntRange): ByteArray = vfs.readRange(path, range.toLongRange())
 
 	// Aliases
-	suspend fun read(): ByteArray = vfs.readRange(path, 0L..Long.MAX_VALUE)
-	suspend fun readAll(): ByteArray = vfs.readRange(path, 0L..Long.MAX_VALUE)
-	suspend fun readBytes(): ByteArray = vfs.readRange(path, 0L..Long.MAX_VALUE)
+	suspend fun read(): ByteArray = vfs.readRange(path, LONG_ZERO_TO_MAX_RANGE)
+	suspend fun readAll(): ByteArray = vfs.readRange(path, LONG_ZERO_TO_MAX_RANGE)
+	suspend fun readBytes(): ByteArray = vfs.readRange(path, LONG_ZERO_TO_MAX_RANGE)
 
 	suspend fun readAsSyncStream(): SyncStream = read().openSync()
 
