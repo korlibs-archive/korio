@@ -10,8 +10,7 @@ object Json {
 	fun decode(@Language("json") s: String): Any? = StrReader(s).decode()
 
 	inline fun <reified T : Any> decodeToType(@Language("json") s: String): T = decodeToType(s, T::class.java)
-	@Suppress("UNCHECKED_CAST")
-	fun <T> decodeToType(@Language("json") s: String, clazz: Class<T>): T = ClassFactory(clazz).create(decode(s))
+	@Suppress("UNCHECKED_CAST") fun <T> decodeToType(@Language("json") s: String, clazz: Class<T>): T = ClassFactory(clazz).create(decode(s))
 
 	fun StrReader.decode(): Any? {
 		val ic = skipSpaces().read()
@@ -85,6 +84,7 @@ object Json {
 				}
 				b.append(']')
 			}
+			is Enum<*> -> encodeString(obj.name, b)
 			is String -> encodeString(obj, b)
 			is Number -> b.append("$obj")
 			else -> encode(ClassFactory(obj::class.java).toMap(obj), b)

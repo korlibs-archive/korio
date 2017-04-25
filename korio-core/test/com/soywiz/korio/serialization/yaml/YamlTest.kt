@@ -125,6 +125,19 @@ class YamlTest {
 		)
 	}
 
+	enum class MyEnum { DEMO, HELLO, WORLD }
+	data class ClassWithEnum(val size: Int = 70, val a: MyEnum = MyEnum.HELLO)
+
+	@Test
+	fun decodeToType() {
+		Assert.assertEquals(
+			ClassWithEnum(a = MyEnum.WORLD),
+			Yaml.decodeToType<ClassWithEnum>("""
+				|a: WORLD
+			""".trimMargin())
+		)
+	}
+
 	//@Test
 	//fun name8() {
 	//	Assert.assertEquals(

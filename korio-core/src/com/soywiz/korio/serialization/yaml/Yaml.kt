@@ -1,13 +1,16 @@
 package com.soywiz.korio.serialization.yaml
 
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.util.ListReader
-import com.soywiz.korio.util.StrReader
-import com.soywiz.korio.util.readStringLit
-import com.soywiz.korio.util.unquote
+import com.soywiz.korio.serialization.json.Json
+import com.soywiz.korio.util.*
+import org.intellij.lang.annotations.Language
 import java.util.*
 
 object Yaml {
+	fun decode(@Language("yaml") str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
+	inline fun <reified T : Any> decodeToType(@Language("yaml") s: String): T = decodeToType(s, T::class.java)
+	@Suppress("UNCHECKED_CAST") fun <T> decodeToType(@Language("yaml") s: String, clazz: Class<T>): T = ClassFactory(clazz).create(decode(s))
+
 	fun read(str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
 
 	private fun parseStr(tok: Token) = when (tok) {

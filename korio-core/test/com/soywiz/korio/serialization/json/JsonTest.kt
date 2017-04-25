@@ -90,6 +90,19 @@ class JsonTest {
 		Assert.assertEquals("""{"a":10}""", Json.encode(Demo2()))
 	}
 
+	enum class MyEnum { DEMO, HELLO, WORLD }
+	data class ClassWithEnum(val a: MyEnum = MyEnum.HELLO)
+
+	@Test
+	fun testEncodeEnum() {
+		Assert.assertEquals("""{"a":"HELLO"}""", Json.encode(ClassWithEnum()))
+	}
+
+	@Test
+	fun testDecodeEnum() {
+		Assert.assertEquals(ClassWithEnum(MyEnum.WORLD), Json.decodeToType<ClassWithEnum>("""{"a":"WORLD"}"""))
+	}
+
 	class Demo2 {
 		var a: Int = 10
 
