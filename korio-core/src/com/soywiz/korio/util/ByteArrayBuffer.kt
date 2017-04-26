@@ -2,7 +2,9 @@ package com.soywiz.korio.util
 
 import java.util.*
 
-class ByteArrayBuffer(var data: ByteArray = ByteArray(0), size: Int = data.size) {
+class ByteArrayBuffer(var data: ByteArray, size: Int = data.size) {
+	constructor(initialCapacity: Int = 4096) : this(ByteArray(initialCapacity), 0)
+
 	private var _size: Int = size
 	var size: Int
 		get() = _size
@@ -13,7 +15,7 @@ class ByteArrayBuffer(var data: ByteArray = ByteArray(0), size: Int = data.size)
 
 	fun ensure(expected: Int) {
 		if (data.size < expected) {
-			data = Arrays.copyOf(data, Math.max(expected, (data.size + 7) * 2))
+			data = Arrays.copyOf(data, Math.max(expected, (data.size + 7) * 5))
 		}
 		_size = Math.max(size, expected)
 	}

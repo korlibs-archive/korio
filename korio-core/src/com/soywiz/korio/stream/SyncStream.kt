@@ -152,8 +152,8 @@ fun FillSyncStream(fillByte: Int = 0, length: Long = Long.MAX_VALUE) = FillSyncS
 
 fun MemorySyncStream(data: ByteArray = ByteArray(0)) = MemorySyncStreamBase(ByteArrayBuffer(data)).toSyncStream()
 fun MemorySyncStream(data: ByteArrayBuffer) = MemorySyncStreamBase(data).toSyncStream()
-inline fun MemorySyncStreamToByteArray(callback: SyncStream.() -> Unit): ByteArray {
-	val buffer = ByteArrayBuffer()
+inline fun MemorySyncStreamToByteArray(initialCapacity: Int = 4096, callback: SyncStream.() -> Unit): ByteArray {
+	val buffer = ByteArrayBuffer(initialCapacity)
 	val s = MemorySyncStream(buffer)
 	callback(s)
 	return buffer.toByteArray()
@@ -178,7 +178,9 @@ fun SyncStream.toByteArray(): ByteArray {
 	}
 }
 
-class MemorySyncStreamBase(var data: ByteArrayBuffer = ByteArrayBuffer()) : SyncStreamBase() {
+class MemorySyncStreamBase(var data: ByteArrayBuffer) : SyncStreamBase() {
+	constructor(initialCapacity: Int = 4096) : this(ByteArrayBuffer(initialCapacity))
+
 	override var length: Long
 		get() = data.size.toLong()
 		set(value) = run { data.size = value.toInt() }
@@ -383,6 +385,15 @@ fun SyncStream.copyTo(target: SyncStream): Unit {
 	}
 }
 
+fun InputStream.toSyncStream(): SyncInputStream {
+	val iss = this
+	return object : SyncInputStream {
+		override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+			return iss.read(buffer, offset, len)
+		}
+	}
+}
+
 fun SyncStream.toInputStream(): InputStream {
 	val ss = this
 	return object : InputStream() {
@@ -474,3 +485,17 @@ fun SyncStream.readStringVL(charset: Charset = Charsets.UTF_8): String {
 	readExact(bytes, 0, bytes.size)
 	return bytes.toString(charset)
 }
+
+fun InputStream.readExactTo(buffer: ByteArray, offset: Int = 0, length: Int = buffer.size - offset): Int {
+	val end = offset + length
+	var pos = offset
+	while (true) {
+		val read = this.read(buffer, pos, end - pos)
+		if (read <= 0) break
+		pos += read
+	}
+	return pos - offset
+}
+
+//fun InputStream.readBytesFast(expectedSize: Int, buffer: ByteArray): Int {
+//}
