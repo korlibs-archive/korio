@@ -103,3 +103,6 @@ fun Long.convertRange(srcMin: Long, srcMax: Long, dstMin: Long, dstMax: Long): L
 fun Double.toIntCeil() = Math.ceil(this).toInt()
 fun Double.toIntFloor() = Math.floor(this).toInt()
 fun Double.toIntRound() = Math.round(this).toInt()
+
+val Int.isOdd get() = (this % 2) == 1
+val Int.isEven get() = (this % 2) == 0
