@@ -23,7 +23,7 @@ class SyncStreamTest {
 		Assert.assertEquals(4L, out.length)
 		Assert.assertEquals(0x0102, out.readU16_be())
 		Assert.assertEquals(0x0304, out.readU16_le())
-		Assert.assertEquals(14, buffer.data.size)
+		Assert.assertEquals(4096, buffer.data.size)
 		Assert.assertEquals(4, buffer.toByteArray().size)
 		Assert.assertEquals(4, buffer.toByteArraySlice().length)
 	}
