@@ -1,14 +1,15 @@
 package com.soywiz.korio.net
 
 import com.soywiz.korio.async.AsyncSequence
+import com.soywiz.korio.service.Services
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.util.AsyncCloseable
 import java.util.concurrent.atomic.AtomicLong
 
-interface AsyncSocketFactory {
-	suspend fun createClient(): AsyncClient
-	suspend fun createServer(port: Int, host: String = "127.0.0.1", backlog: Int = 128): AsyncServer
+abstract class AsyncSocketFactory : Services.Impl() {
+	suspend abstract fun createClient(): AsyncClient
+	suspend abstract fun createServer(port: Int, host: String = "127.0.0.1", backlog: Int = 128): AsyncServer
 }
 
 interface AsyncClient : AsyncInputStream, AsyncOutputStream, AsyncCloseable {

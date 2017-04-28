@@ -7,7 +7,7 @@ import com.soywiz.korio.net.ws.WebSocketClient
 import com.soywiz.korio.net.ws.WebSocketClientFactory
 import java.net.URI
 
-class JsWebSocketClientFactory : WebSocketClientFactory {
+class JsWebSocketClientFactory : WebSocketClientFactory() {
 	override suspend fun create(url: URI, protocols: List<String>?, origin: String?, wskey: String?, debug: Boolean): WebSocketClient = JsWebSocketClient(url, protocols, DEBUG = debug).apply { init() }
 }
 

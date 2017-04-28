@@ -7,7 +7,7 @@ import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
 
-class AndroidAsyncSocketFactory : AsyncSocketFactory {
+class AndroidAsyncSocketFactory : AsyncSocketFactory() {
 	override suspend fun createClient(): AsyncClient = AndroidAsyncClient()
 	override suspend fun createServer(port: Int, host: String, backlog: Int): AsyncServer {
 		return AndroidAsyncServer(port, host, backlog).apply { init() }

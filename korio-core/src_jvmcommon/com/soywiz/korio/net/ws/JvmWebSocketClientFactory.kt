@@ -12,7 +12,7 @@ import java.net.URI
 import java.util.*
 import kotlin.experimental.xor
 
-class JvmWebSocketClientFactory : WebSocketClientFactory {
+class JvmWebSocketClientFactory : WebSocketClientFactory() {
 	override suspend fun create(url: URI, protocols: List<String>?, origin: String?, wskey: String?, debug: Boolean): WebSocketClient {
 		return JvmWebSocketClient(url, protocols, origin, wskey, DEBUG = debug).apply { init() }
 	}

@@ -9,9 +9,8 @@ import java.nio.channels.AsynchronousChannelGroup
 import java.nio.channels.AsynchronousServerSocketChannel
 import java.nio.channels.AsynchronousSocketChannel
 import java.nio.channels.CompletionHandler
-import kotlin.coroutines.experimental.suspendCoroutine
 
-class JsJvmAsyncSocketFactory : AsyncSocketFactory {
+class JsJvmAsyncSocketFactory : AsyncSocketFactory() {
 	override suspend fun createClient(): AsyncClient = JsJvmAsyncClient()
 	override suspend fun createServer(port: Int, host: String, backlog: Int): AsyncServer = JsJvmAsyncServer(port, host, backlog).apply { init() }
 }
@@ -89,6 +88,7 @@ class JsJvmAsyncServer(override val requestPort: Int, override val host: String,
 				pc.produce(JsJvmAsyncClient(result))
 				acceptStep()
 			}
+
 			override fun failed(exc: Throwable, attachment: Unit) = kotlin.Unit.apply {
 				println(exc)
 				acceptStep()
