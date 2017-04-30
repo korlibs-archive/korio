@@ -83,6 +83,12 @@ class JsonTest {
 		Assert.assertEquals(1, Json.decodeToType<Int>("1"))
 		Assert.assertEquals(true, Json.decodeToType<Boolean>("true"))
 		Assert.assertEquals("a", Json.decodeToType<String>("\"a\""))
+		Assert.assertEquals('a', Json.decodeToType<Char>("\"a\""))
+	}
+
+	@Test
+	fun decodeToPrimChar() {
+		Assert.assertEquals('a', Json.decodeToType<Char>("\"a\""))
 	}
 
 	@Test

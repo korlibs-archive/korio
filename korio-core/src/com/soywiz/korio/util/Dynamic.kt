@@ -234,7 +234,7 @@ object Dynamic {
 			when (target) {
 				java.lang.Boolean.TYPE -> return (str == "true" || str == "1") as T
 				Byte.TYPE -> return str.parseInt().toByte() as T
-				Character.TYPE -> return str.parseInt().toChar() as T
+				Character.TYPE -> return if (value is String && value.length >= 1) value[0] as T else str.parseInt().toChar() as T
 				java.lang.Short.TYPE -> return str.parseInt().toShort() as T
 				java.lang.Long.TYPE -> return str.parseLong() as T
 				Float.TYPE -> return str.toFloat() as T
@@ -245,7 +245,7 @@ object Dynamic {
 		}
 		if (target.isAssignableFrom(java.lang.Boolean::class.java)) return (str == "true" || str == "1") as T
 		if (target.isAssignableFrom(java.lang.Byte::class.java)) return str.parseInt().toByte() as T
-		if (target.isAssignableFrom(Character::class.java)) return str.parseInt().toChar() as T
+		if (target.isAssignableFrom(Character::class.java)) return if (value is String && value.length >= 1) value[0] as T else str.parseInt().toChar() as T
 		if (target.isAssignableFrom(java.lang.Short::class.java)) return str.parseShort() as T
 		if (target.isAssignableFrom(Integer::class.java)) return str.parseInt() as T
 		if (target.isAssignableFrom(java.lang.Long::class.java)) return str.parseLong() as T

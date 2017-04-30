@@ -134,7 +134,7 @@ class VfsFile(
 	}
 
 	suspend fun exec(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), handler: VfsProcessHandler = VfsProcessHandler()): Int = vfs.exec(path, cmdAndArgs, env, handler)
-	suspend fun execToString(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), charset: Charset = Charsets.UTF_8): String {
+	suspend fun execToString(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), charset: Charset = Charsets.UTF_8, captureError: Boolean = false): String {
 		val out = ByteArrayOutputStream()
 
 		val result = exec(cmdAndArgs, env, object : VfsProcessHandler() {
@@ -143,7 +143,7 @@ class VfsFile(
 			}
 
 			suspend override fun onErr(data: ByteArray) {
-				out.write(data)
+				if (captureError) out.write(data)
 			}
 		})
 
