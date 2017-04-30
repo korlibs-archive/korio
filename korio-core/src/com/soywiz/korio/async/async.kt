@@ -21,8 +21,8 @@ fun <T> Continuation<T>.toEventLoop(): Continuation<T> {
 	val parent = this
 	return object : Continuation<T> {
 		override val context: CoroutineContext = parent.context
-		override fun resume(value: T) = context.eventLoop.queue { parent.resume(value) }
-		override fun resumeWithException(exception: Throwable) = context.eventLoop.queue { parent.resumeWithException(exception) }
+		override fun resume(value: T): Unit = run { context.eventLoop.queue { parent.resume(value) } }
+		override fun resumeWithException(exception: Throwable): Unit = run { context.eventLoop.queue { parent.resumeWithException(exception) } }
 	}
 }
 
@@ -213,12 +213,16 @@ suspend fun <T> spawn(task: suspend () -> T): Promise<T> = withCoroutineContext 
 
 // Aliases for spawn
 fun <T> async(context: CoroutineContext, task: suspend () -> T): Promise<T> = spawn(context, task)
-
-suspend fun <T> async(task: suspend () -> T): Promise<T> = withCoroutineContext { spawn(this@withCoroutineContext, task) }
-
 fun <T> go(context: CoroutineContext, task: suspend () -> T): Promise<T> = spawn(context, task)
 
-suspend fun <T> go(task: suspend () -> T): Promise<T> = withCoroutineContext { spawn(this@withCoroutineContext, task) }
+suspend fun <T> async(task: suspend CoroutineContext.() -> T): Promise<T> = withCoroutineContext { spawn(this@withCoroutineContext) { task(this@withCoroutineContext) } }
+suspend fun <T> go(task: suspend CoroutineContext.() -> T): Promise<T> = withCoroutineContext { spawn(this@withCoroutineContext) { task(this@withCoroutineContext) } }
+
+fun <T> EventLoop.async(task: suspend CoroutineContext.() -> T): Promise<T> = spawn(this@async.coroutineContext) { task(this@async.coroutineContext) }
+fun <T> CoroutineContext.async(task: suspend CoroutineContext.() -> T): Promise<T> = spawn(this@async) { task(this@async) }
+
+fun <T> EventLoop.go(task: suspend CoroutineContext.() -> T): Promise<T> = spawn(this@go.coroutineContext) { task(this@go.coroutineContext) }
+fun <T> CoroutineContext.go(task: suspend CoroutineContext.() -> T): Promise<T> = spawn(this@go) { task(this@go) }
 
 suspend fun <R, T> (suspend R.() -> T).await(receiver: R): T = korioSuspendCoroutine { c ->
 	this.korioStartCoroutine(receiver, c)

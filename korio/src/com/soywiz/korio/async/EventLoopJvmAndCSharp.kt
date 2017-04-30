@@ -4,10 +4,14 @@ import com.soywiz.korio.util.compareToChain
 import java.io.Closeable
 import java.util.*
 
-class EventLoopJvmAndCSharp : EventLoop() {
+class EventLoopFactoryJvmAndCSharp : EventLoopFactory() {
 	override val priority: Int = 1000
 	override val available: Boolean get() = true
 
+	override fun createEventLoop(): EventLoop = EventLoopJvmAndCSharp()
+}
+
+class EventLoopJvmAndCSharp : EventLoop() {
 	class Task(val time: Long, val callback: () -> Unit)
 
 	private val lock = Object()

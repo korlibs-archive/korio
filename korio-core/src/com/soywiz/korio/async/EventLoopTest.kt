@@ -3,15 +3,19 @@ package com.soywiz.korio.async
 import java.io.Closeable
 import java.util.*
 
+class EventLoopFactoryTest : EventLoopFactory() {
+	override val available = true
+	override val priority: Int = Int.MAX_VALUE - 1000
+
+	override fun createEventLoop(): EventLoop = EventLoopTest()
+}
+
 class EventLoopTest : EventLoop() {
 	override var time: Long = 0L; private set
 
 	private var tasks = LinkedList<() -> Unit>()
 	private val lock = Object()
 	private val timers = TreeMap<Long, ArrayList<() -> Unit>>()
-
-	override val available = true
-	override val priority: Int = Int.MAX_VALUE - 1000
 
 	override fun setInterval(ms: Int, callback: () -> Unit): Closeable {
 		var cancelled = false

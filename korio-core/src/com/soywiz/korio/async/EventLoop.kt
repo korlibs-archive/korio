@@ -5,6 +5,7 @@ package com.soywiz.korio.async
 import com.soywiz.korio.coroutine.*
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.service.Services
+import com.soywiz.korio.util.Cancellable
 import java.io.Closeable
 
 abstract class EventLoopFactory : Services.Impl() {
@@ -12,7 +13,7 @@ abstract class EventLoopFactory : Services.Impl() {
 }
 
 // @TODO: Check CoroutineDispatcher
-abstract class EventLoop : Services.Impl() {
+abstract class EventLoop {
 	val coroutineContext = EventLoopCoroutineContext(this)
 
 	companion object {
@@ -64,37 +65,41 @@ abstract class EventLoop : Services.Impl() {
 		return setInterval(ms, callback)
 	}
 
-	fun queue(handler: () -> Unit): Unit = setImmediate(handler)
+	fun queue(handler: () -> Unit): Unit = run { setImmediate(handler) }
 
-	open fun setImmediate(handler: () -> Unit): Unit {
-		setTimeout(0, handler)
-	}
+	open fun setImmediate(handler: () -> Unit): Unit = run { setTimeout(0, handler) }
 
-	open fun requestAnimationFrame(handler: () -> Unit): Unit {
-		setTimeout(1000 / 60, handler)
+	open fun requestAnimationFrame(handler: () -> Unit): Closeable = setTimeout(1000 / 60, handler)
+
+	open fun animationFrameLoop(callback: () -> Unit): Cancellable {
+		var closeable: Closeable? = null
+		var step: (() -> Unit)? = null
+		var cancelled = false
+		step = {
+			if (!cancelled) {
+				callback()
+				closeable = this.requestAnimationFrame(step!!)
+			}
+		}
+		step()
+		return Cancellable {
+			cancelled = true
+			closeable?.close()
+		}
 	}
 
 	open val time: Long get() = System.currentTimeMillis()
 
-	open fun step(ms: Int): Unit {
-	}
-
+	open fun step(ms: Int): Unit = Unit
 
 	suspend fun sleep(ms: Int): Unit = suspendCancellableCoroutine { c ->
 		val cc = setTimeout(ms) { c.resume(Unit) }
-		c.onCancel {
-			cc.close()
-		}
+		c.onCancel { cc.close() }
 	}
 
 	suspend fun sleepNextFrame(): Unit = suspendCancellableCoroutine { c ->
-		var cancelled = false
-		requestAnimationFrame {
-			if (!cancelled) c.resume(Unit)
-		}
-		c.onCancel {
-			cancelled = true
-		}
+		val cc = requestAnimationFrame { c.resume(Unit) }
+		c.onCancel { cc.close() }
 	}
 }
 

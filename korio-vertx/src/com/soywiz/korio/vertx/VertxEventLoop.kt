@@ -1,13 +1,18 @@
 package com.soywiz.korio.vertx
 
 import com.soywiz.korio.async.EventLoop
+import com.soywiz.korio.async.EventLoopFactory
 import java.io.Closeable
+
+class VertxEventLoopFactory : EventLoopFactory() {
+	override val priority = 500
+	override val available = true
+
+	override fun createEventLoop(): EventLoop = VertxEventLoop()
+}
 
 class VertxEventLoop : EventLoop() {
 	val _vertx = vertx
-
-	override val priority = 500
-	override val available = true
 
 	override fun setImmediate(handler: () -> Unit) {
 		_vertx.runOnContext { handler() }

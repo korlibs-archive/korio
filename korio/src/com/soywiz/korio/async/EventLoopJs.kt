@@ -5,11 +5,15 @@ import com.soywiz.korio.util.OS
 import java.io.Closeable
 import java.util.*
 
-@Suppress("unused")
-class EventLoopJs : EventLoop() {
+class EventLoopFactoryJs : EventLoopFactory() {
 	override val available: Boolean get() = OS.isJs
 	override val priority: Int = 2000
 
+	override fun createEventLoop(): EventLoop = EventLoopJs()
+}
+
+@Suppress("unused")
+class EventLoopJs : EventLoop() {
 	val immediateHandlers = LinkedList<() -> Unit>()
 	var insideImmediate = false
 
