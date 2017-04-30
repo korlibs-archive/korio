@@ -7,7 +7,7 @@ import java.util.concurrent.CancellationException
 
 suspend fun withTimeout(ms: Int, name: String = "timeout", callback: suspend () -> Unit) = suspendCancellableCoroutine<Unit> { c ->
 	var cancelled = false
-	val timer = EventLoop.setTimeout(ms) {
+	val timer = c.eventLoop.setTimeout(ms) {
 		//c.cancel(TimeoutException())
 		c.cancel(CancellationException())
 		//c.resumeWithException(TimeoutException(name))

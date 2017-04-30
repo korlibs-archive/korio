@@ -13,7 +13,7 @@ class Promise<T : Any?> : Cancellable {
 		val onCancel = promise.onCancel
 		fun resolve(value: T): Unit = run { promise.complete(value, null) }
 		fun reject(error: Throwable): Unit = run { promise.complete(null, error) }
-		fun toContinuation(ctx: CoroutineContext = CoroutineCancelContext()): CancellableContinuation<T> {
+		fun toContinuation(ctx: CoroutineContext): CancellableContinuation<T> {
 			val deferred = this
 			val cc = CancellableContinuation(object : Continuation<T> {
 				override val context: CoroutineContext = ctx
@@ -53,12 +53,12 @@ class Promise<T : Any?> : Cancellable {
 		if (error != null) {
 			while (true) {
 				val handler = synchronized(rejectedHandlers) { if (rejectedHandlers.isNotEmpty()) rejectedHandlers.removeFirst() else null } ?: break
-				EventLoop.queue { handler(error ?: RuntimeException()) }
+				handler(error ?: RuntimeException())
 			}
 		} else {
 			while (true) {
 				val handler = synchronized(resolvedHandlers) { if (resolvedHandlers.isNotEmpty()) resolvedHandlers.removeFirst() else null } ?: break
-				EventLoop.queue { handler(value as T) }
+				handler(value as T)
 			}
 		}
 	}

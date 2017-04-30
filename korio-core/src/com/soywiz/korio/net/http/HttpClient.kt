@@ -2,7 +2,7 @@ package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.Promise
-import com.soywiz.korio.async.sleep
+import com.soywiz.korio.coroutine.withEventLoop
 import com.soywiz.korio.crypto.fromBase64
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.service.Services
@@ -16,10 +16,10 @@ interface Http {
 	enum class Method { OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH, OTHER }
 
 	class HttpException(
-			val statusCode: Int,
-			val msg: String = "Error$statusCode",
-			val statusText: String = HttpStatusMessage.CODES[statusCode] ?: "Error$statusCode",
-			val headers: Http.Headers = Http.Headers()
+		val statusCode: Int,
+		val msg: String = "Error$statusCode",
+		val statusText: String = HttpStatusMessage.CODES[statusCode] ?: "Error$statusCode",
+		val headers: Http.Headers = Http.Headers()
 	) : IOException(msg) {
 		companion object {
 			fun unauthorizedBasic(realm: String = "Realm", msg: String = "Unauthorized"): Nothing = throw Http.HttpException(401, msg = msg, headers = Http.Headers("WWW-Authenticate" to "Basic realm=\"$realm\""))
@@ -28,9 +28,9 @@ interface Http {
 	}
 
 	data class Auth(
-			val user: String,
-			val pass: String,
-			val digest: String
+		val user: String,
+		val pass: String,
+		val digest: String
 	) {
 		companion object {
 			fun parse(auth: String): Auth {
@@ -149,10 +149,10 @@ interface Http {
 
 open class HttpClient protected constructor() {
 	data class Response(
-			val status: Int,
-			val statusText: String,
-			val headers: Http.Headers,
-			val content: AsyncInputStream
+		val status: Int,
+		val statusText: String,
+		val headers: Http.Headers,
+		val content: AsyncInputStream
 	) {
 		val success = status < 400
 		suspend fun readAllBytes() = content.readAll()
@@ -168,10 +168,10 @@ open class HttpClient protected constructor() {
 	}
 
 	data class CompletedResponse<T>(
-			val status: Int,
-			val statusText: String,
-			val headers: Http.Headers,
-			val content: T
+		val status: Int,
+		val statusText: String,
+		val headers: Http.Headers,
+		val content: T
 	) {
 		val success = status < 400
 	}
@@ -211,9 +211,11 @@ open class DelayedHttpClient(val delayMs: Int, val parent: HttpClient) : HttpCli
 	private val queue = AsyncThread()
 
 	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = queue {
-		println("Waiting $delayMs milliseconds for $url...")
-		sleep(delayMs)
-		parent.request(method, url, headers, content)
+		withEventLoop {
+			println("Waiting $delayMs milliseconds for $url...")
+			sleep(delayMs)
+			parent.request(method, url, headers, content)
+		}
 	}
 }
 
@@ -274,63 +276,63 @@ class LogHttpClient(val redirect: HttpClient? = null) : HttpClient() {
 
 object HttpStatusMessage {
 	val CODES = mapOf(
-			100 to "Continue",
-			101 to "Switching Protocols",
-			200 to "OK",
-			201 to "Created",
-			202 to "Accepted",
-			203 to "Non-Authoritative Information",
-			204 to "No Content",
-			205 to "Reset Content",
-			206 to "Partial Content",
-			300 to "Multiple Choices",
-			301 to "Moved Permanently",
-			302 to "Found",
-			303 to "See Other",
-			304 to "Not Modified",
-			305 to "Use Proxy",
-			307 to "Temporary Redirect",
-			400 to "Bad Request",
-			401 to "Unauthorized",
-			402 to "Payment Required",
-			403 to "Forbidden",
-			404 to "Not Found",
-			405 to "Method Not Allowed",
-			406 to "Not Acceptable",
-			407 to "Proxy Authentication Required",
-			408 to "Request Timeout",
-			409 to "Conflict",
-			410 to "Gone",
-			411 to "Length Required",
-			412 to "Precondition Failed",
-			413 to "Request Entity Too Large",
-			414 to "Request-URI Too Long",
-			415 to "Unsupported Media Type",
-			416 to "Requested Range Not Satisfiable",
-			417 to "Expectation Failed",
-			418 to "I'm a teapot",
-			422 to "Unprocessable Entity (WebDAV - RFC 4918)",
-			423 to "Locked (WebDAV - RFC 4918)",
-			424 to "Failed Dependency (WebDAV) (RFC 4918)",
-			425 to "Unassigned",
-			426 to "Upgrade Required (RFC 7231)",
-			428 to "Precondition Required",
-			429 to "Too Many Requests",
-			431 to "Request Header Fileds Too Large)",
-			449 to "Error449",
-			451 to "Unavailable for Legal Reasons",
-			500 to "Internal Server Error",
-			501 to "Not Implemented",
-			502 to "Bad Gateway",
-			503 to "Service Unavailable",
-			504 to "Gateway Timeout",
-			505 to "HTTP Version Not Supported",
-			506 to "Variant Also Negotiates (RFC 2295)",
-			507 to "Insufficient Storage (WebDAV - RFC 4918)",
-			508 to "Loop Detected (WebDAV)",
-			509 to "Bandwidth Limit Exceeded",
-			510 to "Not Extended (RFC 2774)",
-			511 to "Network Authentication Required"
+		100 to "Continue",
+		101 to "Switching Protocols",
+		200 to "OK",
+		201 to "Created",
+		202 to "Accepted",
+		203 to "Non-Authoritative Information",
+		204 to "No Content",
+		205 to "Reset Content",
+		206 to "Partial Content",
+		300 to "Multiple Choices",
+		301 to "Moved Permanently",
+		302 to "Found",
+		303 to "See Other",
+		304 to "Not Modified",
+		305 to "Use Proxy",
+		307 to "Temporary Redirect",
+		400 to "Bad Request",
+		401 to "Unauthorized",
+		402 to "Payment Required",
+		403 to "Forbidden",
+		404 to "Not Found",
+		405 to "Method Not Allowed",
+		406 to "Not Acceptable",
+		407 to "Proxy Authentication Required",
+		408 to "Request Timeout",
+		409 to "Conflict",
+		410 to "Gone",
+		411 to "Length Required",
+		412 to "Precondition Failed",
+		413 to "Request Entity Too Large",
+		414 to "Request-URI Too Long",
+		415 to "Unsupported Media Type",
+		416 to "Requested Range Not Satisfiable",
+		417 to "Expectation Failed",
+		418 to "I'm a teapot",
+		422 to "Unprocessable Entity (WebDAV - RFC 4918)",
+		423 to "Locked (WebDAV - RFC 4918)",
+		424 to "Failed Dependency (WebDAV) (RFC 4918)",
+		425 to "Unassigned",
+		426 to "Upgrade Required (RFC 7231)",
+		428 to "Precondition Required",
+		429 to "Too Many Requests",
+		431 to "Request Header Fileds Too Large)",
+		449 to "Error449",
+		451 to "Unavailable for Legal Reasons",
+		500 to "Internal Server Error",
+		501 to "Not Implemented",
+		502 to "Bad Gateway",
+		503 to "Service Unavailable",
+		504 to "Gateway Timeout",
+		505 to "HTTP Version Not Supported",
+		506 to "Variant Also Negotiates (RFC 2295)",
+		507 to "Insufficient Storage (WebDAV - RFC 4918)",
+		508 to "Loop Detected (WebDAV)",
+		509 to "Bandwidth Limit Exceeded",
+		510 to "Not Extended (RFC 2774)",
+		511 to "Network Authentication Required"
 	)
 
 }

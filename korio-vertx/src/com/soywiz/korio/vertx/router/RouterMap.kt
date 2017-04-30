@@ -4,6 +4,7 @@ import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.async
 import com.soywiz.korio.async.invokeSuspend
 import com.soywiz.korio.coroutine.Continuation
+import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.error.InvalidOperationException
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.httpError
@@ -29,8 +30,9 @@ suspend fun KorRouter.registerInterceptor(interceptor: suspend (HttpServerReques
 
 private val MAX_BODY_SIZE = 16 * 1024
 
-suspend fun KorRouter.registerRouter(clazz: Class<*>) {
-	val router = this
+suspend fun KorRouter.registerRouter(clazz: Class<*>) = withCoroutineContext {
+	val coroutineContext = this@withCoroutineContext
+	val router = this@registerRouter
 
 	println("Registering route $clazz...")
 
@@ -90,7 +92,7 @@ suspend fun KorRouter.registerRouter(clazz: Class<*>) {
 					}
 				}
 
-				async {
+				async(coroutineContext) {
 					try {
 						bodyHandler.promise.await()
 

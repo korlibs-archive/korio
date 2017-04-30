@@ -14,7 +14,9 @@ inline suspend fun <T> suspendCancellableCoroutine(crossinline block: (Cancellab
 	block(CancellableContinuation(c))
 }
 
-class CoroutineCancelContext() : AbstractCoroutineContextElement(CoroutineCancelContext.Key) {
+class CoroutineCancelContext : AbstractCoroutineContextElement(CoroutineCancelContext.Key) {
+	companion object Key : CoroutineContextKey<CoroutineCancelContext>
+
 	private val handlers = LinkedList<(Throwable) -> Unit>()
 	private var c: Throwable? = null
 
@@ -43,8 +45,6 @@ class CoroutineCancelContext() : AbstractCoroutineContextElement(CoroutineCancel
 			}
 		}
 	}
-
-	companion object Key : CoroutineContextKey<CoroutineCancelContext>
 
 	override fun toString(): String = "CoroutineCancelSignal(${handlers.size})"
 }

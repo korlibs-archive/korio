@@ -4,6 +4,7 @@ package com.soywiz.korio.vfs.jvm
 
 import com.soywiz.korio.async.*
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
+import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
@@ -146,7 +147,7 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 			return emitter.toSequence()
 			*/
 			return executeInWorker {
-				asyncGenerate {
+				asyncGenerate(coroutineContext) {
 					for (file in File(path).listFiles() ?: arrayOf()) {
 						yield(that.file("$path/${file.name}"))
 					}
@@ -178,14 +179,14 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 			})
 		}
 
-		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable {
+		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = withCoroutineContext {
 			var running = true
 			val fs = FileSystems.getDefault()
 			val watcher = fs.newWatchService()
 
 			fs.getPath(path).register(watcher, ENTRY_CREATE, ENTRY_DELETE, ENTRY_MODIFY)
 
-			spawnAndForget {
+			spawnAndForget(this@withCoroutineContext) {
 				while (running) {
 					val key = executeInWorker {
 						var r: WatchKey?
@@ -221,7 +222,7 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 				}
 			}
 
-			return Closeable {
+			return@withCoroutineContext Closeable {
 				running = false
 				watcher.close()
 			}

@@ -1,8 +1,7 @@
 package com.soywiz.korio.net.ws
 
-import com.jtransc.js.jsDebugger
-import com.soywiz.korio.async.ProduceConsumer
 import com.soywiz.korio.async.spawn
+import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.crypto.Base64
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.stream.*
@@ -12,7 +11,7 @@ import java.net.URI
 import java.util.*
 import kotlin.experimental.xor
 
-class JvmWebSocketClientFactory : WebSocketClientFactory {
+class JvmWebSocketClientFactory : WebSocketClientFactory() {
 	override suspend fun create(url: URI, protocols: List<String>?, origin: String?, wskey: String?, debug: Boolean): WebSocketClient {
 		return JvmWebSocketClient(url, protocols, origin, wskey, DEBUG = debug).apply { init() }
 	}
@@ -32,11 +31,11 @@ class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?
 
 	private val outputChunks = LinkedList<ByteArray>()
 
-	suspend fun init() {
+	suspend fun init() = withCoroutineContext {
 		socket = AsyncClient(url.host, port)
 		// Thread
 		val getRequest = prepareClientHandshake(url.toString(), url.host, port, wskey ?: "wskey", origin ?: "http://127.0.0.1/")
-		spawn {
+		spawn(this@withCoroutineContext) {
 			if (DEBUG) println(getRequest.toString(Charsets.UTF_8))
 			socket.writeBytes(getRequest)
 			socket.apply {
@@ -81,7 +80,7 @@ class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?
 		val fin = (head1 and 0x80) != 0
 		val op = head1 and 0xF
 		val opcode = Opcode.IDS[op]
-				?: throw IllegalStateException("Invalid Opcode $op")
+			?: throw IllegalStateException("Invalid Opcode $op")
 		val head2 = socket.readU8()
 		val masked = (head2 and 0x80) != 0
 		val plen = (head2 and 0x7f)

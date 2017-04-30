@@ -5,10 +5,8 @@ package com.soywiz.korio.vfs.android
 import android.os.Environment
 import android.os.FileObserver
 import com.soywiz.korio.android.KorioAndroidContext
-import com.soywiz.korio.async.EventLoop
-import com.soywiz.korio.async.asyncGenerate
-import com.soywiz.korio.async.executeInWorker
-import com.soywiz.korio.async.sleep
+import com.soywiz.korio.async.*
+import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
@@ -82,7 +80,7 @@ class LocalVfsProviderAndroid : LocalVfsProvider() {
 				} catch (e: Throwable) {
 					if (e.message?.contains("Permission denied", ignoreCase = true) ?: true) {
 						KorioAndroidContext.requestPermission("android.permission.WRITE_EXTERNAL_STORAGE")
-						sleep(5000)
+						coroutineContext.sleep(5000)
 					} else {
 						throw e
 					}
@@ -135,7 +133,7 @@ class LocalVfsProviderAndroid : LocalVfsProvider() {
 		}
 
 		suspend override fun list(path: String) = executeInWorker {
-			asyncGenerate {
+			asyncGenerate(coroutineContext) {
 				for (file in File(path).listFiles() ?: arrayOf()) {
 					yield(that.file("$path/${file.name}"))
 				}
@@ -162,13 +160,13 @@ class LocalVfsProviderAndroid : LocalVfsProvider() {
 			RandomAccessFile(resolveFile(path), "rw").use { it.setLength(size) }
 		}
 
-		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable {
+		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = withCoroutineContext {
 			var movedFrom: String? = null
 			var movedTo: String? = null
 			val observer = object : FileObserver(resolveFile(path).absolutePath, FileObserver.CREATE or FileObserver.DELETE or FileObserver.MODIFY or FileObserver.MOVED_FROM or FileObserver.MOVED_TO) {
 				override fun onEvent(event: Int, cpath: String) {
 					val rpath = "$path/$cpath"
-					EventLoop.queue {
+					this@withCoroutineContext.eventLoop.queue {
 						when (event) {
 							FileObserver.CREATE, FileObserver.MOVED_TO -> handler(VfsFileEvent(VfsFileEvent.Kind.CREATED, that[rpath]))
 							FileObserver.MODIFY -> handler(VfsFileEvent(VfsFileEvent.Kind.MODIFIED, that[rpath]))
@@ -187,7 +185,7 @@ class LocalVfsProviderAndroid : LocalVfsProvider() {
 				}
 			}
 			observer.startWatching()
-			return Closeable { observer.stopWatching() }
+			return@withCoroutineContext Closeable { observer.stopWatching() }
 		}
 
 		override fun toString(): String = "LocalVfs"

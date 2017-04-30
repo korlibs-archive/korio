@@ -2,11 +2,13 @@ package com.soywiz.korio.ext.db.redis
 
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.sleep
+import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.ds.AsyncPool
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.net.HostWithPort
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.AsyncCloseable
+import com.soywiz.korio.util.Once
 import com.soywiz.korio.util.substr
 import java.io.IOException
 import java.nio.charset.Charset
@@ -70,13 +72,16 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 
 		suspend fun close() = this.close.close()
 
+		private val once = Once()
 		private val commandQueue = AsyncThread()
 
-		init {
-			commandQueue.sync {
-				try {
-					reconnect(this@Client)
-				} catch (e: IOException) {
+		suspend private fun initOnce() {
+			once {
+				commandQueue.sync {
+					try {
+						reconnect(this@Client)
+					} catch (e: IOException) {
+					}
 				}
 			}
 		}
@@ -119,10 +124,10 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 
 		val maxRetries = 10
 
-		suspend override fun commandAny(vararg args: Any?): Any? {
+		suspend override fun commandAny(vararg args: Any?): Any? = withCoroutineContext {
 			//println(args.toList())
 			stats.commandsQueued.incrementAndGet()
-			return commandQueue {
+			return@withCoroutineContext commandQueue {
 				val cmd = StringBuilder()
 				cmd.append('*')
 				cmd.append(args.size)

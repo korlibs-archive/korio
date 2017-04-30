@@ -1,6 +1,7 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.asyncGenerate
+import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.stream.*
 
 suspend fun IsoVfs(file: VfsFile): VfsFile = ISO.openVfs(file.open(VfsOpenMode.READ))
@@ -13,9 +14,9 @@ object ISO {
 
 	suspend fun read(s: AsyncStream): IsoFile = IsoReader(s).read()
 
-	suspend fun openVfs(s: AsyncStream): VfsFile {
+	suspend fun openVfs(s: AsyncStream): VfsFile = withCoroutineContext {
 		val iso = read(s)
-		return (object : Vfs() {
+		return@withCoroutineContext (object : Vfs() {
 			val vfs = this
 			val isoFile = iso
 
@@ -24,7 +25,7 @@ object ISO {
 			suspend override fun stat(path: String): VfsStat = try { getVfsStat(isoFile[path]) } catch (e: Throwable) { createNonExistsStat(path) }
 			suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = isoFile[path].open2(mode)
 
-			suspend override fun list(path: String) = asyncGenerate {
+			suspend override fun list(path: String) = asyncGenerate(this@withCoroutineContext) {
 				val file = isoFile[path]
 				for (c in file.children) {
 					//yield(getVfsStat(c))

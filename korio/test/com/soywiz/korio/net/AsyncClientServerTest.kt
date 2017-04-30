@@ -27,7 +27,7 @@ class AsyncClientServerTest {
 		val correctEchoes = LinkedList<Boolean>()
 
 		val clients = (0 until clientsCount).map { clientId ->
-			spawn {
+			spawn(coroutineContext) {
 				try {
 					val client = AsyncClient.createAndConnect("127.0.0.1", server.port)
 

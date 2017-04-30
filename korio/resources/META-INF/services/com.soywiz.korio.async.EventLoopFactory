@@ -1,0 +1,3 @@
+com.soywiz.korio.async.EventLoopFactoryJvmAndCSharp  # <target=java>
+com.soywiz.korio.async.EventLoopFactoryJs            # <target=js>
+com.soywiz.korio.async.EventLoopFactoryJvmAndCSharp  # <target=cs>

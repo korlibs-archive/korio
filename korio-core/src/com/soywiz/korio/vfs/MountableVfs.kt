@@ -28,7 +28,7 @@ suspend fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile = kori
 		}
 	}
 	callback.korioStartCoroutine(mount, object : Continuation<Unit> {
-		override val context: CoroutineContext = EmptyCoroutineContext
+		override val context: CoroutineContext = c.context
 		override fun resume(value: Unit) = c.resume(mount.root)
 		override fun resumeWithException(exception: Throwable) = c.resumeWithException(exception)
 	})

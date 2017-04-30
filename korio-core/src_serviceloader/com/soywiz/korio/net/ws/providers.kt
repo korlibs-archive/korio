@@ -1,8 +1,7 @@
 package com.soywiz.korio.net.ws
 
-import java.util.*
+import com.soywiz.korio.service.Services
 
 val websockets: WebSocketClientFactory by lazy {
-	ServiceLoader.load(WebSocketClientFactory::class.java).firstOrNull()
-		?: throw UnsupportedOperationException("WebSocketClientFactory implementation not found!")
+	Services.load(WebSocketClientFactory::class.java)
 }

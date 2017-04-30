@@ -3,6 +3,7 @@ package com.soywiz.korio.vfs.js
 import com.jtransc.js.*
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
+import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.util.OS
 import com.soywiz.korio.vfs.*
 
@@ -46,9 +47,11 @@ private class EmbededResourceListing(parent: VfsFile) : Vfs.Decorator(parent) {
 		}
 	}
 
-	suspend override fun list(path: String): AsyncSequence<VfsFile> = asyncGenerate {
-		for (item in nodeVfs.rootNode[path]) {
-			yield(file("$path/${item.name}"))
+	suspend override fun list(path: String): AsyncSequence<VfsFile> = withCoroutineContext {
+		asyncGenerate(this@withCoroutineContext) {
+			for (item in nodeVfs.rootNode[path]) {
+				yield(file("$path/${item.name}"))
+			}
 		}
 	}
 

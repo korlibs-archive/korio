@@ -49,7 +49,7 @@ class HttpClientJvm : HttpClient() {
 					} catch (e: BindException) {
 						// Potentially no more ports available. Too many pending connections.
 						e.printStackTrace()
-						sleep(1000)
+						coroutineContext.eventLoop.sleep(1000)
 						continue
 					}
 				}
@@ -69,7 +69,7 @@ class HttpClientJvm : HttpClient() {
 
 			val produceConsumer = ProduceConsumer<ByteArray>()
 
-			spawnAndForget {
+			spawnAndForget(coroutineContext) {
 				val syncStream = if (con.responseCode < 400) con.inputStream else con.errorStream
 				try {
 					val stream = syncStream.toAsync().toAsyncStream()
@@ -78,7 +78,7 @@ class HttpClientJvm : HttpClient() {
 						// @TODO: Totally cancel reading if nobody is consuming this. Think about the best way of doing this.
 						// node.js pause equivalent?
 						while (produceConsumer.availableCount > 4) { // Prevent filling the memory if nobody is consuming data
-							sleep(100)
+							coroutineContext.eventLoop.sleep(100)
 						}
 						val read = stream.read(temp)
 						if (read <= 0) break

@@ -3,6 +3,13 @@ package com.soywiz.korio.async
 import java.io.Closeable
 import java.util.*
 
+class EventLoopFactoryTest : EventLoopFactory() {
+	override val available = true
+	override val priority: Int = Int.MAX_VALUE - 1000
+
+	override fun createEventLoop(): EventLoop = EventLoopTest()
+}
+
 class EventLoopTest : EventLoop() {
 	override var time: Long = 0L; private set
 
@@ -10,16 +17,10 @@ class EventLoopTest : EventLoop() {
 	private val lock = Object()
 	private val timers = TreeMap<Long, ArrayList<() -> Unit>>()
 
-	override val available = true
-	override val priority: Int = Int.MAX_VALUE - 1000
-
-	override fun init() {
-	}
-
-	override fun setInterval(ms: Int, callback: () -> Unit): Closeable {
+	override fun setIntervalInternal(ms: Int, callback: () -> Unit): Closeable {
 		var cancelled = false
 		fun step() {
-			setTimeout(ms, {
+			setTimeoutInternal(ms, {
 				if (!cancelled) {
 					callback()
 					step()
@@ -32,7 +33,7 @@ class EventLoopTest : EventLoop() {
 		}
 	}
 
-	override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
+	override fun setTimeoutInternal(ms: Int, callback: () -> Unit): Closeable {
 		val items = synchronized(lock) { timers.getOrPut(this.time + ms) { ArrayList() } }
 		items += callback
 		return Closeable {
@@ -73,7 +74,7 @@ class EventLoopTest : EventLoop() {
 		}
 	}
 
-	override fun setImmediate(handler: () -> Unit) {
+	override fun setImmediateInternal(handler: () -> Unit) {
 		synchronized(lock) { tasks.add(handler) }
 		executeTasks()
 	}
