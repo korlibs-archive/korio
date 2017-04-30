@@ -35,7 +35,7 @@ class Signal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
 		}
 	}
 
-	operator fun invoke(value: (T) -> Unit): Closeable = add(value)
+	operator fun invoke(handler: (T) -> Unit): Closeable = add(handler)
 
 	suspend fun listen(): AsyncSequence<T> = asyncGenerate {
 		while (true) {
@@ -50,6 +50,10 @@ class Signal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
 //	}
 //}.iterator()
 }
+
+//class AsyncSignal<T>(context: CoroutineContext) {
+
+//}
 
 fun <TI, TO> Signal<TI>.mapSignal(transform: (TI) -> TO): Signal<TO> {
 	val out = Signal<TO>()
