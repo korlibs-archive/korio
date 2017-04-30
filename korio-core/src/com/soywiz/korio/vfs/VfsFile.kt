@@ -3,6 +3,7 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.AsyncSequence
+import com.soywiz.korio.async.async
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.await
 import com.soywiz.korio.coroutine.withCoroutineContext
@@ -58,6 +59,7 @@ class VfsFile(
 
 	// Aliases
 	suspend fun read(): ByteArray = vfs.readRange(path, LONG_ZERO_TO_MAX_RANGE)
+
 	suspend fun readAll(): ByteArray = vfs.readRange(path, LONG_ZERO_TO_MAX_RANGE)
 	suspend fun readBytes(): ByteArray = vfs.readRange(path, LONG_ZERO_TO_MAX_RANGE)
 
@@ -166,7 +168,9 @@ class VfsFile(
 
 	suspend fun passthru(vararg cmdAndArgs: String, env: Map<String, String> = mapOf(), charset: Charset = Charsets.UTF_8): Int = passthru(cmdAndArgs.toList(), env, charset)
 
-	suspend fun watch(handler: (VfsFileEvent) -> Unit): Closeable = vfs.watch(path, handler)
+	suspend fun watch(handler: suspend (VfsFileEvent) -> Unit): Closeable = withCoroutineContext {
+		vfs.watch(path) { event -> async { handler(event) } }
+	}
 
 	suspend fun redirected(pathRedirector: suspend VfsFile.(String) -> String): VfsFile {
 		val actualFile = this
