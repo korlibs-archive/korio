@@ -11,11 +11,11 @@ class EventLoopFactoryAndroid : EventLoopFactory() {
 }
 
 class EventLoopAndroid : EventLoop() {
-	override fun setImmediate(handler: () -> Unit) {
+	override fun setImmediateInternal(handler: () -> Unit) {
 		KorioAndroidContext.runOnUiThread(handler)
 	}
 
-	override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
+	override fun setTimeoutInternal(ms: Int, callback: () -> Unit): Closeable {
 		var cancelled = false
 		android.os.Handler().postDelayed({
 			if (!cancelled) {
@@ -25,7 +25,7 @@ class EventLoopAndroid : EventLoop() {
 		return Closeable { cancelled = true }
 	}
 
-	override fun setInterval(ms: Int, callback: () -> Unit): Closeable {
+	override fun setIntervalInternal(ms: Int, callback: () -> Unit): Closeable {
 		var cancelled = false
 		fun step() {
 			android.os.Handler().postDelayed({

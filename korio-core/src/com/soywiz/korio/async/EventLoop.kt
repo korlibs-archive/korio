@@ -5,7 +5,6 @@ package com.soywiz.korio.async
 import com.soywiz.korio.coroutine.*
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.service.Services
-import com.soywiz.korio.util.Cancellable
 import java.io.Closeable
 
 abstract class EventLoopFactory : Services.Impl() {
@@ -13,7 +12,7 @@ abstract class EventLoopFactory : Services.Impl() {
 }
 
 // @TODO: Check CoroutineDispatcher
-abstract class EventLoop {
+abstract class EventLoop : Closeable {
 	val coroutineContext = EventLoopCoroutineContext(this)
 
 	companion object {
@@ -43,13 +42,12 @@ abstract class EventLoop {
 		}
 	}
 
-	open fun loop(): Unit = Unit
-	abstract fun setTimeout(ms: Int, callback: () -> Unit): Closeable
+	abstract protected fun setTimeoutInternal(ms: Int, callback: () -> Unit): Closeable
 
-	open fun setInterval(ms: Int, callback: () -> Unit): Closeable {
+	open protected fun setIntervalInternal(ms: Int, callback: () -> Unit): Closeable {
 		var cancelled = false
 		fun step() {
-			setTimeout(ms, {
+			setTimeoutInternal(ms, {
 				if (!cancelled) {
 					step()
 					callback()
@@ -60,32 +58,60 @@ abstract class EventLoop {
 		return Closeable { cancelled = true }
 	}
 
-	fun setIntervalImmediate(ms: Int, callback: () -> Unit): Closeable {
-		setImmediate(callback)
-		return setInterval(ms, callback)
+	open protected fun setImmediateInternal(handler: () -> Unit): Unit = run { setTimeoutInternal(0, handler) }
+
+	open protected fun requestAnimationFrameInternal(callback: () -> Unit): Closeable = setTimeoutInternal(1000 / 60, callback)
+
+	open fun loop(): Unit = Unit
+
+	private val closeables = LinkedHashSet<Closeable>()
+
+	private fun Closeable.capture(): Closeable {
+		val closeable = this
+		closeables += closeable
+		return Closeable {
+			closeables -= closeable
+			closeable.close()
+		}
 	}
 
-	fun queue(handler: () -> Unit): Unit = run { setImmediate(handler) }
+	fun setImmediate(handler: () -> Unit): Unit = setImmediateInternal(handler)
+	fun setTimeout(ms: Int, callback: () -> Unit): Closeable = setTimeoutInternal(ms, callback).capture()
+	fun setInterval(ms: Int, callback: () -> Unit): Closeable = setIntervalInternal(ms, callback).capture()
 
-	open fun setImmediate(handler: () -> Unit): Unit = run { setTimeout(0, handler) }
+	fun setIntervalImmediate(ms: Int, callback: () -> Unit): Closeable {
+		setImmediateInternal(callback)
+		return setIntervalInternal(ms, callback).capture()
+	}
 
-	open fun requestAnimationFrame(handler: () -> Unit): Closeable = setTimeout(1000 / 60, handler)
+	fun requestAnimationFrame(callback: () -> Unit): Closeable {
+		return requestAnimationFrameInternal(callback).capture()
+	}
 
-	open fun animationFrameLoop(callback: () -> Unit): Cancellable {
+	fun queue(handler: () -> Unit): Unit = setImmediate(handler)
+
+	fun animationFrameLoop(callback: () -> Unit): Closeable {
 		var closeable: Closeable? = null
 		var step: (() -> Unit)? = null
 		var cancelled = false
 		step = {
 			if (!cancelled) {
 				callback()
-				closeable = this.requestAnimationFrame(step!!)
+				closeable = this.requestAnimationFrameInternal(step!!)
 			}
 		}
 		step()
-		return Cancellable {
+		return Closeable {
 			cancelled = true
 			closeable?.close()
+		}.capture()
+	}
+
+	override fun close() {
+		for (closeable in closeables) {
+			closeable.close()
 		}
+		closeables.clear()
 	}
 
 	open val time: Long get() = System.currentTimeMillis()

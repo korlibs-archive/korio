@@ -17,10 +17,10 @@ class EventLoopTest : EventLoop() {
 	private val lock = Object()
 	private val timers = TreeMap<Long, ArrayList<() -> Unit>>()
 
-	override fun setInterval(ms: Int, callback: () -> Unit): Closeable {
+	override fun setIntervalInternal(ms: Int, callback: () -> Unit): Closeable {
 		var cancelled = false
 		fun step() {
-			setTimeout(ms, {
+			setTimeoutInternal(ms, {
 				if (!cancelled) {
 					callback()
 					step()
@@ -33,7 +33,7 @@ class EventLoopTest : EventLoop() {
 		}
 	}
 
-	override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
+	override fun setTimeoutInternal(ms: Int, callback: () -> Unit): Closeable {
 		val items = synchronized(lock) { timers.getOrPut(this.time + ms) { ArrayList() } }
 		items += callback
 		return Closeable {
@@ -74,7 +74,7 @@ class EventLoopTest : EventLoop() {
 		}
 	}
 
-	override fun setImmediate(handler: () -> Unit) {
+	override fun setImmediateInternal(handler: () -> Unit) {
 		synchronized(lock) { tasks.add(handler) }
 		executeTasks()
 	}

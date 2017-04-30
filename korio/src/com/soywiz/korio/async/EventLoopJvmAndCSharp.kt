@@ -22,11 +22,11 @@ class EventLoopJvmAndCSharp : EventLoop() {
 
 	private val immediateTasks = LinkedList<() -> Unit>()
 
-	override fun setImmediate(handler: () -> Unit) {
+	override fun setImmediateInternal(handler: () -> Unit) {
 		synchronized(lock) { immediateTasks += handler }
 	}
 
-	override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
+	override fun setTimeoutInternal(ms: Int, callback: () -> Unit): Closeable {
 		val task = Task(System.currentTimeMillis() + ms, callback)
 		synchronized(lock) { timedTasks += task }
 		return Closeable { synchronized(timedTasks) { timedTasks -= task } }

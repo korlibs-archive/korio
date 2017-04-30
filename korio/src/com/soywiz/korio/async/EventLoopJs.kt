@@ -1,6 +1,7 @@
 package com.soywiz.korio.async
 
 import com.jtransc.js.*
+import com.soywiz.korio.util.Cancellable
 import com.soywiz.korio.util.OS
 import java.io.Closeable
 import java.util.*
@@ -17,7 +18,7 @@ class EventLoopJs : EventLoop() {
 	val immediateHandlers = LinkedList<() -> Unit>()
 	var insideImmediate = false
 
-	override fun setImmediate(handler: () -> Unit) {
+	override fun setImmediateInternal(handler: () -> Unit) {
 		//println("setImmediate")
 		immediateHandlers += handler
 		if (!insideImmediate) {
@@ -33,13 +34,19 @@ class EventLoopJs : EventLoop() {
 		}
 	}
 
-	override fun setTimeout(ms: Int, callback: () -> Unit): Closeable {
+	override fun setTimeoutInternal(ms: Int, callback: () -> Unit): Closeable {
 		val id = global.call("setTimeout", jsFunctionRaw0 { callback() }, ms)
 		//println("setTimeout($ms)")
 		return Closeable { global.call("clearTimeout", id) }
 	}
 
-	override fun setInterval(ms: Int, callback: () -> Unit): Closeable {
+	override fun requestAnimationFrameInternal(callback: () -> Unit): Closeable {
+		val id = global.call("requestAnimationFrame", jsFunctionRaw0 { callback() })
+		//println("setTimeout($ms)")
+		return Closeable { global.call("cancelAnimationFrame", id) }
+	}
+
+	override fun setIntervalInternal(ms: Int, callback: () -> Unit): Closeable {
 		//println("setInterval($ms)")
 		val id = global.call("setInterval", jsFunctionRaw0 { callback() }, ms)
 		return Closeable { global.call("clearInterval", id) }
