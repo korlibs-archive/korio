@@ -2,12 +2,13 @@ package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.EventLoopTest
 import com.soywiz.korio.async.sync
+import com.soywiz.korio.async.syncTest
 import org.junit.Assert
 import org.junit.Test
 
 class MemoryVfsTest {
 	@Test
-	fun name() = sync(EventLoopTest()) {
+	fun name() = syncTest {
 		val log = arrayListOf<String>()
 		val mem = MemoryVfs()
 

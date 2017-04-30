@@ -8,6 +8,7 @@ import com.soywiz.korio.async.AsyncSequenceEmitter
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.spawnAndForget
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
+import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
@@ -56,10 +57,10 @@ class LocalVfsProviderJs : LocalVfsProvider() {
 			return emitter.toSequence()
 		}
 
-		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable {
+		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = withCoroutineContext {
 			val fs = jsRequire("fs")
 			val watcher = fs.call("watch", path, jsObject("persistent" to true, "recursive" to true), jsFunctionRaw2 { eventType, filename ->
-				spawnAndForget {
+				spawnAndForget(this@withCoroutineContext) {
 					val et = eventType.toJavaString()
 					val fn = filename.toJavaString()
 					val f = file("$path/$fn")
@@ -79,7 +80,7 @@ class LocalVfsProviderJs : LocalVfsProvider() {
 				}
 			})
 
-			return Closeable { watcher.call("close") }
+			return@withCoroutineContext Closeable { watcher.call("close") }
 		}
 
 		override fun toString(): String = "LocalVfs"

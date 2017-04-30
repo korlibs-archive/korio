@@ -9,17 +9,17 @@ interface Generator<in T> {
 	suspend fun yield(value: T)
 }
 
-fun <T> generate(block: suspend Generator<T>.() -> Unit): Iterable<T> = object : Iterable<T> {
-	override fun iterator(): Iterator<T> {
-		val iterator = GeneratorIterator<T>()
-		iterator.nextStep = block.korioCreateCoroutine(receiver = iterator, completion = iterator)
-		return iterator
+suspend fun <T> generate(block: suspend Generator<T>.() -> Unit): Iterable<T> = withCoroutineContext {
+	return@withCoroutineContext object : Iterable<T> {
+		override fun iterator(): Iterator<T> {
+			val iterator = GeneratorIterator<T>(this@withCoroutineContext)
+			iterator.nextStep = block.korioCreateCoroutine(receiver = iterator, completion = iterator)
+			return iterator
+		}
 	}
 }
 
-private class GeneratorIterator<T> : AbstractIterator<T>(), Generator<T>, Continuation<Unit> {
-	override val context: CoroutineContext = EmptyCoroutineContext
-
+private class GeneratorIterator<T>(override val context: CoroutineContext) : AbstractIterator<T>(), Generator<T>, Continuation<Unit> {
 	lateinit var nextStep: Continuation<Unit>
 
 	// AbstractIterator implementation

@@ -10,9 +10,6 @@ class EventLoopJs : EventLoop() {
 	override val available: Boolean get() = OS.isJs
 	override val priority: Int = 2000
 
-	override fun init(): Unit {
-	}
-
 	val immediateHandlers = LinkedList<() -> Unit>()
 	var insideImmediate = false
 

@@ -2,6 +2,7 @@ package com.soywiz.korio.net
 
 import com.soywiz.korio.async.*
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
+import com.soywiz.korio.coroutine.withCoroutineContext
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -17,7 +18,6 @@ class JsJvmAsyncSocketFactory : AsyncSocketFactory() {
 
 //private val newPool by lazy { Executors.newFixedThreadPool(1) }
 //private val group by lazy { AsynchronousChannelGroup.withThreadPool(newPool) }
-private val group by lazy { AsynchronousChannelGroup.withThreadPool(EventLoopExecutorService) }
 
 class JsJvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : AsyncClient {
 	private var _connected = false
@@ -25,7 +25,7 @@ class JsJvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : Asyn
 	//suspend override fun connect(host: String, port: Int): Unit = suspendCoroutineEL { c ->
 	suspend override fun connect(host: String, port: Int): Unit = korioSuspendCoroutine { c ->
 		sc?.close()
-		sc = AsynchronousSocketChannel.open(group)
+		sc = AsynchronousSocketChannel.open(AsynchronousChannelGroup.withThreadPool(EventLoopExecutorService(c.context.eventLoop)))
 		sc?.connect(InetSocketAddress(host, port), this, object : CompletionHandler<Void, AsyncClient> {
 			override fun completed(result: Void?, attachment: AsyncClient): Unit = run { _connected = true; c.resume(Unit) }
 			override fun failed(exc: Throwable, attachment: AsyncClient): Unit = run { _connected = false; c.resumeWithException(exc) }
@@ -72,11 +72,11 @@ class JsJvmAsyncServer(override val requestPort: Int, override val host: String,
 	val ssc = AsynchronousServerSocketChannel.open()
 	val pc = ProduceConsumer<JsJvmAsyncClient>()
 
-	suspend fun init() {
+	suspend fun init(): Unit = withCoroutineContext {
 		ssc.bind(InetSocketAddress(host, requestPort), backlog)
 		for (n in 0 until 100) {
 			if (ssc.isOpen) break
-			sleep(50)
+			eventLoop.sleep(50)
 		}
 
 		acceptStep()
@@ -98,7 +98,9 @@ class JsJvmAsyncServer(override val requestPort: Int, override val host: String,
 
 	override val port: Int get() = (ssc.localAddress as? InetSocketAddress)?.port ?: -1
 
-	suspend override fun listen(): AsyncSequence<AsyncClient> = asyncGenerate {
-		while (true) yield(pc.consume()!!)
+	suspend override fun listen(): AsyncSequence<AsyncClient> = withCoroutineContext {
+		asyncGenerate(this@withCoroutineContext) {
+			while (true) yield(pc.consume()!!)
+		}
 	}
 }

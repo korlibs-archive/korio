@@ -20,7 +20,7 @@ interface SuspendingIterator<out T> {
 }
 
 fun <T> suspendingSequence(
-	context: CoroutineContext = EmptyCoroutineContext,
+	context: CoroutineContext,
 	block: suspend SuspendingSequenceBuilder<T>.() -> Unit
 ): SuspendingSequence<T> = object : SuspendingSequence<T> {
 	override fun iterator(): SuspendingIterator<T> = suspendingIterator(context, block)
@@ -28,7 +28,7 @@ fun <T> suspendingSequence(
 }
 
 fun <T> suspendingIterator(
-	context: CoroutineContext = EmptyCoroutineContext,
+	context: CoroutineContext,
 	block: suspend SuspendingSequenceBuilder<T>.() -> Unit
 ): SuspendingIterator<T> = SuspendingIteratorCoroutine<T>(context).apply {
 	nextStep = block.korioCreateCoroutine(receiver = this, completion = this)
@@ -120,11 +120,13 @@ typealias AsyncSequence<T> = SuspendingSequence<T>
 typealias AsyncIterator<T> = SuspendingIterator<T>
 
 fun <T> asyncGenerate(
-	context: CoroutineContext = EmptyCoroutineContext,
+	context: CoroutineContext,
 	block: suspend SuspendingSequenceBuilder<T>.() -> Unit
 ): SuspendingSequence<T> = object : SuspendingSequence<T> {
 	override fun iterator(): SuspendingIterator<T> = suspendingIterator(context, block)
 }
+
+suspend fun <T> asyncGenerate(block: suspend SuspendingSequenceBuilder<T>.() -> Unit): SuspendingSequence<T> = withCoroutineContext { asyncGenerate(this@withCoroutineContext, block) }
 
 //fun <T> asyncGenerate(
 //	context: CoroutineContext = EmptyCoroutineContext,
@@ -239,33 +241,39 @@ class AsyncGeneratorIterator<T> : AsyncIterator<T>, AsyncGenerator<T>, Continuat
 }
 */
 
-inline suspend fun <T, T2> SuspendingSequence<T>.map(crossinline transform: (T) -> T2) = asyncGenerate<T2> {
-	for (e in this@map) {
-		yield(transform(e))
-	}
-}
-
-inline suspend fun <T> SuspendingSequence<T>.filter(crossinline filter: (T) -> Boolean) = asyncGenerate<T> {
-	for (e in this@filter) {
-		if (filter(e)) {
-			yield(e)
+inline suspend fun <T, T2> SuspendingSequence<T>.map(crossinline transform: (T) -> T2) = withCoroutineContext {
+	asyncGenerate<T2>(this@withCoroutineContext) {
+		for (e in this@map) {
+			yield(transform(e))
 		}
 	}
 }
 
-suspend fun <T> SuspendingSequence<T>.chunks(count: Int) = asyncGenerate<List<T>> {
-	val chunk = arrayListOf<T>()
+inline suspend fun <T> SuspendingSequence<T>.filter(crossinline filter: (T) -> Boolean) = withCoroutineContext {
+	asyncGenerate<T>(this@withCoroutineContext) {
+		for (e in this@filter) {
+			if (filter(e)) {
+				yield(e)
+			}
+		}
+	}
+}
 
-	for (e in this@chunks) {
-		chunk += e
-		if (chunk.size > count) {
+suspend fun <T> SuspendingSequence<T>.chunks(count: Int) = withCoroutineContext {
+	asyncGenerate<List<T>>(this@withCoroutineContext) {
+		val chunk = arrayListOf<T>()
+
+		for (e in this@chunks) {
+			chunk += e
+			if (chunk.size > count) {
+				yield(chunk.toList())
+				chunk.clear()
+			}
+		}
+
+		if (chunk.size > 0) {
 			yield(chunk.toList())
-			chunk.clear()
 		}
-	}
-
-	if (chunk.size > 0) {
-		yield(chunk.toList())
 	}
 }
 
@@ -311,12 +319,14 @@ suspend fun <T : Any?> SuspendingSequence<T>.firstOrNull(): T? {
 	return result
 }
 
-suspend fun <T : Any?> SuspendingSequence<T>.take(count: Int): SuspendingSequence<T> = asyncGenerate {
-	var current = 0
-	val iterator = this@take.iterator()
-	while (current < count && iterator.hasNext()) {
-		yield(iterator.next())
-		current++
+suspend fun <T : Any?> SuspendingSequence<T>.take(count: Int): SuspendingSequence<T> = withCoroutineContext {
+	asyncGenerate(this@withCoroutineContext) {
+		var current = 0
+		val iterator = this@take.iterator()
+		while (current < count && iterator.hasNext()) {
+			yield(iterator.next())
+			current++
+		}
 	}
 }
 

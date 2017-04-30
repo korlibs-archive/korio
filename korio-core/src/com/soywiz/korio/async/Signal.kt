@@ -5,7 +5,7 @@ package com.soywiz.korio.async
 import com.soywiz.korio.ds.LinkedList2
 import java.io.Closeable
 
-class Signal<T>(val onRegister: () -> Unit = {}) : AsyncSequence<T> {
+class Signal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
 	inner class Node(val once: Boolean, val item: (T) -> Unit) : LinkedList2.Node<Node>(), Closeable {
 		override fun close() {
 			handlers.remove(this)
@@ -27,23 +27,28 @@ class Signal<T>(val onRegister: () -> Unit = {}) : AsyncSequence<T> {
 	}
 
 	operator fun invoke(value: T) {
-		EventLoop.queue {
-			val it = handlers.iterator()
-			while (it.hasNext()) {
-				val node = it.next()
-				if (node.once) it.remove()
-				node.item(value)
-			}
+		val it = handlers.iterator()
+		while (it.hasNext()) {
+			val node = it.next()
+			if (node.once) it.remove()
+			node.item(value)
 		}
 	}
 
 	operator fun invoke(value: (T) -> Unit): Closeable = add(value)
 
-	override fun iterator(): AsyncIterator<T> = asyncGenerate {
+	suspend fun listen(): AsyncSequence<T> = asyncGenerate {
 		while (true) {
 			yield(waitOne())
 		}
-	}.iterator()
+	}
+
+
+//override fun iterator(): AsyncIterator<T> = asyncGenerate {
+//	while (true) {
+//		yield(waitOne())
+//	}
+//}.iterator()
 }
 
 fun <TI, TO> Signal<TI>.mapSignal(transform: (TI) -> TO): Signal<TO> {

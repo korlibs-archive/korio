@@ -18,8 +18,6 @@ class EventLoopJvmAndCSharp : EventLoop() {
 
 	private val immediateTasks = LinkedList<() -> Unit>()
 
-	override fun init(): Unit = Unit
-
 	override fun setImmediate(handler: () -> Unit) {
 		synchronized(lock) { immediateTasks += handler }
 	}

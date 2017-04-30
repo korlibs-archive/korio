@@ -1,5 +1,6 @@
 package com.soywiz.korio.async
 
+import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.korioStartCoroutine
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import com.soywiz.korio.stream.AsyncInputStream
@@ -77,10 +78,10 @@ open class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 	}
 }
 
-fun <T> asyncProducer(callback: suspend Producer<T>.() -> Unit): Consumer<T> {
+fun <T> asyncProducer(context: CoroutineContext, callback: suspend Producer<T>.() -> Unit): Consumer<T> {
 	val p = ProduceConsumer<T>()
 
-	callback.korioStartCoroutine(p, completion = EmptyContinuation)
+	callback.korioStartCoroutine(p, completion = EmptyContinuation(context))
 	return p
 }
 

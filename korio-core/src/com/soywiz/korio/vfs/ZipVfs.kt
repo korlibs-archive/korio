@@ -3,6 +3,7 @@ package com.soywiz.korio.vfs
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.AsyncCloseable
 import com.soywiz.korio.util.getBits
@@ -152,10 +153,12 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 			return files[path.normalizeName()].toStat(this@Impl[path])
 		}
 
-		suspend override fun list(path: String): AsyncSequence<VfsFile> = asyncGenerate {
-			for ((name, entry) in filesPerFolder[path.normalizeName()] ?: LinkedHashMap()) {
-				//yield(entry.toStat(this@Impl[entry.path]))
-				yield(vfs[entry.path])
+		suspend override fun list(path: String): AsyncSequence<VfsFile> = withCoroutineContext {
+			asyncGenerate(this@withCoroutineContext) {
+				for ((name, entry) in filesPerFolder[path.normalizeName()] ?: LinkedHashMap()) {
+					//yield(entry.toStat(this@Impl[entry.path]))
+					yield(vfs[entry.path])
+				}
 			}
 		}
 

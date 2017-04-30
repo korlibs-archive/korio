@@ -5,6 +5,7 @@ package com.soywiz.korio.vfs.android
 import com.soywiz.korio.android.KorioAndroidContext
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
+import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.MemorySyncStream
 import com.soywiz.korio.stream.toAsyncInWorker
@@ -17,10 +18,12 @@ val AndroidAssetsVfs by lazy {
 		val resources = ctx.resources
 		val assets = resources.assets
 
-		suspend override fun list(path: String): AsyncSequence<VfsFile> = asyncGenerate {
-			val path2 = path.trim('/')
-			for (name in assets.list(path2)) {
-				yield(file("$path2/$name".trim('/')))
+		suspend override fun list(path: String): AsyncSequence<VfsFile> = withCoroutineContext {
+			asyncGenerate(this@withCoroutineContext) {
+				val path2 = path.trim('/')
+				for (name in assets.list(path2)) {
+					yield(file("$path2/$name".trim('/')))
+				}
 			}
 		}
 

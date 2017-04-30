@@ -3,6 +3,7 @@
 package com.soywiz.korio.net
 
 import com.soywiz.korio.async.*
+import com.soywiz.korio.coroutine.withCoroutineContext
 import java.net.InetSocketAddress
 import java.net.ServerSocket
 import java.net.Socket
@@ -43,13 +44,15 @@ class AndroidAsyncServer(override val requestPort: Int, override val host: Strin
 		s.bind(InetSocketAddress(host, requestPort))
 		for (n in 0 until 100) {
 			if (s.isBound) break
-			sleep(50)
+			coroutineContext.sleep(50)
 		}
 	}
 
 	override val port: Int get() = s.localPort
 
-	suspend override fun listen(): AsyncSequence<AsyncClient> = asyncGenerate {
-		while (true) yield(AndroidAsyncClient(executeInWorker { s.accept() }))
+	suspend override fun listen(): AsyncSequence<AsyncClient> = withCoroutineContext {
+		asyncGenerate(this@withCoroutineContext) {
+			while (true) yield(AndroidAsyncClient(executeInWorker { s.accept() }))
+		}
 	}
 }

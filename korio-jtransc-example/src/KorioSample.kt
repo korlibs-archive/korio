@@ -9,7 +9,19 @@ import com.soywiz.korio.vfs.ResourcesVfs
 import com.soywiz.korio.vfs.UrlVfs
 import com.soywiz.korio.vfs.openAsIso
 
-fun main(args: Array<String>) = EventLoop.main {
+//class Test {
+//	companion object {
+//		fun main(callback: Test.() -> Unit) {
+//		}
+//	}
+//}
+//
+//fun demo() = Test.main {
+//	val a = this@main
+//}
+
+fun main(args: Array<String>) = EventLoop {
+	val eventLoop = this@EventLoop
 	//println(LocalVfs("/").list().toList())
 
 	val url = UrlVfs("http://127.0.0.1:8080")
@@ -21,7 +33,7 @@ fun main(args: Array<String>) = EventLoop.main {
 
 	val file = url["hello.txt"]
 
-	val process = spawn {
+	val process = spawn(eventLoop.coroutineContext) {
 		file.openUse {
 			while (!eof()) {
 				val c = readU8()

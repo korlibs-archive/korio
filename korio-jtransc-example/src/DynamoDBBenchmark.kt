@@ -2,11 +2,10 @@ import com.soywiz.korio.async.*
 import com.soywiz.korio.ext.amazon.dynamodb.DynamoDB
 import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.net.http.HttpStats
-import com.soywiz.korio.net.http.delayed
 import java.net.URL
 
-fun main(args: Array<String>) = EventLoop.main {
-	println(EventLoop.impl)
+fun main(args: Array<String>) = EventLoop {
+	val eventLoop = this@EventLoop
 	data class HelloTable(@DynamoDB.HashKey val myhash: String, @DynamoDB.RangeKey val myrange: String, val test: String)
 
 	val dynamodb = DynamoDB(
@@ -28,7 +27,7 @@ fun main(args: Array<String>) = EventLoop.main {
 
 		val promises = arrayListOf<Promise<Unit>>()
 		for (n in 0 until 50) {
-			promises += spawn {
+			promises += spawn(eventLoop.coroutineContext) {
 				try {
 					val item = HelloTable("hash1", "range$n", "test")
 					//println("Putting $item")

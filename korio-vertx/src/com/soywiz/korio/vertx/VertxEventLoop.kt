@@ -9,9 +9,6 @@ class VertxEventLoop : EventLoop() {
 	override val priority = 500
 	override val available = true
 
-	override fun init() {
-	}
-
 	override fun setImmediate(handler: () -> Unit) {
 		_vertx.runOnContext { handler() }
 	}

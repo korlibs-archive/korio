@@ -5,6 +5,7 @@ package com.soywiz.korio.vfs
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.await
+import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.LONG_ZERO_TO_MAX_RANGE
 import com.soywiz.korio.util.toLongRange
@@ -117,13 +118,15 @@ class VfsFile(
 
 	suspend fun list(): AsyncSequence<VfsFile> = vfs.list(path)
 
-	suspend fun listRecursive(filter: (VfsFile) -> Boolean = { true }): AsyncSequence<VfsFile> = asyncGenerate {
-		for (file in list()) {
-			if (!filter(file)) continue
-			yield(file)
-			val stat = file.stat()
-			if (stat.isDirectory) {
-				for (f in file.listRecursive()) yield(f)
+	suspend fun listRecursive(filter: (VfsFile) -> Boolean = { true }): AsyncSequence<VfsFile> = withCoroutineContext {
+		asyncGenerate(this@withCoroutineContext) {
+			for (file in list()) {
+				if (!filter(file)) continue
+				yield(file)
+				val stat = file.stat()
+				if (stat.isDirectory) {
+					for (f in file.listRecursive()) yield(f)
+				}
 			}
 		}
 	}

@@ -14,11 +14,14 @@ object KorioApp {
 }
 
 open class KorioActivity : Activity(), Extra by Extra.Mixin() {
+	lateinit var eventLoop: EventLoop
+
 	override final fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
 		KorioAndroidInit(this)
 		KorioApp.initOnce {
 			EventLoop.main {
+				eventLoop = this@main
 				println()
 				main(arrayOf())
 			}
@@ -27,13 +30,13 @@ open class KorioActivity : Activity(), Extra by Extra.Mixin() {
 
 	override fun onWindowFocusChanged(hasFocus: Boolean) {
 		super.onWindowFocusChanged(hasFocus)
-		EventLoop.queue {
+		eventLoop.queue {
 			KorioApp.resized(Unit)
 		}
 	}
 
 	suspend open fun requestPermission(name: String): Boolean {
-		sleep(1000)
+		eventLoop.sleep(1000)
 		return false
 	}
 

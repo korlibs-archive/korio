@@ -13,9 +13,6 @@ class EventLoopTest : EventLoop() {
 	override val available = true
 	override val priority: Int = Int.MAX_VALUE - 1000
 
-	override fun init() {
-	}
-
 	override fun setInterval(ms: Int, callback: () -> Unit): Closeable {
 		var cancelled = false
 		fun step() {

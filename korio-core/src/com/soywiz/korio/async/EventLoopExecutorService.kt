@@ -5,7 +5,7 @@ import java.util.concurrent.ExecutorService
 import java.util.concurrent.Future
 import java.util.concurrent.TimeUnit
 
-object EventLoopExecutorService : ExecutorService {
+class EventLoopExecutorService(val eventLoop: EventLoop) : ExecutorService {
 	var shutdown = false
 
 	override fun shutdown() = run { shutdown = true }
@@ -42,6 +42,6 @@ object EventLoopExecutorService : ExecutorService {
 	}
 
 	override fun execute(command: Runnable) {
-		EventLoop.setImmediate { command.run() }
+		eventLoop.setImmediate { command.run() }
 	}
 }
