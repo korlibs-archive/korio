@@ -9,8 +9,9 @@ import java.io.File
 import java.net.URLClassLoader
 
 class ResourcesVfsProviderJvm : ResourcesVfsProvider() {
-	override fun invoke(): Vfs {
-		val classLoader: ClassLoader = ClassLoader.getSystemClassLoader()
+	override fun invoke(): Vfs = invoke(ClassLoader.getSystemClassLoader())
+
+	fun invoke(classLoader: ClassLoader): Vfs {
 		val merged = MergedVfs()
 
 		return object : Vfs.Decorator(merged.root) {

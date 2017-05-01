@@ -250,6 +250,6 @@ class EmptyContinuation(override val context: CoroutineContext) : Continuation<A
 @Suppress("UNCHECKED_CAST")
 inline fun <T> spawnAndForget(context: CoroutineContext, noinline task: suspend () -> T): Unit = task.korioStartCoroutine(EmptyContinuation(context) as Continuation<T>)
 
-suspend fun <T> spawnAndForget(task: suspend () -> T): Unit = withCoroutineContext { spawnAndForget(task) }
+suspend fun <T> spawnAndForget(task: suspend () -> T): Unit = withCoroutineContext { spawnAndForget(this@withCoroutineContext, task) }
 
 inline fun <T> spawnAndForget(context: CoroutineContext, value: T, noinline task: suspend T.() -> Any): Unit = task.korioStartCoroutine(value, EmptyContinuation(context))
