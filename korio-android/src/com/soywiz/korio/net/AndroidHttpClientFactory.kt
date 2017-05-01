@@ -48,11 +48,15 @@ class AndroidHttpClientFactory : HttpFactory() {
 
 				con.connect()
 
+				val pheaders = Http.Headers.fromListMap(con.headerFields)
+
+				val length = pheaders["Content-Length"]?.toLongOrNull()
+
 				Response(
 						status = con.responseCode,
 						statusText = con.responseMessage,
-						headers = Http.Headers.fromListMap(con.headerFields),
-						content = if (con.responseCode < 400) con.inputStream.toAsync().toAsyncStream() else con.errorStream.toAsync().toAsyncStream()
+						headers = pheaders,
+						content = if (con.responseCode < 400) con.inputStream.toAsync(length).toAsyncStream() else con.errorStream.toAsync(length).toAsyncStream()
 				)
 			} catch (e: FileNotFoundException) {
 				Response(

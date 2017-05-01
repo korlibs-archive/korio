@@ -23,20 +23,28 @@ class VfsFile(
 	operator fun get(path: String): VfsFile = VfsFile(vfs, VfsUtil.combine(this.path, path))
 
 	// @TODO: Kotlin suspend operator not supported yet!
-	suspend fun set(path: String, content: String): Unit = this[path].put(content.toByteArray(Charsets.UTF_8).openAsync())
+	suspend fun set(path: String, content: String): Unit = run { this[path].put(content.toByteArray(Charsets.UTF_8).openAsync()) }
 
-	suspend fun set(path: String, content: ByteArray): Unit = this[path].put(content.openAsync())
+	suspend fun set(path: String, content: ByteArray): Unit = run { this[path].put(content.openAsync()) }
 	suspend fun set(path: String, content: AsyncStream): Unit = run { this[path].writeStream(content) }
 	suspend fun set(path: String, content: VfsFile): Unit = run { this[path].writeFile(content) }
 
-	suspend fun put(content: AsyncStream, attributes: List<Vfs.Attribute> = listOf()): Unit = vfs.put(path, content, attributes)
-	suspend fun put(content: AsyncStream, vararg attributes: Vfs.Attribute): Unit = vfs.put(path, content, attributes.toList())
-	suspend fun write(data: ByteArray, vararg attributes: Vfs.Attribute): Unit = put(data.openAsync(), *attributes)
+	suspend fun put(content: AsyncInputStream, attributes: List<Vfs.Attribute> = listOf()): Long = vfs.put(path, content, attributes)
+	suspend fun put(content: AsyncInputStream, vararg attributes: Vfs.Attribute): Long = vfs.put(path, content, attributes.toList())
+	suspend fun write(data: ByteArray, vararg attributes: Vfs.Attribute): Long = put(data.openAsync(), *attributes)
 
 	suspend fun writeStream(src: AsyncStream, vararg attributes: Vfs.Attribute): Long = run { put(src, *attributes); src.getLength() }
+	suspend fun writeStream(src: AsyncInputStream, vararg attributes: Vfs.Attribute): Long = put(src, *attributes)
 	suspend fun writeFile(file: VfsFile, vararg attributes: Vfs.Attribute): Long = file.copyTo(this, *attributes)
 
-	suspend fun copyTo(target: VfsFile, vararg attributes: Vfs.Attribute): Long = this.openUse(VfsOpenMode.READ) { target.writeStream(this, *attributes) }
+	suspend fun copyTo(target: VfsFile, vararg attributes: Vfs.Attribute): Long {
+		val inputStream = this.openInputStream()
+		try {
+			return target.writeStream(inputStream, *attributes)
+		} finally {
+			inputStream.close()
+		}
+	}
 
 	val parent: VfsFile by lazy { VfsFile(vfs, pathInfo.folder) }
 	val root: VfsFile get() = vfs.root
@@ -45,6 +53,7 @@ class VfsFile(
 	fun appendExtension(ext: String): VfsFile = VfsFile(vfs, fullname + ".$ext")
 
 	suspend fun open(mode: VfsOpenMode = VfsOpenMode.READ): AsyncStream = vfs.open(path, mode)
+	suspend fun openInputStream(): AsyncInputStream = vfs.openInputStream(path)
 
 	suspend override fun openRead(): AsyncStream = open(VfsOpenMode.READ)
 
@@ -66,8 +75,8 @@ class VfsFile(
 	suspend fun readAsSyncStream(): SyncStream = read().openSync()
 
 	suspend fun readString(charset: Charset = Charsets.UTF_8): String = read().toString(charset)
-	suspend fun writeString(data: String, vararg attributes: Vfs.Attribute): Unit = write(data.toByteArray(Charsets.UTF_8), *attributes)
-	suspend fun writeString(data: String, charset: Charset, vararg attributes: Vfs.Attribute): Unit = write(data.toByteArray(charset), *attributes)
+	suspend fun writeString(data: String, vararg attributes: Vfs.Attribute): Unit = run { write(data.toByteArray(Charsets.UTF_8), *attributes) }
+	suspend fun writeString(data: String, charset: Charset, vararg attributes: Vfs.Attribute): Unit = run { write(data.toByteArray(charset), *attributes) }
 
 	suspend fun readChunk(offset: Long, size: Int): ByteArray = vfs.readChunk(path, offset, size)
 	suspend fun writeChunk(data: ByteArray, offset: Long, resize: Boolean = false): Unit = vfs.writeChunk(path, data, offset, resize)

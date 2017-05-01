@@ -180,27 +180,61 @@ open class HttpClient protected constructor() {
 		TODO()
 	}
 
-	suspend fun request(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null, throwErrors: Boolean = false): Response {
+	data class RequestConfig(
+		val followRedirects: Boolean = true,
+		val throwErrors: Boolean = false,
+		val maxRedirects: Int = 10,
+		val referer: String? = null,
+		val simulateBrowser: Boolean = false
+	)
+
+	suspend fun request(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null, config: RequestConfig = RequestConfig()): Response {
 		val contentLength = content?.getLength() ?: 0L
 		var actualHeaders = headers
+
 		if (content != null && !headers.any { it.first.equals("content-length", ignoreCase = true) }) {
 			actualHeaders = actualHeaders.withReplaceHeaders("content-length" to "$contentLength")
 		}
-		return requestInternal(method, url, actualHeaders, content).apply { if (throwErrors) checkErrors() }
+
+		if (config.simulateBrowser) {
+			if (actualHeaders["user-agent"] == null) {
+				actualHeaders = actualHeaders.withReplaceHeaders(
+					"Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+					"user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.81 Safari/537.36"
+				)
+			}
+		}
+
+		//println("$method: $url ($config)")
+		//for (header in actualHeaders) println(" ${header.first}: ${header.second}")
+
+		val response = requestInternal(method, url, actualHeaders, content).apply { if (config.throwErrors) checkErrors() }
+		if (config.followRedirects && config.maxRedirects >= 0) {
+			val redirectLocation = response.headers["location"]
+			if (redirectLocation != null) {
+				//for (header in response.headers) println(header)
+				//println("Method: $method")
+				//println("Location: $location")
+				return request(method, redirectLocation, headers.withReplaceHeaders(
+					"Referer" to url
+				), content, config.copy(maxRedirects = config.maxRedirects - 1))
+			}
+		}
+		return response
 	}
 
-	suspend fun requestAsString(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null, throwErrors: Boolean = false): CompletedResponse<String> {
-		val res = request(method, url, headers, content, throwErrors = throwErrors)
+	suspend fun requestAsString(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null, config: RequestConfig = RequestConfig()): CompletedResponse<String> {
+		val res = request(method, url, headers, content, config = config)
 		return res.toCompletedResponse(res.readAllString())
 	}
 
-	suspend fun requestAsBytes(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null, throwErrors: Boolean = false): CompletedResponse<ByteArray> {
-		val res = request(method, url, headers, content, throwErrors = throwErrors)
+	suspend fun requestAsBytes(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null, config: RequestConfig = RequestConfig()): CompletedResponse<ByteArray> {
+		val res = request(method, url, headers, content, config = config)
 		return res.toCompletedResponse(res.readAllBytes())
 	}
 
-	suspend fun readBytes(url: String): ByteArray = requestAsBytes(Http.Method.GET, url, throwErrors = true).content
-	suspend fun readString(url: String, charset: Charset = Charsets.UTF_8): String = requestAsString(Http.Method.GET, url, throwErrors = true).content
+	suspend fun readBytes(url: String, config: RequestConfig = RequestConfig()): ByteArray = requestAsBytes(Http.Method.GET, url, config = config.copy(throwErrors = true)).content
+	suspend fun readString(url: String, config: RequestConfig = RequestConfig()): String = requestAsString(Http.Method.GET, url, config = config.copy(throwErrors = true)).content
 
 	companion object {
 		operator fun invoke() = httpFactory.createClient()

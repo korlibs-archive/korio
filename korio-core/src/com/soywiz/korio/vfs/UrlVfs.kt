@@ -1,11 +1,10 @@
 package com.soywiz.korio.vfs
 
+import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.net.http.Http
+import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.net.http.createHttpClient
-import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.AsyncStreamBase
-import com.soywiz.korio.stream.buffered
-import com.soywiz.korio.stream.toAsyncStream
+import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.LONG_ZERO_TO_MAX_RANGE
 import java.io.FileNotFoundException
 import java.net.URL
@@ -29,9 +28,13 @@ class UrlVfs(val url: String, val dummy: Unit) : Vfs() {
 
 	suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
 		val fullUrl = getFullUrl(path)
-		val stat = stat(path)
 
-		if (!stat.exists) throw FileNotFoundException("Unexistant $fullUrl")
+		val stat = stat(path)
+		val response = stat.extraInfo as? HttpClient.Response
+
+		if (!stat.exists) {
+			throw FileNotFoundException("Unexistant $fullUrl : $response")
+		}
 
 		return object : AsyncStreamBase() {
 			suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
@@ -46,8 +49,13 @@ class UrlVfs(val url: String, val dummy: Unit) : Vfs() {
 			}
 
 			suspend override fun getLength(): Long = stat.size
+			//suspend override fun getLength(): Long = 0L
 		}.toAsyncStream().buffered()
 		//}.toAsyncStream()
+	}
+
+	suspend override fun openInputStream(path: String): AsyncInputStream {
+		return client.request(Http.Method.GET, getFullUrl(path)).content
 	}
 
 	suspend override fun readRange(path: String, range: LongRange): ByteArray = client.requestAsBytes(
@@ -58,7 +66,8 @@ class UrlVfs(val url: String, val dummy: Unit) : Vfs() {
 
 	class HttpHeaders(val headers: Http.Headers) : Attribute
 
-	suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) {
+	suspend override fun put(path: String, content: AsyncInputStream, attributes: List<Attribute>): Long {
+		if (content !is AsyncStream) invalidOp("UrlVfs.put requires content to be AsyncStream")
 		val headers = attributes.get<HttpHeaders>()
 		val mimeType = attributes.get<MimeType>() ?: MimeType.APPLICATION_JSON
 		val hheaders = headers?.headers ?: Http.Headers()
@@ -68,15 +77,17 @@ class UrlVfs(val url: String, val dummy: Unit) : Vfs() {
 			"content-length" to "$contentLength",
 			"content-type" to mimeType.mime
 		), content)
+
+		return content.getLength()
 	}
 
 	suspend override fun stat(path: String): VfsStat {
 		val result = client.request(Http.Method.HEAD, getFullUrl(path))
 
 		return if (result.success) {
-			createExistsStat(path, isDirectory = true, size = result.headers["content-length"]?.toLongOrNull() ?: 0L)
+			createExistsStat(path, isDirectory = true, size = result.headers["content-length"]?.toLongOrNull() ?: 0L, extraInfo = result)
 		} else {
-			createNonExistsStat(path)
+			createNonExistsStat(path, extraInfo = result)
 		}
 	}
 }

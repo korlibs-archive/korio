@@ -3,7 +3,12 @@ package com.soywiz.korio.vfs
 import com.soywiz.korio.service.Services
 import java.io.File
 
-abstract class LocalVfs : Vfs()
+abstract class LocalVfs : Vfs() {
+	companion object {
+		operator fun get(base: String) = LocalVfs(base)
+		operator fun get(base: File) = LocalVfs(base)
+	}
+}
 
 fun LocalVfs(base: String): VfsFile = VfsFile(localVfsProvider(), base)
 fun TempVfs() = LocalVfs(System.getProperty("java.io.tmpdir"))

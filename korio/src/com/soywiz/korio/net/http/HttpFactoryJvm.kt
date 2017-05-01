@@ -69,20 +69,25 @@ class HttpClientJvm : HttpClient() {
 
 			val produceConsumer = ProduceConsumer<ByteArray>()
 
+			val pheaders = Http.Headers.fromListMap(con.headerFields)
+			val length = pheaders["Content-Length"]?.toLongOrNull()
+
 			spawnAndForget(coroutineContext) {
 				val syncStream = if (con.responseCode < 400) con.inputStream else con.errorStream
 				try {
-					val stream = syncStream.toAsync().toAsyncStream()
-					val temp = ByteArray(0x1000)
-					while (true) {
-						// @TODO: Totally cancel reading if nobody is consuming this. Think about the best way of doing this.
-						// node.js pause equivalent?
-						while (produceConsumer.availableCount > 4) { // Prevent filling the memory if nobody is consuming data
-							coroutineContext.eventLoop.sleep(100)
+					if (syncStream != null) {
+						val stream = syncStream.toAsync(length).toAsyncStream()
+						val temp = ByteArray(0x1000)
+						while (true) {
+							// @TODO: Totally cancel reading if nobody is consuming this. Think about the best way of doing this.
+							// node.js pause equivalent?
+							while (produceConsumer.availableCount > 4) { // Prevent filling the memory if nobody is consuming data
+								coroutineContext.eventLoop.sleep(100)
+							}
+							val read = stream.read(temp)
+							if (read <= 0) break
+							produceConsumer.produce(Arrays.copyOf(temp, read))
 						}
-						val read = stream.read(temp)
-						if (read <= 0) break
-						produceConsumer.produce(Arrays.copyOf(temp, read))
 					}
 				} finally {
 					ignoreErrors { syncStream.close() }
@@ -102,7 +107,7 @@ class HttpClientJvm : HttpClient() {
 			Response(
 					status = con.responseCode,
 					statusText = con.responseMessage,
-					headers = Http.Headers.fromListMap(con.headerFields),
+					headers = pheaders,
 					content = produceConsumer.toAsyncInputStream()
 			)
 		} catch (e: FileNotFoundException) {

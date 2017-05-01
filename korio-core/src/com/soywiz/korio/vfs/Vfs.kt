@@ -8,10 +8,7 @@ import com.soywiz.korio.async.spawn
 import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.error.unsupported
-import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.copyTo
-import com.soywiz.korio.stream.readBytes
-import com.soywiz.korio.stream.writeBytes
+import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.use
 import java.io.Closeable
 
@@ -49,6 +46,20 @@ abstract class Vfs {
 
 	suspend open fun open(path: String, mode: VfsOpenMode): AsyncStream = throw UnsupportedOperationException()
 
+	suspend open fun openInputStream(path: String): AsyncInputStream {
+		val s = open(path, VfsOpenMode.READ)
+
+		return object : AsyncInputStream {
+			suspend override fun close() {
+				s.close()
+			}
+
+			suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+				return s.read(buffer, offset, len)
+			}
+		}
+	}
+
 	suspend open fun readRange(path: String, range: LongRange): ByteArray {
 		val s = open(path, VfsOpenMode.READ)
 		try {
@@ -68,8 +79,8 @@ abstract class Vfs {
 
 	inline fun <reified T> Iterable<Attribute>.get(): T? = this.firstOrNull { it is T } as T?
 
-	suspend open fun put(path: String, content: AsyncStream, attributes: List<Attribute> = listOf()) {
-		open(path, VfsOpenMode.CREATE_OR_TRUNCATE).use {
+	suspend open fun put(path: String, content: AsyncInputStream, attributes: List<Attribute> = listOf()): Long {
+		return open(path, VfsOpenMode.CREATE_OR_TRUNCATE).use {
 			content.copyTo(this)
 		}
 	}
@@ -128,7 +139,7 @@ abstract class Vfs {
 
 		suspend override fun <T> readSpecial(path: String, clazz: Class<T>): T = initOnce().access(path).readSpecial(clazz)
 
-		suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) = initOnce().access(path).put(content, attributes)
+		suspend override fun put(path: String, content: AsyncInputStream, attributes: List<Attribute>) = initOnce().access(path).put(content, *attributes.toTypedArray())
 		suspend override fun setSize(path: String, size: Long): Unit = initOnce().access(path).setSize(size)
 		suspend override fun stat(path: String): VfsStat = initOnce().access(path).stat().copy(file = file(path))
 		suspend override fun list(path: String) = withCoroutineContext { asyncGenerate<VfsFile>(this@withCoroutineContext) { initOnce(); for (it in access(path).list()) yield(transform(it)) } }

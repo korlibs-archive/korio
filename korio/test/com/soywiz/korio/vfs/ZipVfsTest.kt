@@ -1,10 +1,12 @@
 package com.soywiz.korio.vfs
 
+import com.soywiz.korio.async.map
 import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.async.toList
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.readAvailable
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Test
 import java.text.SimpleDateFormat
 
@@ -64,6 +66,15 @@ class ZipVfsTest {
 				"[/hello, /hello/compressedWorld.txt, /hello/world.txt]",
 				helloZip.listRecursive().toList().map { it.fullname }.toString()
 		)
+
+		println(helloZip.stat())
+		Assert.assertEquals(true, helloZip.exists())
+		Assert.assertEquals(true, helloZip.isDirectory())
+		Assert.assertEquals(true, helloZip["/"].isDirectory())
+		val mem = MemoryVfs()
+		helloZip.copyToTree(mem)
+		Assert.assertEquals(contents, mem["hello/compressedWorld.txt"].readString())
+
 	}
 
 	@Test
@@ -83,5 +94,24 @@ class ZipVfsTest {
 			"hello world world world world!",
 			zip["/hello/world.txt"].readString()
 		)
+	}
+
+	@Test
+	@Ignore
+	fun testZip1() = syncTest {
+		val mem = MemoryVfs()
+		//UrlVfs("https://github.com/soywiz/korge-tools/releases/download/binaries/rhubarb-lip-sync-1.4.2-win32.zip").copyTo(LocalVfs["c:/temp/file.zip"])
+
+		//val zip = LocalVfs("c:/temp/rhubarb-lip-sync-1.4.2-osx.zip").openAsZip()
+		val zip = LocalVfs("c:/temp/rhubarb-lip-sync-1.4.2-win32.zip").openAsZip()
+		//zip.copyTo(mem) // IOException
+		zip.copyToTree(mem) // IOException
+
+		//Assert.assertEquals(
+		//	listOf("/rhubarb-lip-sync-1.4.2-osx"),
+		//	zip.list().map { it.fullname }.toList()
+		//)
+		//val mem = MemoryVfs()
+		//zip.copyToTree(mem)
 	}
 }

@@ -1,6 +1,7 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.SuspendingSequence
+import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
@@ -52,10 +53,10 @@ class LogVfs(val parent: VfsFile) : Vfs.Proxy() {
 		return super.readRange(path, range)
 	}
 
-	suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) {
+	suspend override fun put(path: String, content: AsyncInputStream, attributes: List<Attribute>): Long {
 		modifiedFiles += path
 		log += "put($path, $content, $attributes)"
-		super.put(path, content, attributes)
+		return super.put(path, content, attributes)
 	}
 
 	suspend override fun setSize(path: String, size: Long) {

@@ -4,6 +4,7 @@ import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.ext.amazon.AmazonAuth
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
+import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.toAsyncStream
 import com.soywiz.korio.util.TimeProvider
@@ -51,7 +52,8 @@ class S3(val credentials: AmazonAuth.Credentials?, val endpoint: String, val htt
 		return request(Http.Method.GET, path).content.toAsyncStream()
 	}
 
-	suspend override fun put(path: String, content: AsyncStream, attributes: List<Attribute>) {
+	suspend override fun put(path: String, content: AsyncInputStream, attributes: List<Attribute>): Long {
+		if (content !is AsyncStream) invalidOp("S3.put requires AsyncStream")
 		val access = attributes.get<ACL>() ?: ACL.PRIVATE
 		val contentType = attributes.get<MimeType>() ?: PathInfo(path).mimeTypeByExtension
 		//val contentLength = content.getAvailable()
@@ -68,6 +70,8 @@ class S3(val credentials: AmazonAuth.Credentials?, val endpoint: String, val htt
 				),
 				content = content
 		)
+
+		return content.getLength()
 	}
 
 	suspend fun request(method: Http.Method, path: String, contentType: String = "", contentMd5: String = "", headers: Http.Headers = Http.Headers(), content: AsyncStream? = null): HttpClient.Response {

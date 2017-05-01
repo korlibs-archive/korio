@@ -3,6 +3,7 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.error.unsupported
 import com.soywiz.korio.util.*
 import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.VfsOpenMode
@@ -543,15 +544,28 @@ suspend fun AsyncInputStream.readLine(eol: Char = '\n', charset: Charset = Chars
 	return out.toByteArray().toString(charset)
 }
 
-fun InputStream.toAsync(): AsyncInputStream {
+fun InputStream.toAsync(length: Long? = null): AsyncInputStream {
 	val syncIS = this
-	return object : AsyncInputStream {
-		suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker {
-			syncIS.read(buffer, offset, len)
+	if (length != null) {
+		return object : AsyncInputStream, AsyncLengthStream {
+			suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker {
+				syncIS.read(buffer, offset, len)
+			}
+			override suspend fun close() = syncIS.close()
+			suspend override fun setLength(value: Long) {
+				unsupported("Can't set length")
+			}
+			suspend override fun getLength(): Long = length
 		}
+	} else {
+		return object : AsyncInputStream {
+			suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker {
+				syncIS.read(buffer, offset, len)
+			}
 
-		override suspend fun close() {
-			syncIS.close()
+			override suspend fun close() {
+				syncIS.close()
+			}
 		}
 	}
 }

@@ -4,12 +4,11 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.coroutine.withCoroutineContext
+import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.AsyncCloseable
-import com.soywiz.korio.util.getBits
-import com.soywiz.korio.util.indexOf
-import com.soywiz.korio.util.toUInt
+import com.soywiz.korio.util.*
 import java.io.FileNotFoundException
+import java.io.IOException
 import java.util.*
 import java.util.zip.Inflater
 
@@ -21,8 +20,8 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 	var pk_endIndex = -1
 
 	for (chunkSize in listOf(0x16, 0x100, 0x1000, 0x10000)) {
-		s.setPosition(s.getLength() - chunkSize)
-		endBytes = s.readBytesExact(chunkSize)
+		s.setPosition(Math.max(0L, s.getLength() - chunkSize))
+		endBytes = s.readBytesExact(Math.max(chunkSize, s.getAvailable().toIntClamp()))
 		pk_endIndex = endBytes.indexOf(PK_END)
 		if (pk_endIndex >= 0) break
 	}
@@ -111,19 +110,35 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 					compressedSize = compressedSize.toUInt(),
 					uncompressedSize = uncompressedSize.toUInt()
 				)
+				val components = listOf("") + PathInfo(normalizedName).getFullComponents()
+				for (m in 1 until components.size) {
+					val f = components[m - 1]
+					val c = components[m]
+					if (c !in files) {
+						val folder2 = filesPerFolder.getOrPut(f) { LinkedHashMap() }
+						val entry2 = ZipEntry(path = c, compressionMethod = 0, isDirectory = true, time = DosFileDateTime(0, 0),inode =  0L, offset = 0, headerEntry = byteArrayOf().openAsync(), compressedSize = 0L, uncompressedSize = 0L)
+						folder2[PathInfo(c).basename] = entry2
+						files[c] = entry2
+					}
+				}
+				//println(components)
 				folder[baseName] = entry
 				files[normalizedName] = entry
 			}
 		}
+		files[""] = ZipEntry(path = "", compressionMethod = 0, isDirectory = true, time = DosFileDateTime(0, 0),inode =  0L, offset = 0, headerEntry = byteArrayOf().openAsync(), compressedSize = 0L, uncompressedSize = 0L)
+		Unit
 	}
 
 	class Impl : Vfs() {
 		val vfs = this
 
 		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
-			val entry = files[path.normalizeName()] ?: throw FileNotFoundException(path)
+			val entry = files[path.normalizeName()] ?: throw FileNotFoundException("Path: '$path'")
+			if (entry.isDirectory) throw IOException("Can't open a zip directory for $mode")
 			val base = entry.headerEntry.slice()
 			return base.run {
+				if (this.getAvailable() < 16) throw IllegalStateException("Chunk to small to be a ZIP chunk")
 				if (readS32_be() != 0x504B_0304) throw IllegalStateException("Not a zip file")
 				val version = readU16_le()
 				val flags = readU16_le()
