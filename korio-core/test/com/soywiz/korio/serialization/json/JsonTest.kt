@@ -109,6 +109,14 @@ class JsonTest {
 		Assert.assertEquals(ClassWithEnum(MyEnum.WORLD), Json.decodeToType<ClassWithEnum>("""{"a":"WORLD"}"""))
 	}
 
+	@Test
+	fun testDecodeMap() {
+		data class V(val a: Int, val b: Int)
+		data class Demo(val v: Map<String, V>)
+
+		Assert.assertEquals(Demo(mapOf("z" to V(1, 2))), Json.decodeToType<Demo>("""{"v":{"z":{"a":1,"b":2}}}"""))
+	}
+
 	class Demo2 {
 		var a: Int = 10
 

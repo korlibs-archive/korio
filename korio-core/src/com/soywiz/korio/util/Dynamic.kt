@@ -256,16 +256,32 @@ object Dynamic {
 		if (value is Map<*, *>) {
 			val map = value as Map<Any?, *>
 			val resultClass = target as Class<Any>
-			val result = createEmptyClass(resultClass)
-			for (field in result::class.java.declaredFields) {
-				if (Modifier.isStatic(field.modifiers)) continue
-				if (field.name in map) {
-					val v = map[field.name]
-					field.isAccessible = true
-					field.set(result, dynamicCast(v, field.type, field.genericType))
+			if (resultClass.isAssignableFrom(Map::class.java)) {
+				if (genericType is ParameterizedType) {
+					val result = hashMapOf<Any?, Any?>()
+					val keyType = genericType.actualTypeArguments[0] as? Class<*>?
+					val valueType = genericType.actualTypeArguments[1] as? Class<*>?
+					for (entry in value.entries) {
+						val keyCasted = if (keyType != null) dynamicCast(entry.key, keyType) else entry.key
+						val valueCasted = if (valueType != null) dynamicCast(entry.value, valueType) else entry.value
+						result[keyCasted] = valueCasted
+					}
+					return result as T
+				} else {
+					return map as T
 				}
+			} else {
+				val result = createEmptyClass(resultClass)
+				for (field in result::class.java.declaredFields) {
+					if (Modifier.isStatic(field.modifiers)) continue
+					if (field.name in map) {
+						val v = map[field.name]
+						field.isAccessible = true
+						field.set(result, dynamicCast(v, field.type, field.genericType))
+					}
+				}
+				return result as T
 			}
-			return result as T
 		}
 		if (value is Iterable<*>) {
 			if (genericType is ParameterizedType) {
