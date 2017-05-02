@@ -115,6 +115,8 @@ class JsonTest {
 		data class Demo(val v: Map<String, V>)
 
 		Assert.assertEquals(Demo(mapOf("z" to V(1, 2))), Json.decodeToType<Demo>("""{"v":{"z":{"a":1,"b":2}}}"""))
+
+		Assert.assertEquals("""{"v":{"z1":{"a":1,"b":2},"z2":{"a":1,"b":2}}}""", Json.encode(Demo(mapOf("z1" to V(1, 2), "z2" to V(1, 2)))))
 	}
 
 	class Demo2 {

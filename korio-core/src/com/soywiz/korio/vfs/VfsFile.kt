@@ -50,6 +50,7 @@ class VfsFile(
 	val root: VfsFile get() = vfs.root
 
 	fun withExtension(ext: String): VfsFile = VfsFile(vfs, fullnameWithoutExtension + if (ext.isNotEmpty()) ".$ext" else "")
+	fun withCompoundExtension(ext: String): VfsFile = VfsFile(vfs, fullnameWithoutCompoundExtension + if (ext.isNotEmpty()) ".$ext" else "")
 	fun appendExtension(ext: String): VfsFile = VfsFile(vfs, fullname + ".$ext")
 
 	suspend fun open(mode: VfsOpenMode = VfsOpenMode.READ): AsyncStream = vfs.open(path, mode)

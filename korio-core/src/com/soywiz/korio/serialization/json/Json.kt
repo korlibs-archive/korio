@@ -5,6 +5,10 @@ import org.intellij.lang.annotations.Language
 import java.io.IOException
 
 object Json {
+	fun stringify(obj: Any?, pretty: Boolean = false) = if (pretty) encodePretty(obj) else encode(obj)
+	fun parse(@Language("json") s: String): Any? = StrReader(s).decode()
+	inline fun <reified T : Any> parseTyped(@Language("json") s: String): T = decodeToType(s, T::class.java)
+
 	fun invalidJson(msg: String = "Invalid JSON"): Nothing = throw IOException(msg)
 
 	fun decode(@Language("json") s: String): Any? = StrReader(s).decode()
