@@ -12,6 +12,7 @@ import java.lang.reflect.Modifier
 import java.lang.reflect.ParameterizedType
 import java.lang.reflect.Type
 import java.util.*
+import kotlin.collections.LinkedHashMap
 
 object Dynamic {
 	@Suppress("UNCHECKED_CAST")
@@ -258,7 +259,7 @@ object Dynamic {
 			val resultClass = target as Class<Any>
 			if (resultClass.isAssignableFrom(Map::class.java)) {
 				if (genericType is ParameterizedType) {
-					val result = hashMapOf<Any?, Any?>()
+					val result = LinkedHashMap<Any?, Any?>()
 					val keyType = genericType.actualTypeArguments[0] as? Class<*>?
 					val valueType = genericType.actualTypeArguments[1] as? Class<*>?
 					for (entry in value.entries) {
