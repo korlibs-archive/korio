@@ -2,6 +2,7 @@ package com.soywiz.korio.inject
 
 import com.jtransc.annotation.JTranscKeep
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.util.Extra
 import com.soywiz.korio.util.allDeclaredFields
 import java.lang.reflect.Modifier
 import kotlin.reflect.KClass
@@ -21,7 +22,7 @@ annotation class Inject
 @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.FIELD)
 annotation class Optional
 
-class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
+class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Extra by Extra.Mixin() {
 	private val instancesByClass = hashMapOf<Class<*>, Any?>()
 
 	fun child() = AsyncInjector(this, level + 1)
@@ -67,7 +68,7 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) {
 		}
 	}
 
-	suspend fun has(clazz: Class<*>): Boolean = instancesByClass.containsKey(clazz) || parent?.has(clazz) ?: false
+	fun has(clazz: Class<*>): Boolean = instancesByClass.containsKey(clazz) || parent?.has(clazz) ?: false
 
 	@Suppress("UNCHECKED_CAST")
 	@JvmOverloads
