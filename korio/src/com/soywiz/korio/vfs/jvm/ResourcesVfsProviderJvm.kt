@@ -1,6 +1,7 @@
 package com.soywiz.korio.vfs.jvm
 
 import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.MemorySyncStream
 import com.soywiz.korio.stream.toAsync
@@ -41,17 +42,19 @@ class ResourcesVfsProviderJvm : ResourcesVfsProvider() {
 				merged.vfsList += object : Vfs() {
 					private fun normalize(path: String): String = path.trim('/')
 
+					private fun getResourceAsStream(npath: String) = classLoader.getResourceAsStream(npath) ?: invalidOp("Can't find '$npath' in ResourcesVfsProviderJvm")
+
 					suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = executeInWorker {
 						val npath = normalize(path)
 						//println("ResourcesVfsProviderJvm:open: $path")
-						MemorySyncStream(classLoader.getResourceAsStream(npath).readBytes()).toAsync()
+						MemorySyncStream(getResourceAsStream(npath).readBytes()).toAsync()
 					}
 
 					suspend override fun stat(path: String): VfsStat = executeInWorker {
 						val npath = normalize(path)
 						//println("ResourcesVfsProviderJvm:stat: $npath")
 						try {
-							val s = classLoader.getResourceAsStream(npath)
+							val s = getResourceAsStream(npath)
 							val size = s.available()
 							s.read()
 							createExistsStat(npath, isDirectory = false, size = size.toLong())
