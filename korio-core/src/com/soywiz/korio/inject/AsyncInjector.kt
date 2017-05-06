@@ -82,6 +82,7 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Ext
 			if (actualClass.isInterface || Modifier.isAbstract(actualClass.modifiers)) invalidOp("Can't instantiate abstract or interface: $actualClass in $ctx")
 			val constructor = actualClass.declaredConstructors.firstOrNull() ?: return null
 			val out = arrayListOf<Any?>()
+			val allInstances = arrayListOf<Any?>()
 
 			for ((paramType, annotations) in constructor.parameterTypes.zip(constructor.parameterAnnotations)) {
 				var isOptional = false
@@ -104,6 +105,7 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Ext
 					out += i.getOrNull(paramType, ctx) ?: throw NotMappedException(paramType, actualClass, ctx)
 				}
 			}
+			allInstances.addAll(out)
 			constructor.isAccessible = true
 			val instance = constructor.newInstance(*out.toTypedArray())
 
@@ -131,10 +133,17 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Ext
 				} else {
 					i.get(field.type, ctx)
 				}
+				allInstances += res
 				field.set(instance, res)
 			}
 
 			if (instance is AsyncDependency) instance.init()
+
+			for (createdInstance in allInstances) {
+				if (createdInstance is InjectedHandler) {
+					createdInstance.injectedInto(instance)
+				}
+			}
 
 			if (loaderClass != null) {
 				return (instance as AsyncFactory<T>).create()
@@ -155,6 +164,10 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Ext
 
 interface AsyncFactory<T> {
 	suspend fun create(): T
+}
+
+interface InjectedHandler {
+	suspend fun injectedInto(instance: Any): Unit
 }
 
 annotation class AsyncFactoryClass(val clazz: KClass<out AsyncFactory<*>>)
