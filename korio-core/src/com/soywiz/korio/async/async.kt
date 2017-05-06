@@ -211,9 +211,18 @@ suspend fun <T> spawn(task: suspend () -> T): Promise<T> = withCoroutineContext 
 	return@withCoroutineContext deferred.promise
 }
 
+interface CoroutineContextHolder {
+	val coroutineContext: CoroutineContext
+}
+
+
 // Aliases for spawn
 fun <T> async(context: CoroutineContext, task: suspend () -> T): Promise<T> = spawn(context, task)
 fun <T> go(context: CoroutineContext, task: suspend () -> T): Promise<T> = spawn(context, task)
+
+fun <T> CoroutineContextHolder.go(task: suspend () -> T): Promise<T> = spawn(this.coroutineContext, task)
+fun <T> CoroutineContextHolder.async(task: suspend () -> T): Promise<T> = spawn(this.coroutineContext, task)
+fun <T> CoroutineContextHolder.spawn(task: suspend () -> T): Promise<T> = spawn(this.coroutineContext, task)
 
 suspend fun <T> async(task: suspend CoroutineContext.() -> T): Promise<T> = withCoroutineContext { spawn(this@withCoroutineContext) { task(this@withCoroutineContext) } }
 suspend fun <T> go(task: suspend CoroutineContext.() -> T): Promise<T> = withCoroutineContext { spawn(this@withCoroutineContext) { task(this@withCoroutineContext) } }
