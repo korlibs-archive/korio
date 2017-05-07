@@ -8,14 +8,12 @@ class Computed<K : Computed.WithParent<K>, T>(val prop: KProperty1<K, T?>, val d
 		val parent: T?
 	}
 
-	operator fun getValue(thisRef: K, p: KProperty<*>): T {
-		val par = thisRef.parent
-		val r = prop.get(thisRef)
-		if (r != null) return r
-
-		if (par != null) {
-			val v = prop.get(par)
-			if (v != null) return v
+	operator fun getValue(thisRef: K?, p: KProperty<*>): T {
+		var current: K? = thisRef
+		while (current != null) {
+			val result = prop.get(current)
+			if (result != null) return result
+			current = current.parent
 		}
 
 		return default()

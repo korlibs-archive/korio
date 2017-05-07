@@ -20,6 +20,12 @@ typealias AbstractCoroutineContextElement = kotlin.coroutines.experimental.Abstr
 //inline suspend fun <T> korioSuspendCoroutine(crossinline block: (Continuation<T>) -> Unit): T = kotlin.coroutines.experimental.suspendCoroutine(block)
 
 
+//suspend val coroutineContext: CoroutineContext = korioSuspendCoroutine<CoroutineContext> { c -> c.resume(c.context) }
+
+suspend fun getCoroutineContext(): CoroutineContext = korioSuspendCoroutine<CoroutineContext> { c ->
+	c.resume(c.context)
+}
+
 suspend fun <T> withCoroutineContext(callback: suspend CoroutineContext.() -> T) = korioSuspendCoroutine<T> { c ->
 	callback.startCoroutine(c.context, c)
 }
