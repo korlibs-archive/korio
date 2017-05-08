@@ -48,6 +48,31 @@ class PromiseTest {
 
 	@Test
 	@Ignore
+	fun cancel1() = syncTest {
+		var out = ""
+		val prom = go {
+			out += "a"
+			sleep(1000)
+			out += "b"
+			go {
+				sleep(1000)
+				out += "c"
+				sleep(1000)
+				out += "d"
+			}.await()
+		}
+		Assert.assertEquals("a", out)
+		this@syncTest.step(1200)
+		Assert.assertEquals("ab", out)
+		this@syncTest.step(100)
+		Assert.assertEquals("ab", out)
+		prom.cancel()
+		this@syncTest.step(1200)
+		Assert.assertEquals("ab", out)
+	}
+
+	@Test
+	@Ignore
 	fun jvmUnsafeAwait() = syncTest {
 		Assert.assertEquals(10, async(coroutineContext) {
 			sleep(20)
