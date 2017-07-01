@@ -64,7 +64,7 @@ class ResourcesVfsProviderAndroid : ResourcesVfsProvider() {
 		override fun toString(): String = "ResourcesVfs"
 	}
 
-	override fun invoke(): Vfs = object : Vfs.Decorator(merged.root) {
+	override fun invoke(classLoader: ClassLoader): Vfs = object : Vfs.Decorator(merged.root) {
 		suspend override fun init() {
 			val ai = KorioAndroidContext.applicationInfo
 			val source = ai.sourceDir

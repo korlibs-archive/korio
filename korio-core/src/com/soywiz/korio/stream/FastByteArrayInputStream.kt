@@ -7,6 +7,12 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 	val length: Int get() = ba.size
 	val available: Int get() = ba.size - offset
 
+	var position: Long
+		set(value) {
+			offset = value.toInt()
+		}
+		get() = offset.toLong()
+
 	// Skipping
 	fun skip(count: Int) = run { offset += count }
 
@@ -40,6 +46,10 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 	fun readS32_be() = increment(4) { ba.readS32_be(offset) }
 	fun readU32_le() = increment(4) { ba.readU32_le(offset) }
 	fun readU32_be() = increment(4) { ba.readU32_be(offset) }
+
+	// 64 bits
+	fun readS64_le() = increment(8) { ba.readS64_le(offset) }
+	fun readS64_be() = increment(8) { ba.readS64_be(offset) }
 
 	// 32 bits FLOAT
 	fun readF32_le() = increment(4) { ba.readF32_le(offset) }
@@ -125,3 +135,5 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 		return out
 	}
 }
+
+fun ByteArray.openSyncFast() = FastByteArrayInputStream(this)
