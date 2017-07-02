@@ -299,7 +299,10 @@ suspend private fun AsyncInputStream.readTempExact(len: Int, temp: ByteArray = B
 suspend fun AsyncInputStream.read(data: ByteArray): Int = read(data, 0, data.size)
 suspend fun AsyncInputStream.read(data: UByteArray): Int = read(data.data, 0, data.size)
 
-suspend fun AsyncInputStream.readBytes(len: Int): ByteArray {
+@Deprecated("Use readBytesPartial instead", ReplaceWith("readBytesUpTo(len)"))
+suspend fun AsyncInputStream.readBytes(len: Int): ByteArray = readBytesUpTo(len)
+
+suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {
 	if (len > BYTES_TEMP_SIZE) {
 		if (this is AsyncPositionLengthStream) {
 			val alen = Math.min(len, this.getAvailable().toIntClamp())

@@ -75,6 +75,10 @@ Korio includes a HttpClient client that uses available native implementations. U
 
 ### Databases
 
+#### Cassandra
+
+Korio includes basic support for connecting and querying to cassandra.
+
 #### Redis
 
 Korio includes an extension with some database/cache clients. At this point, there is a Redis client implementation,
