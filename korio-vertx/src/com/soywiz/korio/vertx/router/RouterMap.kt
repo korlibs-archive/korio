@@ -106,25 +106,34 @@ suspend fun KorRouter.registerRouter(clazz: Class<*>) = withCoroutineContext {
 							val get = annotations.filterIsInstance<Param>().firstOrNull()
 							val post = annotations.filterIsInstance<Post>().firstOrNull()
 							val header = annotations.filterIsInstance<Header>().firstOrNull()
-							if (get != null) {
-								args += Dynamic.dynamicCast(rreq.pathParam(get.name), paramType)
-							} else if (post != null) {
-								val result = postParams[post.name]?.firstOrNull()
-								mapArgs[post.name] = result ?: ""
-								args += Dynamic.dynamicCast(result, paramType)
-							} else if (header != null) {
-								args += Dynamic.dynamicCast(req.getHeader(header.name) ?: "", paramType)
-							} else if (Http.Auth::class.java.isAssignableFrom(paramType)) {
-								args += Http.Auth.parse(req.getHeader("authorization") ?: "")
-							} else if (Http.Headers::class.java.isAssignableFrom(paramType)) {
-								args += Http.Headers(headers.map { it.key to it.value }) as Any?
-							} else if (Http.Response::class.java.isAssignableFrom(paramType)) {
-								args += response
-							} else if (Continuation::class.java.isAssignableFrom(paramType)) {
-								//deferred = Promise.Deferred<Any>()
-								//args += deferred.toContinuation()
-							} else {
-								httpError(500, "Route $route expected Http.Headers type, or @Get, @Post or @Header annotation for parameter $index in method ${method.name}")
+							when {
+								get != null -> {
+									args += Dynamic.dynamicCast(rreq.pathParam(get.name), paramType)
+								}
+								post != null -> {
+									val result = postParams[post.name]?.firstOrNull()
+									mapArgs[post.name] = result ?: ""
+									args += Dynamic.dynamicCast(result, paramType)
+								}
+								header != null -> {
+									args += Dynamic.dynamicCast(req.getHeader(header.name) ?: "", paramType)
+								}
+								Http.Auth::class.java.isAssignableFrom(paramType) -> {
+									args += Http.Auth.parse(req.getHeader("authorization") ?: "")
+								}
+								Http.Headers::class.java.isAssignableFrom(paramType) -> {
+									args += Http.Headers(headers.map { it.key to it.value }) as Any?
+								}
+								Http.Response::class.java.isAssignableFrom(paramType) -> {
+									args += response
+								}
+								Continuation::class.java.isAssignableFrom(paramType) -> {
+									//deferred = Promise.Deferred<Any>()
+									//args += deferred.toContinuation()
+								}
+								else -> {
+									httpError(500, "Route $route expected Http.Headers type, or @Get, @Post or @Header annotation for parameter $index in method ${method.name}")
+								}
 							}
 						}
 

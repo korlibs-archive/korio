@@ -2,6 +2,8 @@
 
 package com.soywiz.korio.stream
 
+import com.soywiz.korio.async.AsyncQueue
+import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.error.unsupported
 import com.soywiz.korio.util.*
@@ -107,13 +109,17 @@ open class AsyncStreamBase : AsyncCloseable, AsyncRAInputStream, AsyncRAOutputSt
 fun AsyncStreamBase.toAsyncStream(position: Long = 0L): AsyncStream = AsyncStream(this, position)
 
 class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : Extra by Extra.Mixin(), AsyncInputStream, AsyncOutputStream, AsyncPositionLengthStream, AsyncCloseable {
-	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+	private val ioQueue = AsyncThread()
+
+	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = ioQueue {
+	//suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		val read = base.read(position, buffer, offset, len)
 		if (read >= 0) position += read
-		return read
+		return@ioQueue read
 	}
 
-	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit {
+	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = ioQueue {
+	//suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit {
 		base.write(position, buffer, offset, len)
 		position += len
 	}
