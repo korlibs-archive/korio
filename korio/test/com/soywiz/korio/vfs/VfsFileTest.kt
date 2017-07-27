@@ -18,6 +18,24 @@ class VfsFileTest {
 	}
 
 	@Test
+	fun testCaseSensitiveAccess() = syncTest {
+		val file = MemoryVfs(caseSensitive = true)
+		file["test.tXt"].writeString("hello world")
+		Assert.assertEquals(true, file["test.tXt"].exists())
+		Assert.assertEquals(false, file["test.txt"].exists())
+		Assert.assertEquals(false, file["test.TXT"].exists())
+	}
+
+	@Test
+	fun testCaseInsensitiveAccess() = syncTest {
+		val file = MemoryVfs(caseSensitive = false)
+		file["test.tXt"].writeString("hello world")
+		Assert.assertEquals(true, file["test.txt"].exists())
+		Assert.assertEquals(true, file["test.tXt"].exists())
+		Assert.assertEquals(true, file["test.TXT"].exists())
+	}
+
+	@Test
 	fun redirected() = syncTest {
 		var out = ""
 		val file = MemoryVfsMix(

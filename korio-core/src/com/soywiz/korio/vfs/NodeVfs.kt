@@ -13,14 +13,15 @@ import com.soywiz.korio.stream.toAsyncStream
 import java.io.Closeable
 import java.io.FileNotFoundException
 
-open class NodeVfs : Vfs() {
+open class NodeVfs(val caseSensitive: Boolean = true) : Vfs() {
 	val events = Signal<VfsFileEvent>()
 
-	open class Node(
+	open inner class Node(
 		val name: String,
 		val isDirectory: Boolean = false,
 		parent: Node? = null
 	) : Iterable<Node> {
+		val nameLC = name.toLowerCase()
 		override fun iterator(): Iterator<Node> = children.values.iterator()
 
 		var parent: Node? = null
@@ -28,9 +29,11 @@ open class NodeVfs : Vfs() {
 			set(value) {
 				if (field != null) {
 					field!!.children.remove(this.name)
+					field!!.childrenLC.remove(this.nameLC)
 				}
 				field = value
 				field?.children?.set(name, this)
+				field?.childrenLC?.set(nameLC, this)
 			}
 
 		init {
@@ -39,13 +42,18 @@ open class NodeVfs : Vfs() {
 
 		var data: Any? = null
 		val children = LinkedHashMap<String, Node>()
+		val childrenLC = LinkedHashMap<String, Node>()
 		val root: Node get() = parent?.root ?: this
 		var stream: AsyncStream? = null
 
 		fun child(name: String): Node? = when (name) {
 			"", "." -> this
 			".." -> parent
-			else -> children[name]
+			else -> if (caseSensitive) {
+				children[name]
+			} else {
+				childrenLC[name.toLowerCase()]
+			}
 		}
 
 		fun createChild(name: String, isDirectory: Boolean = false): Node = Node(name, isDirectory = isDirectory, parent = this)
