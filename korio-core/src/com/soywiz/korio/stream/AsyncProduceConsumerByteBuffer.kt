@@ -1,11 +1,11 @@
 package com.soywiz.korio.stream
 
+import com.soywiz.korio.async.AsyncSemaphore
 import com.soywiz.korio.util.indexOf
 import java.io.ByteArrayOutputStream
 import java.util.*
-import java.util.concurrent.Semaphore
 
-class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
+class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 	companion object {
 		private val EMPTY = byteArrayOf()
 	}
@@ -16,29 +16,27 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 	private var availableInBuffers = 0
 	private val availableInCurrent: Int get() = current.size - currentPos
 
-	private val producedSema = Semaphore(0)
-
 	val available: Int get() = availableInCurrent + availableInBuffers
 
-	fun produce(data: ByteArray) = synchronized(this) {
+	fun produce(data: ByteArray) {
 		buffers += data
 		availableInBuffers += data.size
-		producedSema.release()
+		producedSemaphore.release()
 	}
 
-	private fun useNextBuffer() = synchronized(this) {
+	private fun useNextBuffer() {
 		current = if (buffers.isEmpty()) EMPTY else buffers.removeFirst()
 		currentPos = 0
 		availableInBuffers -= current.size
 	}
 
-	private fun ensureCurrentBuffer() = synchronized(this) {
+	private fun ensureCurrentBuffer() {
 		if (availableInCurrent <= 0) {
 			useNextBuffer()
 		}
 	}
 
-	fun consume(data: ByteArray, offset: Int = 0, len: Int = data.size): Int = synchronized(this) {
+	fun consume(data: ByteArray, offset: Int = 0, len: Int = data.size): Int {
 		var totalRead = 0
 		var remaining = len
 		var outputPos = offset
@@ -52,12 +50,12 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 			totalRead += readInCurrent
 			outputPos += readInCurrent
 		}
-		totalRead
+		return totalRead
 	}
 
 	fun consume(len: Int): ByteArray = ByteArray(len).run { Arrays.copyOf(this, consume(this, 0, len)) }
 
-	fun consumeUntil(end: Byte, including: Boolean = true): ByteArray = synchronized(this) {
+	fun consumeUntil(end: Byte, including: Boolean = true): ByteArray {
 		val out = ByteArrayOutputStream()
 		while (true) {
 			ensureCurrentBuffer()
@@ -72,19 +70,23 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 		return out.toByteArray()
 	}
 
-	override fun write(buffer: ByteArray, offset: Int, len: Int) {
+	private val producedSemaphore = AsyncSemaphore()
+
+	override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
 		produce(Arrays.copyOfRange(buffer, offset, offset + len))
 	}
 
-	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+	override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		while (true) {
-			if (len == 0) return 0
 			val out = consume(buffer, offset, len)
 			if (out == 0) {
-				producedSema.acquire()
+				producedSemaphore.acquire()
 			} else {
 				return out
 			}
 		}
+	}
+
+	suspend override fun close() {
 	}
 }

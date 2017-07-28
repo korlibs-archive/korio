@@ -17,6 +17,7 @@ include(
 		'korio-ext-db-mongodb',
 		'korio-ext-db-mysql',
 		'korio-ext-db-cassandra',
+		'korio-junit',
 )
 
 includeProj(":korio-ext-amazon-common", "korio-ext-amazon/korio-ext-amazon-common")

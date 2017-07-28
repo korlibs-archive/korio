@@ -22,6 +22,9 @@ class JsJvmAsyncSocketFactory : AsyncSocketFactory() {
 class JsJvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : AsyncClient {
 	private var _connected = false
 
+	private val readQueue = AsyncThread()
+	private val writeQueue = AsyncThread()
+
 	//suspend override fun connect(host: String, port: Int): Unit = suspendCoroutineEL { c ->
 	suspend override fun connect(host: String, port: Int): Unit = korioSuspendCoroutine { c ->
 		sc?.close()
@@ -34,28 +37,39 @@ class JsJvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : Asyn
 
 	override val connected: Boolean get() = sc?.isOpen ?: false
 
+	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = readQueue {
+		_read(buffer, offset, len)
+	}
+
+	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = writeQueue {
+		_write(buffer, offset, len)
+	}
+
 	//suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = suspendCoroutineEL { c ->
-	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = korioSuspendCoroutine { c ->
+	suspend private fun _read(buffer: ByteArray, offset: Int, len: Int): Int = korioSuspendCoroutine { c ->
 		if (sc == null) throw IOException("Not connected")
 		val bb = ByteBuffer.wrap(buffer, offset, len)
 		sc!!.read(bb, this, object : CompletionHandler<Int, AsyncClient> {
 			override fun completed(result: Int, attachment: AsyncClient): Unit = c.resume(result)
 			override fun failed(exc: Throwable, attachment: AsyncClient): Unit = c.resumeWithException(exc)
-		}) ?: -1
+		})
 	}
 
 	//suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = suspendCoroutineEL { c ->
-	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = korioSuspendCoroutine { c ->
+	suspend private fun _write(buffer: ByteArray, offset: Int, len: Int): Unit = korioSuspendCoroutine { c ->
+		//println("write started: $len")
 		if (sc == null) throw IOException("Not connected")
 		val bb = ByteBuffer.wrap(buffer, offset, len)
 		AsyncClient.Stats.writeCountStart.incrementAndGet()
 		sc!!.write(bb, this, object : CompletionHandler<Int, AsyncClient> {
 			override fun completed(result: Int, attachment: AsyncClient): Unit {
+				//println("write completed")
 				AsyncClient.Stats.writeCountEnd.incrementAndGet()
 				c.resume(Unit)
 			}
 
 			override fun failed(exc: Throwable, attachment: AsyncClient): Unit {
+				//println("write failed")
 				AsyncClient.Stats.writeCountError.incrementAndGet()
 				c.resumeWithException(exc)
 			}

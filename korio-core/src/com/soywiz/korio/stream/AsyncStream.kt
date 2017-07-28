@@ -2,7 +2,6 @@
 
 package com.soywiz.korio.stream
 
-import com.soywiz.korio.async.AsyncQueue
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.error.unsupported
@@ -60,7 +59,7 @@ interface AsyncRAOutputStream {
 fun AsyncBaseStream.toAsyncStream(): AsyncStream {
 	val input = this as? AsyncInputStream
 	val output = this as? AsyncOutputStream
-	val len = this as? AsyncLengthStream
+	val rlen = this as? AsyncLengthStream
 	val closeable = this
 
 	return object : AsyncStreamBase() {
@@ -90,8 +89,8 @@ fun AsyncBaseStream.toAsyncStream(): AsyncStream {
 			}
 		}
 
-		suspend override fun setLength(value: Long) = len?.setLength(value) ?: throw UnsupportedOperationException()
-		suspend override fun getLength(): Long = len?.getLength() ?: throw UnsupportedOperationException()
+		suspend override fun setLength(value: Long) = rlen?.setLength(value) ?: throw UnsupportedOperationException()
+		suspend override fun getLength(): Long = rlen?.getLength() ?: throw UnsupportedOperationException()
 		suspend override fun close() = closeable.close()
 	}.toAsyncStream()
 }
@@ -109,20 +108,26 @@ open class AsyncStreamBase : AsyncCloseable, AsyncRAInputStream, AsyncRAOutputSt
 fun AsyncStreamBase.toAsyncStream(position: Long = 0L): AsyncStream = AsyncStream(this, position)
 
 class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : Extra by Extra.Mixin(), AsyncInputStream, AsyncOutputStream, AsyncPositionLengthStream, AsyncCloseable {
-	private val ioQueue = AsyncThread()
+	// NOTE: Sharing queue would hang writting on hang read
+	//private val ioQueue = AsyncThread()
+	//private val readQueue = ioQueue
+	//private val writeQueue = ioQueue
 
-	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = ioQueue {
+	private val readQueue = AsyncThread()
+	private val writeQueue = AsyncThread()
+
+	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = readQueue {
 	//suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		val read = base.read(position, buffer, offset, len)
 		if (read >= 0) position += read
-		return@ioQueue read
+		read
 	}
 
-	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = ioQueue {
-	//suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit {
-		base.write(position, buffer, offset, len)
-		position += len
-	}
+	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = writeQueue {
+        //suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit {
+        base.write(position, buffer, offset, len)
+        position += len
+    }
 
 	suspend override fun setPosition(value: Long): Unit = run { this.position = value }
 	suspend override fun getPosition(): Long = this.position
