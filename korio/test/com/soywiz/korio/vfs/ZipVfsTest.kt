@@ -120,5 +120,6 @@ class ZipVfsTest {
 	fun testReadChunk() = syncTest {
 		val zip = ResourcesVfs["simple1.fla.zip"].openAsZip()
 		val xml = zip["DOMDocument.xml"].readXml()
+		Assert.assertEquals(1, xml.descendants.filter { it.nameLC == "frames" }.count())
 	}
 }

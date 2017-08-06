@@ -8,7 +8,7 @@ import java.util.*
 data class Xml(val type: Type, val name: String, val attributes: Map<String, String>, val allChildren: List<Xml>, val content: String) {
 	val attributesLC = attributes.toTreeMap(String.CASE_INSENSITIVE_ORDER)
 	val nameLC: String = name.toLowerCase().trim()
-	val descendants: Iterable<Xml> get() = allChildren.flatMap { it.allChildren + it }
+	val descendants: Iterable<Xml> get() = allChildren.flatMap { it.descendants + it }
 	val allChildrenNoComments get() = allChildren.filter { !it.isComment }
 	val allNodeChildren get() = allChildren.filter { it.isNode }
 
