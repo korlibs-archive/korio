@@ -318,8 +318,15 @@ suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {
 		if (this is AsyncPositionLengthStream) {
 			val alen = Math.min(len, this.getAvailable().toIntClamp())
 			val ba = ByteArray(alen)
-			val alen2 = read(ba, 0, alen)
-			return if (ba.size == alen2) ba else Arrays.copyOf(ba, alen2)
+			var available = alen
+			var pos = 0
+			while (true) {
+				val alen2 = read(ba, pos, available)
+				if (alen2 <= 0) break
+				pos += alen2
+				available -= alen2
+			}
+			return if (ba.size == pos) ba else Arrays.copyOf(ba, pos)
 		} else {
 			// @TODO: We can read chunks of data in preallocated byte arrays, then join them all.
 			// @TODO: That would prevent resizing issues with the trade-off of more allocations.
@@ -336,8 +343,15 @@ suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {
 		}
 	} else {
 		val ba = ByteArray(len)
-		val alen = read(ba, 0, len)
-		return if (ba.size == alen) ba else Arrays.copyOf(ba, alen)
+		var available = len
+		var pos = 0
+		while (true) {
+			val rlen = read(ba, pos, available)
+			if (rlen <= 0) break
+			pos += rlen
+			available -= rlen
+		}
+		return if (ba.size == pos) ba else Arrays.copyOf(ba, pos)
 	}
 
 }

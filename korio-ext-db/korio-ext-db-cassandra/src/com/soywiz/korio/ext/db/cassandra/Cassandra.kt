@@ -9,6 +9,7 @@ import com.soywiz.korio.lang.toBytes
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
+import org.intellij.lang.annotations.Language
 import java.util.*
 
 // https://raw.githubusercontent.com/apache/cassandra/trunk/doc/native_protocol_v3.spec
@@ -349,7 +350,7 @@ class Cassandra private constructor(
 		return use(namespace)
 	}
 
-	suspend fun query(query: String, consistency: Consistency = Consistency.ONE): Rows {
+	suspend fun query(@Language("cql") query: String, consistency: Consistency = Consistency.ONE): Rows {
 		ready.await()
 		return allocStream { channel ->
 			writePacket(Packet(

@@ -144,8 +144,9 @@ class VfsFile(
 	}
 
 	suspend fun exec(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), handler: VfsProcessHandler = VfsProcessHandler()): Int = vfs.exec(path, cmdAndArgs, env, handler)
-	suspend fun execToString(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), charset: Charset = Charsets.UTF_8, captureError: Boolean = false): String {
+	suspend fun execToString(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), charset: Charset = Charsets.UTF_8, captureError: Boolean = false, throwOnError: Boolean = true): String {
 		val out = ByteArrayOutputStream()
+		val err = ByteArrayOutputStream()
 
 		val result = exec(cmdAndArgs, env, object : VfsProcessHandler() {
 			suspend override fun onOut(data: ByteArray) {
@@ -154,12 +155,16 @@ class VfsFile(
 
 			suspend override fun onErr(data: ByteArray) {
 				if (captureError) out.write(data)
+				err.write(data)
 			}
 		})
 
-		if (result != 0) throw VfsProcessException("Process not returned 0, but $result")
+		val errString = err.toString(charset.name())
+		val outString = out.toString(charset.name())
 
-		return out.toByteArray().toString(charset)
+		if (throwOnError && result != 0) throw VfsProcessException("Process not returned 0, but $result. Error: $errString, Output: $outString")
+
+		return outString
 	}
 
 	suspend fun execToString(vararg cmdAndArgs: String, charset: Charset = Charsets.UTF_8): String = execToString(cmdAndArgs.toList(), charset = charset)

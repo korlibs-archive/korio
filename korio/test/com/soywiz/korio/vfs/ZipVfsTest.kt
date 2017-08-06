@@ -3,6 +3,7 @@ package com.soywiz.korio.vfs
 import com.soywiz.korio.async.map
 import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.async.toList
+import com.soywiz.korio.serialization.xml.readXml
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.readAvailable
 import org.junit.Assert
@@ -80,19 +81,19 @@ class ZipVfsTest {
 	@Test
 	fun testCreateZip() = syncTest {
 		val mem = MemoryVfsMix(
-			"/test.txt" to "test",
-			"/hello/world.txt" to "hello world world world world!"
+				"/test.txt" to "test",
+				"/hello/world.txt" to "hello world world world world!"
 		)
 		val zipBytes = mem.treeCreateZip()
 		//zipBytes.writeToFile("c:/temp/mytest.zip")
 		val zip = zipBytes.openAsync().openAsZip()
 		Assert.assertEquals(
-			"test",
-			zip["/test.txt"].readString()
+				"test",
+				zip["/test.txt"].readString()
 		)
 		Assert.assertEquals(
-			"hello world world world world!",
-			zip["/hello/world.txt"].readString()
+				"hello world world world world!",
+				zip["/hello/world.txt"].readString()
 		)
 	}
 
@@ -113,5 +114,11 @@ class ZipVfsTest {
 		//)
 		//val mem = MemoryVfs()
 		//zip.copyToTree(mem)
+	}
+
+	@Test
+	fun testReadChunk() = syncTest {
+		val zip = ResourcesVfs["simple1.fla.zip"].openAsZip()
+		val xml = zip["DOMDocument.xml"].readXml()
 	}
 }

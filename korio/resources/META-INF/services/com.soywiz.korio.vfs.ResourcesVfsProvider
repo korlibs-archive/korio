@@ -1,2 +1,3 @@
 com.soywiz.korio.vfs.jvm.ResourcesVfsProviderJvm # <target=java>
 com.soywiz.korio.vfs.js.ResourcesVfsProviderJs # <target=js>
+com.soywiz.korio.vfs.jvm.ResourcesVfsProviderJvm # <target=haxe>

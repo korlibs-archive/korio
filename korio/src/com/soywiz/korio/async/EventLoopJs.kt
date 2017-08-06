@@ -3,6 +3,7 @@ package com.soywiz.korio.async
 import com.jtransc.js.*
 import com.soywiz.korio.util.Cancellable
 import com.soywiz.korio.util.OS
+import com.soywiz.korio.util.nonNullMap
 import java.io.Closeable
 import java.util.*
 

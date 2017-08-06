@@ -69,7 +69,7 @@ abstract class Vfs {
 				(range.endInclusive - range.start)
 			).toInt() + 1
 
-			return s.readBytes(readCount)
+			return s.readBytesUpTo(readCount)
 		} finally {
 			s.close()
 		}
