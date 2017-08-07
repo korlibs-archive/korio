@@ -33,6 +33,7 @@ class VfsFile(
 	suspend fun put(content: AsyncInputStream, vararg attributes: Vfs.Attribute): Long = vfs.put(path, content, attributes.toList())
 	suspend fun write(data: ByteArray, vararg attributes: Vfs.Attribute): Long = put(data.openAsync(), *attributes)
 
+	suspend fun writeBytes(data: ByteArray, vararg attributes: Vfs.Attribute): Long = put(data.openAsync(), *attributes)
 	suspend fun writeStream(src: AsyncStream, vararg attributes: Vfs.Attribute): Long = run { put(src, *attributes); src.getLength() }
 	suspend fun writeStream(src: AsyncInputStream, vararg attributes: Vfs.Attribute): Long = put(src, *attributes)
 	suspend fun writeFile(file: VfsFile, vararg attributes: Vfs.Attribute): Long = file.copyTo(this, *attributes)
