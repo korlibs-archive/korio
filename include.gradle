@@ -13,6 +13,7 @@ if (project.hasProperty('useAndroid')) {
 apply plugin: 'maven'
 apply plugin: 'signing'
 apply plugin: 'maven-publish'
+apply plugin: 'jacoco'
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
@@ -121,3 +122,12 @@ publishing {
 
 task deploy(dependsOn: ['install', 'uploadArchives']) {
 }
+
+jacocoTestReport {
+	reports {
+		xml.enabled true
+		html.enabled false
+	}
+}
+
+check.dependsOn jacocoTestReport
