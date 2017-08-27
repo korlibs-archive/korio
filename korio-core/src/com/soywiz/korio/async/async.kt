@@ -10,7 +10,16 @@ import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.experimental.startCoroutine
 
-val workerLazyPool by lazy { Executors.newFixedThreadPool(4) }
+var _workerLazyPool: ExecutorService? = null
+val workerLazyPool: ExecutorService by lazy {
+	//val pool = Executors.newCachedThreadPool()
+	val pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
+	_workerLazyPool = pool
+	//Runtime.getRuntime().addShutdownHook(object : Thread() {
+	//	override fun run() = pool.shutdown()
+	//})
+	pool
+}
 val tasksInProgress = AtomicInteger(0)
 
 inline suspend fun <T> suspendCoroutineEL(crossinline block: (Continuation<T>) -> Unit): T = _korioSuspendCoroutine { c ->

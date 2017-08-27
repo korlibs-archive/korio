@@ -3,6 +3,7 @@ package com.soywiz.korio.async
 import com.soywiz.korio.util.compareToChain
 import java.io.Closeable
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 class EventLoopFactoryJvmAndCSharp : EventLoopFactory() {
 	override val priority: Int = 1000
@@ -55,7 +56,11 @@ class EventLoopJvmAndCSharp : EventLoop() {
 		while (synchronized(lock) { immediateTasks.isNotEmpty() || timedTasks.isNotEmpty() } || (tasksInProgress.get() != 0)) {
 			step(1)
 			Thread.sleep(1L)
+			//println("immediateTasks: ${immediateTasks.size}, timedTasks: ${timedTasks.size}, tasksInProgress: ${tasksInProgress.get()}")
 		}
+		//_workerLazyPool?.shutdown()
+		//_workerLazyPool?.awaitTermination(5, TimeUnit.SECONDS);
+		_workerLazyPool?.shutdownNow()
 	}
 }
 

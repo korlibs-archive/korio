@@ -7,6 +7,8 @@ import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.service.Services
 import java.io.Closeable
 
+fun Korio(entry: suspend EventLoop.() -> Unit) = EventLoop.main(entry)
+
 abstract class EventLoopFactory : Services.Impl() {
 	abstract fun createEventLoop(): EventLoop
 }
