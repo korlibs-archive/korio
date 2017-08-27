@@ -28,15 +28,22 @@ class VertxEventLoop : EventLoop() {
 	}
 
 	override fun setTimeoutInternal(ms: Int, callback: () -> Unit): Closeable {
-		var done = false
-		val timer = _vertx.setTimer(ms.toLong()) {
-			done = true
-			callback()
-		}
-		return Closeable {
-			if (!done) {
-				done = true
-				_vertx.cancelTimer(timer)
+		if (ms < 1) {
+			var cancelled = false
+			_vertx.runOnContext {
+				if (!cancelled) callback()
+			}
+			return Closeable {
+				cancelled = true
+			}
+		} else {
+			var done = false
+			val timer = _vertx.setTimer(ms.toLong()) { done = true; callback() }
+			return Closeable {
+				if (!done) {
+					done = true
+					_vertx.cancelTimer(timer)
+				}
 			}
 		}
 	}
