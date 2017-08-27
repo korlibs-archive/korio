@@ -1,4 +1,6 @@
-.gradle
-.idea
-build
-log.txt
+/.idea
+/.gradle
+/build
+/out
+/classes
+/log.txt
