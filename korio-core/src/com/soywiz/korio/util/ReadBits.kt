@@ -96,3 +96,7 @@ fun ByteArray.readStringz(o: Int, size: Int, charset: Charset = Charsets.UTF_8):
 fun ByteArray.readStringz(o: Int, charset: Charset = Charsets.UTF_8): String {
 	return readStringz(o, size - o, charset)
 }
+
+fun ByteArray.readString(o: Int, size: Int, charset: Charset = Charsets.UTF_8): String {
+	return String(this, o, size)
+}
