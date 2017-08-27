@@ -1,6 +1,9 @@
 package com.soywiz.korio.util
 
 import com.soywiz.korio.coroutine.*
+import kotlin.coroutines.experimental.EmptyCoroutineContext
+import kotlin.coroutines.experimental.createCoroutine
+import kotlin.coroutines.experimental.suspendCoroutine
 
 // From: https://github.com/Kotlin/kotlin-coroutines/blob/master/examples/generate.kt
 
@@ -9,11 +12,21 @@ interface Generator<in T> {
 	suspend fun yield(value: T)
 }
 
-suspend fun <T> generate(block: suspend Generator<T>.() -> Unit): Iterable<T> = withCoroutineContext {
+suspend fun <T> generateSync(block: suspend Generator<T>.() -> Unit): Iterable<T> = withCoroutineContext {
 	return@withCoroutineContext object : Iterable<T> {
 		override fun iterator(): Iterator<T> {
 			val iterator = GeneratorIterator<T>(this@withCoroutineContext)
-			iterator.nextStep = block.korioCreateCoroutine(receiver = iterator, completion = iterator)
+			iterator.nextStep = block.createCoroutine(receiver = iterator, completion = iterator)
+			return iterator
+		}
+	}
+}
+
+fun <T> generate(block: suspend Generator<T>.() -> Unit): Iterable<T> {
+	return object : Iterable<T> {
+		override fun iterator(): Iterator<T> {
+			val iterator = GeneratorIterator<T>(EmptyCoroutineContext)
+			iterator.nextStep = block.createCoroutine(receiver = iterator, completion = iterator)
 			return iterator
 		}
 	}
@@ -39,6 +52,6 @@ private class GeneratorIterator<T>(override val context: CoroutineContext) : Abs
 	// Generator implementation
 	override suspend fun yield(value: T) {
 		setNext(value)
-		return korioSuspendCoroutine { c -> nextStep = c }
+		return suspendCoroutine { c -> nextStep = c }
 	}
 }
