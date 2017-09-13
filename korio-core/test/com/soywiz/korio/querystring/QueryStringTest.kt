@@ -1,5 +1,6 @@
-package com.soywiz.korio.serialization.querystring
+package com.soywiz.korio.querystring
 
+import com.soywiz.korio.serialization.querystring.QueryString
 import org.junit.Assert.*
 import org.junit.Test
 

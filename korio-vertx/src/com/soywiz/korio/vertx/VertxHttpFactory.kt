@@ -16,7 +16,6 @@ import io.vertx.core.http.HttpClientOptions
 import io.vertx.core.http.HttpClientResponse
 import io.vertx.core.http.HttpMethod
 import java.net.URL
-import java.nio.ByteBuffer
 
 class VertxHttpClientFactory : HttpFactory() {
 	override val available: Boolean = true
@@ -129,10 +128,10 @@ class VertxHttpClient : HttpClient() {
 		val res = deferred.promise.await()
 
 		return Response(
-				status = res.statusCode(),
-				statusText = res.statusMessage(),
-				headers = Http.Headers(res.headers().map { it.key to it.value }),
-				content = p.toAsyncInputStream()
+			status = res.statusCode(),
+			statusText = res.statusMessage(),
+			headers = Http.Headers(res.headers().map { it.key to it.value }),
+			content = p.toAsyncInputStream()
 		)
 	}
 }

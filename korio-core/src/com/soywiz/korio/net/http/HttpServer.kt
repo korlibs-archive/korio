@@ -2,6 +2,7 @@ package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.util.AsyncCloseable
+import com.soywiz.korio.util.Extra
 import java.io.IOException
 
 
@@ -14,7 +15,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		val method: Http.Method,
 		val uri: String,
 		val headers: Http.Headers
-	) {
+	) : Extra by Extra.Mixin() {
 		val absoluteURI: String by lazy { uri }
 
 		fun getHeader(key: String): String? = headers[key]
@@ -80,11 +81,6 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		}
 		fun emit(data: String) = emit(data.toByteArray(Charsets.UTF_8))
 		fun end(data: String) = end(data.toByteArray(Charsets.UTF_8))
-
-		fun pathParam(name: String): String {
-			println("WARNING: Not implemented: Request.pathParam!!")
-			return ""
-		}
 	}
 
 	suspend open protected fun listenInternal(port: Int, host: String = "127.0.0.1", handler: suspend (Request) -> Unit) {

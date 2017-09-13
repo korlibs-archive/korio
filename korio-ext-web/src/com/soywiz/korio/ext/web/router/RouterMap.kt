@@ -5,7 +5,6 @@ import com.soywiz.korio.async.async
 import com.soywiz.korio.async.invokeSuspend
 import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.error.InvalidOperationException
-import com.soywiz.korio.inject.AsyncInjector
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.http.httpError

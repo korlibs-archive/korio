@@ -1,10 +1,7 @@
 package com.soywiz.korio.vertx.sample
 
 import com.soywiz.korio.Korio
-import com.soywiz.korio.ext.web.router.Header
-import com.soywiz.korio.ext.web.router.KorRouter
-import com.soywiz.korio.ext.web.router.Route
-import com.soywiz.korio.ext.web.router.registerRouter
+import com.soywiz.korio.ext.web.router.*
 import com.soywiz.korio.inject.AsyncInjector
 import com.soywiz.korio.inject.Singleton
 import com.soywiz.korio.net.http.Http
@@ -20,7 +17,7 @@ object Example1 {
 		router.registerRouter<TestRoute>()
 
 		server.listen(8090) { req ->
-			router.handle(req)
+			router.accept(req)
 		}
 	}
 }
@@ -50,5 +47,10 @@ class TestRoute(
 		response.header("X-Authorization-Echo", authorization)
 
 		return "yay!"
+	}
+
+	@Route(Http.Methods.GET, "/hello/:name")
+	suspend fun helloName(@Param("name") name: String): String {
+		return "Hello $name"
 	}
 }
