@@ -1,17 +1,16 @@
 package com.soywiz.korio.net.http.rest
 
-import com.soywiz.korio.net.http.Http
-import com.soywiz.korio.net.http.HttpClient
+import com.soywiz.korio.net.http.*
 import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.stream.openAsync
 import java.io.IOException
 
-class HttpRestClient(val client: HttpClient) {
-	suspend fun request(method: Http.Method, url: String, request: Any?): Any {
+class HttpRestClient(val endpoint: HttpClientEndpoint) {
+	suspend fun request(method: Http.Method, path: String, request: Any?): Any {
 		val requestContent = request?.let { Json.encode(it) }
-		val result = client.request(
+		val result = endpoint.request(
 			method,
-			url,
+			path,
 			content = requestContent?.openAsync(),
 			headers = Http.Headers(
 				"Content-Type" to "application/json"
@@ -27,9 +26,13 @@ class HttpRestClient(val client: HttpClient) {
 		}
 	}
 
-	suspend fun head(url: String): Any = request(Http.Method.HEAD, url, null)
-	suspend fun put(url: String, request: Any): Any = request(Http.Method.PUT, url, request)
-	suspend fun post(url: String, request: Any): Any = request(Http.Method.POST, url, request)
+	suspend fun head(path: String): Any = request(Http.Method.HEAD, path, null)
+	suspend fun delete(path: String): Any = request(Http.Method.DELETE, path, null)
+	suspend fun get(path: String): Any = request(Http.Method.GET, path, null)
+	suspend fun put(path: String, request: Any): Any = request(Http.Method.PUT, path, request)
+	suspend fun post(path: String, request: Any): Any = request(Http.Method.POST, path, request)
 }
 
-fun HttpClient.rest() = HttpRestClient(this)
+fun HttpClientEndpoint.rest() = HttpRestClient(this)
+fun HttpClient.rest(endpoint: String) = HttpRestClient(this.endpoint(endpoint))
+fun HttpFactory.createRestClient(endpoint: String) = createClient().endpoint(endpoint).rest()

@@ -1,40 +1,43 @@
 package com.soywiz.korio.ext.db.elasticsearch
 
 import com.soywiz.korio.net.http.Http
+import com.soywiz.korio.net.http.HttpClientEndpoint
 import com.soywiz.korio.net.http.HttpFactory
 import com.soywiz.korio.net.http.defaultHttpFactory
 import com.soywiz.korio.net.http.rest.HttpRestClient
+import com.soywiz.korio.net.http.rest.createRestClient
 import com.soywiz.korio.net.http.rest.rest
 import com.soywiz.korio.time.TimeSpan
 import com.soywiz.korio.util.Dynamic
 
-class ElasticSearch private constructor(
-	private val baseUrl: String,
-	private val httpFactory: HttpFactory,
-	rest: HttpRestClient
-) : ElasticSearchResource(rest, baseUrl) {
+class ElasticSearch(
+	rest: HttpRestClient = defaultHttpFactory.createRestClient("http://127.0.0.1:9200")
+) : ElasticSearchResource(rest, "") {
 
-	constructor(baseUrl: String = "http://127.0.0.1:9200", httpFactory: HttpFactory = defaultHttpFactory) : this(baseUrl, httpFactory, httpFactory.createClient().rest())
+	constructor(endpoint: String = "http://127.0.0.1:9200", httpFactory: HttpFactory = defaultHttpFactory) : this(httpFactory.createRestClient(endpoint))
+	constructor(endpoint: HttpClientEndpoint) : this(endpoint.rest())
 
 	operator fun get(index: String) = ElasticSearch.Index(this, index)
 	operator fun get(index: String, type: String) = ElasticSearch.Type(this[index], type)
+
+	inline fun <reified T : Any> typed(index: String, type: String) = this[index, type].typed<T>()
 
 	data class PutResult(val id: String, val version: Long)
 
 	class Index(
 		es: ElasticSearch,
 		name: String
-	) : ElasticSearchResource(es.rest, "${es.baseUrl}/$name") {
+	) : ElasticSearchResource(es.rest, name) {
 		operator fun get(type: String) = ElasticSearch.Type(this, type)
 
 		suspend fun exists(): Boolean = try {
-			rest.head(resourceUrl); true
+			rest.head(resourcePath); true
 		} catch (e: Http.HttpException) {
 			false
 		}
 
 		suspend fun create(numberOfShards: Int = 8, numberOfReplicas: Int = 0) {
-			val result = rest.put(resourceUrl, mapOf(
+			val result = rest.put(resourcePath, mapOf(
 				"settings" to mapOf(
 					"index" to mapOf(
 						"number_of_shards" to numberOfShards,
@@ -53,17 +56,41 @@ class ElasticSearch private constructor(
 		}
 	}
 
-	class Type(
+	open class CommonType(
 		internal val esi: ElasticSearch.Index,
 		val name: String
-	) : ElasticSearchResource(esi.rest, "${esi.resourceUrl}/$name") {
+	) : ElasticSearchResource(esi.rest, "${esi.resourcePath}/$name") {
+
+	}
+
+	class Type(
+		esi: ElasticSearch.Index,
+		name: String
+	) : CommonType(esi, name) {
+
+		fun <T : Any> typed(clazz: Class<T>) = TypedType(this, clazz)
+		inline fun <reified T : Any> typed() = TypedType(this, T::class.java)
+
+		suspend fun delete(id: String): Boolean {
+			return try {
+				rest.delete("$resourcePath/$id")
+				true
+			} catch (e: Http.HttpException) {
+				when (e.statusCode) {
+					404 -> false
+					else -> throw e
+				}
+			}
+		}
+
+		suspend fun get(id: String) = rest.get("$resourcePath/$id")
 
 		suspend fun put(document: Any, id: String? = null): ElasticSearch.PutResult {
 			//println("id:$id")
 			val result = if (id != null) {
-				rest.put("$resourceUrl/$id", document)
+				rest.put("$resourcePath/$id", document)
 			} else {
-				rest.post(resourceUrl, document)
+				rest.post(resourcePath, document)
 			}
 			//println(result)
 			return ElasticSearch.PutResult(
@@ -72,16 +99,44 @@ class ElasticSearch private constructor(
 			)
 			//return ElasticSearch.PutResult(".")
 		}
+	}
 
-		suspend fun <T : Any> searchTyped(clazz: Class<T>, query: ElasticSearch.QueryBuilder.() -> ElasticSearch.Query = { ElasticSearch.Query(ElasticSearch.QueryBuilder) }): SearchResult<T> {
-			val result = search(query)
+	class TypedType<T : Any>(
+		val type: Type,
+		val clazz: Class<T>
+	) {
+		// operator
+		suspend fun get(id: String): T {
+			val result = type.get(id)
+			return Dynamic.dynamicCast(Dynamic.getAnySync(result, "_source") ?: mapOf<String, Any>(), clazz)!!
+		}
+
+		suspend fun getOrNull(id: String): T? = try {
+			get(id)
+		} catch (e: Http.HttpException) {
+			when (e.statusCode) {
+				404 -> null
+				else -> throw e
+			}
+		}
+
+		// operator
+		suspend fun set(id: String, document: T) = type.put(document, id)
+		suspend fun add(document: T): ElasticSearch.PutResult = type.put(document)
+		suspend fun put(document: T, id: String? = null): ElasticSearch.PutResult = type.put(document, id)
+		suspend fun delete(id: String) = type.delete(id)
+		suspend fun search(query: ElasticSearch.QueryBuilder.() -> ElasticSearch.Query = { ElasticSearch.Query(ElasticSearch.QueryBuilder) }): SearchResult<T> {
+			val result = type.search(query)
 			return SearchResult(result.took, result.timedOut, result.results.map {
 				Result(it.index, it.type, it.id, it.score, Dynamic.dynamicCast(it.obj, clazz)!!)
 			})
 		}
+		suspend fun searchList(query: ElasticSearch.QueryBuilder.() -> ElasticSearch.Query = { ElasticSearch.Query(ElasticSearch.QueryBuilder) }): List<T> = search(query).results.map { it.obj }
 
-		suspend inline fun <reified T : Any> searchTyped(noinline query: ElasticSearch.QueryBuilder.() -> ElasticSearch.Query): SearchResult<T> = searchTyped(T::class.java, query)
-		suspend inline fun <reified T : Any> searchTyped(): SearchResult<T> = searchTyped(T::class.java)
+		// @TODO:
+		suspend fun setMappingLanguage(lang: String): Unit {
+			//type.put(document, id)
+		}
 	}
 
 	data class SearchResult<T>(
@@ -110,7 +165,7 @@ class ElasticSearch private constructor(
 			use_dis_max: Boolean? = null,
 			fields: List<String>? = null
 		): Query {
-			val map = HashMap<String, Any>()
+			val map = LinkedHashMap<String, Any>()
 			map["query"] = query
 			if (use_dis_max != null) map["use_dis_max"] = use_dis_max
 			if (fields != null) map["fields"] = fields
@@ -119,9 +174,9 @@ class ElasticSearch private constructor(
 	}
 }
 
-abstract class ElasticSearchResource(internal val rest: HttpRestClient, val resourceUrl: String) {
+abstract class ElasticSearchResource(internal val rest: HttpRestClient, val resourcePath: String) {
 	suspend fun search(query: ElasticSearch.QueryBuilder.() -> ElasticSearch.Query = { ElasticSearch.Query(ElasticSearch.QueryBuilder) }): ElasticSearch.SearchResult<Any> {
-		val search = HashMap<String, Any>()
+		val search = LinkedHashMap<String, Any>()
 
 		val q = query(ElasticSearch.QueryBuilder)
 
@@ -132,7 +187,7 @@ abstract class ElasticSearchResource(internal val rest: HttpRestClient, val reso
 
 		//println(search)
 
-		val result = rest.post("$resourceUrl/_search", search)
+		val result = rest.post("$resourcePath/_search", search)
 
 		val took = Dynamic.toInt(Dynamic.getAnySync(result, "took"))
 		val timedOut = Dynamic.toBool(Dynamic.getAnySync(result, "timed_out"))
@@ -148,7 +203,7 @@ abstract class ElasticSearchResource(internal val rest: HttpRestClient, val reso
 			ElasticSearch.Result<Any>(index, type, id, score, source ?: Object())
 		}
 
-		println(result)
+		//println(result)
 
 		return ElasticSearch.SearchResult(took, timedOut, results)
 	}

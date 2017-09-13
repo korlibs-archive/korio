@@ -426,10 +426,12 @@ open class HttpFactory : Services.Impl() {
 val defaultHttpFactory by lazy { Services.load<HttpFactory>() }
 
 @Deprecated("Use defaultHttpFactory instead", ReplaceWith("defaultHttpFactory"))
-val httpFactory
-	get() = defaultHttpFactory
+val httpFactory get() = defaultHttpFactory
+
+fun HttpFactory.createClientEndpoint(endpoint: String) = createClient().endpoint(endpoint)
 
 fun createHttpClient() = defaultHttpFactory.createClient()
 fun createHttpServer() = defaultHttpFactory.createServer()
+fun createHttpClientEndpoint(endpoint: String) = createHttpClient().endpoint(endpoint)
 
 fun httpError(code: Int, msg: String): Nothing = throw Http.HttpException(code, msg)
