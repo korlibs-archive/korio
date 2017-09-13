@@ -1,11 +1,11 @@
 ## Korio: Kotlin cORoutines I/O : Streams + Async TCP Client/Server + Virtual File System for JVM, Kotlin-JS, Android, Jtransc+Node.JS and Jtransc+Browser
 
-[![Build Status](https://travis-ci.org/soywiz/korio.svg?branch=master)](https://travis-ci.org/soywiz/korio)
-[![Maven Version](https://img.shields.io/github/tag/soywiz/korio.svg?style=flat&label=maven)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22korio%22)
+[![Build Status](https://travis-ci.org/korlibs/korio.svg?branch=master)](https://travis-ci.org/korlibs/korio)
+[![Maven Version](https://img.shields.io/github/tag/korlibs/korio.svg?style=flat&label=maven)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22korio%22)
 
-![](https://raw.githubusercontent.com/soywiz/kor/master/logos/128/korio.png)
+![](https://raw.githubusercontent.com/korlibs/kor/master/logos/128/korio.png)
 
-[All KOR libraries](https://github.com/soywiz/kor)
+[All KOR libraries](https://github.com/korlibs/kor)
 
 Use with gradle (uploaded to maven central):
 
@@ -78,6 +78,10 @@ Korio includes a HttpClient client that uses available native implementations. U
 #### Cassandra
 
 Korio includes basic support for connecting and querying to cassandra.
+
+#### ElasticSearch
+
+Korio includes basic support for connecting and querying to elasticsearch with its DSL.
 
 #### Redis
 

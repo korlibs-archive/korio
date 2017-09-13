@@ -9,18 +9,48 @@ import com.soywiz.korio.service.Services
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.AsyncCloseable
 import java.io.IOException
+import java.net.URI
 import java.nio.charset.Charset
 import java.util.concurrent.atomic.AtomicLong
 
 interface Http {
-	enum class Method { OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH, OTHER }
+	data class Method(val _name: String) {
+		val nameUC = _name.trim().toUpperCase()
+		val name get() = nameUC
+
+		companion object {
+			@JvmStatic
+			val OPTIONS = Method("OPTIONS")
+			@JvmStatic
+			val GET = Method("GET")
+			@JvmStatic
+			val HEAD = Method("HEAD")
+			@JvmStatic
+			val POST = Method("POST")
+			@JvmStatic
+			val PUT = Method("PUT")
+			@JvmStatic
+			val DELETE = Method("DELETE")
+			@JvmStatic
+			val TRACE = Method("TRACE")
+			@JvmStatic
+			val CONNECT = Method("CONNECT")
+			@JvmStatic
+			val PATCH = Method("PATCH")
+
+			val values = listOf(OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH)
+			fun values() = values
+		}
+
+		override fun toString(): String = nameUC
+	}
 
 	class HttpException(
 		val statusCode: Int,
 		val msg: String = "Error$statusCode",
 		val statusText: String = HttpStatusMessage.CODES[statusCode] ?: "Error$statusCode",
 		val headers: Http.Headers = Http.Headers()
-	) : IOException(msg) {
+	) : IOException("$statusCode $statusText - $msg") {
 		companion object {
 			fun unauthorizedBasic(realm: String = "Realm", msg: String = "Unauthorized"): Nothing = throw Http.HttpException(401, msg = msg, headers = Http.Headers("WWW-Authenticate" to "Basic realm=\"$realm\""))
 			//fun unauthorizedDigest(realm: String = "My Domain", msg: String = "Unauthorized"): Nothing = throw Http.HttpException(401, msg = msg, headers = Http.Headers("WWW-Authenticate" to "Digest realm=\"$realm\""))
@@ -156,7 +186,13 @@ open class HttpClient protected constructor() {
 	) {
 		val success = status < 400
 		suspend fun readAllBytes() = content.readAll()
-		suspend fun readAllString(charset: Charset = Charsets.UTF_8) = readAllBytes().toString(charset) // Detect charset from headers
+
+		val responseCharset by lazy {
+			// @TODO: Detect charset from headers with default to UTF-8
+			Charsets.UTF_8
+		}
+
+		suspend fun readAllString(charset: Charset = responseCharset) = readAllBytes().toString(charset)
 
 		suspend fun checkErrors(): Response = this.apply {
 			if (!success) throw Http.HttpException(status, readAllString(), statusText)
@@ -215,7 +251,11 @@ open class HttpClient protected constructor() {
 				//for (header in response.headers) println(header)
 				//println("Method: $method")
 				//println("Location: $location")
-				return request(method, redirectLocation, headers.withReplaceHeaders(
+				val resolvedRedirectLocation = URI(url).resolve(redirectLocation).toString()
+				//println("Redirect: $redirectLocation")
+				//println("Redirect: ${URI(url).resolve(redirectLocation)}")
+
+				return request(method, resolvedRedirectLocation, headers.withReplaceHeaders(
 					"Referer" to url
 				), content, config.copy(maxRedirects = config.maxRedirects - 1))
 			}
@@ -383,9 +423,13 @@ open class HttpFactory : Services.Impl() {
 	open fun createServer(): HttpServer = object : HttpServer() {}
 }
 
-val httpFactory by lazy { Services.load<HttpFactory>() }
+val defaultHttpFactory by lazy { Services.load<HttpFactory>() }
 
-fun createHttpClient() = httpFactory.createClient()
-fun createHttpServer() = httpFactory.createServer()
+@Deprecated("Use defaultHttpFactory instead", ReplaceWith("defaultHttpFactory"))
+val httpFactory
+	get() = defaultHttpFactory
+
+fun createHttpClient() = defaultHttpFactory.createClient()
+fun createHttpServer() = defaultHttpFactory.createServer()
 
 fun httpError(code: Int, msg: String): Nothing = throw Http.HttpException(code, msg)

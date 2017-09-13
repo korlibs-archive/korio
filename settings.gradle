@@ -17,6 +17,7 @@ include(
 		'korio-ext-db-mongodb',
 		'korio-ext-db-mysql',
 		'korio-ext-db-cassandra',
+		'korio-ext-db-elasticsearch',
 		'korio-junit',
 )
 
@@ -28,3 +29,4 @@ includeProj(":korio-ext-db-redis", "korio-ext-db/korio-ext-db-redis")
 includeProj(":korio-ext-db-mongodb", "korio-ext-db/korio-ext-db-mongodb")
 includeProj(":korio-ext-db-mysql", "korio-ext-db/korio-ext-db-mysql")
 includeProj(":korio-ext-db-cassandra", "korio-ext-db/korio-ext-db-cassandra")
+includeProj(":korio-ext-db-elasticsearch", "korio-ext-db/korio-ext-db-elasticsearch")

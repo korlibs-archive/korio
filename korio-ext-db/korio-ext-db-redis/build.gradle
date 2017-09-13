@@ -1,5 +1,5 @@
 apply plugin: 'kotlin'
 
 dependencies {
-	compile project(":korio")
+	compile project(":korio-core")
 }

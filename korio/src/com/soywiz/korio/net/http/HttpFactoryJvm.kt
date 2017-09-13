@@ -22,10 +22,11 @@ class HttpFactoryJvm : HttpFactory() {
 class HttpClientJvm : HttpClient() {
 	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = executeInWorker {
 		try {
+			//println("url: $url")
 			val aurl = URL(url)
 			HttpURLConnection.setFollowRedirects(false)
 			val con = aurl.openConnection() as HttpURLConnection
-			con.requestMethod = method.name
+			con.requestMethod = method.nameUC
 			//println("URL:$url")
 			//println("METHOD:${method.name}")
 			for (header in headers) {

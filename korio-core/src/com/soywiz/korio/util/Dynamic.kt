@@ -119,9 +119,8 @@ object Dynamic {
 		}
 	}
 
-	fun toInt(it: Any?): Int {
-		return toNumber(it).toInt()
-	}
+	fun toInt(it: Any?): Int = toNumber(it).toInt()
+	fun toDouble(it: Any?): Double = toNumber(it).toDouble()
 
 	fun toBool(it: Any?): Boolean {
 		return when (it) {
@@ -363,6 +362,7 @@ object Dynamic {
 	fun toString(value: Any?): String {
 		return when (value) {
 			null -> ""
+			is String -> value
 			is Double -> {
 				if (value == value.toInt().toDouble()) {
 					value.toInt().toString()

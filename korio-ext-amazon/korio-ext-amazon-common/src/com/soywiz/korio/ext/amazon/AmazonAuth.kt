@@ -63,7 +63,7 @@ object AmazonAuth {
 
 			val canonicalizedAmzHeaders = amzHeaders.entries.sortedBy { it.key }.map { "${it.key}:${it.value}\n" }.joinToString()
 			val canonicalizedResource = cannonicalPath
-			val toSign = method.name + "\n" + contentMd5 + "\n" + contentType + "\n" + date + "\n" + canonicalizedAmzHeaders + canonicalizedResource
+			val toSign = method.nameUC + "\n" + contentMd5 + "\n" + contentType + "\n" + date + "\n" + canonicalizedAmzHeaders + canonicalizedResource
 			val signature = macProcessStringsB64(secretKey, "HmacSHA1", toSign)
 			return "AWS $accessKey:$signature"
 		}
@@ -79,7 +79,7 @@ object AmazonAuth {
 
 		fun getCannonicalRequest(method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray): String {
 			var CanonicalRequest = ""
-			CanonicalRequest += method.name + "\n"
+			CanonicalRequest += method.nameUC + "\n"
 			CanonicalRequest += "/" + url.path.trim('/') + "\n"
 			CanonicalRequest += (url.query ?: "") + "\n"
 			for ((k, v) in headers.toListGrouped().map { it.first.toLowerCase() to it.second.map(String::trim).joinToString(",") }.sortedBy { it.first }) {
