@@ -32,6 +32,7 @@ class VertxHttpServer : HttpServer() {
 
 	suspend override fun listenInternal(port: Int, host: String, handler: suspend (Request) -> Unit) {
 		val ctx = getCoroutineContext()
+		val wait = Promise.Deferred<Unit>()
 		vxServer.requestHandler { req ->
 			val res = req.response()
 			val kreq = object : Request(
@@ -69,7 +70,14 @@ class VertxHttpServer : HttpServer() {
 			go(ctx) {
 				handler(kreq)
 			}
-		}.listen(port, host)
+		}.listen(port, host) {
+			if (it.failed()) {
+				wait.reject(it.cause())
+			} else {
+				wait.resolve(Unit)
+			}
+		}
+		wait.promise.await()
 	}
 
 	suspend override fun closeInternal() {

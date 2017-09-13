@@ -96,7 +96,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 	suspend open protected fun closeInternal() {
 	}
 
-	suspend fun listen(port: Int, host: String = "127.0.0.1", handler: suspend (Request) -> Unit): HttpServer {
+	suspend fun listen(port: Int = 0, host: String = "127.0.0.1", handler: suspend (Request) -> Unit): HttpServer {
 		listenInternal(port, host, handler)
 		return this
 	}
