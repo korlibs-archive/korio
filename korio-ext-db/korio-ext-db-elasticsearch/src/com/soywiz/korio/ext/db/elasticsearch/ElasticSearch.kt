@@ -45,7 +45,7 @@ class ElasticSearch(
 					)
 				)
 			))
-			println(result)
+			//println(result)
 		}
 
 		suspend fun ensure(numberOfShards: Int = 8, numberOfReplicas: Int = 0): Index {

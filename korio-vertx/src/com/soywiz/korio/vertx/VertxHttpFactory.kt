@@ -2,7 +2,9 @@ package com.soywiz.korio.vertx
 
 import com.soywiz.korio.async.ProduceConsumer
 import com.soywiz.korio.async.Promise
+import com.soywiz.korio.async.go
 import com.soywiz.korio.async.toAsyncInputStream
+import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.net.http.HttpFactory
@@ -14,6 +16,7 @@ import io.vertx.core.http.HttpClientOptions
 import io.vertx.core.http.HttpClientResponse
 import io.vertx.core.http.HttpMethod
 import java.net.URL
+import java.nio.ByteBuffer
 
 class VertxHttpClientFactory : HttpFactory() {
 	override val available: Boolean = true
@@ -29,16 +32,44 @@ class VertxHttpServer : HttpServer() {
 	override val actualPort: Int get() = vxServer.actualPort()
 
 	suspend override fun listenInternal(port: Int, host: String, handler: suspend (Request) -> Unit) {
+		val ctx = getCoroutineContext()
 		vxServer.requestHandler { req ->
-			TODO()
-			//var content = ""
-			//req.handler {
-			//	content += it
-			//}
-			//req.endHandler {
-			//	val res = req.response()
-			//	res.end("hello ${req.method()} ${req.path()} : '$content'")
-			//}
+			val res = req.response()
+			val kreq = object : Request(
+				method = Http.Method(req.rawMethod()),
+				uri = req.uri(),
+				headers = Http.Headers(req.headers().map { it.key to it.value })
+			) {
+				override fun _handler(handler: (ByteArray) -> Unit) {
+					req.handler { handler(it.bytes) }
+				}
+
+				override fun _endHandler(handler: () -> Unit) {
+					req.endHandler { handler() }
+				}
+
+				override fun _setStatus(code: Int, message: String) {
+					res.statusCode = code
+					res.statusMessage = message
+				}
+
+				override fun _sendHeaders(headers: Http.Headers) {
+					for (header in headers) {
+						res.putHeader(header.first, header.second)
+					}
+				}
+
+				override fun _emit(data: ByteArray) {
+					res.write(Buffer.buffer(data))
+				}
+
+				override fun _end() {
+					res.end()
+				}
+			}
+			go(ctx) {
+				handler(kreq)
+			}
 		}.listen(port, host)
 	}
 

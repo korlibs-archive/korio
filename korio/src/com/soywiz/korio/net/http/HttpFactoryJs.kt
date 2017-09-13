@@ -23,7 +23,7 @@ class HttpClientNodeJs : HttpClient() {
 		for (header in headers) reqHeaders[header.first] = header.second
 
 		val r = http.call("request", jsObject(
-			"method" to method.nameUC,
+			"method" to method.name,
 			"host" to info["hostname"],
 			"port" to info["port"],
 			"path" to info["path"],
@@ -68,7 +68,7 @@ class HttpClientNodeJs : HttpClient() {
 class HttpClientBrowserJs : HttpClient() {
 	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = Promise.create { deferred ->
 		val xhr = jsNew("XMLHttpRequest")
-		xhr.call("open", method.nameUC, url, true)
+		xhr.call("open", method.name, url, true)
 		xhr["responseType"] = "arraybuffer"
 
 		xhr["onload"] = jsFunctionRaw1 { e ->
