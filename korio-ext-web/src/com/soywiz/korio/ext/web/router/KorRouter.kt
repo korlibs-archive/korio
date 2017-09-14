@@ -4,6 +4,7 @@ import com.soywiz.korio.inject.AsyncInjector
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.util.Extra
+import java.net.URLDecoder
 
 val HttpServer.Request.extraParams by Extra.Property<HashMap<String, String>> { LinkedHashMap() }
 
@@ -31,7 +32,7 @@ data class KorRoute(val method: Http.Method, val path: String, val handler: (Htt
 		for ((index, key) in matchNames.withIndex()) {
 			val value = m.groupValues[index + 1]
 			//println("extra:$key -> $value")
-			req.extraParams[key] = value
+			req.extraParams[key] = URLDecoder.decode(value, "UTF-8")
 		}
 
 		handler(req)

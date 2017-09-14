@@ -9,16 +9,11 @@ import com.soywiz.korio.net.http.createHttpServer
 
 object Example1 {
 	@JvmStatic fun main(args: Array<String>) = Korio {
-		val server = createHttpServer()
 		val injector = AsyncInjector()
 		val router = KorRouter(injector)
-		println("Listening to 8090...")
-
 		router.registerRouter<TestRoute>()
-
-		server.listen(8090) { req ->
-			router.accept(req)
-		}
+		val server = createHttpServer().listen(8090) { router.accept(it) }
+		println("Listening to ${server.actualPort}...")
 	}
 }
 

@@ -73,6 +73,18 @@ So this is supported on all targets.
 
 Korio includes a HttpClient client that uses available native implementations. UrlVfs uses HttpClient.
 
+### HttpServer
+
+Korio includes a HttpServer server that uses available native implementations.
+
+### Router
+
+Korio provides a router class for creating web applications that uses Korio's HttpServer so works everywhere.
+
+### OAuth
+
+Korio includes an oauth client + Google and Facebook oauth implementation for logins.
+
 ### Databases
 
 #### Cassandra

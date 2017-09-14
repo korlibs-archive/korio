@@ -9,11 +9,16 @@ import com.soywiz.korio.util.OS
 
 class HttpFactoryJs : HttpFactory() {
 	override fun createClient(): HttpClient = if (OS.isNodejs) HttpClientNodeJs() else HttpClientBrowserJs()
+	override fun createServer(): HttpServer = HttpSeverNodeJs()
+}
+
+class HttpSeverNodeJs : HttpServer() {
+	// @TODO: Implement in nodejs!
 }
 
 class HttpClientNodeJs : HttpClient() {
 	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = Promise.create { deferred ->
-		println(url)
+		//println(url)
 
 		val http = jsRequire("http")
 		val jsurl = jsRequire("url")

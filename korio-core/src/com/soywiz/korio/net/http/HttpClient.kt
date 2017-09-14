@@ -5,6 +5,7 @@ import com.soywiz.korio.async.Promise
 import com.soywiz.korio.coroutine.withEventLoop
 import com.soywiz.korio.crypto.fromBase64
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.service.Services
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.AsyncCloseable
@@ -13,7 +14,9 @@ import java.net.URI
 import java.nio.charset.Charset
 import java.util.concurrent.atomic.AtomicLong
 
-open class HttpClient protected constructor() {
+abstract class HttpClient protected constructor() {
+	suspend abstract protected fun requestInternal(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null): Response
+
 	data class Response(
 		val status: Int,
 		val statusText: String,
@@ -46,10 +49,6 @@ open class HttpClient protected constructor() {
 		val content: T
 	) {
 		val success = status < 400
-	}
-
-	suspend open protected fun requestInternal(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null): Response {
-		TODO()
 	}
 
 	data class RequestConfig(
@@ -111,9 +110,10 @@ open class HttpClient protected constructor() {
 
 	suspend fun readBytes(url: String, config: RequestConfig = RequestConfig()): ByteArray = requestAsBytes(Http.Method.GET, url, config = config.copy(throwErrors = true)).content
 	suspend fun readString(url: String, config: RequestConfig = RequestConfig()): String = requestAsString(Http.Method.GET, url, config = config.copy(throwErrors = true)).content
+	suspend fun readJson(url: String, config: RequestConfig = RequestConfig()): Any? = Json.decode(requestAsString(Http.Method.GET, url, config = config.copy(throwErrors = true)).content)
 
 	companion object {
-		operator fun invoke() = httpFactory.createClient()
+		operator fun invoke() = defaultHttpFactory.createClient()
 	}
 }
 
@@ -225,7 +225,9 @@ object HttpStats {
 }
 
 open class HttpFactory : Services.Impl() {
-	open fun createClient(): HttpClient = object : HttpClient() {}
+	open fun createClient(): HttpClient = object : HttpClient() {
+		suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = TODO()
+	}
 	open fun createServer(): HttpServer = object : HttpServer() {}
 }
 

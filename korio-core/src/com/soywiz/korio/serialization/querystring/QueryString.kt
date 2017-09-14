@@ -1,6 +1,7 @@
 package com.soywiz.korio.serialization.querystring
 
 import java.net.URLDecoder
+import java.net.URLEncoder
 
 object QueryString {
 	fun decode(str: CharSequence): Map<String, List<String>> {
@@ -13,5 +14,17 @@ object QueryString {
 			list += value
 		}
 		return out
+	}
+
+	fun encode(map: Map<String, List<String>>): String {
+		return encode(*map.flatMap { (key, value) -> value.map { key to it } }.toTypedArray())
+	}
+
+	fun encode(vararg items: Pair<String, String>): String {
+		val parts = arrayListOf<String>()
+		for ((key, value) in items) {
+			parts += URLEncoder.encode(key, "UTF-8") + "=" + URLEncoder.encode(value, "UTF-8")
+		}
+		return parts.joinToString("&")
 	}
 }
