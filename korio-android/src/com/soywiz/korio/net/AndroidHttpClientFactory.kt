@@ -21,7 +21,7 @@ class AndroidHttpClientFactory : HttpFactory() {
 				val aurl = URL(url)
 				HttpURLConnection.setFollowRedirects(false)
 				val con = aurl.openConnection() as HttpURLConnection
-				con.requestMethod = method.nameUC
+				con.requestMethod = method.name
 				//println("URL:$url")
 				//println("METHOD:${method.name}")
 				for (header in headers) {
