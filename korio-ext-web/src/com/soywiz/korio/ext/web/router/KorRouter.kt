@@ -71,7 +71,7 @@ class KorRouter(val injector: AsyncInjector) {
 				if (route != null) {
 					route.handle(req)
 				} else {
-					req.putHeader("Content-Type", "text/html")
+					req.addHeader("Content-Type", "text/html")
 					req.end("Route not found for ${req.uri}")
 				}
 			}

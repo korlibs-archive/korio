@@ -91,9 +91,20 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			}
 		}
 
-		fun putHeader(key: String, value: String) {
+		fun removeHeader(key: String) {
+			ensureHeadersNotSent()
+			resHeaders.removeIf { it.first.equals(key, ignoreCase = true) }
+		}
+
+		fun addHeader(key: String, value: String) {
 			ensureHeadersNotSent()
 			resHeaders += key to value
+		}
+
+		fun replaceHeader(key: String, value: String) {
+			ensureHeadersNotSent()
+			removeHeader(key)
+			addHeader(key, value)
 		}
 
 		abstract protected fun _handler(handler: (ByteArray) -> Unit)
@@ -136,7 +147,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		}
 
 		fun end(data: ByteArray) {
-			putHeader("Content-Length", "${data.size}")
+			addHeader("Content-Length", "${data.size}")
 			emit(data)
 			end()
 		}

@@ -11,6 +11,12 @@ class KorRouterTest {
 	val injector = AsyncInjector()
 	val router = KorRouter(injector)
 
+	suspend private fun KorRouter.testRoute(method: Http.Method, uri: String, headers: Http.Headers = Http.Headers(), body: ByteArray = ByteArray(0)): String {
+		val request = FakeRequest(method, uri, headers, body)
+		router.accept(request)
+		return request.toString()
+	}
+
 	@Test
 	fun testSimpleRoute() = syncTest {
 		@Suppress("unused")
@@ -19,11 +25,29 @@ class KorRouterTest {
 			fun test(@Param("name") name: String): String {
 				return "hello $name"
 			}
+
+			@Route(Http.Methods.GET, "/hellotext/:name", textContentType = "text/plain")
+			fun test2(@Param("name") name: String): String {
+				return "hellotext $name"
+			}
+
+			@Route(Http.Methods.GET, "/api/test")
+			fun test2() = mapOf("hello" to "world")
 		}
 
-		router.registerRoutes<DemoRoute>()
-		val request = FakeRequest(Http.Method.GET, "/hello/world")
-		router.accept(request)
-		Assert.assertEquals("200:OK:Headers((Content-Length, [11]), (Content-Type, [text/html])):hello world", request.toString())
+		Assert.assertEquals(
+				"200:OK:Headers((Content-Length, [11]), (Content-Type, [text/html])):hello world",
+				router.registerRoutes<DemoRoute>().testRoute(Http.Method.GET, "/hello/world")
+		)
+
+		Assert.assertEquals(
+				"200:OK:Headers((Content-Length, [15]), (Content-Type, [text/plain])):hellotext world",
+				router.registerRoutes<DemoRoute>().testRoute(Http.Method.GET, "/hellotext/world")
+		)
+
+		Assert.assertEquals(
+				"""200:OK:Headers((Content-Length, [17]), (Content-Type, [application/json])):{"hello":"world"}""",
+				router.registerRoutes<DemoRoute>().testRoute(Http.Method.GET, "/api/test")
+		)
 	}
 }

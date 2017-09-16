@@ -119,17 +119,17 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 				}
 
 				res.setStatus(200)
-				res.putHeader("Content-Type", route.textContentType)
+				res.replaceHeader("Content-Type", route.textContentType)
 				val result = method.invokeSuspend(instance, args)
 
 				val finalResult = if (result is Promise<*>) result.await() else result
 
-				for ((k, v) in response.headers) res.putHeader(k, v)
+				for ((k, v) in response.headers) res.addHeader(k, v)
 
 				when (finalResult) {
 					is String -> res.end("$finalResult")
 					else -> {
-						res.putHeader("Content-Type", "application/json")
+						res.replaceHeader("Content-Type", "application/json")
 						res.end(Json.encode(finalResult))
 					}
 				}
@@ -146,7 +146,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 				if (ft is Http.HttpException) {
 					System.err.println("Http.HttpException: +++ ${req.absoluteURI} : $postParams")
 					res.setStatus(ft.statusCode, ft.statusText)
-					for (header in ft.headers) res.putHeader(header.first, header.second)
+					for (header in ft.headers) res.addHeader(header.first, header.second)
 					res.end(ft.msg)
 				} else {
 					System.err.println("OtherException: ### ${req.absoluteURI} : $postParams")
