@@ -13,10 +13,13 @@ object Example1 {
 	@JvmStatic
 	fun main(args: Array<String>) = Korio {
 		val injector = AsyncInjector()
-		val router = KorRouter(injector)
-		router.registerRouter<TestRoute>()
-		router.registerRouter<ChatRoute>()
-		val server = createHttpServer().router(router).listen(8090)
+		val server = createHttpServer()
+				.router(
+						KorRouter(injector)
+								.registerRoutes<TestRoute>()
+								.registerRoutes<ExampleChatRoute>()
+				)
+				.listen(8090)
 		println("Listening to ${server.actualPort}...")
 	}
 }
@@ -77,78 +80,6 @@ class TestRoute(
 </form>
 <script type="text/javascript">
 	var ws = new WebSocket('ws://127.0.0.1:8090/echo');
-	ws.addEventListener('open', function(it) {
-		console.log('ws.open');
-	});
-	ws.addEventListener('close', function(it) {
-		console.log('ws.close');
-	});
-	ws.addEventListener('message', function(it) {
-		console.log('ws.message', it.data);
-	});
-	document.getElementById('send').addEventListener('click', function() {
-		var messageInput = document.getElementById('message');
-		ws.send(messageInput.value);
-		messageInput.value = '';
-	});
-
-</script>
-</body>
-</html>
-		""")
-	}
-}
-
-
-@Suppress("unused")
-class ChatRoute(
-) {
-	data class Client(val ws: HttpServer.WsRequest, val id: Long) {
-		val name: String = "Client$id"
-	}
-
-	val clients = hashSetOf<Client>()
-	private var lastClientId = 0L
-
-	@WsRoute("/chat")
-	suspend fun chatWS(ws: HttpServer.WsRequest) {
-		val client = Client(ws, lastClientId++)
-		try {
-			clients += client
-
-			for (c in clients) {
-				c.ws.sendSafe("${client.name} joined")
-			}
-
-			for (msg in ws.stringMessageStream()) {
-				for (c in clients) c.ws.sendSafe("${client.name} said: $msg")
-			}
-		} finally {
-			clients -= client
-
-			for (c in clients) {
-				c.ws.sendSafe("${client.name} left")
-			}
-		}
-	}
-
-	@Route(Http.Methods.GET, "/chat")
-	suspend fun chat(): String {
-		return html("""<html>
-<head>
-	<title>
-	</title>
-</head>
-<body>
-<p>
-	<strong>Open developer console to see events</strong>
-</p>
-<form action='javascript:void(0)'>
-	<input type='text' id='message' autofocus/>
-	<input type='submit' id='send' value='Send' />
-</form>
-<script type="text/javascript">
-	var ws = new WebSocket('ws://127.0.0.1:8090/chat');
 	ws.addEventListener('open', function(it) {
 		console.log('ws.open');
 	});

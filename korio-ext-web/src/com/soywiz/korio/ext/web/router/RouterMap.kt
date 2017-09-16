@@ -20,7 +20,7 @@ annotation class Param(val name: String, val limit: Int = -1)
 annotation class Post(val name: String, val limit: Int = -1)
 annotation class Header(val name: String, val limit: Int = -1)
 
-suspend inline fun <reified T : Any> KorRouter.registerRouter() = this.registerRouter(T::class.java)
+suspend inline fun <reified T : Any> KorRouter.registerRoutes() = this.apply { this.registerRoutes(T::class.java) }
 suspend fun HttpServer.router(router: KorRouter) = this.allHandler { router.accept(it) }
 suspend fun KorRouter.registerInterceptor(interceptor: suspend (HttpServer.Request, Map<String, String>) -> Unit) {
 	interceptors.add(interceptor)
@@ -179,8 +179,8 @@ suspend private fun registerWsRoute(router: KorRouter, instance: Any, method: Me
 	}
 }
 
-suspend fun KorRouter.registerRouter(clazz: Class<*>) {
-	val router = this@registerRouter
+suspend fun KorRouter.registerRoutes(clazz: Class<*>) {
+	val router = this@registerRoutes
 
 	println("Registering route $clazz...")
 
