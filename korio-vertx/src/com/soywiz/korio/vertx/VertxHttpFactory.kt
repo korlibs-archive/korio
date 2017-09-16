@@ -30,15 +30,68 @@ class VertxHttpServer : HttpServer() {
 
 	override val actualPort: Int get() = vxServer.actualPort()
 
-	suspend override fun listenInternal(port: Int, host: String, handler: suspend (Request) -> Unit) {
+	suspend override fun websocketHandlerInternal(handler: suspend (WsRequest) -> Unit) {
 		val ctx = getCoroutineContext()
-		val wait = Promise.Deferred<Unit>()
+
+		vxServer.websocketHandler { ws ->
+			val kws = object : WsRequest(
+					uri = ws.uri()
+			) {
+				override suspend fun reject() {
+					ws.reject()
+				}
+
+				suspend override fun close() {
+					ws.close()
+				}
+
+				suspend override fun onStringMessage(handler: suspend (String) -> Unit) {
+					ws.textMessageHandler {
+						go(ctx) {
+							handler(it)
+						}
+					}
+				}
+
+				suspend override fun onBinaryMessage(handler: suspend (ByteArray) -> Unit) {
+					ws.binaryMessageHandler {
+						go(ctx) {
+							handler(it.bytes)
+						}
+					}
+				}
+
+				suspend override fun onClose(handler: suspend () -> Unit) {
+					ws.closeHandler {
+						go(ctx) {
+							handler()
+						}
+					}
+				}
+
+				suspend override fun send(msg: String) {
+					ws.writeFinalTextFrame(msg)
+				}
+
+				suspend override fun send(msg: ByteArray) {
+					ws.writeFinalBinaryFrame(Buffer.buffer(msg))
+				}
+			}
+			go(ctx) {
+				handler(kws)
+			}
+		}
+	}
+
+	suspend override fun httpHandlerInternal(handler: suspend (Request) -> Unit) {
+		val ctx = getCoroutineContext()
+
 		vxServer.requestHandler { req ->
 			val res = req.response()
 			val kreq = object : Request(
-				method = Http.Method(req.rawMethod()),
-				uri = req.uri(),
-				headers = Http.Headers(req.headers().map { it.key to it.value })
+					method = Http.Method(req.rawMethod()),
+					uri = req.uri(),
+					headers = Http.Headers(req.headers().map { it.key to it.value })
 			) {
 				override fun _handler(handler: (ByteArray) -> Unit) {
 					req.handler { handler(it.bytes) }
@@ -70,7 +123,12 @@ class VertxHttpServer : HttpServer() {
 			go(ctx) {
 				handler(kreq)
 			}
-		}.listen(port, host) {
+		}
+	}
+
+	suspend override fun listenInternal(port: Int, host: String) {
+		val wait = Promise.Deferred<Unit>()
+		vxServer.listen(port, host) {
 			if (it.failed()) {
 				wait.reject(it.cause())
 			} else {
@@ -136,10 +194,10 @@ class VertxHttpClient : HttpClient() {
 		val res = deferred.promise.await()
 
 		return Response(
-			status = res.statusCode(),
-			statusText = res.statusMessage(),
-			headers = Http.Headers(res.headers().map { it.key to it.value }),
-			content = p.toAsyncInputStream()
+				status = res.statusCode(),
+				statusText = res.statusMessage(),
+				headers = Http.Headers(res.headers().map { it.key to it.value }),
+				content = p.toAsyncInputStream()
 		)
 	}
 }

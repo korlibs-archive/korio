@@ -26,6 +26,7 @@ suspend fun getCoroutineContext(): CoroutineContext = korioSuspendCoroutine<Coro
 	c.resume(c.context)
 }
 
+@Deprecated("Use getCoroutineContext() instead?")
 suspend fun <T> withCoroutineContext(callback: suspend CoroutineContext.() -> T) = korioSuspendCoroutine<T> { c ->
 	callback.startCoroutine(c.context, c)
 }

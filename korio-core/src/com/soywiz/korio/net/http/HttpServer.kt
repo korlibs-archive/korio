@@ -11,12 +11,35 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		operator fun invoke() = defaultHttpFactory.createServer()
 	}
 
-	abstract class Request(
-		val method: Http.Method,
-		val uri: String,
-		val headers: Http.Headers
+	abstract class BaseRequest(
+			val uri: String
 	) : Extra by Extra.Mixin() {
 		val absoluteURI: String by lazy { uri }
+	}
+
+	abstract class WsRequest(
+			uri: String
+	) : BaseRequest(uri) {
+		abstract suspend fun reject()
+
+		abstract suspend fun close()
+
+		abstract suspend fun onStringMessage(handler: suspend (String) -> Unit)
+
+		abstract suspend fun onBinaryMessage(handler: suspend (ByteArray) -> Unit)
+
+		abstract suspend fun onClose(handler: suspend () -> Unit)
+
+		abstract suspend fun send(msg: String)
+
+		abstract suspend fun send(msg: ByteArray)
+	}
+
+	abstract class Request(
+			val method: Http.Method,
+			uri: String,
+			val headers: Http.Headers
+	) : BaseRequest(uri) {
 
 		fun getHeader(key: String): String? = headers[key]
 
@@ -79,11 +102,23 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			emit(data)
 			end()
 		}
+
 		fun emit(data: String) = emit(data.toByteArray(Charsets.UTF_8))
 		fun end(data: String) = end(data.toByteArray(Charsets.UTF_8))
 	}
 
-	suspend open protected fun listenInternal(port: Int, host: String = "127.0.0.1", handler: suspend (Request) -> Unit) {
+	suspend open protected fun websocketHandlerInternal(handler: suspend (WsRequest) -> Unit) {
+	}
+
+	suspend open protected fun httpHandlerInternal(handler: suspend (Request) -> Unit) {
+	}
+
+	suspend fun allHandler(handler: suspend (BaseRequest) -> Unit) = this.apply {
+		websocketHandler { handler(it) }
+		httpHandler { handler(it) }
+	}
+
+	suspend open protected fun listenInternal(port: Int, host: String = "127.0.0.1") {
 		val deferred = Promise.Deferred<Unit>()
 		deferred.onCancel {
 
@@ -96,12 +131,28 @@ open class HttpServer protected constructor() : AsyncCloseable {
 	suspend open protected fun closeInternal() {
 	}
 
-	suspend fun listen(port: Int = 0, host: String = "127.0.0.1", handler: suspend (Request) -> Unit): HttpServer {
-		listenInternal(port, host, handler)
+	suspend fun websocketHandler(handler: suspend (WsRequest) -> Unit): HttpServer {
+		websocketHandlerInternal(handler)
 		return this
 	}
 
-	suspend override fun close() {
+	suspend fun httpHandler(handler: suspend (Request) -> Unit): HttpServer {
+		httpHandlerInternal(handler)
+		return this
+	}
+
+	suspend fun listen(port: Int = 0, host: String = "127.0.0.1"): HttpServer {
+		listenInternal(port, host)
+		return this
+	}
+
+	suspend fun listen(port: Int = 0, host: String = "127.0.0.1", handler: suspend (Request) -> Unit): HttpServer {
+		httpHandler(handler)
+		listen(port, host)
+		return this
+	}
+
+	suspend final override fun close() {
 		closeInternal()
 	}
 }

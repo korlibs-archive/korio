@@ -12,13 +12,17 @@ fun HttpServer.Request.pathParam(name: String): String? {
 	return this.extraParams[name]
 }
 
-data class KorRoute(val method: Http.Method, val path: String, val handler: (HttpServer.Request) -> Unit) {
+open class KorBaseRoute(val bpath: String) {
 	val matchNames = arrayListOf<String>()
-	val regex = Regex(Regex.escapeReplacement(path).replace("\\*", ".*").replace(Regex(":(\\w+)")) {
+	val regex = Regex(Regex.escapeReplacement(bpath).replace("\\*", ".*").replace(Regex(":(\\w+)")) {
 		matchNames += it.groupValues[1]
 		"([^/]+)"
 	})
 
+	open fun matches(req: HttpServer.BaseRequest): Boolean = regex.matches(req.uri)
+}
+
+data class KorRoute(val method: Http.Method, val path: String, val handler: suspend (HttpServer.Request) -> Unit) : KorBaseRoute(path) {
 	//init {
 	//	println("-------------")
 	//	println(path)
@@ -27,7 +31,7 @@ data class KorRoute(val method: Http.Method, val path: String, val handler: (Htt
 	//	println(regex)
 	//}
 
-	fun handle(req: HttpServer.Request) {
+	suspend fun handle(req: HttpServer.Request) {
 		val m = regex.find(req.uri)!!
 		for ((index, key) in matchNames.withIndex()) {
 			val value = m.groupValues[index + 1]
@@ -38,30 +42,47 @@ data class KorRoute(val method: Http.Method, val path: String, val handler: (Htt
 		handler(req)
 	}
 
-	fun matches(req: HttpServer.Request): Boolean {
-		if (req.method == method && regex.matches(req.uri)) {
-			return true
-		}
-		return false
-	}
+	override fun matches(req: HttpServer.BaseRequest): Boolean = (req as? HttpServer.Request?)?.method == method && super.matches(req)
+}
+
+data class KorWsRoute(val path: String, val handler: suspend (HttpServer.WsRequest) -> Unit) : KorBaseRoute(path) {
+
 }
 
 class KorRouter(val injector: AsyncInjector) {
 	var interceptors = arrayListOf<suspend (HttpServer.Request, Map<String, String>) -> Unit>()
-	val routes = arrayListOf<KorRoute>()
+	val httpRoutes = arrayListOf<KorRoute>()
+	val wsRoutes = arrayListOf<KorWsRoute>()
 
-	fun route(method: Http.Method, path: String, handler: (HttpServer.Request) -> Unit): KorRouter {
-		routes += KorRoute(method, path, handler)
+	fun route(method: Http.Method, path: String, handler: suspend (HttpServer.Request) -> Unit): KorRouter {
+		httpRoutes += KorRoute(method, path, handler)
 		return this
 	}
 
-	fun accept(req: HttpServer.Request) {
-		val route = routes.firstOrNull { it.matches(req) }
-		if (route != null) {
-			route.handle(req)
-		} else {
-			req.putHeader("Content-Type", "text/html")
-			req.end("Route not found for ${req.uri}")
+	fun wsroute(path: String, handler: suspend (HttpServer.WsRequest) -> Unit): KorRouter {
+		wsRoutes += KorWsRoute(path, handler)
+		return this
+	}
+
+	suspend fun accept(req: HttpServer.BaseRequest) {
+		when (req) {
+			is HttpServer.Request -> {
+				val route = httpRoutes.firstOrNull { it.matches(req) }
+				if (route != null) {
+					route.handle(req)
+				} else {
+					req.putHeader("Content-Type", "text/html")
+					req.end("Route not found for ${req.uri}")
+				}
+			}
+			is HttpServer.WsRequest -> {
+				val route = wsRoutes.firstOrNull { it.matches(req) }
+				if (route != null) {
+					route.handler(req)
+				} else {
+					req.reject()
+				}
+			}
 		}
 	}
 }
