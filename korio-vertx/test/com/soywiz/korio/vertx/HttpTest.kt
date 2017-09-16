@@ -20,7 +20,7 @@ class HttpTest {
 				content += it.toString(Charsets.UTF_8)
 			}
 			req.endHandler {
-				req.end("hello ${req.method} ${req.uri} : '$content'")
+				req.end("hello ${req.method} ${req.path} : '$content'")
 			}
 		}
 		val port = server.actualPort

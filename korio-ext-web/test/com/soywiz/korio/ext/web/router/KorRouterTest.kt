@@ -81,4 +81,22 @@ class KorRouterTest {
 				router.testRoute(Http.Method.GET, "/donotexists")
 		)
 	}
+
+	@Test
+	fun testParams() = syncTest {
+		@Suppress("unused")
+		class DemoRoute {
+			@Route(Http.Methods.GET, "/test")
+			fun test(@Get("name") name: String, @Get("demo") demo: Int, @Get("test") test: Int): String {
+				return "hello $name$demo$test"
+			}
+		}
+
+		router.registerRoutes<DemoRoute>()
+
+		Assert.assertEquals(
+				"200:OK:Headers((Content-Length, [13]), (Content-Type, [text/html])):hello world70",
+				router.testRoute(Http.Method.GET, "/test?name=world&demo=7&test=a")
+		)
+	}
 }

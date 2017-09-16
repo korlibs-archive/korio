@@ -2,6 +2,7 @@ package com.soywiz.korio.net.http
 
 import com.soywiz.korio.crypto.fromBase64
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.serialization.querystring.QueryString
 import com.soywiz.korio.vfs.UrlVfs
 import java.io.IOException
 
@@ -92,7 +93,13 @@ interface Http {
 	class Request(
 			val uri: String,
 			val headers: Http.Headers
-	)
+	) {
+		private val parts by lazy { uri.split('?', limit = 2) }
+		val path: String by lazy { parts[0] }
+		val queryString: String by lazy { parts.getOrElse(1) { "" } }
+		val getParams by lazy { QueryString.decode(queryString) }
+		val absoluteURI: String by lazy { uri }
+	}
 
 	class Response {
 		val headers = arrayListOf<Pair<String, String>>()

@@ -3,6 +3,7 @@ package com.soywiz.korio.net.http
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.asyncGenerate3
 import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.serialization.querystring.QueryString
 import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.util.AsyncCloseable
 import com.soywiz.korio.util.Extra
@@ -19,7 +20,10 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			val uri: String,
 			val headers: Http.Headers
 	) : Extra by Extra.Mixin() {
-		val path: String by lazy { uri }
+		private val parts by lazy { uri.split('?', limit = 2) }
+		val path: String by lazy { parts[0] }
+		val queryString: String by lazy { parts.getOrElse(1) { "" } }
+		val getParams by lazy { QueryString.decode(queryString) }
 		val absoluteURI: String by lazy { uri }
 	}
 
@@ -159,6 +163,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			flushHeaders()
 			_write(data.toByteArray(Charsets.UTF_8))
 		}
+
 		fun end(data: String) {
 			end(data.toByteArray(Charsets.UTF_8))
 		}
