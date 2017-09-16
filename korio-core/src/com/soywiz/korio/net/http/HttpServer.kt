@@ -59,6 +59,17 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			onStringMessage { yield(it) }
 			onClose { close() }
 		}
+
+		fun binaryMessageStream() = asyncGenerate3<ByteArray> {
+			onBinaryMessage { yield(it) }
+			onClose { close() }
+		}
+
+		fun anyMessageStream() = asyncGenerate3<Any> {
+			onStringMessage { yield(it) }
+			onBinaryMessage { yield(it) }
+			onClose { close() }
+		}
 	}
 
 	abstract class Request(

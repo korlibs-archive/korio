@@ -20,22 +20,22 @@ interface SuspendingIterator<out T> {
 }
 
 fun <T> suspendingSequence(
-	context: CoroutineContext,
-	block: suspend SuspendingSequenceBuilder<T>.() -> Unit
+		context: CoroutineContext,
+		block: suspend SuspendingSequenceBuilder<T>.() -> Unit
 ): SuspendingSequence<T> = object : SuspendingSequence<T> {
 	override fun iterator(): SuspendingIterator<T> = suspendingIterator(context, block)
 
 }
 
 fun <T> suspendingIterator(
-	context: CoroutineContext,
-	block: suspend SuspendingSequenceBuilder<T>.() -> Unit
+		context: CoroutineContext,
+		block: suspend SuspendingSequenceBuilder<T>.() -> Unit
 ): SuspendingIterator<T> = SuspendingIteratorCoroutine<T>(context).apply {
 	nextStep = block.korioCreateCoroutine(receiver = this, completion = this)
 }
 
 class SuspendingIteratorCoroutine<T>(
-	override val context: CoroutineContext
+		override val context: CoroutineContext
 ) : SuspendingIterator<T>, SuspendingSequenceBuilder<T>, Continuation<Unit> {
 	enum class State { INITIAL, COMPUTING_HAS_NEXT, COMPUTING_NEXT, COMPUTED, DONE }
 
@@ -120,8 +120,8 @@ typealias AsyncSequence<T> = SuspendingSequence<T>
 typealias AsyncIterator<T> = SuspendingIterator<T>
 
 fun <T> asyncGenerate(
-	context: CoroutineContext,
-	block: suspend SuspendingSequenceBuilder<T>.() -> Unit
+		context: CoroutineContext,
+		block: suspend SuspendingSequenceBuilder<T>.() -> Unit
 ): SuspendingSequence<T> = object : SuspendingSequence<T> {
 	override fun iterator(): SuspendingIterator<T> = suspendingIterator(context, block)
 }
@@ -365,14 +365,8 @@ class AsyncSequenceEmitter<T : Any> : Extra by Extra.Mixin() {
 
 class SuspendingSequenceBuilder2<T : Any> {
 	val emitter = AsyncSequenceEmitter<T>()
-
-	fun yield(value: T): Unit {
-		emitter.emit(value)
-	}
-
-	fun close(): Unit {
-		emitter.close()
-	}
+	fun yield(value: T) = emitter.emit(value)
+	fun close() = emitter.close()
 }
 
 interface SuspendingSequence2<out T> {
