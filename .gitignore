@@ -4,3 +4,6 @@
 /out
 /classes
 /log.txt
+*.iml
+*.ipr
+*.iws
