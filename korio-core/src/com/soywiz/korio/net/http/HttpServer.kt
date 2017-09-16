@@ -2,6 +2,7 @@ package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.asyncGenerate3
+import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.util.AsyncCloseable
 import com.soywiz.korio.util.Extra
 import java.io.IOException
@@ -191,5 +192,47 @@ open class HttpServer protected constructor() : AsyncCloseable {
 
 	suspend final override fun close() {
 		closeInternal()
+	}
+}
+
+class FakeRequest(
+		method: Http.Method,
+		uri: String,
+		headers: Http.Headers = Http.Headers(),
+		val body: ByteArray = ByteArray(0)
+) : HttpServer.Request(method, uri, headers) {
+	private val buf = OptByteBuffer()
+	var outputHeaders: Http.Headers = Http.Headers()
+	var outputStatusCode: Int = 0
+	var outputStatusMessage: String = ""
+	var output: String = ""
+
+	override fun _handler(handler: (ByteArray) -> Unit) {
+		handler(body)
+	}
+
+	override fun _endHandler(handler: () -> Unit) {
+		handler()
+	}
+
+	override fun _setStatus(code: Int, message: String) {
+		outputStatusCode = code
+		outputStatusMessage = message
+	}
+
+	override fun _sendHeaders(headers: Http.Headers) {
+		outputHeaders = headers
+	}
+
+	override fun _emit(data: ByteArray) {
+		buf.append(data)
+	}
+
+	override fun _end() {
+		output = buf.toByteArray().toString(Charsets.UTF_8)
+	}
+
+	override fun toString(): String {
+		return "$outputStatusCode:$outputStatusMessage:$outputHeaders:$output"
 	}
 }

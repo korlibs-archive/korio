@@ -118,6 +118,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 					interceptor(req, mapArgs)
 				}
 
+				res.setStatus(200)
 				res.putHeader("Content-Type", route.textContentType)
 				val result = method.invokeSuspend(instance, args)
 

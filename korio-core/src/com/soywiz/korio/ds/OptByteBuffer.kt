@@ -4,9 +4,25 @@ class OptByteBuffer {
 	var size: Int = 0; private set
 	val chunks = arrayListOf<ByteArray>()
 
+	constructor() {
+
+	}
+
+	constructor(chunk: ByteArray) {
+		append(chunk)
+	}
+
+	constructor(chunks: Iterable<ByteArray>) {
+		for (chunk in chunks) append(chunk)
+	}
+
 	fun append(chunk: ByteArray) {
 		chunks += chunk
 		size += chunk.size
+	}
+
+	fun append(buffer: OptByteBuffer) {
+		for (c in buffer.chunks) append(c)
 	}
 
 	fun toByteArray(): ByteArray {
