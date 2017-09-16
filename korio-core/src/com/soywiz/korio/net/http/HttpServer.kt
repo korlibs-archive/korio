@@ -1,6 +1,7 @@
 package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.Promise
+import com.soywiz.korio.async.asyncGenerate3
 import com.soywiz.korio.util.AsyncCloseable
 import com.soywiz.korio.util.Extra
 import java.io.IOException
@@ -12,34 +13,59 @@ open class HttpServer protected constructor() : AsyncCloseable {
 	}
 
 	abstract class BaseRequest(
-			val uri: String
+			val uri: String,
+			val headers: Http.Headers
 	) : Extra by Extra.Mixin() {
 		val absoluteURI: String by lazy { uri }
 	}
 
 	abstract class WsRequest(
-			uri: String
-	) : BaseRequest(uri) {
-		abstract suspend fun reject()
+			uri: String,
+			headers: Http.Headers
+	) : BaseRequest(uri, headers) {
+		abstract fun reject()
 
-		abstract suspend fun close()
+		abstract fun close()
+		abstract fun onStringMessage(handler: suspend (String) -> Unit)
+		abstract fun onBinaryMessage(handler: suspend (ByteArray) -> Unit)
+		abstract fun onClose(handler: suspend () -> Unit)
+		abstract fun send(msg: String)
+		abstract fun send(msg: ByteArray)
 
-		abstract suspend fun onStringMessage(handler: suspend (String) -> Unit)
+		fun sendSafe(msg: String) {
+			try {
+				send(msg)
+			} catch (e: Throwable) {
+				e.printStackTrace()
+			}
+		}
 
-		abstract suspend fun onBinaryMessage(handler: suspend (ByteArray) -> Unit)
+		fun sendSafe(msg: ByteArray) {
+			try {
+				send(msg)
+			} catch (e: Throwable) {
+				e.printStackTrace()
+			}
+		}
 
-		abstract suspend fun onClose(handler: suspend () -> Unit)
+		//suspend fun stringMessageStream(): SuspendingSequence<String> {
+		//	val emitter = AsyncSequenceEmitter<String>()
+		//	onStringMessage { emitter.emit(it) }
+		//	onClose { emitter.close() }
+		//	return emitter.toSequence()
+		//}
 
-		abstract suspend fun send(msg: String)
-
-		abstract suspend fun send(msg: ByteArray)
+		fun stringMessageStream() = asyncGenerate3<String> {
+			onStringMessage { yield(it) }
+			onClose { close() }
+		}
 	}
 
 	abstract class Request(
 			val method: Http.Method,
 			uri: String,
-			val headers: Http.Headers
-	) : BaseRequest(uri) {
+			headers: Http.Headers
+	) : BaseRequest(uri, headers) {
 
 		fun getHeader(key: String): String? = headers[key]
 

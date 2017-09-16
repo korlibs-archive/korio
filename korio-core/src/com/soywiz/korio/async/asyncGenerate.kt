@@ -362,3 +362,39 @@ class AsyncSequenceEmitter<T : Any> : Extra by Extra.Mixin() {
 		}
 	}
 }
+
+class SuspendingSequenceBuilder2<T : Any> {
+	val emitter = AsyncSequenceEmitter<T>()
+
+	fun yield(value: T): Unit {
+		emitter.emit(value)
+	}
+
+	fun close(): Unit {
+		emitter.close()
+	}
+}
+
+interface SuspendingSequence2<out T> {
+	operator suspend fun iterator(): SuspendingIterator<T>
+}
+
+suspend fun <T : Any> asyncGenerate2(
+		block: suspend SuspendingSequenceBuilder2<T>.() -> Unit
+): SuspendingSequence2<T> = object : SuspendingSequence2<T> {
+	override suspend fun iterator(): SuspendingIterator<T> {
+		val builder = SuspendingSequenceBuilder2<T>()
+		block(builder)
+		return builder.emitter.toSequence().iterator()
+	}
+}
+
+fun <T : Any> asyncGenerate3(
+		block: SuspendingSequenceBuilder2<T>.() -> Unit
+): SuspendingSequence<T> = object : SuspendingSequence<T> {
+	override fun iterator(): SuspendingIterator<T> {
+		val builder = SuspendingSequenceBuilder2<T>()
+		block(builder)
+		return builder.emitter.toSequence().iterator()
+	}
+}

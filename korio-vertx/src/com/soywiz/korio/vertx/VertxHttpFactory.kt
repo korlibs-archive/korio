@@ -1,9 +1,6 @@
 package com.soywiz.korio.vertx
 
-import com.soywiz.korio.async.ProduceConsumer
-import com.soywiz.korio.async.Promise
-import com.soywiz.korio.async.go
-import com.soywiz.korio.async.toAsyncInputStream
+import com.soywiz.korio.async.*
 import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
@@ -35,33 +32,39 @@ class VertxHttpServer : HttpServer() {
 
 		vxServer.websocketHandler { ws ->
 			val kws = object : WsRequest(
-					uri = ws.uri()
+					uri = ws.uri(),
+					headers = Http.Headers(ws.headers().map { it.key to it.value })
 			) {
-				override suspend fun reject() {
+				override fun reject() {
 					ws.reject()
 				}
 
-				suspend override fun close() {
+				override fun close() {
 					ws.close()
 				}
 
-				suspend override fun onStringMessage(handler: suspend (String) -> Unit) {
+				override fun onStringMessage(handler: suspend (String) -> Unit) {
 					ws.textMessageHandler {
-						go(ctx) {
-							handler(it)
+						ctx.eventLoop.queue {
+							go(ctx) {
+
+								handler(it)
+							}
 						}
 					}
 				}
 
-				suspend override fun onBinaryMessage(handler: suspend (ByteArray) -> Unit) {
+				override fun onBinaryMessage(handler: suspend (ByteArray) -> Unit) {
 					ws.binaryMessageHandler {
-						go(ctx) {
-							handler(it.bytes)
+						ctx.eventLoop.queue {
+							go(ctx) {
+								handler(it.bytes)
+							}
 						}
 					}
 				}
 
-				suspend override fun onClose(handler: suspend () -> Unit) {
+				override fun onClose(handler: suspend () -> Unit) {
 					ws.closeHandler {
 						go(ctx) {
 							handler()
@@ -69,11 +72,11 @@ class VertxHttpServer : HttpServer() {
 					}
 				}
 
-				suspend override fun send(msg: String) {
+				override fun send(msg: String) {
 					ws.writeFinalTextFrame(msg)
 				}
 
-				suspend override fun send(msg: ByteArray) {
+				override fun send(msg: ByteArray) {
 					ws.writeFinalBinaryFrame(Buffer.buffer(msg))
 				}
 			}

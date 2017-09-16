@@ -35,6 +35,7 @@ suspend fun <T> withEventLoop(callback: suspend EventLoop.() -> T) = korioSuspen
 	callback.startCoroutine(c.context.eventLoop, c)
 }
 
+
 inline suspend fun <T> korioSuspendCoroutine(crossinline block: (Continuation<T>) -> Unit): T = _korioSuspendCoroutine { c ->
 	block(c.toEventLoop())
 }

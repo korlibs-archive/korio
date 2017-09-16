@@ -3,7 +3,6 @@ package com.soywiz.korio.ext.web.router
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.async
 import com.soywiz.korio.async.invokeSuspend
-import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.error.InvalidOperationException
 import com.soywiz.korio.net.http.Http
@@ -161,7 +160,22 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 
 suspend private fun registerWsRoute(router: KorRouter, instance: Any, method: Method, route: WsRoute) {
 	router.wsroute(route.path) { ws ->
-		method.invokeSuspend(instance, listOf(ws))
+		val args = arrayListOf<Any?>()
+		for ((indexedParamType, annotations) in method.parameterTypes.withIndex().zip(method.parameterAnnotations)) {
+			val (index, paramType) = indexedParamType
+			when {
+				HttpServer.WsRequest::class.java.isAssignableFrom(paramType) -> {
+					args += ws
+				}
+				com.soywiz.korio.coroutine.Continuation::class.java.isAssignableFrom(paramType) -> {
+				}
+				else -> {
+					args.add(null)
+				}
+
+			}
+		}
+		method.invokeSuspend(instance, args)
 	}
 }
 
