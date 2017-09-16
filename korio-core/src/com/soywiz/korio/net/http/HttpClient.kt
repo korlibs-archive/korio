@@ -1,6 +1,7 @@
 package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.AsyncThread
+import com.soywiz.korio.async.Korio
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.coroutine.withEventLoop
 import com.soywiz.korio.crypto.fromBase64
@@ -228,7 +229,9 @@ open class HttpFactory : Services.Impl() {
 	open fun createClient(): HttpClient = object : HttpClient() {
 		suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = TODO()
 	}
-	open fun createServer(): HttpServer = object : HttpServer() {}
+	open fun createServer(): HttpServer {
+		throw RuntimeException("$this doesn't provide createServer, add a dependency with the service like `com.soywiz:korio-vertx:\$korVersion`")
+	}
 }
 
 val defaultHttpFactory by lazy { Services.load<HttpFactory>() }
