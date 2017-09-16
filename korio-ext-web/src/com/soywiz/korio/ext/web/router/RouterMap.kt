@@ -156,12 +156,12 @@ suspend fun KorRouter.registerRouter(clazz: Class<*>) = com.soywiz.korio.corouti
 							else -> t2
 						}
 						if (ft is Http.HttpException) {
-							System.err.println("+++ ${req.absoluteURI} : $postParams")
+							System.err.println("Http.HttpException: +++ ${req.absoluteURI} : $postParams")
 							res.setStatus(ft.statusCode, ft.statusText)
 							for (header in ft.headers) res.putHeader(header.first, header.second)
 							res.end(ft.msg)
 						} else {
-							System.err.println("### ${req.absoluteURI} : $postParams")
+							System.err.println("OtherException: ### ${req.absoluteURI} : $postParams")
 							t.printStackTrace()
 							res.setStatus(500)
 							res.end("${ft.message}")
