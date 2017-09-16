@@ -32,7 +32,7 @@ interface AsyncInputStream : AsyncBaseStream {
 }
 
 interface AsyncOutputStream : AsyncBaseStream {
-	suspend fun write(buffer: ByteArray, offset: Int, len: Int): Unit
+	suspend fun write(buffer: ByteArray, offset: Int = 0, len: Int = buffer.size - offset)
 }
 
 interface AsyncPositionStream : AsyncBaseStream {
@@ -133,6 +133,7 @@ class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : Extra by
 	suspend override fun getPosition(): Long = this.position
 	suspend override fun setLength(value: Long): Unit = base.setLength(value)
 	suspend override fun getLength(): Long = base.getLength()
+	suspend fun size(): Long = base.getLength()
 
 	suspend fun getAvailable(): Long {
 		return getLength() - getPosition()

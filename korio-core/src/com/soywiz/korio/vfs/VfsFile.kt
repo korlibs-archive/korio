@@ -47,6 +47,12 @@ class VfsFile(
 		}
 	}
 
+	suspend fun copyTo(target: AsyncOutputStream) {
+		this.openUse {
+			this.copyTo(target)
+		}
+	}
+
 	val parent: VfsFile by lazy { VfsFile(vfs, pathInfo.folder) }
 	val root: VfsFile get() = vfs.root
 

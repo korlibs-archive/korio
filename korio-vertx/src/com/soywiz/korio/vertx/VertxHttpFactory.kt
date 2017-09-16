@@ -115,8 +115,8 @@ class VertxHttpServer : HttpServer() {
 					}
 				}
 
-				override fun _emit(data: ByteArray) {
-					res.write(Buffer.buffer(data))
+				override fun _write(data: ByteArray, offset: Int, length: Int) {
+					res.write(Buffer.buffer(data.copyOfRange(offset, offset + length)))
 				}
 
 				override fun _end() {

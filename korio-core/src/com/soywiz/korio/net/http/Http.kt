@@ -2,6 +2,7 @@ package com.soywiz.korio.net.http
 
 import com.soywiz.korio.crypto.fromBase64
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.vfs.UrlVfs
 import java.io.IOException
 
 
@@ -87,6 +88,11 @@ interface Http {
 			if (user.isEmpty() || !check(this)) Http.HttpException.unauthorizedBasic(realm = "Domain", msg = "Invalid auth")
 		}
 	}
+
+	class Request(
+			val uri: String,
+			val headers: Http.Headers
+	)
 
 	class Response {
 		val headers = arrayListOf<Pair<String, String>>()

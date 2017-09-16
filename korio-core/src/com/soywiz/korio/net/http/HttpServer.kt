@@ -3,9 +3,11 @@ package com.soywiz.korio.net.http
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.asyncGenerate3
 import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.util.AsyncCloseable
 import com.soywiz.korio.util.Extra
 import java.io.IOException
+import java.nio.ByteBuffer
 
 
 open class HttpServer protected constructor() : AsyncCloseable {
@@ -17,6 +19,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			val uri: String,
 			val headers: Http.Headers
 	) : Extra by Extra.Mixin() {
+		val path: String by lazy { uri }
 		val absoluteURI: String by lazy { uri }
 	}
 
@@ -77,7 +80,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			val method: Http.Method,
 			uri: String,
 			headers: Http.Headers
-	) : BaseRequest(uri, headers) {
+	) : BaseRequest(uri, headers), AsyncOutputStream {
 
 		fun getHeader(key: String): String? = headers[key]
 
@@ -111,7 +114,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		abstract protected fun _endHandler(handler: () -> Unit)
 		abstract protected fun _setStatus(code: Int, message: String)
 		abstract protected fun _sendHeaders(headers: Http.Headers)
-		abstract protected fun _emit(data: ByteArray)
+		abstract protected fun _write(data: ByteArray, offset: Int = 0, size: Int = data.size - offset)
 		abstract protected fun _end()
 
 		fun handler(handler: (ByteArray) -> Unit) {
@@ -134,10 +137,9 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			}
 		}
 
-		fun emit(data: ByteArray) {
-			//println("EMIT: ${data.size}")
+		override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
 			flushHeaders()
-			_emit(data)
+			_write(buffer, offset, len)
 		}
 
 		fun end() {
@@ -147,13 +149,23 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		}
 
 		fun end(data: ByteArray) {
-			addHeader("Content-Length", "${data.size}")
-			emit(data)
+			replaceHeader("Content-Length", "${data.size}")
+			flushHeaders()
+			_write(data, 0, data.size)
 			end()
 		}
 
-		fun emit(data: String) = emit(data.toByteArray(Charsets.UTF_8))
-		fun end(data: String) = end(data.toByteArray(Charsets.UTF_8))
+		fun write(data: String) {
+			flushHeaders()
+			_write(data.toByteArray(Charsets.UTF_8))
+		}
+		fun end(data: String) {
+			end(data.toByteArray(Charsets.UTF_8))
+		}
+
+		suspend override fun close() {
+			end()
+		}
 	}
 
 	suspend open protected fun websocketHandlerInternal(handler: suspend (WsRequest) -> Unit) {
@@ -217,29 +229,36 @@ class FakeRequest(
 	var outputStatusCode: Int = 0
 	var outputStatusMessage: String = ""
 	var output: String = ""
+	val log = arrayListOf<String>()
 
 	override fun _handler(handler: (ByteArray) -> Unit) {
+		log += "handler()"
 		handler(body)
 	}
 
 	override fun _endHandler(handler: () -> Unit) {
+		log += "_endHandler()"
 		handler()
 	}
 
 	override fun _setStatus(code: Int, message: String) {
+		log += "status($code, $message)"
 		outputStatusCode = code
 		outputStatusMessage = message
 	}
 
 	override fun _sendHeaders(headers: Http.Headers) {
+		log += "headers($headers)"
 		outputHeaders = headers
 	}
 
-	override fun _emit(data: ByteArray) {
-		buf.append(data)
+	override fun _write(data: ByteArray, offset: Int, size: Int) {
+		log += "write(${ByteBuffer.wrap(data, offset, size).array().toString(Charsets.UTF_8)})"
+		buf.append(data, offset, size)
 	}
 
 	override fun _end() {
+		log += "end()"
 		output = buf.toByteArray().toString(Charsets.UTF_8)
 	}
 

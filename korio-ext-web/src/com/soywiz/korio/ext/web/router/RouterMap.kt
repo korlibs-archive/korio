@@ -10,12 +10,24 @@ import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.http.httpError
 import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.serialization.querystring.QueryString
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.copyTo
 import com.soywiz.korio.util.Dynamic
+import com.soywiz.korio.vfs.VfsFile
+import com.soywiz.korio.vfs.mimeType
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
 
-annotation class WsRoute(val path: String)
-annotation class Route(val method: Http.Methods, val path: String, val textContentType: String = "text/html")
+object RoutePriority {
+	const val HIGHEST = -1000
+	const val HIGH = -100
+	const val NORMAL = 0
+	const val LOW = 100
+	const val LOWEST = 1000
+}
+
+annotation class WsRoute(val path: String, val priority: Int = RoutePriority.NORMAL)
+annotation class Route(val method: Http.Methods, val path: String, val priority: Int = RoutePriority.NORMAL, val textContentType: String = "text/html")
 annotation class Param(val name: String, val limit: Int = -1)
 annotation class Post(val name: String, val limit: Int = -1)
 annotation class Header(val name: String, val limit: Int = -1)
@@ -32,7 +44,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 	//object : Continuation<Any>
 	//router.route(route.path).handler { rreq ->
 	//router.router.route(route.method, route.path).handler(BodyHandler.create().setBodyLimit(16 * 1024)).handler { rreq ->
-	router.route(route.method, route.path) { rreq ->
+	router.route(route.method, route.path, route.priority) { rreq ->
 		val res = rreq
 		val req = rreq
 		//val res = rreq.response()
@@ -47,6 +59,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 		var bodyOverflow = false
 		val bodyContent = OptByteBuffer()
 		val response = Http.Response()
+		val request = Http.Request(rreq.uri, req.headers)
 
 		req.handler {
 			totalRequestSize += it.size
@@ -104,6 +117,12 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 						Http.Response::class.java.isAssignableFrom(paramType) -> {
 							args += response
 						}
+						Http.Request::class.java.isAssignableFrom(paramType) -> {
+							args += request
+						}
+						HttpServer.Request::class.java.isAssignableFrom(paramType) -> {
+							args += rreq
+						}
 						com.soywiz.korio.coroutine.Continuation::class.java.isAssignableFrom(paramType) -> {
 							//deferred = Promise.Deferred<Any>()
 							//args += deferred.toContinuation()
@@ -127,7 +146,19 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 				for ((k, v) in response.headers) res.addHeader(k, v)
 
 				when (finalResult) {
+					null -> res.end("")
 					is String -> res.end("$finalResult")
+					is AsyncStream -> {
+						res.replaceHeader("Content-Length", "${finalResult.size()}")
+						finalResult.copyTo(res)
+						res.close()
+					}
+					is VfsFile -> {
+						res.replaceHeader("Content-Length", "${finalResult.size()}")
+						res.replaceHeader("Content-Type", finalResult.mimeType().mime)
+						finalResult.copyTo(res)
+						res.close()
+					}
 					else -> {
 						res.replaceHeader("Content-Type", "application/json")
 						res.end(Json.encode(finalResult))
@@ -139,28 +170,35 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 					else -> t
 				}
 				val ft = when (t2) {
-					is NoSuchElementException -> Http.HttpException(404, t2.message ?: "")
-					is InvalidOperationException -> Http.HttpException(400, t2.message ?: "")
-					else -> t2
+					is java.nio.file.NoSuchFileException,
+					is java.nio.file.InvalidPathException,
+					is java.io.FileNotFoundException,
+					is NoSuchFileException,
+					is NoSuchElementException
+					->
+						//Http.HttpException(404, t2.message ?: "")
+						Http.HttpException(404, "404 - Not Found - ${req.uri}")
+					is InvalidOperationException ->
+						Http.HttpException(400, "400 - Invalid Operation - ${req.uri}")
+					else -> {
+						System.err.println("OtherException: ### ${req.absoluteURI} : $postParams")
+						t.printStackTrace()
+						//Http.HttpException(500, t2.message ?: "")
+						Http.HttpException(500, "500 - Internal Server Error")
+					}
 				}
-				if (ft is Http.HttpException) {
-					System.err.println("Http.HttpException: +++ ${req.absoluteURI} : $postParams")
-					res.setStatus(ft.statusCode, ft.statusText)
-					for (header in ft.headers) res.addHeader(header.first, header.second)
-					res.end(ft.msg)
-				} else {
-					System.err.println("OtherException: ### ${req.absoluteURI} : $postParams")
-					t.printStackTrace()
-					res.setStatus(500)
-					res.end("${ft.message}")
-				}
+				System.err.println("Http.HttpException: +++ ${ft.statusCode}:${ft.statusText} : ${req.absoluteURI} : $postParams")
+				res.setStatus(ft.statusCode, ft.statusText)
+				res.replaceHeader("Content-Type", "text/html")
+				for (header in ft.headers) res.addHeader(header.first, header.second)
+				res.end(ft.msg)
 			}
 		}
 	}
 }
 
 suspend private fun registerWsRoute(router: KorRouter, instance: Any, method: Method, route: WsRoute) {
-	router.wsroute(route.path) { ws ->
+	router.wsroute(route.path, route.priority) { ws ->
 		val args = arrayListOf<Any?>()
 		for ((indexedParamType, annotations) in method.parameterTypes.withIndex().zip(method.parameterAnnotations)) {
 			val (index, paramType) = indexedParamType

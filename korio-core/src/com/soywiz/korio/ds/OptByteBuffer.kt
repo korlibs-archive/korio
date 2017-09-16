@@ -21,6 +21,12 @@ class OptByteBuffer {
 		size += chunk.size
 	}
 
+	fun append(chunk: ByteArray, offset: Int, length: Int) {
+		val achunk = chunk.copyOfRange(offset, offset + length)
+		chunks += achunk
+		size += achunk.size
+	}
+
 	fun append(buffer: OptByteBuffer) {
 		for (c in buffer.chunks) append(c)
 	}

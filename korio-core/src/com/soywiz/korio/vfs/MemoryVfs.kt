@@ -7,7 +7,7 @@ import com.soywiz.korio.stream.SyncStream
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.toAsync
 
-suspend fun MemoryVfs(items: Map<String, AsyncStream> = mapOf(), caseSensitive: Boolean = true): VfsFile {
+fun MemoryVfs(items: Map<String, AsyncStream> = mapOf(), caseSensitive: Boolean = true): VfsFile {
 	val vfs = NodeVfs(caseSensitive)
 	for ((path, stream) in items) {
 		val info = PathInfo(path)
@@ -18,7 +18,7 @@ suspend fun MemoryVfs(items: Map<String, AsyncStream> = mapOf(), caseSensitive: 
 	return vfs.root
 }
 
-suspend fun MemoryVfsMix(items: Map<String, Any> = mapOf(), caseSensitive: Boolean = true): VfsFile = MemoryVfs(items.mapValues { (_, v) ->
+fun MemoryVfsMix(items: Map<String, Any> = mapOf(), caseSensitive: Boolean = true): VfsFile = MemoryVfs(items.mapValues { (_, v) ->
 	when (v) {
 		is SyncStream -> v.toAsync()
 		is ByteArray -> v.openAsync()
@@ -27,7 +27,7 @@ suspend fun MemoryVfsMix(items: Map<String, Any> = mapOf(), caseSensitive: Boole
 	}
 }, caseSensitive)
 
-suspend fun MemoryVfsMix(vararg items: Pair<String, Any>, caseSensitive: Boolean = true): VfsFile = MemoryVfs(items.map { (key, value) ->
+fun MemoryVfsMix(vararg items: Pair<String, Any>, caseSensitive: Boolean = true): VfsFile = MemoryVfs(items.map { (key, value) ->
 	key to when (value) {
 		is SyncStream -> value.toAsync()
 		is ByteArray -> value.openAsync()
