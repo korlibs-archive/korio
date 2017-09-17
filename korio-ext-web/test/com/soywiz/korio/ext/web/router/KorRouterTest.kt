@@ -66,7 +66,7 @@ class KorRouterTest {
 			)
 
 			@Route(Http.Methods.GET, "/*", priority = RoutePriority.LOWEST)
-			fun static(req: HttpServer.Request): VfsFile = files[req.uri]
+			fun static(req: HttpServer.Request): VfsFile = files[req.path]
 		}
 
 		router.registerRoutes<StaticRoute>()
@@ -77,9 +77,15 @@ class KorRouterTest {
 		)
 
 		Assert.assertEquals(
+			"200:OK:Headers((Content-Length, [13]), (Content-Type, [text/plain])):User-agent: *",
+			router.testRoute(Http.Method.GET, "/robots.txt?v=3.2.0")
+		)
+
+		Assert.assertEquals(
 				"404:Not Found:Headers((Content-Length, [30]), (Content-Type, [text/html])):404 - Not Found - /donotexists",
 				router.testRoute(Http.Method.GET, "/donotexists")
 		)
+
 	}
 
 	@Test
