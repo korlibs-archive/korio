@@ -1,5 +1,6 @@
 package com.soywiz.korio.ext.web.router
 
+import com.jtransc.io.async.jtranscAsyncFileSystem
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.async
 import com.soywiz.korio.async.invokeSuspend
@@ -273,8 +274,6 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 					}
 				}
 			} catch (tt: Throwable) {
-				tt.printStackTrace() // @TODO: Enable just in debug
-
 				val t = when (tt) {
 					is InvocationTargetException -> tt.cause ?: tt
 					else -> tt
@@ -282,11 +281,13 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 
 				when (t) {
 					is Http.RedirectException -> {
+						System.err.println("Redirected: ${t.statusCode}:${t.statusText}: Location: ${t.redirectUri}")
 						res.setStatus(t.statusCode, t.statusText)
 						res.replaceHeader("Location", t.redirectUri)
 						res.end()
 					}
 					else -> {
+						tt.printStackTrace() // @TODO: Enable just in debug
 						val ft = when (t) {
 							is java.nio.file.NoSuchFileException,
 							is InvalidPathException,

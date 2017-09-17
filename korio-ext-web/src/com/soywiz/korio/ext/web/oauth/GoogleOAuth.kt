@@ -6,7 +6,7 @@ import com.soywiz.korio.net.http.rest.rest
 import com.soywiz.korio.serialization.querystring.QueryString
 import com.soywiz.korio.util.asDynamicNode
 
-class GoogleOAuth(override val clientId: String, override val clientSecret: String, redirectUri: String, client: HttpClient = createHttpClient()) : OAuth(client, redirectUri) {
+class GoogleOAuth(override val clientId: String, override val clientSecret: String, client: HttpClient = createHttpClient()) : OAuth(client) {
 	override val oauthBase = "https://accounts.google.com/o/oauth2/auth"
 	override val oauthTokenBase = "https://accounts.google.com/o/oauth2/token"
 	override val oauthTokenInfoBase = ""

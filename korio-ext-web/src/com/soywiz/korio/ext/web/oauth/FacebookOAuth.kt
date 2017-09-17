@@ -6,7 +6,7 @@ import com.soywiz.korio.net.http.rest.rest
 import com.soywiz.korio.serialization.querystring.QueryString
 import com.soywiz.korio.util.asDynamicNode
 
-class FacebookOAuth(override val clientId: String, override val clientSecret: String, redirectUri: String, client: HttpClient = createHttpClient()) : OAuth(client, redirectUri) {
+class FacebookOAuth(override val clientId: String, override val clientSecret: String, client: HttpClient = createHttpClient()) : OAuth(client) {
 	override val oauthBase = "https://www.facebook.com/dialog/oauth"
 	override val oauthTokenBase = "https://graph.facebook.com/oauth/access_token"
 	override val oauthTokenInfoBase = ""
