@@ -273,6 +273,8 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 					}
 				}
 			} catch (t: Throwable) {
+				t.printStackTrace() // @TODO: Enable just in debug
+
 				val t2 = when (t) {
 					is InvocationTargetException -> t.cause ?: t
 					else -> t
