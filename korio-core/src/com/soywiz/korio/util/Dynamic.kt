@@ -414,6 +414,7 @@ object Dynamic {
 			">" -> compare(l, r) > 0
 			">=" -> compare(l, r) >= 0
 			"in" -> contains(r, l)
+			"?:" -> if (toBool(l)) l else r
 			else -> noImpl("Not implemented binary operator '$op'")
 		}
 	}
