@@ -464,4 +464,21 @@ object Dynamic {
 	inline fun context(callback: Context.() -> Unit) {
 		contextInstance.callback()
 	}
+
+	fun <T> getTypedFields(sourceClass: Class<*>, source: Any?, clazz: Class<T>): List<T> {
+		val list = arrayListOf<T>()
+		val expectStatic = source == null
+		for (field in sourceClass.allDeclaredFields) {
+			val isStatic = Modifier.isStatic(field.modifiers)
+			if ((isStatic == expectStatic) && field.type == clazz) {
+				field.isAccessible = true
+				list += field.get(source) as T
+			}
+		}
+		return list.toList()
+	}
+
+	inline fun <reified T> getInstanceTypedFields(source: Any): List<T> = getTypedFields(source.javaClass, source, T::class.java)
+
+	inline fun <reified T> getStaticTypedFields(source: Class<*>): List<T> = getTypedFields(source, null, T::class.java)
 }
