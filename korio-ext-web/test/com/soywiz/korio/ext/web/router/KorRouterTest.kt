@@ -85,7 +85,24 @@ class KorRouterTest {
 				"404:Not Found:Headers((Content-Length, [30]), (Content-Type, [text/html])):404 - Not Found - /donotexists",
 				router.testRoute(Http.Method.GET, "/donotexists")
 		)
+	}
 
+	@Test
+	fun testRedirect() = syncTest {
+		@Suppress("unused")
+		class TestRoute {
+			@Route(Http.Methods.GET, "/redir", priority = RoutePriority.LOWEST)
+			fun redir(): String {
+				throw Http.TemporalRedirect("/target")
+			}
+		}
+
+		router.registerRoutes<TestRoute>()
+
+		Assert.assertEquals(
+			"307:Temporary Redirect:Headers((Content-Type, [text/html]), (Location, [/target])):",
+			router.testRoute(Http.Method.GET, "/redir")
+		)
 	}
 
 	@Test

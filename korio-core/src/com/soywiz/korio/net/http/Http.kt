@@ -3,7 +3,6 @@ package com.soywiz.korio.net.http
 import com.soywiz.korio.crypto.fromBase64
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.serialization.querystring.QueryString
-import com.soywiz.korio.vfs.UrlVfs
 import java.io.IOException
 
 
@@ -49,7 +48,7 @@ interface Http {
 		override fun toString(): String = nameUC
 	}
 
-	class HttpException(
+	open class HttpException(
 		val statusCode: Int,
 		val msg: String = "Error$statusCode",
 		val statusText: String = HttpStatusMessage.CODES[statusCode] ?: "Error$statusCode",
@@ -91,8 +90,8 @@ interface Http {
 	}
 
 	class Request(
-			val uri: String,
-			val headers: Http.Headers
+		val uri: String,
+		val headers: Http.Headers
 	) {
 		private val parts by lazy { uri.split('?', limit = 2) }
 		val path: String by lazy { parts[0] }
@@ -151,6 +150,13 @@ interface Http {
 				}.filterNotNull())
 			}
 		}
+	}
+
+	data class RedirectException(val code: Int = 307, val redirectUri: String) : Http.HttpException(code, HttpStatusMessage(code))
+
+	companion object {
+		fun TemporalRedirect(uri: String) = RedirectException(code = 307, redirectUri = uri)
+		fun PermanentRedirect(uri: String) = RedirectException(code = 301, redirectUri = uri)
 	}
 
 	/*

@@ -272,36 +272,46 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 						res.end(Json.encode(finalResult))
 					}
 				}
-			} catch (t: Throwable) {
-				t.printStackTrace() // @TODO: Enable just in debug
+			} catch (tt: Throwable) {
+				tt.printStackTrace() // @TODO: Enable just in debug
 
-				val t2 = when (t) {
-					is InvocationTargetException -> t.cause ?: t
-					else -> t
+				val t = when (tt) {
+					is InvocationTargetException -> tt.cause ?: tt
+					else -> tt
 				}
-				val ft = when (t2) {
-					is java.nio.file.NoSuchFileException,
-					is InvalidPathException,
-					is FileNotFoundException,
-					is NoSuchFileException,
-					is NoSuchElementException
-					->
-						//Http.HttpException(404, t2.message ?: "")
-						Http.HttpException(404, "404 - Not Found - ${req.path}")
-					is InvalidOperationException ->
-						Http.HttpException(400, "400 - Invalid Operation - ${req.path}")
+
+				when (t) {
+					is Http.RedirectException -> {
+						res.setStatus(t.statusCode, t.statusText)
+						res.replaceHeader("Location", t.redirectUri)
+						res.end()
+					}
 					else -> {
-						System.err.println("OtherException: ### ${req.absoluteURI} : $postParams")
-						t.printStackTrace()
-						//Http.HttpException(500, t2.message ?: "")
-						Http.HttpException(500, "500 - Internal Server Error")
+						val ft = when (t) {
+							is java.nio.file.NoSuchFileException,
+							is InvalidPathException,
+							is FileNotFoundException,
+							is NoSuchFileException,
+							is NoSuchElementException
+							->
+								//Http.HttpException(404, t2.message ?: "")
+								Http.HttpException(404, "404 - Not Found - ${req.path}")
+							is InvalidOperationException ->
+								Http.HttpException(400, "400 - Invalid Operation - ${req.path}")
+							else -> {
+								System.err.println("OtherException: ### ${req.absoluteURI} : $postParams")
+								tt.printStackTrace()
+								//Http.HttpException(500, t2.message ?: "")
+								Http.HttpException(500, "500 - Internal Server Error")
+							}
+						}
+						System.err.println("Http.HttpException: +++ ${ft.statusCode}:${ft.statusText} : ${req.absoluteURI} : $postParams")
+						res.setStatus(ft.statusCode, ft.statusText)
+						res.replaceHeader("Content-Type", "text/html")
+						for (header in ft.headers) res.addHeader(header.first, header.second)
+						res.end(ft.msg)
 					}
 				}
-				System.err.println("Http.HttpException: +++ ${ft.statusCode}:${ft.statusText} : ${req.absoluteURI} : $postParams")
-				res.setStatus(ft.statusCode, ft.statusText)
-				res.replaceHeader("Content-Type", "text/html")
-				for (header in ft.headers) res.addHeader(header.first, header.second)
-				res.end(ft.msg)
 			}
 		}
 	}
