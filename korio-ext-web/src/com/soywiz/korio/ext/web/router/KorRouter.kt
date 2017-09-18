@@ -1,12 +1,12 @@
 package com.soywiz.korio.ext.web.router
 
-import com.jtransc.io.async.jtranscAsyncFileSystem
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.async
 import com.soywiz.korio.async.invokeSuspend
 import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.error.InvalidOperationException
+import com.soywiz.korio.ext.web.sstatic.serveStatic
 import com.soywiz.korio.inject.AsyncInjector
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpServer
@@ -263,10 +263,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 						res.close()
 					}
 					is VfsFile -> {
-						res.replaceHeader("Content-Length", "${finalResult.size()}")
-						res.replaceHeader("Content-Type", finalResult.mimeType().mime)
-						finalResult.copyTo(res)
-						res.close()
+						res.serveStatic(finalResult)
 					}
 					else -> {
 						res.replaceHeader("Content-Type", "application/json")

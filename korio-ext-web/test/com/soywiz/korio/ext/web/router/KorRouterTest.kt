@@ -67,23 +67,38 @@ class KorRouterTest {
 
 			@Route(Http.Methods.GET, "/*", priority = RoutePriority.LOWEST)
 			fun static(req: HttpServer.Request): VfsFile = files[req.path]
+
+			@Route(Http.Methods.HEAD, "/*", priority = RoutePriority.LOWEST)
+			fun staticHead(req: HttpServer.Request): VfsFile = files[req.path]
 		}
 
 		router.registerRoutes<StaticRoute>()
 
 		Assert.assertEquals(
-				"200:OK:Headers((Content-Length, [13]), (Content-Type, [text/plain])):User-agent: *",
+				"200:OK:Headers((Accept-Ranges, [bytes]), (Content-Length, [13]), (Content-Type, [text/plain])):User-agent: *",
 				router.testRoute(Http.Method.GET, "/robots.txt")
 		)
 
 		Assert.assertEquals(
-			"200:OK:Headers((Content-Length, [13]), (Content-Type, [text/plain])):User-agent: *",
+			"200:OK:Headers((Accept-Ranges, [bytes]), (Content-Length, [13]), (Content-Type, [text/plain])):User-agent: *",
 			router.testRoute(Http.Method.GET, "/robots.txt?v=3.2.0")
 		)
 
 		Assert.assertEquals(
 				"404:Not Found:Headers((Content-Length, [30]), (Content-Type, [text/html])):404 - Not Found - /donotexists",
 				router.testRoute(Http.Method.GET, "/donotexists")
+		)
+
+		// Partial content: GET
+		Assert.assertEquals(
+			"206:Partial Content:Headers((Accept-Ranges, [bytes]), (Content-Length, [2]), (Content-Range, [bytes 1-2/13]), (Content-Type, [text/plain])):se",
+			router.testRoute(Http.Method.GET, "/robots.txt", Http.Headers("Range" to "bytes=1-2"))
+		)
+
+		// Partial content: HEAD
+		Assert.assertEquals(
+			"206:Partial Content:Headers((Accept-Ranges, [bytes]), (Content-Length, [0]), (Content-Range, [bytes 1-2/13]), (Content-Type, [text/plain])):",
+			router.testRoute(Http.Method.HEAD, "/robots.txt", Http.Headers("Range" to "bytes=1-2"))
 		)
 	}
 

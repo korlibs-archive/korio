@@ -3,6 +3,7 @@ package com.soywiz.korio.net.http
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.asyncGenerate3
 import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.nio.toString
 import com.soywiz.korio.serialization.querystring.QueryString
 import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.util.AsyncCloseable
@@ -258,7 +259,7 @@ class FakeRequest(
 	}
 
 	override fun _write(data: ByteArray, offset: Int, size: Int) {
-		log += "write(${ByteBuffer.wrap(data, offset, size).array().toString(Charsets.UTF_8)})"
+		log += "write(${ByteBuffer.wrap(data, offset, size).toString(Charsets.UTF_8)})"
 		buf.append(data, offset, size)
 	}
 
