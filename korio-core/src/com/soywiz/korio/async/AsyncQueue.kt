@@ -1,15 +1,24 @@
 package com.soywiz.korio.async
 
 import com.soywiz.korio.coroutine.CoroutineContext
+import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.coroutine.korioStartCoroutine
 import com.soywiz.korio.coroutine.withCoroutineContext
 
-class AsyncQueue {
+//class AsyncQueue(val context: CoroutineContext) {
+class AsyncQueue() {
+	//constructor() : AsyncQueue(CoroutineContext())
+
 	private var promise: Promise<Any> = Promise.resolved(Unit)
+
+	//companion object {
+	//	suspend operator fun invoke() = AsyncQueue(getCoroutineContext())
+	//}
 
 	operator suspend fun invoke(func: suspend () -> Unit): AsyncQueue = withCoroutineContext { invoke(this@withCoroutineContext, func) }
 
 	operator fun invoke(context: CoroutineContext, func: suspend () -> Unit): AsyncQueue {
+		//operator fun invoke(func: suspend () -> Unit): AsyncQueue {
 		val oldPromise = this@AsyncQueue.promise
 		val newDeferred = Promise.Deferred<Any>()
 		this@AsyncQueue.promise = newDeferred.promise
@@ -19,14 +28,21 @@ class AsyncQueue {
 		return this@AsyncQueue
 	}
 
-	suspend fun await(func: suspend () -> Unit): Unit {
+	suspend fun await(func: suspend () -> Unit) {
 		invoke(func)
 		await()
 	}
 
-	suspend fun await(): Unit {
-		promise.await()
-	}
+	suspend fun await() = promise.await()
+}
+
+fun AsyncQueue.withContext(ctx: CoroutineContext) = AsyncQueueWithContext(this, ctx)
+suspend fun AsyncQueue.withContext() = AsyncQueueWithContext(this, getCoroutineContext())
+
+class AsyncQueueWithContext(val queue: AsyncQueue, val context: CoroutineContext) {
+	operator fun invoke(func: suspend () -> Unit): AsyncQueue = queue.invoke(context, func)
+	suspend fun await(func: suspend () -> Unit) = queue.await(func)
+	suspend fun await() = queue.await()
 }
 
 class AsyncThread {

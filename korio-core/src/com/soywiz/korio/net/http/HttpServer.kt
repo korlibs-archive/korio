@@ -131,18 +131,18 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			addHeader(key, value)
 		}
 
-		abstract protected fun _handler(handler: (ByteArray) -> Unit)
-		abstract protected fun _endHandler(handler: () -> Unit)
+		abstract suspend protected fun _handler(handler: suspend (ByteArray) -> Unit)
+		abstract suspend protected fun _endHandler(handler: suspend () -> Unit)
 		abstract protected fun _setStatus(code: Int, message: String)
 		abstract protected fun _sendHeaders(headers: Http.Headers)
 		abstract protected fun _write(data: ByteArray, offset: Int = 0, size: Int = data.size - offset)
 		abstract protected fun _end()
 
-		fun handler(handler: (ByteArray) -> Unit) {
+		suspend fun handler(handler: suspend (ByteArray) -> Unit) {
 			_handler(handler)
 		}
 
-		fun endHandler(handler: () -> Unit) {
+		suspend fun endHandler(handler: suspend () -> Unit) {
 			_endHandler(handler)
 		}
 
@@ -260,12 +260,12 @@ class FakeRequest(
 	var output: String = ""
 	val log = arrayListOf<String>()
 
-	override fun _handler(handler: (ByteArray) -> Unit) {
+	override suspend fun _handler(handler: suspend (ByteArray) -> Unit) {
 		log += "handler()"
 		handler(body)
 	}
 
-	override fun _endHandler(handler: () -> Unit) {
+	override suspend fun _endHandler(handler: suspend () -> Unit) {
 		log += "_endHandler()"
 		handler()
 	}
