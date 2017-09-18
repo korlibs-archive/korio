@@ -1,9 +1,11 @@
 package com.soywiz.korio.vertx.sample
 
 import com.soywiz.korio.Korio
-import com.soywiz.korio.ext.web.cookie.supportCookies
 import com.soywiz.korio.ext.web.html.html
 import com.soywiz.korio.ext.web.router.*
+import com.soywiz.korio.ext.web.session.MemorySessionProvider
+import com.soywiz.korio.ext.web.session.registerSessions
+import com.soywiz.korio.ext.web.session.session
 import com.soywiz.korio.inject.AsyncInjector
 import com.soywiz.korio.inject.Singleton
 import com.soywiz.korio.net.http.Http
@@ -16,8 +18,10 @@ object Example1 {
 		val injector = AsyncInjector()
 		val server = createHttpServer()
 			.router(injector) {
+				registerSessions(MemorySessionProvider())
 				registerRoutes<TestRoute>()
 				registerRoutes<ExampleChatRoute>()
+				registerRoutes<SessionRoute>()
 			}
 			.listen(System.getenv("PORT")?.toIntOrNull() ?: 8080)
 		println("Listening to ${server.actualPort}...")
@@ -28,6 +32,17 @@ object Example1 {
 class AuthRepository {
 	suspend fun check(user: String, pass: String): Boolean {
 		return user == pass
+	}
+}
+
+@Suppress("unused")
+class SessionRoute {
+	@Route(Http.Methods.GET, "/sessiontest")
+	suspend fun test(req: HttpServer.Request): String {
+		val count = req.session.getInt("count")
+
+		req.session.setInt("count", count + 1)
+		return "Count: $count : ${req.session.getStringOrNull("userName")}"
 	}
 }
 

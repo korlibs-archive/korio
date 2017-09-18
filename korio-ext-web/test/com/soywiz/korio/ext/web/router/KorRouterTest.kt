@@ -1,7 +1,7 @@
 package com.soywiz.korio.ext.web.router
 
 import com.soywiz.korio.async.syncTest
-import com.soywiz.korio.ext.web.cookie.supportCookies
+import com.soywiz.korio.ext.web.cookie.registerCookies
 import com.soywiz.korio.inject.AsyncInjector
 import com.soywiz.korio.net.http.FakeRequest
 import com.soywiz.korio.net.http.Http
@@ -148,12 +148,12 @@ class KorRouterTest {
 			fun test(): String = "demo"
 		}
 
-		router.supportCookies()
+		router.registerCookies()
 		router.registerRoutes<DemoRoute>()
 
 		Assert.assertEquals(
-			"200:OK:Headers((Content-Length, [4]), (Content-Type, [text/html]), (Cookie, [hello=world])):demo",
-			router.testRoute(Http.Method.GET, "/", Http.Headers("Set-Cookie" to "hello=world"))
+			"200:OK:Headers((Content-Length, [4]), (Content-Type, [text/html]), (Set-Cookie, [hello=world])):demo",
+			router.testRoute(Http.Method.GET, "/", Http.Headers("Cookie" to "hello=world"))
 		)
 	}
 }

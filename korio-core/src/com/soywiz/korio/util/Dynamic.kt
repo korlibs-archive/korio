@@ -111,15 +111,16 @@ object Dynamic {
 		}
 	}
 
-	fun toNumber(it: Any?): Double {
+	fun toNumber(it: Any?): Number {
 		return when (it) {
 			null -> 0.0
-			is Number -> it.toDouble()
-			else -> it.toString().toDouble()
+			is Number -> it
+			else -> it.toString().toNumber()
 		}
 	}
 
 	fun toInt(it: Any?): Int = toNumber(it).toInt()
+	fun toLong(it: Any?): Long = toNumber(it).toLong()
 	fun toDouble(it: Any?): Double = toNumber(it).toDouble()
 
 	fun toBool(it: Any?): Boolean {
@@ -350,7 +351,7 @@ object Dynamic {
 	fun unop(r: Any?, op: String): Any? {
 		return when (op) {
 			"+" -> r
-			"-" -> -toNumber(r)
+			"-" -> -toDouble(r)
 			"~" -> toInt(r).inv()
 			"!" -> !toBool(r)
 			else -> noImpl("Not implemented unary operator $op")
@@ -382,14 +383,14 @@ object Dynamic {
 				when (l) {
 					is String -> l.toString() + toString(r)
 					is Iterable<*> -> toIterable(l) + toIterable(r)
-					else -> toNumber(l) + toNumber(r)
+					else -> toDouble(l) + toDouble(r)
 				}
 			}
-			"-" -> toNumber(l) - toNumber(r)
-			"*" -> toNumber(l) * toNumber(r)
-			"/" -> toNumber(l) / toNumber(r)
-			"%" -> toNumber(l) % toNumber(r)
-			"**" -> Math.pow(toNumber(l), toNumber(r))
+			"-" -> toDouble(l) - toDouble(r)
+			"*" -> toDouble(l) * toDouble(r)
+			"/" -> toDouble(l) / toDouble(r)
+			"%" -> toDouble(l) % toDouble(r)
+			"**" -> Math.pow(toDouble(l), toDouble(r))
 			"&" -> toInt(l) and toInt(r)
 			"or" -> toInt(l) or toInt(r)
 			"^" -> toInt(l) xor toInt(r)
@@ -449,6 +450,8 @@ object Dynamic {
 		fun Any?.toDynamicString() = Dynamic.toString(this)
 		fun Any?.toDynamicBool() = Dynamic.toBool(this)
 		fun Any?.toDynamicInt() = Dynamic.toInt(this)
+		fun Any?.toDynamicDouble() = Dynamic.toDouble(this)
+		fun Any?.toDynamicLong() = Dynamic.toLong(this)
 		fun Any?.toDynamicList() = Dynamic.toList(this)
 		fun Any?.toDynamicIterable() = Dynamic.toIterable(this)
 		fun Any?.dynamicLength() = Dynamic.length(this)

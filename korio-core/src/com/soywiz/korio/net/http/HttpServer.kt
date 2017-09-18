@@ -86,8 +86,11 @@ open class HttpServer protected constructor() : AsyncCloseable {
 	)
 
 	data class RequestConfig(
-		val beforeSendHeadersInterceptors: ArrayList<suspend (Request) -> Unit> = arrayListOf()
-	)
+		val beforeSendHeadersInterceptors: LinkedHashMap<String, suspend (Request) -> Unit> = LinkedHashMap()
+	) : Extra by Extra.Mixin() {
+		// TODO:
+		fun registerComponent(component: Any, dependsOn: List<Any>): Unit = TODO()
+	}
 
 	abstract class Request constructor(
 			val method: Http.Method,
@@ -95,6 +98,8 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			headers: Http.Headers,
 			val requestConfig: RequestConfig = RequestConfig()
 	) : BaseRequest(uri, headers), AsyncOutputStream {
+		val finalizers = arrayListOf<suspend () -> Unit>()
+
 		fun getHeader(key: String): String? = headers[key]
 
 		fun getHeaderList(key: String): List<String> = headers.getAll(key)
@@ -151,9 +156,10 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			if (finalizingHeaders) invalidOp("Can't write while finalizing headers")
 			finalizingHeaders = true
 			for (interceptor in requestConfig.beforeSendHeadersInterceptors) {
-				interceptor(this)
+				interceptor.value(this)
 			}
 			headersSent = true
+			//println("----HEADERS-----\n" + resHeaders.joinToString("\n"))
 			_sendHeaders(Http.Headers(resHeaders))
 		}
 
@@ -166,6 +172,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			//println("END")
 			flushHeaders()
 			_end()
+			for (finalizer in finalizers) finalizer()
 		}
 
 		suspend fun end(data: ByteArray) {
