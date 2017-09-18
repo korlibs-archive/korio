@@ -13,7 +13,7 @@ class ResourcesVfsTest {
 
 		Assert.assertEquals(
 			"[a.txt, b.txt]",
-			ResourcesVfs["tresfolder"].list().filter { it.extensionLC == "txt" }.toList().map { it.basename }.toString()
+			ResourcesVfs["tresfolder"].list().filter { it.extensionLC == "txt" }.toList().map { it.basename }.sorted().toString()
 		)
 	}
 }
