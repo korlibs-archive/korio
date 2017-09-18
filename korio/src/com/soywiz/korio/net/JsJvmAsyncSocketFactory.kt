@@ -55,20 +55,27 @@ class JsJvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : Asyn
 		})
 	}
 
-	//suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = suspendCoroutineEL { c ->
-	suspend private fun _write(buffer: ByteArray, offset: Int, len: Int): Unit = korioSuspendCoroutine { c ->
-		//println("write started: $len")
+	suspend private fun _write(buffer: ByteArray, offset: Int, len: Int): Unit {
+		_writeBufferFull(ByteBuffer.wrap(buffer, offset, len))
+	}
+
+	suspend private fun _writeBufferFull(bb: ByteBuffer) {
+		while (bb.hasRemaining()) {
+			_writeBufferPartial(bb)
+		}
+	}
+
+
+	suspend private fun _writeBufferPartial(bb: ByteBuffer): Int = korioSuspendCoroutine { c ->
 		if (sc == null) throw IOException("Not connected")
-		val bb = ByteBuffer.wrap(buffer, offset, len)
 		AsyncClient.Stats.writeCountStart.incrementAndGet()
 		sc!!.write(bb, this, object : CompletionHandler<Int, AsyncClient> {
-			override fun completed(result: Int, attachment: AsyncClient): Unit {
-				//println("write completed")
+			override fun completed(result: Int, attachment: AsyncClient) {
 				AsyncClient.Stats.writeCountEnd.incrementAndGet()
-				c.resume(Unit)
+				c.resume(result)
 			}
 
-			override fun failed(exc: Throwable, attachment: AsyncClient): Unit {
+			override fun failed(exc: Throwable, attachment: AsyncClient) {
 				//println("write failed")
 				AsyncClient.Stats.writeCountError.incrementAndGet()
 				c.resumeWithException(exc)
