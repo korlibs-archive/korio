@@ -32,8 +32,8 @@ class VertxHttpServer : HttpServer() {
 
 		vxServer.websocketHandler { ws ->
 			val kws = object : WsRequest(
-					uri = ws.uri(),
-					headers = Http.Headers(ws.headers().map { it.key to it.value })
+				uri = ws.uri(),
+				headers = Http.Headers(ws.headers().map { it.key to it.value })
 			) {
 				override fun reject() {
 					ws.reject()
@@ -92,9 +92,10 @@ class VertxHttpServer : HttpServer() {
 		vxServer.requestHandler { req ->
 			val res = req.response()
 			val kreq = object : Request(
-					method = Http.Method(req.rawMethod()),
-					uri = req.uri(),
-					headers = Http.Headers(req.headers().map { it.key to it.value })
+				method = Http.Method(req.rawMethod()),
+				uri = req.uri(),
+				headers = Http.Headers(req.headers().map { it.key to it.value }),
+				requestConfig = requestConfig
 			) {
 				override fun _handler(handler: (ByteArray) -> Unit) {
 					req.handler { handler(it.bytes) }
@@ -197,10 +198,10 @@ class VertxHttpClient : HttpClient() {
 		val res = deferred.promise.await()
 
 		return Response(
-				status = res.statusCode(),
-				statusText = res.statusMessage(),
-				headers = Http.Headers(res.headers().map { it.key to it.value }),
-				content = p.toAsyncInputStream()
+			status = res.statusCode(),
+			statusText = res.statusMessage(),
+			headers = Http.Headers(res.headers().map { it.key to it.value }),
+			content = p.toAsyncInputStream()
 		)
 	}
 }

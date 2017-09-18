@@ -1,6 +1,7 @@
 package com.soywiz.korio.ext.web.router
 
 import com.soywiz.korio.async.syncTest
+import com.soywiz.korio.ext.web.cookie.supportCookies
 import com.soywiz.korio.inject.AsyncInjector
 import com.soywiz.korio.net.http.FakeRequest
 import com.soywiz.korio.net.http.Http
@@ -12,10 +13,11 @@ import org.junit.Test
 
 class KorRouterTest {
 	val injector = AsyncInjector()
-	val router = KorRouter(injector)
+	val requestConfig = HttpServer.RequestConfig()
+	val router = KorRouter(injector, requestConfig)
 
 	suspend private fun KorRouter.testRoute(method: Http.Method, uri: String, headers: Http.Headers = Http.Headers(), body: ByteArray = ByteArray(0)): String {
-		val request = FakeRequest(method, uri, headers, body)
+		val request = FakeRequest(method, uri, headers, body, requestConfig)
 		router.accept(request)
 		println(request.log.joinToString("\n"))
 		return request.toString()
@@ -135,6 +137,23 @@ class KorRouterTest {
 		Assert.assertEquals(
 				"200:OK:Headers((Content-Length, [13]), (Content-Type, [text/html])):hello world70",
 				router.testRoute(Http.Method.GET, "/test?name=world&demo=7&test=a")
+		)
+	}
+
+	@Test
+	fun testCookies() = syncTest {
+		@Suppress("unused")
+		class DemoRoute {
+			@Route(Http.Methods.GET, "/")
+			fun test(): String = "demo"
+		}
+
+		router.supportCookies()
+		router.registerRoutes<DemoRoute>()
+
+		Assert.assertEquals(
+			"200:OK:Headers((Content-Length, [4]), (Content-Type, [text/html]), (Cookie, [hello=world])):demo",
+			router.testRoute(Http.Method.GET, "/", Http.Headers("Set-Cookie" to "hello=world"))
 		)
 	}
 }

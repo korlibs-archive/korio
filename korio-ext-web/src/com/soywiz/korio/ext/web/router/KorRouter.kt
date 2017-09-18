@@ -8,6 +8,7 @@ import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.error.InvalidOperationException
 import com.soywiz.korio.ext.web.sstatic.serveStatic
 import com.soywiz.korio.inject.AsyncInjector
+import com.soywiz.korio.net.http.FakeHttpClient
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.http.httpError
@@ -91,8 +92,8 @@ data class KorWsRoute(val path: String, val bpriority: Int = 0, val handler: sus
 
 }
 
-class KorRouter(val injector: AsyncInjector) {
-	var interceptors = arrayListOf<suspend (HttpServer.Request, Map<String, String>) -> Unit>()
+class KorRouter(val injector: AsyncInjector, val requestConfig: HttpServer.RequestConfig) : Extra by Extra.Mixin() {
+	val interceptors = arrayListOf<suspend (HttpServer.Request, Map<String, String>) -> Unit>()
 	val httpRoutes = arrayListOf<KorRoute>()
 	val wsRoutes = arrayListOf<KorWsRoute>()
 	var dirty = false
@@ -138,7 +139,15 @@ class KorRouter(val injector: AsyncInjector) {
 }
 
 suspend inline fun <reified T : Any> KorRouter.registerRoutes() = this.apply { this.registerRoutes(T::class.java) }
-suspend fun HttpServer.router(router: KorRouter) = this.allHandler { router.accept(it) }
+//suspend fun HttpServer.router(router: KorRouter) = this.allHandler { router.accept(it) }
+
+suspend fun HttpServer.router(injector: AsyncInjector = AsyncInjector(), configurer: suspend KorRouter.() -> Unit): HttpServer {
+	val router = KorRouter(injector, requestConfig)
+	router.configurer()
+	this.allHandler { router.accept(it) }
+	return this
+}
+
 suspend fun KorRouter.registerInterceptor(interceptor: suspend (HttpServer.Request, Map<String, String>) -> Unit) {
 	interceptors.add(interceptor)
 }

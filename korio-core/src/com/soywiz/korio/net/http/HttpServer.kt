@@ -3,6 +3,7 @@ package com.soywiz.korio.net.http
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.asyncGenerate3
 import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.nio.toString
 import com.soywiz.korio.serialization.querystring.QueryString
 import com.soywiz.korio.stream.AsyncOutputStream
@@ -81,15 +82,25 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		}
 	}
 
-	abstract class Request(
+	val requestConfig = RequestConfig(
+	)
+
+	data class RequestConfig(
+		val beforeSendHeadersInterceptors: ArrayList<suspend (Request) -> Unit> = arrayListOf()
+	)
+
+	abstract class Request constructor(
 			val method: Http.Method,
 			uri: String,
-			headers: Http.Headers
+			headers: Http.Headers,
+			val requestConfig: RequestConfig = RequestConfig()
 	) : BaseRequest(uri, headers), AsyncOutputStream {
-
 		fun getHeader(key: String): String? = headers[key]
 
+		fun getHeaderList(key: String): List<String> = headers.getAll(key)
+
 		private var headersSent = false
+		private var finalizingHeaders = false
 		private val resHeaders = ArrayList<Pair<String, String>>()
 
 		private fun ensureHeadersNotSent() {
@@ -135,11 +146,15 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			_setStatus(code, message)
 		}
 
-		private fun flushHeaders() {
-			if (!headersSent) {
-				headersSent = true
-				_sendHeaders(Http.Headers(resHeaders))
+		private suspend fun flushHeaders() {
+			if (headersSent) return
+			if (finalizingHeaders) invalidOp("Can't write while finalizing headers")
+			finalizingHeaders = true
+			for (interceptor in requestConfig.beforeSendHeadersInterceptors) {
+				interceptor(this)
 			}
+			headersSent = true
+			_sendHeaders(Http.Headers(resHeaders))
 		}
 
 		override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
@@ -147,25 +162,25 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			_write(buffer, offset, len)
 		}
 
-		fun end() {
+		suspend fun end() {
 			//println("END")
 			flushHeaders()
 			_end()
 		}
 
-		fun end(data: ByteArray) {
+		suspend fun end(data: ByteArray) {
 			replaceHeader("Content-Length", "${data.size}")
 			flushHeaders()
 			_write(data, 0, data.size)
 			end()
 		}
 
-		fun write(data: String) {
+		suspend fun write(data: String) {
 			flushHeaders()
 			_write(data.toByteArray(Charsets.UTF_8))
 		}
 
-		fun end(data: String) {
+		suspend fun end(data: String) {
 			end(data.toByteArray(Charsets.UTF_8))
 		}
 
@@ -228,8 +243,9 @@ class FakeRequest(
 		method: Http.Method,
 		uri: String,
 		headers: Http.Headers = Http.Headers(),
-		val body: ByteArray = ByteArray(0)
-) : HttpServer.Request(method, uri, headers) {
+		val body: ByteArray = ByteArray(0),
+		requestConfig: HttpServer.RequestConfig
+) : HttpServer.Request(method, uri, headers, requestConfig) {
 	private val buf = OptByteBuffer()
 	var outputHeaders: Http.Headers = Http.Headers()
 	var outputStatusCode: Int = 0

@@ -1,6 +1,7 @@
 package com.soywiz.korio.vertx.sample
 
 import com.soywiz.korio.Korio
+import com.soywiz.korio.ext.web.cookie.supportCookies
 import com.soywiz.korio.ext.web.html.html
 import com.soywiz.korio.ext.web.router.*
 import com.soywiz.korio.inject.AsyncInjector
@@ -14,12 +15,11 @@ object Example1 {
 	fun main(args: Array<String>) = Korio {
 		val injector = AsyncInjector()
 		val server = createHttpServer()
-				.router(
-						KorRouter(injector)
-								.registerRoutes<TestRoute>()
-								.registerRoutes<ExampleChatRoute>()
-				)
-				.listen(8090)
+			.router(injector) {
+				registerRoutes<TestRoute>()
+				registerRoutes<ExampleChatRoute>()
+			}
+			.listen(System.getenv("PORT")?.toIntOrNull() ?: 8080)
 		println("Listening to ${server.actualPort}...")
 	}
 }
@@ -33,7 +33,7 @@ class AuthRepository {
 
 @Suppress("unused")
 class TestRoute(
-		val authRepository: AuthRepository
+	val authRepository: AuthRepository
 ) {
 	@Route(Http.Methods.GET, "/")
 	suspend fun test(auth: Http.Auth, response: Http.Response, @Header("authorization") authorization: String): String {
