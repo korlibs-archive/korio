@@ -3,9 +3,9 @@
 [![Build Status](https://travis-ci.org/korlibs/korio.svg?branch=master)](https://travis-ci.org/korlibs/korio)
 [![Maven Version](https://img.shields.io/github/tag/korlibs/korio.svg?style=flat&label=maven)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22korio%22)
 
-![](https://raw.githubusercontent.com/korlibs/kor/master/logos/128/korio.png)
+![](https://raw.githubusercontent.com/korlibs/korlibs-logos/master/128/korio.png)
 
-[All KOR libraries](https://github.com/korlibs/kor)
+[All KOR libraries](https://github.com/korlibs/korlibs)
 
 Use with gradle (uploaded to maven central):
 
