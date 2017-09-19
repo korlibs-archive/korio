@@ -1,8 +1,10 @@
 package com.soywiz.korio.ext.web.cookie
 
 import com.soywiz.korio.ext.web.router.KorRouter
+import com.soywiz.korio.net.http.HttpDate
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.util.Extra
+import java.util.*
 import kotlin.collections.HashMap
 import kotlin.collections.LinkedHashMap
 
@@ -36,7 +38,13 @@ data class KorCookie(
 					cookie.value = value
 				} else {
 					when (key.toLowerCase()) {
-					//"expires" ->expires
+						"expires" -> cookie.expire = HttpDate.parseOrNull(value)?.time ?: 0L
+						"max-age" -> cookie.maxAge = value?.toLongOrNull() ?: 0L
+						"domain" -> cookie.domain = value
+						"path" -> cookie.path = value
+						"secure" -> cookie.secure = true
+						"httponly" -> cookie.httpOnly = true
+						"samesite" -> cookie.sameSiteStrict = value?.toLowerCase() == "strict"
 					}
 				}
 			}
@@ -47,8 +55,8 @@ data class KorCookie(
 	override fun toString(): String {
 		val out = StringBuilder()
 		out.append("$name=$value")
-		if (expire != 0L) out.append("; Expires=${expire}")
-		if (maxAge != 0L) out.append("; Max-Age=${maxAge}")
+		if (expire != 0L) out.append("; Expires=${HttpDate.format(Date(expire))}")
+		if (maxAge != 0L) out.append("; Max-Age=$maxAge")
 		if (domain != null) out.append("; Domain=$domain")
 		if (path != null) out.append("; Path=$path")
 		if (secure) out.append("; Secure")

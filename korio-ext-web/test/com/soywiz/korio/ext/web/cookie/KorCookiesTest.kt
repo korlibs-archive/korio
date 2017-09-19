@@ -9,7 +9,7 @@ class KorCookiesTest {
 		val setCookie = "id=a3fWa; Expires=Wed, 21 Oct 2015 07:28:00 GMT; Secure; HttpOnly"
 
 		Assert.assertEquals(
-			KorCookie("id", "a3fWa"),
+			KorCookie(name = "id", value = "a3fWa", expire = 1445412480000L, secure = true, httpOnly = true),
 			KorCookie.parse(setCookie)
 		)
 
