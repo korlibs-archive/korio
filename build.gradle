@@ -15,6 +15,20 @@ buildscript {
 	dependencies {
 		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$compilerVersion"
 	}
+	ext {
+		libraries = [
+				kotlin_stdlib_common: "org.jetbrains.kotlin:kotlin-stdlib-common:$librariesVersion",
+				kotlin_stdlib_jvm: "org.jetbrains.kotlin:kotlin-stdlib:$librariesVersion",
+				kotlin_stdlib_js: "org.jetbrains.kotlin:kotlin-stdlib-js:$librariesVersion",
+
+				kotlin_test_common: "org.jetbrains.kotlin:kotlin-test-common:$librariesVersion",
+				kotlin_test_jvm: "org.jetbrains.kotlin:kotlin-test:$librariesVersion",
+				kotlin_test_js: "org.jetbrains.kotlin:kotlin-test-js:$librariesVersion",
+
+				kotlin_reflect: "org.jetbrains.kotlin:kotlin-reflect:$librariesVersion",
+		]
+	}
+
 }
 
 def file = new File(".").absolutePath
@@ -36,12 +50,24 @@ allprojects {
 
 	if (project.name.contains('impl')) {
 		if (project.name.contains('impl-js')) {
-			apply plugin: 'kotlin'
+			apply plugin: 'kotlin2js'
+			dependencies {
+				compile libraries.kotlin_stdlib_js
+				testCompile libraries.kotlin_test_js
+			}
 		} else if (project.name.contains('impl-jvm')) {
 			apply plugin: 'kotlin'
+			dependencies {
+				compile libraries.kotlin_stdlib_jvm
+				testCompile libraries.kotlin_test_jvm
+			}
 		}
 	} else {
 		apply plugin: 'kotlin-platform-common'
+		dependencies {
+			compile libraries.kotlin_stdlib_common
+			testCompile libraries.kotlin_test_common
+		}
 	}
 
 	/*
@@ -76,15 +102,6 @@ allprojects {
 		test.resources.srcDirs = ['testresources']
 		main { compileClasspath += configurations.provided }
 	}
-
-	dependencies {
-		compile "org.jetbrains.kotlin:kotlin-stdlib:$kotlinVersion"
-		compile "com.jtransc:jtransc-rt-core:$jtranscVersion"
-		compile "com.jtransc:jtransc-rt-core-kotlin:$jtranscVersion"
-		//compile "com.jtransc:jtransc-annotations:$jtranscVersion"
-		testCompile "junit:junit:4.11"
-	}
-
 
 	task javadoc2(type: Javadoc) {
 		failOnError = false
