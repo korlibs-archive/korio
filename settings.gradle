@@ -12,6 +12,7 @@ include(
 		'korio-kotlinjs',
 		'korio-android',
 		'korio-vertx',
+		'korio-ktor',
 		'korio-jtransc-example',
 		'korio-ext-db-redis',
 		'korio-ext-db-mongodb',
