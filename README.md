@@ -33,11 +33,13 @@ You can even create your own event loop implementation and hook it.
 
 Korio also provides some async primitives until they are officially available
 at a common place like kotlinx.coroutines, and will provide typealias + @Deprecated for the future migration
-when available.
+when available. Hopefully when Kotlin 1.2 is released.
 
 ### Serialization
 
-Embeded **Json**, **Xml** and **Yaml** parsers. Can also write Json (with pretty print support) and Xml. Support Json to Object mapping with kotlin data classes suport.
+Embeded **Json**, **Xml** and **Yaml** parsers.
+Can also write Json (with pretty print support) and Xml.
+Support Json to Object mapping with kotlin data classes suport.
 
 ### Streams
 
@@ -62,24 +64,28 @@ writeBytes, write8, write16_le, write32_le, write64_le, writeF32_le, writeF64_le
 
 ### AsyncClient + AsyncServer
 
-Korio includes a TCP client (implementing AsyncStream) and a TCP server with a lazy asynchronous connection iterator for all supported platforms but browser javascript. 
+Korio includes a TCP client (implementing AsyncStream) and a TCP server with
+a lazy asynchronous connection iterator for all supported platforms but browser javascript.
 
 ### WebSocketClient
 
-Korio includes a WebSocket client. It has two implementations: one simple and generic for targets supporting AsyncClient and other for browser javascript.
+Korio includes a WebSocket client. It has two implementations: one simple and generic for
+targets supporting AsyncClient and other for browser javascript.
 So this is supported on all targets.
 
-### HttpClient
+### HttpClient + HttpServer
 
 Korio includes a HttpClient client that uses available native implementations. UrlVfs uses HttpClient.
-
-### HttpServer
-
-Korio includes a HttpServer server that uses available native implementations.
+Korio also includes a HttpServer server that uses available native implementations. That webserver support
+websockets. It is extensible and hooks with Korio's router, static VfsFile serving, cookies, sessions, oauth
+and so on.
 
 ### Router
 
 Korio provides a router class for creating web applications that uses Korio's HttpServer so works everywhere.
+It supports per class and per method injections, route annotations, injection of params, getters, posts,
+the request itself.
+Also support websocket routes.
 
 ### Static File Serving
 
@@ -94,9 +100,10 @@ Korio supports cookies and sessions as extensions for its HttpServer.
 
 ### Korte integration
 
-Korio has a tightly integration with [Korte](https://github.com/korlibs/korte), a hybrid template engine
-compatible with both twig and liquid (jekyll) in a asynchronous fashion. Prepared to support chunked
-serving to reduce memory requirements per request.
+Korio has a tightly integration with [Korte](https://github.com/korlibs/korte), an hybrid template engine
+compatible with both twig and liquid (jekyll) in a asynchronous fashion supporting asynchronous lazily
+loading of data (executing suspend getters).
+Prepared to support chunked serving to reduce memory requirements per request.
 
 ### OAuth
 
