@@ -2,9 +2,10 @@ package com.soywiz.korio.net.http
 
 import com.soywiz.korio.crypto.fromBase64
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.lang.Charsets
+import com.soywiz.korio.lang.IOException
+import com.soywiz.korio.lang.toString
 import com.soywiz.korio.serialization.querystring.QueryString
-import java.io.IOException
-
 
 interface Http {
 	enum class Methods : Method {

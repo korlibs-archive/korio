@@ -1,9 +1,9 @@
 package com.soywiz.korio.net.http.rest
 
+import com.soywiz.korio.lang.IOException
 import com.soywiz.korio.net.http.*
 import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.stream.openAsync
-import java.io.IOException
 
 class HttpRestClient(val endpoint: HttpClientEndpoint) {
 	suspend fun request(method: Http.Method, path: String, request: Any?): Any {

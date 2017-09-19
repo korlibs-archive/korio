@@ -4,7 +4,10 @@ package com.soywiz.korio.async
 
 import com.soywiz.korio.coroutine.*
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.lang.Closeable
+import com.soywiz.korio.lang.printStackTrace
 import com.soywiz.korio.service.Services
+import com.soywiz.korio.time.TimeProvider
 import java.io.Closeable
 
 fun Korio(entry: suspend EventLoop.() -> Unit) = EventLoop.main(entry)
@@ -116,7 +119,7 @@ abstract class EventLoop : Closeable {
 		closeables.clear()
 	}
 
-	open val time: Long get() = System.currentTimeMillis()
+	open val time: Long get() = TimeProvider.now()
 
 	open fun step(ms: Int): Unit = Unit
 

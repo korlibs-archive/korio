@@ -1,6 +1,8 @@
 package com.soywiz.korio.crypto
 
 import com.soywiz.korio.async.executeInWorkerSafe
+import com.soywiz.korio.lang.Charset
+import com.soywiz.korio.lang.Charsets
 import com.soywiz.korio.stream.AsyncInputOpenable
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.openAsync

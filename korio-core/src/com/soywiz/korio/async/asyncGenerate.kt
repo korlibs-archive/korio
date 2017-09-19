@@ -4,7 +4,6 @@ package com.soywiz.korio.async
 
 import com.soywiz.korio.coroutine.*
 import com.soywiz.korio.util.Extra
-import java.util.*
 
 interface SuspendingSequenceBuilder<in T> {
 	suspend fun yield(value: T)
@@ -332,7 +331,7 @@ suspend fun <T : Any?> SuspendingSequence<T>.take(count: Int): SuspendingSequenc
 
 class AsyncSequenceEmitter<T : Any> : Extra by Extra.Mixin() {
 	private val signal = Signal<Unit>()
-	private var queuedElements = LinkedList<T>()
+	private var queuedElements = ArrayList<T>()
 	private var closed = false
 
 	fun close() {
@@ -357,7 +356,7 @@ class AsyncSequenceEmitter<T : Any> : Extra by Extra.Mixin() {
 			suspend override fun next(): T {
 				while (synchronized(queuedElements) { queuedElements.isEmpty() && !closed }) signal.waitOne()
 				if (queuedElements.isEmpty() && closed) throw RuntimeException("Already closed")
-				return synchronized(queuedElements) { queuedElements.remove() }
+				return synchronized(queuedElements) { queuedElements.removeAt(queuedElements.size - 1) }
 			}
 		}
 	}

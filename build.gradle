@@ -61,6 +61,12 @@ allprojects {
 				compile libraries.kotlin_stdlib_jvm
 				testCompile libraries.kotlin_test_jvm
 			}
+		} else {
+			apply plugin: 'kotlin'
+			dependencies {
+				compile libraries.kotlin_stdlib_jvm
+				testCompile libraries.kotlin_test_jvm
+			}
 		}
 	} else {
 		apply plugin: 'kotlin-platform-common'
@@ -69,6 +75,10 @@ allprojects {
 			testCompile libraries.kotlin_test_common
 		}
 	}
+
+	//dependencies {
+	//	compile libraries.kotlin_reflect
+	//}
 
 	/*
 	if (project.hasProperty('useAndroid')) {
@@ -89,7 +99,7 @@ allprojects {
 	//sourceCompatibility = 1.7
 	//targetCompatibility = 1.7
 
-	//kotlin { experimental { coroutines 'enable' } }
+	kotlin { experimental { coroutines 'enable' } }
 
 	configurations {
 		provided

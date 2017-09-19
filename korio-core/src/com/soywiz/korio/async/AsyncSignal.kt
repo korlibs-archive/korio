@@ -3,7 +3,7 @@ package com.soywiz.korio.async
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.ds.LinkedList2
-import java.io.Closeable
+import com.soywiz.korio.lang.Closeable
 
 class AsyncSignal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
 	inner class Node(val once: Boolean, val item: suspend (T) -> Unit) : LinkedList2.Node<Node>(), Closeable {

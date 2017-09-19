@@ -15,7 +15,7 @@ class LinkedList2<T : LinkedList2.Node<T>> : MutableIterable<T> {
 			val res = next
 			next = next?.next
 			current = res
-			return res!!
+			return@synchronized res!!
 		}
 
 	}
@@ -34,7 +34,7 @@ class LinkedList2<T : LinkedList2.Node<T>> : MutableIterable<T> {
 
 	fun remove(item: T): Unit = synchronized(this) {
 		if (item.list == null) return@synchronized
-		if (item.list != this) return item.list!!.remove(item)
+		if (item.list != this) return@synchronized item.list!!.remove(item)
 		item.prev?.next = item.next
 		item.next?.prev = item.prev
 		if (item == head) head = item.next

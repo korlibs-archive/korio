@@ -1,10 +1,11 @@
 package com.soywiz.korio.crypto
 
+import com.soywiz.korio.lang.Charset
+import com.soywiz.korio.lang.Charsets
+import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.util.UByteArray
 import com.soywiz.korio.util.readU24_be
 import com.soywiz.korio.util.readU8
-import java.nio.charset.Charset
-import java.util.*
 
 object Base64 {
 	private val TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
@@ -18,9 +19,9 @@ object Base64 {
 	}
 
 	fun decode(str: String): ByteArray {
-		val src = str.toByteArray()
+		val src = str.toByteArray(Charsets.UTF_8)
 		val dst = ByteArray(src.size)
-		return Arrays.copyOf(dst, decode(src, dst))
+		return dst.copyOf(decode(src, dst))
 	}
 
 	fun decode(src: ByteArray, dst: ByteArray): Int {
@@ -82,7 +83,7 @@ object Base64 {
 			out[opos++] = '='
 		}
 
-		return String(Arrays.copyOf(out, opos))
+		return out.copyOf(opos).toString()
 	}
 }
 

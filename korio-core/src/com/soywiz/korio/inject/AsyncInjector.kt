@@ -16,7 +16,6 @@ annotation class Singleton
 //@Target(AnnotationTarget.PROPERTY_SETTER, AnnotationTarget.FIELD)
 @Target(AnnotationTarget.PROPERTY_SETTER, AnnotationTarget.FIELD)
 //@Target(AnnotationTarget.)
-@JTranscKeep
 annotation class Inject
 
 @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.FIELD)

@@ -4,8 +4,8 @@ import com.soywiz.korio.coroutine.AbstractCoroutineContextElement
 import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.CoroutineContextKey
+import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.util.Cancellable
-import java.util.*
 
 //inline suspend fun <T> suspendCancellableCoroutine(crossinline block: (CancellableContinuation<T>) -> Unit): T = suspendCoroutineOrReturn { c ->
 inline suspend fun <T> suspendCancellableCoroutine(crossinline block: (CancellableContinuation<T>) -> Unit): T = suspendCoroutineEL { c ->
@@ -59,13 +59,14 @@ class CancellableContinuation<in T>(private val delegate: Continuation<T>) : Con
 
 	private var _cancelled: Boolean = false
 	private var _cancelledHandler: Boolean = false
-	val cancelled: Boolean get() {
-		if (!_cancelledHandler) {
-			cancelContext.add { _cancelled = true }
-			_cancelledHandler = true
+	val cancelled: Boolean
+		get() {
+			if (!_cancelledHandler) {
+				cancelContext.add { _cancelled = true }
+				_cancelledHandler = true
+			}
+			return _cancelled
 		}
-		return _cancelled
-	}
 
 	override fun resume(value: T) {
 		if (completed || _cancelled) return

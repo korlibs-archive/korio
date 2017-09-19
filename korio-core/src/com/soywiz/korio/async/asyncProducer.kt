@@ -6,11 +6,17 @@ import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.util.BYTES_EMPTY
-import java.io.Closeable
-import java.util.*
-import java.util.concurrent.CancellationException
+import com.soywiz.korio.lang.Closeable
+import com.soywiz.korio.ds.LinkedList
+import com.soywiz.korio.lang.CancellationException
+import com.soywiz.korio.math.Math
+import com.soywiz.korio.typedarray.ByteArrayBliting
 
 typealias CancelHandler = Signal<Unit>
+
+fun test() {
+	println("wow!")
+}
 
 interface Consumer<T> : Closeable {
 	suspend fun consume(cancel: CancelHandler? = null): T?
@@ -21,7 +27,7 @@ interface Producer<T> : Closeable {
 }
 
 open class ProduceConsumer<T> : Consumer<T>, Producer<T> {
-	private val items = LinkedList<T>()
+	private val items = LinkedList<T?>()
 	private val consumers = LinkedList<(T?) -> Unit>()
 	private var closed = false
 
@@ -90,7 +96,7 @@ fun Consumer<ByteArray>.toAsyncInputStream() = AsyncConsumerStream(this)
 
 class AsyncProducerStream(val producer: Producer<ByteArray>) : AsyncOutputStream {
 	suspend override fun write(buffer: ByteArray, offset: Int, len: Int) {
-		producer.produce(Arrays.copyOfRange(buffer, offset, offset + len))
+		producer.produce(buffer.copyOfRange(offset, offset + len))
 	}
 
 	suspend override fun close() {
@@ -122,7 +128,7 @@ class AsyncConsumerStream(val consumer: Consumer<ByteArray>) : AsyncInputStream 
 		ensureNonEmptyBuffer()
 		if (eof) return -1
 		val actualRead = Math.min(len, available)
-		System.arraycopy(current, currentPos, buffer, offset, actualRead)
+		ByteArrayBliting.arraycopy(current, currentPos, buffer, offset, actualRead)
 		currentPos += actualRead
 		return actualRead
 	}
