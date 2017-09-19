@@ -86,7 +86,9 @@ data class KorRoute(val method: Http.Method, val path: String, val bpriority: In
 		handler(req)
 	}
 
-	override fun matches(req: HttpServer.BaseRequest): Boolean = (req as? HttpServer.Request?)?.method == method && super.matches(req)
+	fun matchesMethod(method: Http.Method?) = (this.method == Http.Methods.ALL) || (this.method == method)
+
+	override fun matches(req: HttpServer.BaseRequest): Boolean = matchesMethod((req as? HttpServer.Request?)?.method) && super.matches(req)
 }
 
 data class KorWsRoute(val path: String, val bpriority: Int = 0, val handler: suspend (HttpServer.WsRequest) -> Unit) : KorBaseRoute(path, bpriority) {

@@ -67,14 +67,11 @@ class KorRouterTest {
 					"robots.txt" to "User-agent: *"
 			)
 
-			@Route(Http.Methods.GET, "*", priority = RoutePriority.LOWEST)
+			@Route(Http.Methods.ALL, "*", priority = RoutePriority.LOWEST)
 			fun static(req: HttpServer.Request): VfsFile {
 				val file = files[req.path]
 				return file
 			}
-
-			@Route(Http.Methods.HEAD, "*", priority = RoutePriority.LOWEST)
-			fun staticHead(req: HttpServer.Request): VfsFile = files[req.path]
 		}
 
 		router.registerRoutes<StaticRoute>()

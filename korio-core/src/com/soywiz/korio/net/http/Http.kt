@@ -8,6 +8,7 @@ import java.io.IOException
 
 interface Http {
 	enum class Methods : Method {
+		ALL,
 		OPTIONS,
 		GET,
 		HEAD,
