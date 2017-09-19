@@ -11,6 +11,7 @@ import com.soywiz.korio.util.AsyncCloseable
 import com.soywiz.korio.util.Extra
 import java.io.IOException
 import java.nio.ByteBuffer
+import java.nio.charset.Charset
 
 
 open class HttpServer protected constructor() : AsyncCloseable {
@@ -182,13 +183,13 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			end()
 		}
 
-		suspend fun write(data: String) {
+		suspend fun write(data: String, charset: Charset = Charsets.UTF_8) {
 			flushHeaders()
-			_write(data.toByteArray(Charsets.UTF_8))
+			_write(data.toByteArray(charset))
 		}
 
-		suspend fun end(data: String) {
-			end(data.toByteArray(Charsets.UTF_8))
+		suspend fun end(data: String, charset: Charset = Charsets.UTF_8) {
+			end(data.toByteArray(charset))
 		}
 
 		suspend override fun close() {

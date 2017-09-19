@@ -16,6 +16,7 @@ import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.serialization.querystring.QueryString
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.copyTo
+import com.soywiz.korio.text.AsyncTextWriterContainer
 import com.soywiz.korio.util.Dynamic
 import com.soywiz.korio.util.Extra
 import com.soywiz.korio.vfs.VfsFile
@@ -273,6 +274,13 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 					}
 					is VfsFile -> {
 						res.serveStatic(finalResult)
+					}
+					// @TODO: Korte should allow to return this interface
+					is AsyncTextWriterContainer -> {
+						// @TODO: Use chunked to avoid wasting memory!
+						val buffer = StringBuffer()
+						finalResult.write { buffer.append(it) }
+						res.end(buffer.toString())
 					}
 					else -> {
 						res.replaceHeader("Content-Type", "application/json")
