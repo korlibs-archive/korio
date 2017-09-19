@@ -1,14 +1,19 @@
 package com.soywiz.korio.ext.web.sstatic
 
+import com.soywiz.korio.crypto.AsyncHash
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.net.http.Http
+import com.soywiz.korio.net.http.HttpDate
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.stream.copyTo
 import com.soywiz.korio.stream.slice
+import com.soywiz.korio.util.toHexString
+import com.soywiz.korio.util.toHexStringLower
 import com.soywiz.korio.util.use
 import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.mimeType
 import java.io.FileNotFoundException
+import java.util.*
 
 
 object StaticServe {
@@ -74,7 +79,11 @@ object StaticServe {
 	fun combineRanges(ranges: Iterable<LongRange>): LongRange {
 		// @TODO:
 		return ranges.firstOrNull() ?: 0L..-1L
+	}
 
+	suspend fun generateETag(name: String, lastModified: Long, size: Long): String {
+		//return Map
+		return "" + AsyncHash.SHA1.hash(name).toHexStringLower() + "-" + lastModified + "-" + size
 	}
 
 	suspend fun serveStatic(res: HttpServer.Request, file: VfsFile) {
@@ -92,6 +101,8 @@ object StaticServe {
 			res.replaceHeader("Accept-Ranges", "bytes")
 		}
 		res.replaceHeader("Content-Type", file.mimeType().mime)
+		res.replaceHeader("Last-Modified", HttpDate.format(Date(fileStat.modifiedTime)))
+		res.replaceHeader("ETag", generateETag(file.toString(), fileStat.modifiedTime, fileStat.size))
 
 		val contentLength = when {
 			head -> 0L

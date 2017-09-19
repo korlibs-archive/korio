@@ -118,10 +118,14 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 			val file = resolveFile(path)
 			val fullpath = "$path/${file.name}"
 			if (file.exists()) {
+				val lastModified = file.lastModified()
 				createExistsStat(
 					fullpath,
 					isDirectory = file.isDirectory,
-					size = file.length()
+					size = file.length(),
+					createTime = lastModified,
+					modifiedTime = lastModified,
+					lastAccessTime = lastModified
 				)
 			} else {
 				createNonExistsStat(fullpath)
