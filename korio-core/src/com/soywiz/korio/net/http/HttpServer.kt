@@ -132,18 +132,18 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			addHeader(key, value)
 		}
 
-		abstract suspend protected fun _handler(handler: suspend (ByteArray) -> Unit)
-		abstract suspend protected fun _endHandler(handler: suspend () -> Unit)
+		abstract suspend protected fun _handler(handler: (ByteArray) -> Unit)
+		abstract suspend protected fun _endHandler(handler: () -> Unit)
 		abstract protected fun _setStatus(code: Int, message: String)
 		abstract protected fun _sendHeaders(headers: Http.Headers)
 		abstract protected fun _write(data: ByteArray, offset: Int = 0, size: Int = data.size - offset)
 		abstract protected fun _end()
 
-		suspend fun handler(handler: suspend (ByteArray) -> Unit) {
+		suspend fun handler(handler: (ByteArray) -> Unit) {
 			_handler(handler)
 		}
 
-		suspend fun endHandler(handler: suspend () -> Unit) {
+		suspend fun endHandler(handler: () -> Unit) {
 			_endHandler(handler)
 		}
 
@@ -153,6 +153,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		}
 
 		private suspend fun flushHeaders() {
+			//println("flushHeaders")
 			if (headersSent) return
 			if (finalizingHeaders) invalidOp("Can't write while finalizing headers")
 			finalizingHeaders = true
@@ -261,34 +262,34 @@ class FakeRequest(
 	var output: String = ""
 	val log = arrayListOf<String>()
 
-	override suspend fun _handler(handler: suspend (ByteArray) -> Unit) {
-		log += "handler()"
+	override suspend fun _handler(handler: (ByteArray) -> Unit) {
+		log += "_handler()"
 		handler(body)
 	}
 
-	override suspend fun _endHandler(handler: suspend () -> Unit) {
+	override suspend fun _endHandler(handler: () -> Unit) {
 		log += "_endHandler()"
 		handler()
 	}
 
 	override fun _setStatus(code: Int, message: String) {
-		log += "status($code, $message)"
+		log += "_setStatus($code, $message)"
 		outputStatusCode = code
 		outputStatusMessage = message
 	}
 
 	override fun _sendHeaders(headers: Http.Headers) {
-		log += "headers($headers)"
+		log += "_sendHeaders($headers)"
 		outputHeaders = headers
 	}
 
 	override fun _write(data: ByteArray, offset: Int, size: Int) {
-		log += "write(${ByteBuffer.wrap(data, offset, size).toString(Charsets.UTF_8)})"
+		log += "_write(${ByteBuffer.wrap(data, offset, size).toString(Charsets.UTF_8)})"
 		buf.append(data, offset, size)
 	}
 
 	override fun _end() {
-		log += "end()"
+		log += "_end()"
 		output = buf.toByteArray().toString(Charsets.UTF_8)
 	}
 

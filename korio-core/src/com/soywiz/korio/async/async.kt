@@ -5,6 +5,7 @@ package com.soywiz.korio.async
 import com.soywiz.korio.coroutine.*
 import com.soywiz.korio.util.OS
 import java.util.concurrent.CancellationException
+import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 import java.util.concurrent.atomic.AtomicInteger
@@ -21,6 +22,17 @@ val workerLazyPool: ExecutorService by lazy {
 	pool
 }
 val tasksInProgress = AtomicInteger(0)
+
+fun Executor.executeUpdatingTasksInProgress(action: () -> Unit) {
+	tasksInProgress.incrementAndGet()
+	this.execute {
+		try {
+			action()
+		} finally {
+			tasksInProgress.decrementAndGet()
+		}
+	}
+}
 
 inline suspend fun <T> suspendCoroutineEL(crossinline block: (Continuation<T>) -> Unit): T = _korioSuspendCoroutine { c ->
 	block(c.toEventLoop())
@@ -110,6 +122,22 @@ suspend fun <T> executeInWorkerSync(task: CheckRunning.() -> T): T = suspendCanc
 			tasksInProgress.decrementAndGet()
 		}
 	}
+}
+
+suspend fun <T> executeInWorkerSafe(task: suspend () -> T): T {
+	val ctx = getCoroutineContext()
+	val deferred = Promise.Deferred<T>()
+	workerLazyPool.executeUpdatingTasksInProgress {
+		go(ctx) {
+			try {
+
+				deferred.resolve(task())
+			} catch (t: Throwable) {
+				deferred.reject(t)
+			}
+		}
+	}
+	return deferred.promise.await()
 }
 
 suspend fun <T> executeInWorker(task: suspend CheckRunning.() -> T): T = suspendCancellableCoroutine<T> { c ->
@@ -227,6 +255,7 @@ interface CoroutineContextHolder {
 
 // Aliases for spawn
 fun <T> async(context: CoroutineContext, task: suspend () -> T): Promise<T> = spawn(context, task)
+
 fun <T> go(context: CoroutineContext, task: suspend () -> T): Promise<T> = spawn(context, task)
 
 fun <T> CoroutineContextHolder.go(task: suspend () -> T): Promise<T> = spawn(this.coroutineContext, task)

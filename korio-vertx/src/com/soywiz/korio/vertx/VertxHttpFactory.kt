@@ -88,7 +88,6 @@ class VertxHttpServer : HttpServer() {
 
 	suspend override fun httpHandlerInternal(handler: suspend (Request) -> Unit) {
 		val ctx = getCoroutineContext()
-		val writeQueue = AsyncQueue().withContext()
 
 		vxServer.requestHandler { req ->
 			val res = req.response()
@@ -98,12 +97,12 @@ class VertxHttpServer : HttpServer() {
 				headers = Http.Headers(req.headers().map { it.key to it.value }),
 				requestConfig = requestConfig
 			) {
-				override suspend fun _handler(handler: suspend (ByteArray) -> Unit) {
-					req.handler { writeQueue { handler(it.bytes) } }
+				override suspend fun _handler(handler: (ByteArray) -> Unit) {
+					req.handler { handler(it.bytes) }
 				}
 
-				override suspend fun _endHandler(handler: suspend () -> Unit) {
-					req.endHandler { writeQueue { handler() } }
+				override suspend fun _endHandler(handler: () -> Unit) {
+					req.endHandler { handler() }
 				}
 
 				override fun _setStatus(code: Int, message: String) {

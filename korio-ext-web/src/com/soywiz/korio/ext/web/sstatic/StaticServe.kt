@@ -1,13 +1,13 @@
 package com.soywiz.korio.ext.web.sstatic
 
 import com.soywiz.korio.crypto.AsyncHash
+import com.soywiz.korio.error.ignoreErrors
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpDate
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.stream.copyTo
 import com.soywiz.korio.stream.slice
-import com.soywiz.korio.util.toHexString
 import com.soywiz.korio.util.toHexStringLower
 import com.soywiz.korio.util.use
 import com.soywiz.korio.vfs.VfsFile
@@ -18,45 +18,6 @@ import java.util.*
 
 object StaticServe {
 	// https://tools.ietf.org/html/rfc7233#section-3.1
-	/*
-	o  The final 500 bytes (byte offsets 9500-9999, inclusive):
-
-        bytes=-500
-
-   Or:
-
-        bytes=9500-
-
-   o  The first and last bytes only (bytes 0 and 9999):
-
-        bytes=0-0,-1
-
-   o  Other valid (but not canonical) specifications of the second 500
-      bytes (byte offsets 500-999, inclusive):
-
-        bytes=500-600,601-999
-        bytes=500-700,601-999
-
- The following are examples of Content-Range values in which the
-   selected representation contains a total of 1234 bytes:
-
-   o  The first 500 bytes:
-
-        Content-Range: bytes 0-499/1234
-
-   o  The second 500 bytes:
-
-        Content-Range: bytes 500-999/1234
-
-   o  All except for the first 500 bytes:
-
-        Content-Range: bytes 500-1233/1234
-
-   o  The last 500 bytes:
-
-        Content-Range: bytes 734-1233/1234
-
-	 */
 	fun parseRange(str: String?, size: Long): Iterable<LongRange> {
 		if (str == null) return listOf(0L until size)
 		val parts = str.split('=', limit = 2).map { it.trim() }
@@ -82,13 +43,16 @@ object StaticServe {
 	}
 
 	suspend fun generateETag(name: String, lastModified: Long, size: Long): String {
-		//return Map
-		return "" + AsyncHash.SHA1.hash(name).toHexStringLower() + "-" + lastModified + "-" + size
+		return "" + AsyncHash.SHA1.hashSync(name).toHexStringLower() + "-" + lastModified + "-" + size
+		// @TODO: Calling asynchronous hash fails tests! Because it doesn't wait.
+		//return "" + AsyncHash.SHA1.hash(name).toHexStringLower() + "-" + lastModified + "-" + size
 	}
 
 	suspend fun serveStatic(res: HttpServer.Request, file: VfsFile) {
+		//println("[a]")
 		val fileStat = file.stat()
 		if (!fileStat.exists) throw FileNotFoundException()
+		//println("[b]")
 
 		val fileSize = fileStat.size
 		val rangeStr = res.getHeader("Range")
@@ -100,9 +64,11 @@ object StaticServe {
 		if (fileStat.exists) {
 			res.replaceHeader("Accept-Ranges", "bytes")
 		}
+		//println("[c]")
 		res.replaceHeader("Content-Type", file.mimeType().mime)
 		res.replaceHeader("Last-Modified", HttpDate.format(Date(fileStat.modifiedTime)))
-		res.replaceHeader("ETag", generateETag(file.toString(), fileStat.modifiedTime, fileStat.size))
+		res.replaceHeader("ETag", generateETag(file.absolutePath, fileStat.modifiedTime, fileStat.size))
+		//println("[d]")
 
 		val contentLength = when {
 			head -> 0L
@@ -114,8 +80,11 @@ object StaticServe {
 			res.replaceHeader("Content-Range", "bytes ${range.start}-${range.endInclusive}/$fileSize")
 		}
 
+		//println("[e]")
+
 		res.replaceHeader("Content-Length", "$contentLength")
 
+		//println("----------------")
 		if (!head) {
 			if (hasRange) {
 				file.openRead().use { slice(range).copyTo(res) }
@@ -123,7 +92,12 @@ object StaticServe {
 				file.copyTo(res)
 			}
 		}
+
+		//println("[f]")
+
 		res.close()
+
+		//println("[g]")
 	}
 }
 

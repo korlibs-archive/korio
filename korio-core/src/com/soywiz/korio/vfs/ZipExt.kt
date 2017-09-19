@@ -1,7 +1,7 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.crypto.AsyncHash
-import com.soywiz.korio.crypto.hash
+import com.soywiz.korio.crypto.hashSync
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.ByteArrayBuffer
 import com.soywiz.korio.util.readS32_le
@@ -22,7 +22,7 @@ suspend private fun addZipFileEntry(s: AsyncStream, entry: VfsFile): ZipEntry {
 	val compressionMethod = 0 // Store
 	val date = 0
 	val time = 0
-	val crc32 = entry.hash(AsyncHash.CRC32).readS32_le(0)
+	val crc32 = entry.hashSync(AsyncHash.CRC32).readS32_le(0)
 
 	val name = entry.fullname.trim('/')
 	val nameBytes = name.toByteArray(Charsets.UTF_8)

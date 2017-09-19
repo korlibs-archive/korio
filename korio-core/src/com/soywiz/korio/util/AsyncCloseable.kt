@@ -3,7 +3,7 @@ package com.soywiz.korio.util
 import com.soywiz.korio.async.await
 
 interface AsyncCloseable {
-	suspend fun close(): Unit
+	suspend fun close()
 
 	companion object {
 		val DUMMY = object : AsyncCloseable {

@@ -1,12 +1,11 @@
 package com.soywiz.korio.crypto
 
-import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.async.executeInWorkerSafe
 import com.soywiz.korio.stream.AsyncInputOpenable
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.util.use
 import com.soywiz.korio.util.write32_le
-import com.soywiz.korio.vfs.VfsFile
 import java.nio.charset.Charset
 import java.security.MessageDigest
 
@@ -17,13 +16,18 @@ abstract class AsyncHash {
 		val CRC32 by lazy { CRC32Hash() }
 	}
 
-	suspend abstract fun hash(content: AsyncInputStream): ByteArray
-	suspend fun hash(content: ByteArray): ByteArray = hash(content.openAsync())
-	suspend fun hash(content: String, charset: Charset = Charsets.UTF_8): ByteArray = hash(content.toByteArray(charset))
-	suspend fun hash(openable: AsyncInputOpenable): ByteArray = openable.openRead().use { hash(this) }
+	suspend abstract fun hashSync(content: AsyncInputStream): ByteArray
+	suspend fun hashSync(content: ByteArray): ByteArray = hashSync(content.openAsync())
+	suspend fun hashSync(content: String, charset: Charset = Charsets.UTF_8): ByteArray = hashSync(content.toByteArray(charset))
+	suspend fun hashSync(openable: AsyncInputOpenable): ByteArray = openable.openRead().use { hashSync(this) }
+
+	suspend fun hash(content: AsyncInputStream): ByteArray = executeInWorkerSafe { hashSync(content)  }
+	suspend fun hash(content: ByteArray): ByteArray = executeInWorkerSafe { hashSync(content)  }
+	suspend fun hash(content: String, charset: Charset = Charsets.UTF_8): ByteArray = executeInWorkerSafe { hashSync(content)  }
+	suspend fun hash(openable: AsyncInputOpenable): ByteArray = executeInWorkerSafe { hashSync(openable)  }
 
 	class MessageDigestHash(val algo: String) : AsyncHash() {
-		suspend override fun hash(content: AsyncInputStream): ByteArray = executeInWorker {
+		suspend override fun hashSync(content: AsyncInputStream): ByteArray {
 			val temp = ByteArray(0x1000)
 			val md = MessageDigest.getInstance(algo)
 			while (true) {
@@ -31,12 +35,12 @@ abstract class AsyncHash {
 				if (read <= 0) break
 				md.update(temp, 0, read)
 			}
-			md.digest()
+			return md.digest()
 		}
 	}
 
 	class CRC32Hash() : AsyncHash() {
-		suspend override fun hash(content: AsyncInputStream): ByteArray {
+		suspend override fun hashSync(content: AsyncInputStream): ByteArray {
 			val temp = ByteArray(0x1000)
 			val crc32 = java.util.zip.CRC32()
 			while (true) {
@@ -50,6 +54,10 @@ abstract class AsyncHash {
 		}
 	}
 }
+
+suspend fun ByteArray.hashSync(hash: AsyncHash) = hash.hashSync(this)
+suspend fun AsyncInputStream.hashSync(hash: AsyncHash) = hash.hashSync(this)
+suspend fun AsyncInputOpenable.hashSync(hash: AsyncHash) = hash.hashSync(this)
 
 suspend fun ByteArray.hash(hash: AsyncHash) = hash.hash(this)
 suspend fun AsyncInputStream.hash(hash: AsyncHash) = hash.hash(this)

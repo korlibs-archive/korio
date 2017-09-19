@@ -1,5 +1,6 @@
 package com.soywiz.korio.vertx
 
+import com.soywiz.korio.async.go
 import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
@@ -20,7 +21,9 @@ class HttpTest {
 				content += it.toString(Charsets.UTF_8)
 			}
 			req.endHandler {
-				req.end("hello ${req.method} ${req.path} : '$content'")
+				go {
+					req.end("hello ${req.method} ${req.path} : '$content'")
+				}
 			}
 		}
 		val port = server.actualPort
