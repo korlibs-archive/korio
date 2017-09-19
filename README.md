@@ -169,9 +169,18 @@ Korio includes an inmemory vfs to create volatile vfs:
 
 ```kotlin
 val mem = MemoryVfs(mapOf(
-    "hello/secret.txt" to "SECRET!".toByteArray().openAsync(),
-    "hello/world/test.txt" to "HELLO WORLD!".toByteArray().openAsync()
+    "hello/secret.txt" to "SECRET!".openAsync(Charsets.UTF_8),
+    "hello/world/test.txt" to "HELLO WORLD!".openAsync(Charsets.UTF_8)
 ))
+```
+
+or
+
+```kotlin
+val mem = MemoryVfsMix(
+    "hello/secret.txt" to "SECRET!",
+    "hello/world/test.txt" to "HELLO WORLD!"
+)
 ```
 
 ### NodeVfs
