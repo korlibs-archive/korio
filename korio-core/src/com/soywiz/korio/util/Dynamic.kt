@@ -447,6 +447,7 @@ object Dynamic {
 	}
 
 	interface Context {
+		operator fun Any?.get(key: Any?) = Dynamic.accessAnySync(this, key)
 		fun Any?.toDynamicString() = Dynamic.toString(this)
 		fun Any?.toDynamicBool() = Dynamic.toBool(this)
 		fun Any?.toDynamicInt() = Dynamic.toInt(this)

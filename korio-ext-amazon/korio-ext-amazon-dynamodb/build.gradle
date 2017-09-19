@@ -1,6 +1,4 @@
-apply plugin: 'kotlin'
-
 dependencies {
 	compile project(":korio-ext-amazon-common")
-	compile project(":korio")
+	compile project(":korio-core")
 }

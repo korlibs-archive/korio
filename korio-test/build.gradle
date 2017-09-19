@@ -1,4 +1,4 @@
 dependencies {
 	compile project(":korio-core")
-	testCompile project(":korio-test")
+	compile "junit:junit:4.11"
 }

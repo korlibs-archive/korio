@@ -1,6 +1,4 @@
-apply plugin: 'kotlin'
-
 dependencies {
 	compile project(":korio-core")
-	testCompile project(":korio")
+	testCompile project(":korio-test")
 }

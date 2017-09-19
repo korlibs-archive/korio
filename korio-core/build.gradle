@@ -1,6 +1,0 @@
-sourceSets {
-	main.java.srcDirs = ['src', 'src_serviceloader', 'src_jvmcommon']
-	test.java.srcDirs = ['test']
-	main.resources.srcDirs = ['resources']
-	test.resources.srcDirs = ['testresources']
-}
