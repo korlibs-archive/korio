@@ -15,6 +15,10 @@ abstract class SessionProvider {
 	abstract suspend fun set(sessionId: String, content: String)
 }
 
+/**
+ * @TODO: Warning: Right now this implementation leaks since it doesn't delete sessions ta all.
+ * Also an in-memory session provider should be use just for debugging purposes in local development.
+ */
 class MemorySessionProvider : SessionProvider() {
 	val memory = hashMapOf<String, String>()
 

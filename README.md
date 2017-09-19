@@ -81,6 +81,23 @@ Korio includes a HttpServer server that uses available native implementations.
 
 Korio provides a router class for creating web applications that uses Korio's HttpServer so works everywhere.
 
+### Static File Serving
+
+Korio allows to serve VfsFiles directly using HttpServer supporting mime types, Last-Modified, ETag and Range.
+There is in the works a refactor in the system that internally uses MappedByteBuffer with zero copy overhead
+to transfer from local files into sockets transparently using Korio async streams and VfsFile at the JVM level,
+and equivalent methods in other targets.
+
+### Cookies and Sessions
+
+Korio supports cookies and sessions as extensions for its HttpServer.
+
+### Korte integration
+
+Korio has a tightly integration with [Korte](https://github.com/korlibs/korte), a hybrid template engine
+compatible with both twig and liquid (jekyll) in a asynchronous fashion. Prepared to support chunked
+serving to reduce memory requirements per request.
+
 ### OAuth
 
 Korio includes an oauth client + Google and Facebook oauth implementation for logins.
