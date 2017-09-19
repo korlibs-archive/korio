@@ -2,12 +2,10 @@ package com.soywiz.korio.serialization.xml
 
 import com.soywiz.korio.lang.Language
 import com.soywiz.korio.util.Indenter
-import com.soywiz.korio.util.toTreeMap
-import org.intellij.lang.annotations.Language
-import java.util.*
+import com.soywiz.korio.util.toCaseInsensitiveTreeMap
 
 data class Xml(val type: Type, val name: String, val attributes: Map<String, String>, val allChildren: List<Xml>, val content: String) {
-	val attributesLC = attributes.toTreeMap(String.CASE_INSENSITIVE_ORDER)
+	val attributesLC = attributes.toCaseInsensitiveTreeMap()
 	val nameLC: String = name.toLowerCase().trim()
 	val descendants: Iterable<Xml> get() = allChildren.flatMap { it.descendants + it }
 	val allChildrenNoComments get() = allChildren.filter { !it.isComment }
@@ -69,11 +67,12 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 		}
 	}
 
-	val text: String get() = when (type) {
-		Type.NODE -> allChildren.map { it.text }.joinToString("")
-		Type.TEXT -> content
-		Type.COMMENT -> ""
-	}
+	val text: String
+		get() = when (type) {
+			Type.NODE -> allChildren.map { it.text }.joinToString("")
+			Type.TEXT -> content
+			Type.COMMENT -> ""
+		}
 
 	fun toOuterXmlIndented(indenter: Indenter = Indenter()): Indenter = indenter.apply {
 		when (type) {
@@ -95,24 +94,26 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 
 	val attributesStr: String get() = attributes.toList().map { " ${it.first}=\"${it.second}\"" }.joinToString("")
 
-	val outerXml: String get() = when (type) {
-		Type.NODE -> {
-			if (allChildren.isEmpty()) {
-				"<$name$attributesStr/>"
-			} else {
-				val children = this.allChildren.map(Xml::outerXml).joinToString("")
-				"<$name$attributesStr>$children</$name>"
+	val outerXml: String
+		get() = when (type) {
+			Type.NODE -> {
+				if (allChildren.isEmpty()) {
+					"<$name$attributesStr/>"
+				} else {
+					val children = this.allChildren.map(Xml::outerXml).joinToString("")
+					"<$name$attributesStr>$children</$name>"
+				}
 			}
+			Type.TEXT -> content
+			Type.COMMENT -> "<!--$content-->"
 		}
-		Type.TEXT -> content
-		Type.COMMENT -> "<!--$content-->"
-	}
 
-	val innerXml: String get() = when (type) {
-		Type.NODE -> this.allChildren.map(Xml::outerXml).joinToString("")
-		Type.TEXT -> content
-		Type.COMMENT -> "<!--$content-->"
-	}
+	val innerXml: String
+		get() = when (type) {
+			Type.NODE -> this.allChildren.map(Xml::outerXml).joinToString("")
+			Type.TEXT -> content
+			Type.COMMENT -> "<!--$content-->"
+		}
 
 	operator fun get(name: String): Iterable<Xml> = children(name)
 

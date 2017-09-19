@@ -2,6 +2,8 @@
 
 package com.soywiz.korio.util
 
+import com.soywiz.korio.math.Math
+
 inline fun Int.mask(): Int = (1 shl this) - 1
 inline fun Long.mask(): Long = (1L shl this.toInt()) - 1L
 fun Int.toUInt(): Long = this.toLong() and 0xFFFFFFFFL

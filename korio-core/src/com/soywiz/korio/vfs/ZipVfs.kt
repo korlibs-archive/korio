@@ -3,14 +3,13 @@ package com.soywiz.korio.vfs
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.compression.Inflater
 import com.soywiz.korio.coroutine.withCoroutineContext
-import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.lang.FileNotFoundException
+import com.soywiz.korio.lang.IOException
+import com.soywiz.korio.math.Math
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
-import java.io.FileNotFoundException
-import java.io.IOException
-import java.util.*
-import java.util.zip.Inflater
 
 suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 	//val s = zipFile.open(VfsOpenMode.READ)
@@ -28,7 +27,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 
 	if (pk_endIndex < 0) throw IllegalArgumentException("Not a zip file")
 
-	val data = Arrays.copyOfRange(endBytes, pk_endIndex, endBytes.size).openSync()
+	val data = endBytes.copyOfRange(pk_endIndex, endBytes.size).openSync()
 
 	fun String.normalizeName() = this.trim('/')
 
@@ -116,7 +115,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 					val c = components[m]
 					if (c !in files) {
 						val folder2 = filesPerFolder.getOrPut(f) { LinkedHashMap() }
-						val entry2 = ZipEntry(path = c, compressionMethod = 0, isDirectory = true, time = DosFileDateTime(0, 0),inode =  0L, offset = 0, headerEntry = byteArrayOf().openAsync(), compressedSize = 0L, uncompressedSize = 0L)
+						val entry2 = ZipEntry(path = c, compressionMethod = 0, isDirectory = true, time = DosFileDateTime(0, 0), inode = 0L, offset = 0, headerEntry = byteArrayOf().openAsync(), compressedSize = 0L, uncompressedSize = 0L)
 						folder2[PathInfo(c).basename] = entry2
 						files[c] = entry2
 					}
@@ -126,7 +125,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 				files[normalizedName] = entry
 			}
 		}
-		files[""] = ZipEntry(path = "", compressionMethod = 0, isDirectory = true, time = DosFileDateTime(0, 0),inode =  0L, offset = 0, headerEntry = byteArrayOf().openAsync(), compressedSize = 0L, uncompressedSize = 0L)
+		files[""] = ZipEntry(path = "", compressionMethod = 0, isDirectory = true, time = DosFileDateTime(0, 0), inode = 0L, offset = 0, headerEntry = byteArrayOf().openAsync(), compressedSize = 0L, uncompressedSize = 0L)
 		Unit
 	}
 

@@ -20,6 +20,8 @@ class LinkedList<T> {
 	fun isNotEmpty(): Boolean = size != 0
 	fun isEmpty(): Boolean = size == 0
 
+	fun addAll(items: Iterable<T>) = list.addAll(items)
+	fun addFirst(item: T) = list.add(0, item)
 	fun addLast(item: T) = list.add(item)
 	fun removeFirst() = list.removeAt(0)
 	fun removeLast() = list.removeAt(list.size - 1)

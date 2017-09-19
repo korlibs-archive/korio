@@ -1,6 +1,6 @@
 package com.soywiz.korio.util
 
-import java.util.*
+import com.soywiz.korio.ds.LinkedList
 
 class Pool<T>(private val reset: (T) -> Unit = {}, preallocate: Int = 0, private val gen: () -> T) {
 	constructor(preallocate: Int = 0, gen: () -> T) : this({}, preallocate, gen)
