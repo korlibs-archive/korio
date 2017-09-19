@@ -1,16 +1,6 @@
 package com.soywiz.korio.serialization.binary
 
-import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.SyncStream
-import com.soywiz.korio.stream.readBytes
-import com.soywiz.korio.stream.writeBytes
-import com.soywiz.korio.util.*
-import java.lang.reflect.Array
-import java.lang.reflect.Field
-import java.nio.ByteOrder
-import java.nio.charset.Charset
-import java.util.*
-
+/*
 interface Struct {
 	sealed class Type(val size: Int) {
 		object S1 : Type(1)
@@ -19,16 +9,16 @@ interface Struct {
 		object S8 : Type(8)
 		object F4 : Type(4)
 		object F8 : Type(8)
-		class CUSTOM(val elementClazz: Class<Struct>) : Type(StructReflect[elementClazz].size)
+		class CUSTOM(val elementClazz: KClass<Struct>) : Type(StructReflect[elementClazz].size)
 		class ARRAY(val elementType: Type, val count: Int) : Type(elementType.size * count)
 		class STRING(val charset: Charset, val count: Int) : Type(count)
 	}
-	/*
-	enum class Type(val size: Int) {
-		S1(1), S2(2), S4(4), S8(8),
-		F4(4), F8(8), CUSTOM(-1)
-	}
-	*/
+
+	//enum class Type(val size: Int) {
+	//	S1(1), S2(2), S4(4), S8(8),
+	//	F4(4), F8(8), CUSTOM(-1)
+	//}
+
 }
 
 @Target(AnnotationTarget.FIELD, AnnotationTarget.CLASS) annotation class LE
@@ -44,7 +34,7 @@ annotation class Size(val size: Int)
 //@Target(AnnotationTarget.FIELD) annotation class U2
 //@Target(AnnotationTarget.FIELD) annotation class U4
 
-class StructReflect<T>(val clazz: Class<T>) {
+class StructReflect<T>(val clazz: KClass<T>) {
 	data class FieldInfo(
 		val field: Field,
 		val offset: Int,
@@ -238,3 +228,4 @@ suspend fun <T : Struct> AsyncStream.readStruct(clazz: Class<T>): T {
 }
 
 suspend fun <T : Struct> AsyncStream.writeStruct(obj: T) = this.writeBytes(obj.getStructBytes())
+*/

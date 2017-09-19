@@ -1,6 +1,7 @@
 package com.soywiz.korio.lang
 
-import java.lang.Float
+import com.soywiz.korio.math.Math
+import com.soywiz.korio.math.MathEx
 
 class Float16(val bits: Int) {
 	constructor(value: Double) : this(doubleToIntBits(value))
@@ -34,7 +35,7 @@ class Float16(val bits: Int) {
 		}
 
 		fun doubleToIntBits(value: Double): Int {
-			val dword = Float.floatToIntBits(value.toFloat())
+			val dword = MathEx.floatToIntBits(value.toFloat())
 
 			return if ((dword and 0x7FFFFFFF) == 0) {
 				dword ushr 16

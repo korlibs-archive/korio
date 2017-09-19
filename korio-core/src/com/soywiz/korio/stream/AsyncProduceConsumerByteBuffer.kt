@@ -1,6 +1,7 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.AsyncSemaphore
+import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.util.indexOf
 import java.io.ByteArrayOutputStream
 import java.util.*

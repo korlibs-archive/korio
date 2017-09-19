@@ -1,6 +1,7 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.AsyncThread
+import com.soywiz.korio.ds.OptByteBuffer
 import java.io.ByteArrayOutputStream
 
 class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int = 0x2000) : AsyncInputStream {
@@ -18,11 +19,11 @@ class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int =
 	}
 
 	suspend fun readBufferedUntil(end: Byte, including: Boolean = true): ByteArray {
-		val out = ByteArrayOutputStream()
+		val out = OptByteBuffer()
 		while (true) {
 			require()
 			val chunk = buf.consumeUntil(end, including)
-			out.write(chunk)
+			out.append(chunk)
 			if (chunk.isNotEmpty() && chunk.last() == end) break
 		}
 		return out.toByteArray()

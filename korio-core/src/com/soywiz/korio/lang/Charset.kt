@@ -1,11 +1,9 @@
 package com.soywiz.korio.lang
 
-class Charset {
-
-}
+data class Charset(val name: String)
 
 object Charsets {
-	val UTF_8 = Charset()
+	val UTF_8 = Charset("UTF-8")
 }
 
 fun String.toByteArray(charset: Charset): ByteArray = TODO()

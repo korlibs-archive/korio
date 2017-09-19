@@ -1,5 +1,6 @@
 package com.soywiz.korio.serialization.xml
 
+import com.soywiz.korio.lang.Language
 import com.soywiz.korio.util.Indenter
 import com.soywiz.korio.util.toTreeMap
 import org.intellij.lang.annotations.Language

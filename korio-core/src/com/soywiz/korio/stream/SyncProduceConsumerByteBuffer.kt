@@ -1,5 +1,9 @@
 package com.soywiz.korio.stream
 
+import com.soywiz.korio.ds.LinkedList
+import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.math.Math
+import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.util.indexOf
 import java.io.ByteArrayOutputStream
 import java.util.*
@@ -46,7 +50,7 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 			ensureCurrentBuffer()
 			val readInCurrent = Math.min(availableInCurrent, len)
 			if (readInCurrent <= 0) break
-			System.arraycopy(current, currentPos, data, outputPos, readInCurrent)
+			current.copyRangeTo(currentPos, data, outputPos, readInCurrent)
 			currentPos += readInCurrent
 			remaining -= readInCurrent
 			totalRead += readInCurrent
@@ -55,25 +59,25 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 		totalRead
 	}
 
-	fun consume(len: Int): ByteArray = ByteArray(len).run { Arrays.copyOf(this, consume(this, 0, len)) }
+	fun consume(len: Int): ByteArray = ByteArray(len).run { this.copyOf(consume(this, 0, len)) }
 
 	fun consumeUntil(end: Byte, including: Boolean = true): ByteArray = synchronized(this) {
-		val out = ByteArrayOutputStream()
+		val out = OptByteBuffer()
 		while (true) {
 			ensureCurrentBuffer()
 			if (availableInCurrent <= 0) break // no more data!
 			val p = current.indexOf(currentPos, end)
 			val pp = if (p < 0) current.size else if (including) p + 1 else p
 			val len = pp - currentPos
-			if (len > 0) out.write(current, currentPos, len)
+			if (len > 0) out.append(current, currentPos, len)
 			currentPos += len
 			if (p >= 0) break // found!
 		}
-		return out.toByteArray()
+		return@synchronized out.toByteArray()
 	}
 
 	override fun write(buffer: ByteArray, offset: Int, len: Int) {
-		produce(Arrays.copyOfRange(buffer, offset, offset + len))
+		produce(buffer.copyOfRange(offset, offset + len))
 	}
 
 	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {

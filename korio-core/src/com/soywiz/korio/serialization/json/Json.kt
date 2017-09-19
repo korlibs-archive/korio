@@ -1,21 +1,23 @@
 package com.soywiz.korio.serialization.json
 
+import com.soywiz.korio.lang.IOException
+import com.soywiz.korio.lang.KClass
+import com.soywiz.korio.lang.Language
 import com.soywiz.korio.util.*
-import org.intellij.lang.annotations.Language
-import java.io.IOException
 
 object Json {
 	fun stringifyPretty(obj: Any?) = stringify(obj, pretty = true)
 	fun stringify(obj: Any?, pretty: Boolean = false) = if (pretty) encodePretty(obj) else encode(obj)
 	fun parse(@Language("json") s: String): Any? = StrReader(s).decode()
-	inline fun <reified T : Any> parseTyped(@Language("json") s: String): T = decodeToType(s, T::class.java)
+	inline fun <reified T : Any> parseTyped(@Language("json") s: String): T = decodeToType(s, T::class)
 
 	fun invalidJson(msg: String = "Invalid JSON"): Nothing = throw IOException(msg)
 
 	fun decode(@Language("json") s: String): Any? = StrReader(s).decode()
 
-	inline fun <reified T : Any> decodeToType(@Language("json") s: String): T = decodeToType(s, T::class.java)
-	@Suppress("UNCHECKED_CAST") fun <T> decodeToType(@Language("json") s: String, clazz: Class<T>): T = ClassFactory(clazz).create(decode(s))
+	inline fun <reified T : Any> decodeToType(@Language("json") s: String): T = decodeToType(s, T::class)
+	@Suppress("UNCHECKED_CAST")
+	fun <T> decodeToType(@Language("json") s: String, clazz: KClass<T>): T = ClassFactory(clazz).create(decode(s))
 
 	fun StrReader.decode(): Any? {
 		val ic = skipSpaces().read()
@@ -92,7 +94,7 @@ object Json {
 			is Enum<*> -> encodeString(obj.name, b)
 			is String -> encodeString(obj, b)
 			is Number -> b.append("$obj")
-			else -> encode(ClassFactory(obj::class.java).toMap(obj), b)
+			else -> encode(ClassFactory(obj::class).toMap(obj), b)
 		}
 	}
 
@@ -132,7 +134,7 @@ object Json {
 			}
 			is String -> b.inline(encodeString(obj))
 			is Number -> b.inline("$obj")
-			else -> encodePretty(ClassFactory(obj::class.java).toMap(obj), b)
+			else -> encodePretty(ClassFactory(obj::class).toMap(obj), b)
 		}
 	}
 

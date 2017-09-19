@@ -28,6 +28,6 @@ object Hex {
 			out[m++] = digits[(v ushr 4) and 0xF]
 			out[m++] = digits[(v ushr 0) and 0xF]
 		}
-		return String(out)
+		return out.toString()
 	}
 }

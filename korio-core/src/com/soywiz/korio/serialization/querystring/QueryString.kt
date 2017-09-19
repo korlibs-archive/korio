@@ -1,8 +1,5 @@
 package com.soywiz.korio.serialization.querystring
 
-import java.net.URLDecoder
-import java.net.URLEncoder
-
 object QueryString {
 	fun decode(str: CharSequence): Map<String, List<String>> {
 		val out = LinkedHashMap<String, ArrayList<String>>()
@@ -27,4 +24,12 @@ object QueryString {
 		}
 		return parts.joinToString("&")
 	}
+}
+
+object URLDecoder {
+	fun decode(str: String, charset: String): String = TODO()
+}
+
+object URLEncoder {
+	fun encode(str: String, charset: String): String = TODO()
 }

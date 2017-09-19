@@ -4,16 +4,14 @@ package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.executeInWorker
-import com.soywiz.korio.error.unsupported
+import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.lang.*
+import com.soywiz.korio.math.Math
+import com.soywiz.korio.typedarray.copyRangeTo
+import com.soywiz.korio.typedarray.fill
 import com.soywiz.korio.util.*
 import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.VfsOpenMode
-import java.io.ByteArrayOutputStream
-import java.io.Closeable
-import java.io.EOFException
-import java.io.InputStream
-import java.nio.charset.Charset
-import java.util.*
 
 //interface SmallTemp {
 //	val smallTemp: ByteArray
@@ -117,17 +115,17 @@ class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : Extra by
 	private val writeQueue = AsyncThread()
 
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = readQueue {
-	//suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+		//suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		val read = base.read(position, buffer, offset, len)
 		if (read >= 0) position += read
 		read
 	}
 
 	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = writeQueue {
-        //suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit {
-        base.write(position, buffer, offset, len)
-        position += len
-    }
+		//suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit {
+		base.write(position, buffer, offset, len)
+		position += len
+	}
 
 	suspend override fun setPosition(value: Long): Unit = run { this.position = value }
 	suspend override fun getPosition(): Long = this.position
@@ -201,7 +199,7 @@ class BufferedStreamBase(val base: AsyncStreamBase, val blockSize: Int = 2048) :
 		val length = end - start
 		val out = ByteArray((blockSize * length).toInt())
 		val r = base.read(getSectorPosition(start), out, 0, out.size)
-		return Arrays.copyOf(out, r)
+		return out.copyOf(r)
 	}
 
 	var cached: CachedEntry? = null
@@ -217,7 +215,7 @@ class BufferedStreamBase(val base: AsyncStreamBase, val blockSize: Int = 2048) :
 		val entry = readSectorsCached(getSectorAtPosition(position), getSectorAtPosition(position + len) + 1)
 		val readOffset = entry.getPositionInData(position)
 		val readLen = Math.min(entry.getAvailableAtPosition(position), len)
-		System.arraycopy(entry.data, readOffset, buffer, offset, readLen)
+		entry.data.copyRangeTo(readOffset, buffer, offset, readLen)
 		return readLen
 	}
 
@@ -264,13 +262,13 @@ suspend fun AsyncStream.readStream(length: Int): AsyncStream = readSlice(length.
 suspend fun AsyncStream.readStream(length: Long): AsyncStream = readSlice(length)
 
 suspend fun AsyncInputStream.readStringz(charset: Charset = Charsets.UTF_8): String {
-	val buf = ByteArrayOutputStream()
+	val buf = OptByteBuffer()
 	val temp = BYTES_TEMP
 	while (true) {
 		val read = read(temp, 0, 1)
 		if (read <= 0) break
 		if (temp[0] == 0.toByte()) break
-		buf.write(temp[0].toInt())
+		buf.append(temp[0].toByte())
 	}
 	return buf.toByteArray().toString(charset)
 }
@@ -278,7 +276,7 @@ suspend fun AsyncInputStream.readStringz(charset: Charset = Charsets.UTF_8): Str
 suspend fun AsyncInputStream.readStringz(len: Int, charset: Charset = Charsets.UTF_8): String {
 	val res = readBytes(len)
 	val index = res.indexOf(0.toByte())
-	return String(res, 0, if (index < 0) len else index, charset)
+	return res.copyOf(if (index < 0) len else index).toString(charset)
 }
 
 suspend fun AsyncInputStream.readString(len: Int, charset: Charset = Charsets.UTF_8): String = readBytes(len).toString(charset)
@@ -327,17 +325,17 @@ suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {
 				pos += alen2
 				available -= alen2
 			}
-			return if (ba.size == pos) ba else Arrays.copyOf(ba, pos)
+			return if (ba.size == pos) ba else ba.copyOf(pos)
 		} else {
 			// @TODO: We can read chunks of data in preallocated byte arrays, then join them all.
 			// @TODO: That would prevent resizing issues with the trade-off of more allocations.
 			var pending = len
 			val temp = BYTES_TEMP
-			val bout = ByteArrayOutputStream()
+			val bout = OptByteBuffer()
 			while (pending > 0) {
 				val read = this.read(temp, 0, Math.min(temp.size, pending))
 				if (read <= 0) break
-				bout.write(temp, 0, read)
+				bout.append(temp, 0, read)
 				pending -= read
 			}
 			return bout.toByteArray()
@@ -352,7 +350,7 @@ suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {
 			pos += rlen
 			available -= rlen
 		}
-		return if (ba.size == pos) ba else Arrays.copyOf(ba, pos)
+		return if (ba.size == pos) ba else ba.copyOf(pos)
 	}
 
 }
@@ -397,12 +395,12 @@ suspend fun AsyncInputStream.readAll(): ByteArray {
 			val available = this.getAvailable().toInt()
 			return this.readBytes(available)
 		} else {
-			val out = ByteArrayOutputStream()
+			val out = OptByteBuffer()
 			val temp = BYTES_TEMP
 			while (true) {
 				val r = this.read(temp, 0, temp.size)
 				if (r <= 0) break
-				out.write(temp, 0, r)
+				out.append(temp, 0, r)
 			}
 			out.toByteArray()
 		}
@@ -517,7 +515,7 @@ suspend fun AsyncInputStream.copyTo(target: AsyncOutputStream): Long {
 suspend fun AsyncStream.writeToAlign(alignment: Int, value: Int = 0) {
 	val nextPosition = getPosition().nextAlignedTo(alignment.toLong())
 	val data = ByteArray((nextPosition - getPosition()).toInt())
-	Arrays.fill(data, value.toByte())
+	data.fill(value.toByte())
 	writeBytes(data)
 }
 
@@ -548,12 +546,12 @@ suspend fun AsyncOutputStream.writeFloatArray_be(array: FloatArray) = writeBytes
 suspend fun AsyncOutputStream.writeDoubleArray_be(array: DoubleArray) = writeBytes(ByteArray(array.size * 8).apply { writeArray_be(0, array) })
 
 suspend fun AsyncInputStream.readUntil(endByte: Byte): ByteArray {
-	val out = ByteArrayOutputStream()
+	val out = OptByteBuffer()
 	try {
 		while (true) {
 			val c = readU8()
 			if (c.toByte() == endByte) break
-			out.write(c)
+			out.append(c.toByte())
 		}
 	} catch (e: EOFException) {
 	}
@@ -561,43 +559,18 @@ suspend fun AsyncInputStream.readUntil(endByte: Byte): ByteArray {
 }
 
 suspend fun AsyncInputStream.readLine(eol: Char = '\n', charset: Charset = Charsets.UTF_8): String {
-	val out = ByteArrayOutputStream()
+	val out = OptByteBuffer()
 	try {
 		while (true) {
 			val c = readU8()
 			if (c.toChar() == eol) break
-			out.write(c)
+			out.append(c.toByte())
 		}
 	} catch (e: EOFException) {
 	}
 	return out.toByteArray().toString(charset)
 }
 
-fun InputStream.toAsync(length: Long? = null): AsyncInputStream {
-	val syncIS = this
-	if (length != null) {
-		return object : AsyncInputStream, AsyncLengthStream {
-			suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker {
-				syncIS.read(buffer, offset, len)
-			}
-			override suspend fun close() = syncIS.close()
-			suspend override fun setLength(value: Long) {
-				unsupported("Can't set length")
-			}
-			suspend override fun getLength(): Long = length
-		}
-	} else {
-		return object : AsyncInputStream {
-			suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker {
-				syncIS.read(buffer, offset, len)
-			}
-
-			override suspend fun close() {
-				syncIS.close()
-			}
-		}
-	}
-}
 
 fun SyncInputStream.toAsyncInputStream() = object : AsyncInputStream {
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {

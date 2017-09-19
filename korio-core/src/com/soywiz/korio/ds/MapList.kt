@@ -1,7 +1,5 @@
 package com.soywiz.korio.ds
 
-import java.util.*
-
 class MapList<K, V>() : Iterable<Pair<K, List<V>>> {
 	override fun iterator(): Iterator<Pair<K, List<V>>> = map.entries.map { it.key to it.value }.iterator()
 

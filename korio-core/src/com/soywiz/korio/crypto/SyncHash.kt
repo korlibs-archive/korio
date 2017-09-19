@@ -1,9 +1,10 @@
 package com.soywiz.korio.crypto
 
+import com.soywiz.korio.lang.Charset
+import com.soywiz.korio.lang.Charsets
+import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.stream.SyncInputStream
 import com.soywiz.korio.stream.openSync
-import java.nio.charset.Charset
-import java.security.MessageDigest
 
 abstract class SyncHash {
 	companion object {
@@ -17,14 +18,15 @@ abstract class SyncHash {
 
 	class MessageDigestHash(val algo: String) : SyncHash() {
 		override fun hash(content: SyncInputStream): ByteArray {
-			val temp = ByteArray(0x1000)
-			val md = MessageDigest.getInstance(algo)
-			while (true) {
-				val read = content.read(temp, 0, temp.size)
-				if (read <= 0) break
-				md.update(temp, 0, read)
-			}
-			return md.digest()
+			//val temp = ByteArray(0x1000)
+			//val md = MessageDigest.getInstance(algo)
+			//while (true) {
+			//	val read = content.read(temp, 0, temp.size)
+			//	if (read <= 0) break
+			//	md.update(temp, 0, read)
+			//}
+			//return md.digest()
+			TODO()
 		}
 	}
 }

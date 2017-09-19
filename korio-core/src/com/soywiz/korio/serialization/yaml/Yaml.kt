@@ -1,15 +1,16 @@
 package com.soywiz.korio.serialization.yaml
 
+import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.serialization.json.Json
+import com.soywiz.korio.lang.KClass
+import com.soywiz.korio.lang.Language
 import com.soywiz.korio.util.*
-import org.intellij.lang.annotations.Language
-import java.util.*
 
 object Yaml {
 	fun decode(@Language("yaml") str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
-	inline fun <reified T : Any> decodeToType(@Language("yaml") s: String): T = decodeToType(s, T::class.java)
-	@Suppress("UNCHECKED_CAST") fun <T> decodeToType(@Language("yaml") s: String, clazz: Class<T>): T = ClassFactory(clazz).create(decode(s))
+	inline fun <reified T : Any> decodeToType(@Language("yaml") s: String): T = decodeToType(s, T::class)
+	@Suppress("UNCHECKED_CAST")
+	fun <T> decodeToType(@Language("yaml") s: String, clazz: KClass<T>): T = ClassFactory(clazz).create(decode(s))
 
 	fun read(str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
 
@@ -22,19 +23,7 @@ object Yaml {
 		"null" -> null
 		"true" -> true
 		"false" -> false
-		else -> {
-			try {
-				java.lang.Integer.parseInt(str)
-			} catch (e: NumberFormatException) {
-				try {
-					java.lang.Double.parseDouble(str)
-				} catch (e: NumberFormatException) {
-					str
-				}
-			}
-			// @TODO: jtransc bug. Check!
-			//str.toIntOrNull() ?: str.toDoubleOrNull() ?: str
-		}
+		else -> str.toIntOrNull() ?: str.toDoubleOrNull() ?: str
 	}
 
 	//const val TRACE = true

@@ -1,9 +1,11 @@
 package com.soywiz.korio.stream
 
+import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.lang.*
+import com.soywiz.korio.math.Math
+import com.soywiz.korio.typedarray.copyRangeTo
+import com.soywiz.korio.typedarray.fill
 import com.soywiz.korio.util.*
-import java.io.*
-import java.nio.charset.Charset
-import java.util.*
 
 interface SyncInputStream {
 	fun read(buffer: ByteArray, offset: Int, len: Int): Int
@@ -31,6 +33,7 @@ open class SyncStreamBase : Closeable, SyncRAInputStream, SyncRAOutputStream, Sy
 		val count = read(position, smallTemp, 0, 1)
 		return if (count >= 1) smallTemp[0].toInt() and 0xFF else -1
 	}
+
 	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = throw UnsupportedOperationException()
 	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int): Unit = throw UnsupportedOperationException()
 	override var length: Long
@@ -107,31 +110,11 @@ class SliceSyncStreamBase(internal val base: SyncStreamBase, internal val baseSt
 	override fun toString(): String = "SliceAsyncStreamBase($base, $baseStart, $baseEnd)"
 }
 
-class FileSyncStreamBase(val file: File, val mode: String = "r") : SyncStreamBase() {
-	val ra = RandomAccessFile(file, mode)
-
-	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = synchronized(ra) {
-		ra.seek(position)
-		return ra.read(buffer, offset, len)
-	}
-
-	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) = synchronized(ra) {
-		ra.seek(position)
-		ra.write(buffer, offset, len)
-	}
-
-	override var length: Long
-		get() = ra.length()
-		set(value) = run { ra.setLength(value) }
-
-	override fun close() = ra.close()
-}
-
 class FillSyncStreamBase(val fill: Byte, override var length: Long) : SyncStreamBase() {
 	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 		val end = Math.min(length, position + len)
 		val actualLen = (end - position).toIntSafe()
-		Arrays.fill(buffer, offset, offset + actualLen, fill)
+		buffer.fill(fill, offset, offset + actualLen)
 		return actualLen
 	}
 
@@ -151,16 +134,18 @@ inline fun MemorySyncStreamToByteArray(initialCapacity: Int = 4096, callback: Sy
 	return buffer.toByteArray()
 }
 
-val SyncStream.hasLength: Boolean get() = try {
-	length; true
-} catch (e: Throwable) {
-	false
-}
-val SyncStream.hasAvailable: Boolean get() = try {
-	available; true
-} catch (e: Throwable) {
-	false
-}
+val SyncStream.hasLength: Boolean
+	get() = try {
+		length; true
+	} catch (e: Throwable) {
+		false
+	}
+val SyncStream.hasAvailable: Boolean
+	get() = try {
+		available; true
+	} catch (e: Throwable) {
+		false
+	}
 
 fun SyncStream.toByteArray(): ByteArray {
 	if (hasLength) {
@@ -180,13 +165,13 @@ class MemorySyncStreamBase(var data: ByteArrayBuffer) : SyncStreamBase() {
 	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 		val end = Math.min(this.length, position + len)
 		val actualLen = (end - position).toInt()
-		System.arraycopy(this.data.data, position.toInt(), buffer, offset, actualLen)
+		this.data.data.copyRangeTo(position.toInt(), buffer, offset, actualLen)
 		return actualLen
 	}
 
 	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
 		data.ensure((position + len).toInt())
-		System.arraycopy(buffer, offset, this.data.data, position.toInt(), len)
+		buffer.copyRangeTo(offset, this.data.data, position.toInt(), len)
 	}
 
 	override fun close() = Unit
@@ -222,13 +207,13 @@ fun SyncStream.readStream(length: Int): SyncStream = readSlice(length.toLong())
 fun SyncStream.readStream(length: Long): SyncStream = readSlice(length)
 
 fun SyncInputStream.readStringz(charset: Charset = Charsets.UTF_8): String {
-	val buf = ByteArrayOutputStream()
+	val buf = OptByteBuffer()
 	val temp = BYTES_TEMP
 	while (true) {
 		val read = read(temp, 0, 1)
 		if (read <= 0) break
 		if (temp[0] == 0.toByte()) break
-		buf.write(temp[0].toInt())
+		buf.append(temp[0].toByte())
 	}
 	return buf.toByteArray().toString(charset)
 }
@@ -236,7 +221,7 @@ fun SyncInputStream.readStringz(charset: Charset = Charsets.UTF_8): String {
 fun SyncInputStream.readStringz(len: Int, charset: Charset = Charsets.UTF_8): String {
 	val res = readBytes(len)
 	val index = res.indexOf(0.toByte())
-	return String(res, 0, if (index < 0) len else index, charset)
+	return res.copyOf(if (index < 0) len else index).toString(charset)
 }
 
 fun SyncInputStream.readString(len: Int, charset: Charset = Charsets.UTF_8): String = readBytes(len).toString(charset)
@@ -265,7 +250,7 @@ fun SyncOutputStream.writeStringz(str: String, len: Int, charset: Charset = Char
 
 fun SyncInputStream.readBytes(len: Int): ByteArray {
 	val bytes = ByteArray(len)
-	return Arrays.copyOf(bytes, read(bytes, 0, len))
+	return bytes.copyOf(read(bytes, 0, len))
 }
 
 fun SyncOutputStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
@@ -371,7 +356,6 @@ fun SyncStreamBase.toSyncStream(position: Long = 0L) = SyncStream(this, position
 fun ByteArray.openSync(mode: String = "r"): SyncStream = MemorySyncStreamBase(ByteArrayBuffer(this)).toSyncStream(0L)
 fun ByteArray.openAsync(mode: String = "r"): AsyncStream = openSync(mode).toAsync()
 fun String.openAsync(charset: Charset = Charsets.UTF_8): AsyncStream = toByteArray(charset).openSync("r").toAsync()
-fun File.openSync(mode: String = "r"): SyncStream = FileSyncStreamBase(this, mode).toSyncStream()
 
 fun SyncOutputStream.writeStream(source: SyncInputStream): Unit = source.copyTo(this)
 
@@ -384,28 +368,11 @@ fun SyncInputStream.copyTo(target: SyncOutputStream): Unit {
 	}
 }
 
-fun InputStream.toSyncStream(): SyncInputStream {
-	val iss = this
-	return object : SyncInputStream {
-		override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-			return iss.read(buffer, offset, len)
-		}
-	}
-}
-
-fun SyncStream.toInputStream(): InputStream {
-	val ss = this
-	return object : InputStream() {
-		override fun read(): Int = if (ss.eof) -1 else ss.readU8()
-		override fun read(b: ByteArray, off: Int, len: Int): Int = ss.read(b, off, len)
-		override fun available(): Int = ss.available.toInt()
-	}
-}
 
 fun SyncStream.writeToAlign(alignment: Int, value: Int = 0) {
 	val nextPosition = position.nextAlignedTo(alignment.toLong())
 	val data = ByteArray((nextPosition - position).toInt())
-	Arrays.fill(data, value.toByte())
+	data.fill(value.toByte())
 	writeBytes(data)
 }
 
@@ -449,6 +416,7 @@ fun SyncInputStream.readU_VL(): Int {
 	result = (result and 0xfffffff) or (readU8() shl 28)
 	return result
 }
+
 fun SyncInputStream.readS_VL(): Int {
 	val v = readU_VL()
 	val sign = ((v and 1) != 0)
@@ -468,6 +436,7 @@ fun SyncOutputStream.writeU_VL(v: Int): Unit {
 		write8(c or 0x80)
 	}
 }
+
 fun SyncOutputStream.writeS_VL(v: Int): Unit {
 	val sign = if (v < 0) 1 else 0
 	writeU_VL(sign or ((if (v < 0) -v - 1 else v) shl 1))

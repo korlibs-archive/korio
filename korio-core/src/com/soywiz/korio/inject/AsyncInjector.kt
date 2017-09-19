@@ -2,6 +2,7 @@ package com.soywiz.korio.inject
 
 import com.jtransc.annotation.JTranscKeep
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.lang.printStackTrace
 import com.soywiz.korio.util.Extra
 import com.soywiz.korio.util.allDeclaredFields
 import java.lang.reflect.Modifier
@@ -22,35 +23,33 @@ annotation class Inject
 annotation class Optional
 
 class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Extra by Extra.Mixin() {
-	private val instancesByClass = hashMapOf<Class<*>, Any?>()
+	private val instancesByClass = hashMapOf<KClass<*>, Any?>()
 
 	fun child() = AsyncInjector(this, level + 1)
 
 	val rootForSingleton: AsyncInjector = parent?.rootForSingleton ?: this
 
-	suspend inline fun <reified T : Any> get() = get(T::class.java)
+	suspend inline fun <reified T : Any> get() = get(T::class)
 
-	inline fun <reified T : Any> mapTyped(instance: T): AsyncInjector = map(instance, T::class.java)
-	fun <T : Any> map(instance: T, clazz: Class<T> = instance.javaClass): AsyncInjector = this.apply { instancesByClass[clazz] = instance as Any }
+	inline fun <reified T : Any> mapTyped(instance: T): AsyncInjector = map(instance, T::class)
+	fun <T : Any> map(instance: T, clazz: KClass<T> = instance.javaClass): AsyncInjector = this.apply { instancesByClass[clazz] = instance as Any }
 
 	init {
 		mapTyped<AsyncInjector>(this)
 	}
 
 	@Suppress("UNCHECKED_CAST")
-	@JvmOverloads
-	suspend fun <T : Any?> get(clazz: Class<T>, ctx: RequestContext = RequestContext(clazz)): T = getOrNull(clazz, ctx) ?: create(clazz, ctx) ?: invalidOp("Class '$clazz' doesn't have constructors $ctx")
+	suspend fun <T : Any> get(clazz: KClass<T>, ctx: RequestContext = RequestContext(clazz)): T = getOrNull(clazz, ctx) ?: create(clazz, ctx) ?: invalidOp("Class '$clazz' doesn't have constructors $ctx")
 
-	data class RequestContext(val initialClazz: Class<*>)
+	data class RequestContext(val initialClazz: KClass<*>)
 
 	@Suppress("UNCHECKED_CAST")
-	@JvmOverloads
-	suspend fun <T : Any?> getOrNull(clazz: Class<T>, ctx: RequestContext = RequestContext(clazz)): T? {
-		return if (clazz.getAnnotation(Prototype::class.java) != null) {
+	suspend fun <T : Any?> getOrNull(clazz: KClass<T>, ctx: RequestContext = RequestContext(clazz)): T? {
+		return if (clazz.getAnnotation(Prototype::class) != null) {
 			val instance = create(clazz, ctx)
 			instancesByClass[clazz] = instance
 			instance
-		} else if (clazz.getAnnotation(Singleton::class.java) != null) {
+		} else if (clazz.getAnnotation(Singleton::class) != null) {
 			val root = rootForSingleton
 			//val root = this
 			if (!has(clazz)) {
@@ -60,7 +59,7 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Ext
 			} else {
 				(instancesByClass[clazz] ?: parent?.getOrNull(clazz, ctx)) as T?
 			}
-		} else if (clazz.getAnnotation(AsyncFactoryClass::class.java) != null) {
+		} else if (clazz.getAnnotation(AsyncFactoryClass::class) != null) {
 			create(clazz, ctx)
 		} else {
 			(instancesByClass[clazz] ?: parent?.getOrNull(clazz, ctx)) as T?
@@ -156,7 +155,7 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Ext
 		}
 	}
 
-	class NotMappedException(val clazz: Class<*>, val requestedByClass: Class<*>, val ctx: RequestContext) : RuntimeException("Not mapped ${clazz.name} requested by ${requestedByClass.name} in $ctx")
+	class NotMappedException(val clazz: KClass<*>, val requestedByClass: KClass<*>, val ctx: RequestContext) : RuntimeException("Not mapped ${clazz.name} requested by ${requestedByClass.name} in $ctx")
 
 	override fun toString(): String = "AsyncInjector(level=$level, instances=${instancesByClass.size})"
 }

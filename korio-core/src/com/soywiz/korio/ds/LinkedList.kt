@@ -22,6 +22,7 @@ class LinkedList<T> {
 
 	fun addLast(item: T) = list.add(item)
 	fun removeFirst() = list.removeAt(0)
+	fun removeLast() = list.removeAt(list.size - 1)
 
 	operator fun plusAssign(item: T) {
 		addLast(item)
@@ -30,4 +31,6 @@ class LinkedList<T> {
 	operator fun minusAssign(item: T) {
 		list.remove(item)
 	}
+
+	val last: T get() = list.last()
 }
