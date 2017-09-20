@@ -9,6 +9,7 @@ import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.lang.IOException
 import com.soywiz.korio.math.Math
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.time.Date
 import com.soywiz.korio.util.*
 
 suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {

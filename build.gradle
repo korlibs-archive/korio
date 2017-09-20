@@ -107,8 +107,8 @@ allprojects {
 	}
 
 	sourceSets {
-		main.java.srcDirs = ['src']
-		test.java.srcDirs = ['test']
+		main.kotlin.srcDirs = ['src']
+		test.kotlin.srcDirs = ['test']
 		main.resources.srcDirs = ['resources']
 		test.resources.srcDirs = ['testresources']
 		main { compileClasspath += configurations.provided }

@@ -2,11 +2,13 @@
 
 package com.soywiz.korio.vfs
 
+import com.soywiz.korio.lang.Charset
+import com.soywiz.korio.lang.Charsets
+import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.SyncStream
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.toAsync
-import java.nio.charset.Charset
 
 fun MemoryVfs(items: Map<String, AsyncStream> = mapOf(), caseSensitive: Boolean = true): VfsFile {
 	val vfs = NodeVfs(caseSensitive)
@@ -24,7 +26,7 @@ fun MemoryVfsMix(items: Map<String, Any> = mapOf(), caseSensitive: Boolean = tru
 		is SyncStream -> v.toAsync()
 		is ByteArray -> v.openAsync()
 		is String -> v.openAsync(charset)
-		else -> v.toString().toByteArray().openAsync()
+		else -> v.toString().toByteArray(charset).openAsync()
 	}
 }, caseSensitive)
 
@@ -33,6 +35,6 @@ fun MemoryVfsMix(vararg items: Pair<String, Any>, caseSensitive: Boolean = true,
 		is SyncStream -> value.toAsync()
 		is ByteArray -> value.openAsync()
 		is String -> value.openAsync(charset)
-		else -> value.toString().toByteArray().openAsync()
+		else -> value.toString().toByteArray(charset).openAsync()
 	}
 }.toMap(), caseSensitive)

@@ -1,10 +1,7 @@
 package com.soywiz.korio.ds
 
 import com.soywiz.korio.async.ProduceConsumer
-import com.soywiz.korio.async.Signal
-import com.soywiz.korio.async.waitOne
-import java.util.*
-import java.util.concurrent.atomic.AtomicInteger
+import com.soywiz.korio.lang.AtomicInteger
 
 class AsyncPool<T>(val maxItems: Int = Int.MAX_VALUE, val create: suspend () -> T) {
 	var createdItems = AtomicInteger()

@@ -1,6 +1,6 @@
 package com.soywiz.korio.vfs
 
-import java.io.IOException
+import com.soywiz.korio.lang.IOException
 
 open class VfsProcessHandler {
 	suspend open fun onOut(data: ByteArray): Unit {

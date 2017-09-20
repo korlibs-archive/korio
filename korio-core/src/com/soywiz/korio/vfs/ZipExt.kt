@@ -2,6 +2,8 @@ package com.soywiz.korio.vfs
 
 import com.soywiz.korio.crypto.AsyncHash
 import com.soywiz.korio.crypto.hashSync
+import com.soywiz.korio.lang.Charsets
+import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.ByteArrayBuffer
 import com.soywiz.korio.util.readS32_le

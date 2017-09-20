@@ -4,9 +4,6 @@ import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.lang.Closeable
 
 class EventLoopFactoryTest : EventLoopFactory() {
-	override val available = true
-	override val priority: Int = Int.MAX_VALUE - 1000
-
 	override fun createEventLoop(): EventLoop = EventLoopTest()
 }
 
@@ -15,7 +12,7 @@ class EventLoopTest : EventLoop() {
 
 	private var tasks = LinkedList<() -> Unit>()
 	private val lock = Any()
-	private val timers = TreeMap<Long, ArrayList<() -> Unit>>()
+	private val timers = HashMap<Long, ArrayList<() -> Unit>>()
 
 	override fun setIntervalInternal(ms: Int, callback: () -> Unit): Closeable {
 		var cancelled = false
@@ -53,7 +50,7 @@ class EventLoopTest : EventLoop() {
 
 				val handlers = synchronized(lock) {
 					if (timers.isNotEmpty()) {
-						val item = timers.firstEntry()
+						val item = timers.entries.first()
 						if (time >= item.key) {
 							timers.remove(item.key)
 							item.value.toList()
@@ -75,7 +72,7 @@ class EventLoopTest : EventLoop() {
 	}
 
 	override fun setImmediateInternal(handler: () -> Unit) {
-		synchronized(lock) { tasks.add(handler) }
+		synchronized(lock) { tasks += handler }
 		executeTasks()
 	}
 

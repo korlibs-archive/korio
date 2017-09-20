@@ -4,14 +4,11 @@ import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.asyncGenerate3
 import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.nio.toString
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.querystring.QueryString
 import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.util.AsyncCloseable
 import com.soywiz.korio.util.Extra
-import java.io.IOException
-import java.nio.ByteBuffer
-import java.nio.charset.Charset
 
 
 open class HttpServer protected constructor() : AsyncCloseable {
@@ -20,8 +17,8 @@ open class HttpServer protected constructor() : AsyncCloseable {
 	}
 
 	abstract class BaseRequest(
-			val uri: String,
-			val headers: Http.Headers
+		val uri: String,
+		val headers: Http.Headers
 	) : Extra by Extra.Mixin() {
 		private val parts by lazy { uri.split('?', limit = 2) }
 		val path: String by lazy { parts[0] }
@@ -31,8 +28,8 @@ open class HttpServer protected constructor() : AsyncCloseable {
 	}
 
 	abstract class WsRequest(
-			uri: String,
-			headers: Http.Headers
+		uri: String,
+		headers: Http.Headers
 	) : BaseRequest(uri, headers) {
 		abstract fun reject()
 
@@ -94,10 +91,10 @@ open class HttpServer protected constructor() : AsyncCloseable {
 	}
 
 	abstract class Request constructor(
-			val method: Http.Method,
-			uri: String,
-			headers: Http.Headers,
-			val requestConfig: RequestConfig = RequestConfig()
+		val method: Http.Method,
+		uri: String,
+		headers: Http.Headers,
+		val requestConfig: RequestConfig = RequestConfig()
 	) : BaseRequest(uri, headers), AsyncOutputStream {
 		val finalizers = arrayListOf<suspend () -> Unit>()
 
@@ -118,7 +115,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 
 		fun removeHeader(key: String) {
 			ensureHeadersNotSent()
-			resHeaders.removeIf { it.first.equals(key, ignoreCase = true) }
+			resHeaders.removeAll { it.first.equals(key, ignoreCase = true) }
 		}
 
 		fun addHeader(key: String, value: String) {
@@ -249,11 +246,11 @@ open class HttpServer protected constructor() : AsyncCloseable {
 }
 
 class FakeRequest(
-		method: Http.Method,
-		uri: String,
-		headers: Http.Headers = Http.Headers(),
-		val body: ByteArray = ByteArray(0),
-		requestConfig: HttpServer.RequestConfig
+	method: Http.Method,
+	uri: String,
+	headers: Http.Headers = Http.Headers(),
+	val body: ByteArray = ByteArray(0),
+	requestConfig: HttpServer.RequestConfig
 ) : HttpServer.Request(method, uri, headers, requestConfig) {
 	private val buf = OptByteBuffer()
 	var outputHeaders: Http.Headers = Http.Headers()
@@ -284,7 +281,7 @@ class FakeRequest(
 	}
 
 	override fun _write(data: ByteArray, offset: Int, size: Int) {
-		log += "_write(${ByteBuffer.wrap(data, offset, size).toString(Charsets.UTF_8)})"
+		log += "_write(${data.copyOfRange(offset, offset + size).toString(Charsets.UTF_8)})"
 		buf.append(data, offset, size)
 	}
 

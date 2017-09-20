@@ -1,4 +1,4 @@
-package com.soywiz.korio.vfs
+package com.soywiz.korio
 
 /*
 class LocalVfsProviderCSharp : LocalVfsProvider() {
@@ -125,4 +125,20 @@ class LocalVfsProviderHaxe : LocalVfsProvider() {
 	}
 }
 
+class HttpFactoryCSharp : HttpFactory() {
+	override fun createClient(): HttpClient = CSharpHttpClient()
+}
+
+class CSharpHttpClient : HttpClient() {
+	private val csClient = CSharp.raw<Any>("N.wrap(new System.Net.Http.HttpClient())")
+
+	private fun createCSharpHttpMethod(kind: String) = CSharp.raw<String>("N.str(new System.Net.Http.HttpMethod(N.istr(p0)))")
+
+	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
+		// System.Net.Http.HttpClient
+		// OpenReadAsync
+		// OpenWriteAsync
+		TODO()
+	}
+}
 */

@@ -1,9 +1,7 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.async.sync
 import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.expectException
-import org.junit.Assert
 import org.junit.Test
 import java.io.FileNotFoundException
 import kotlin.test.assertEquals

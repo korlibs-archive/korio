@@ -1,8 +1,5 @@
 package com.soywiz.korio.vfs
 
-import java.io.File
-import java.util.*
-
 object VfsUtil {
 	fun parts(path: String): List<String> = path.split('/')
 
@@ -13,11 +10,11 @@ object VfsUtil {
 			return path.substring(0, schemeIndex + take) + normalize(path.substring(schemeIndex + take))
 		} else {
 			val path2 = path.replace('\\', '/')
-			val out = LinkedList<String>()
+			val out = ArrayList<String>()
 			for (part in path2.split("/")) {
 				when (part) {
 					"", "." -> if (out.isEmpty()) out += "" else Unit
-					".." -> if (out.isNotEmpty()) out.removeLast()
+					".." -> if (out.isNotEmpty()) out.removeAt(out.size - 1)
 					else -> out += part
 				}
 			}
@@ -40,6 +37,10 @@ object VfsUtil {
 	fun normalizeAbsolute(path: String): String {
 		//val res = path.replace('/', File.separatorChar).trim(File.separatorChar)
 		//return if (OS.isUnix) "/$res" else res
-		return path.replace('/', File.separatorChar)
+		return path.replace('/', File_separatorChar)
 	}
 }
+
+header val File_separatorChar: Char
+
+impl val File_separatorChar: Char = '/'

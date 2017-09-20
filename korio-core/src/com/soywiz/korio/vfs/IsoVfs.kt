@@ -2,6 +2,7 @@ package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.coroutine.withCoroutineContext
+import com.soywiz.korio.lang.format
 import com.soywiz.korio.stream.*
 
 suspend fun IsoVfs(file: VfsFile): VfsFile = ISO.openVfs(file.open(VfsOpenMode.READ))
@@ -22,7 +23,12 @@ object ISO {
 
 			fun getVfsStat(file: IsoFile): VfsStat = createExistsStat(file.fullname, isDirectory = file.isDirectory, size = file.size)
 
-			suspend override fun stat(path: String): VfsStat = try { getVfsStat(isoFile[path]) } catch (e: Throwable) { createNonExistsStat(path) }
+			suspend override fun stat(path: String): VfsStat = try {
+				getVfsStat(isoFile[path])
+			} catch (e: Throwable) {
+				createNonExistsStat(path)
+			}
+
 			suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = isoFile[path].open2(mode)
 
 			suspend override fun list(path: String) = asyncGenerate(this@withCoroutineContext) {

@@ -6,12 +6,12 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.Signal
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.coroutine.withCoroutineContext
+import com.soywiz.korio.lang.Closeable
+import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.MemorySyncStream
 import com.soywiz.korio.stream.toAsyncStream
-import java.io.Closeable
-import java.io.FileNotFoundException
 
 open class NodeVfs(val caseSensitive: Boolean = true) : Vfs() {
 	val events = Signal<VfsFileEvent>()

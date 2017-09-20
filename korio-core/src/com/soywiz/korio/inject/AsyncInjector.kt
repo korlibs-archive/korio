@@ -1,11 +1,8 @@
 package com.soywiz.korio.inject
 
-import com.jtransc.annotation.JTranscKeep
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.printStackTrace
 import com.soywiz.korio.util.Extra
-import com.soywiz.korio.util.allDeclaredFields
-import java.lang.reflect.Modifier
 import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.CLASS)

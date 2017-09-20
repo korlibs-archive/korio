@@ -10,7 +10,6 @@ class ByteArrayBuilder {
 	var size: Int = 0; private set
 
 	constructor() {
-
 	}
 
 	constructor(chunk: ByteArray) {

@@ -1,11 +1,11 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.SuspendingSequence
+import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
-import java.io.Closeable
 
 class LogVfs(val parent: VfsFile) : Vfs.Proxy() {
 	val log = arrayListOf<String>()

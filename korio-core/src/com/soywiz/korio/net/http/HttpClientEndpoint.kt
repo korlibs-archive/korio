@@ -1,9 +1,11 @@
 package com.soywiz.korio.net.http
 
+import com.soywiz.korio.lang.Charsets
+import com.soywiz.korio.lang.URIUtils
+import com.soywiz.korio.lang.toString
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.readAll
-import java.net.URI
 
 interface HttpClientEndpoint {
 	suspend fun request(method: Http.Method, path: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null, config: HttpClient.RequestConfig = HttpClient.RequestConfig()): HttpClient.Response
@@ -90,10 +92,9 @@ class FakeHttpClientEndpoint(val defaultMessage: String = "{}") : HttpClientEndp
 
 fun HttpClient.endpoint(endpoint: String): HttpClientEndpoint {
 	val client = this
-	val rendpoint = URI(endpoint)
 	return object : HttpClientEndpoint {
 		override suspend fun request(method: Http.Method, path: String, headers: Http.Headers, content: AsyncStream?, config: HttpClient.RequestConfig): HttpClient.Response {
-			val resolvedUrl = rendpoint.resolve("/" + path.trimStart('/')).toString()
+			val resolvedUrl = URIUtils.resolve(endpoint, "/" + path.trimStart('/')).toString()
 			return client.request(method, resolvedUrl, headers, content, config)
 		}
 	}

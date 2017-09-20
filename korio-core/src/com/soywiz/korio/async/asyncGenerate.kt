@@ -19,22 +19,22 @@ interface SuspendingIterator<out T> {
 }
 
 fun <T> suspendingSequence(
-		context: CoroutineContext,
-		block: suspend SuspendingSequenceBuilder<T>.() -> Unit
+	context: CoroutineContext,
+	block: suspend SuspendingSequenceBuilder<T>.() -> Unit
 ): SuspendingSequence<T> = object : SuspendingSequence<T> {
 	override fun iterator(): SuspendingIterator<T> = suspendingIterator(context, block)
 
 }
 
 fun <T> suspendingIterator(
-		context: CoroutineContext,
-		block: suspend SuspendingSequenceBuilder<T>.() -> Unit
+	context: CoroutineContext,
+	block: suspend SuspendingSequenceBuilder<T>.() -> Unit
 ): SuspendingIterator<T> = SuspendingIteratorCoroutine<T>(context).apply {
 	nextStep = block.korioCreateCoroutine(receiver = this, completion = this)
 }
 
 class SuspendingIteratorCoroutine<T>(
-		override val context: CoroutineContext
+	override val context: CoroutineContext
 ) : SuspendingIterator<T>, SuspendingSequenceBuilder<T>, Continuation<Unit> {
 	enum class State { INITIAL, COMPUTING_HAS_NEXT, COMPUTING_NEXT, COMPUTED, DONE }
 
@@ -119,8 +119,8 @@ typealias AsyncSequence<T> = SuspendingSequence<T>
 typealias AsyncIterator<T> = SuspendingIterator<T>
 
 fun <T> asyncGenerate(
-		context: CoroutineContext,
-		block: suspend SuspendingSequenceBuilder<T>.() -> Unit
+	context: CoroutineContext,
+	block: suspend SuspendingSequenceBuilder<T>.() -> Unit
 ): SuspendingSequence<T> = object : SuspendingSequence<T> {
 	override fun iterator(): SuspendingIterator<T> = suspendingIterator(context, block)
 }
@@ -373,7 +373,7 @@ interface SuspendingSequence2<out T> {
 }
 
 suspend fun <T : Any> asyncGenerate2(
-		block: suspend SuspendingSequenceBuilder2<T>.() -> Unit
+	block: suspend SuspendingSequenceBuilder2<T>.() -> Unit
 ): SuspendingSequence2<T> = object : SuspendingSequence2<T> {
 	override suspend fun iterator(): SuspendingIterator<T> {
 		val builder = SuspendingSequenceBuilder2<T>()
@@ -383,7 +383,7 @@ suspend fun <T : Any> asyncGenerate2(
 }
 
 fun <T : Any> asyncGenerate3(
-		block: SuspendingSequenceBuilder2<T>.() -> Unit
+	block: SuspendingSequenceBuilder2<T>.() -> Unit
 ): SuspendingSequence<T> = object : SuspendingSequence<T> {
 	override fun iterator(): SuspendingIterator<T> {
 		val builder = SuspendingSequenceBuilder2<T>()

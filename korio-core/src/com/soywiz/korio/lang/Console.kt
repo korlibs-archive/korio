@@ -10,4 +10,12 @@ object Console {
 		// @TODO:
 		println(msg)
 	}
+
+	fun err_print(str: String) {
+		print(str)
+	}
+
+	fun out_print(str: String) {
+		print(str)
+	}
 }

@@ -7,15 +7,12 @@ import com.soywiz.korio.async.async
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.await
 import com.soywiz.korio.coroutine.withCoroutineContext
-import com.soywiz.korio.lang.Charset
-import com.soywiz.korio.lang.Charsets
+import com.soywiz.korio.ds.ByteArrayBuilder
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.LONG_ZERO_TO_MAX_RANGE
 import com.soywiz.korio.util.toLongRange
 import com.soywiz.korio.util.use
-import java.io.ByteArrayOutputStream
-import java.io.Closeable
-import java.nio.charset.Charset
 
 class VfsFile(
 	val vfs: Vfs,
@@ -71,8 +68,8 @@ class VfsFile(
 		return open(mode).use { callback.await(this) }
 	}
 
-	inline suspend fun <reified T> readSpecial(): T = vfs.readSpecial(path, T::class.java)
-	suspend fun <T> readSpecial(clazz: Class<T>): T = vfs.readSpecial(path, clazz)
+	inline suspend fun <reified T> readSpecial(): T = vfs.readSpecial(path, T::class)
+	suspend fun <T> readSpecial(clazz: KClass<T>): T = vfs.readSpecial(path, clazz)
 	suspend fun readRangeBytes(range: LongRange): ByteArray = vfs.readRange(path, range)
 	suspend fun readRangeBytes(range: IntRange): ByteArray = vfs.readRange(path, range.toLongRange())
 
@@ -154,22 +151,22 @@ class VfsFile(
 
 	suspend fun exec(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), handler: VfsProcessHandler = VfsProcessHandler()): Int = vfs.exec(path, cmdAndArgs, env, handler)
 	suspend fun execToString(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), charset: Charset = Charsets.UTF_8, captureError: Boolean = false, throwOnError: Boolean = true): String {
-		val out = ByteArrayOutputStream()
-		val err = ByteArrayOutputStream()
+		val out = ByteArrayBuilder()
+		val err = ByteArrayBuilder()
 
 		val result = exec(cmdAndArgs, env, object : VfsProcessHandler() {
 			suspend override fun onOut(data: ByteArray) {
-				out.write(data)
+				out.append(data)
 			}
 
 			suspend override fun onErr(data: ByteArray) {
-				if (captureError) out.write(data)
-				err.write(data)
+				if (captureError) out.append(data)
+				err.append(data)
 			}
 		})
 
-		val errString = err.toString(charset.name())
-		val outString = out.toString(charset.name())
+		val errString = err.toByteArray().toString(charset)
+		val outString = out.toByteArray().toString(charset)
 
 		if (throwOnError && result != 0) throw VfsProcessException("Process not returned 0, but $result. Error: $errString, Output: $outString")
 
@@ -181,11 +178,11 @@ class VfsFile(
 	suspend fun passthru(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), charset: Charset = Charsets.UTF_8): Int {
 		return exec(cmdAndArgs.toList(), env, object : VfsProcessHandler() {
 			suspend override fun onOut(data: ByteArray) {
-				System.out.print(data.toString(charset))
+				Console.out_print(data.toString(charset))
 			}
 
 			suspend override fun onErr(data: ByteArray) {
-				System.err.print(data.toString(charset))
+				Console.err_print(data.toString(charset))
 			}
 		})
 	}

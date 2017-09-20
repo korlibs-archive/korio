@@ -40,7 +40,7 @@ abstract class Vfs {
 	fun createNonExistsStat(path: String, extraInfo: Any? = null) = VfsStat(file(path), exists = false, isDirectory = false, size = 0L, device = -1L, inode = -1L, mode = 511, owner = "nobody", group = "nobody", createTime = 0L, modifiedTime = 0L, lastAccessTime = 0L, extraInfo = extraInfo)
 
 	suspend open fun <T> readSpecial(path: String, clazz: KClass<T>): T {
-		return (vfsSpecialReaders[clazz]?.readSpecial(this, path) as T) ?: invalidOp("Don't know how to readSpecial $clazz")
+		return (vfsSpecialReadersMap[clazz]?.readSpecial(this, path) as T) ?: invalidOp("Don't know how to readSpecial $clazz")
 	}
 
 	suspend open fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler = VfsProcessHandler()): Int = throw UnsupportedOperationException()

@@ -2,19 +2,34 @@
 
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.coroutine.*
-import com.soywiz.korio.util.compareToChain
-import java.io.FileNotFoundException
-import java.util.*
+import com.soywiz.korio.coroutine.Continuation
+import com.soywiz.korio.coroutine.CoroutineContext
+import com.soywiz.korio.coroutine.korioStartCoroutine
+import com.soywiz.korio.coroutine.korioSuspendCoroutine
+import com.soywiz.korio.lang.FileNotFoundException
 
 suspend fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile = korioSuspendCoroutine { c ->
 	val mount = object : Vfs.Proxy(), Mountable {
-		private val mounts = TreeMap<String, VfsFile>({ a, b ->
-			b.length.compareTo(a.length).compareToChain { b.compareTo(a) }
-		})
+		private val mounts = ArrayList<Pair<String, VfsFile>>()
 
-		override fun mount(folder: String, file: VfsFile) = this.apply { mounts[VfsUtil.normalize(folder)] = file }
-		override fun unmount(folder: String): Mountable = this.apply { mounts.remove(VfsUtil.normalize(folder)) }
+		override fun mount(folder: String, file: VfsFile) = this.apply {
+			_unmount(folder)
+			mounts += VfsUtil.normalize(folder) to file
+			resort()
+		}
+
+		override fun unmount(folder: String): Mountable = this.apply {
+			_unmount(folder)
+			resort()
+		}
+
+		private fun _unmount(folder: String) {
+			mounts.removeAll { it.first == VfsUtil.normalize(folder) }
+		}
+
+		private fun resort() {
+			mounts.sortBy { it.first.length }
+		}
 
 		override suspend fun access(path: String): VfsFile {
 			val rpath = VfsUtil.normalize(path)

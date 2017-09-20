@@ -3,15 +3,14 @@ package com.soywiz.korio.async
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.korioStartCoroutine
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
-import com.soywiz.korio.stream.AsyncInputStream
-import com.soywiz.korio.stream.AsyncOutputStream
-import com.soywiz.korio.util.BYTES_EMPTY
-import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.lang.CancellationException
+import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.math.Math
-import com.soywiz.korio.typedarray.ByteArrayBliting
+import com.soywiz.korio.stream.AsyncInputStream
+import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.typedarray.copyRangeTo
+import com.soywiz.korio.util.BYTES_EMPTY
 
 typealias CancelHandler = Signal<Unit>
 
