@@ -1,6 +1,9 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.coroutine.*
+import com.soywiz.korio.coroutine.Continuation
+import com.soywiz.korio.coroutine.CoroutineContext
+import com.soywiz.korio.coroutine.RestrictsSuspension
+import com.soywiz.korio.coroutine.withCoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
 import kotlin.coroutines.experimental.createCoroutine
 import kotlin.coroutines.experimental.suspendCoroutine

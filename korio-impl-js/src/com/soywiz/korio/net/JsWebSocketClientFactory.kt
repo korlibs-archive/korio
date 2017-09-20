@@ -1,4 +1,4 @@
-package com.soywiz.korio.net.ws.js
+package com.soywiz.korio.net
 
 import com.jtransc.annotation.JTranscMethodBody
 import com.jtransc.js.*

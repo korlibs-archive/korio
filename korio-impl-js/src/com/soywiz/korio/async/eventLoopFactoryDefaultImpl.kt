@@ -1,18 +1,16 @@
 package com.soywiz.korio.async
 
-import com.jtransc.js.*
-import com.soywiz.korio.util.Cancellable
-import com.soywiz.korio.util.OS
-import com.soywiz.korio.util.nonNullMap
-import java.io.Closeable
-import java.util.*
+import com.soywiz.korio.ds.LinkedList
+import com.soywiz.korio.lang.Closeable
+import kotlin.browser.window
+
+impl val eventLoopFactoryDefaultImpl: EventLoopFactory = EventLoopFactoryJs()
 
 class EventLoopFactoryJs : EventLoopFactory() {
-	override val available: Boolean get() = OS.isJs
-	override val priority: Int = 2000
-
 	override fun createEventLoop(): EventLoop = EventLoopJs()
 }
+
+val global = window
 
 @Suppress("unused")
 class EventLoopJs : EventLoop() {
@@ -36,20 +34,20 @@ class EventLoopJs : EventLoop() {
 	}
 
 	override fun setTimeoutInternal(ms: Int, callback: () -> Unit): Closeable {
-		val id = global.call("setTimeout", jsFunctionRaw0 { callback() }, ms)
+		val id = window.setTimeout({ callback() }, ms)
 		//println("setTimeout($ms)")
-		return Closeable { global.call("clearTimeout", id) }
+		return Closeable { global.clearInterval(id) }
 	}
 
 	override fun requestAnimationFrameInternal(callback: () -> Unit): Closeable {
-		val id = global.call("requestAnimationFrame", jsFunctionRaw0 { callback() })
+		val id = global.requestAnimationFrame { callback() }
 		//println("setTimeout($ms)")
-		return Closeable { global.call("cancelAnimationFrame", id) }
+		return Closeable { global.cancelAnimationFrame(id) }
 	}
 
 	override fun setIntervalInternal(ms: Int, callback: () -> Unit): Closeable {
 		//println("setInterval($ms)")
-		val id = global.call("setInterval", jsFunctionRaw0 { callback() }, ms)
-		return Closeable { global.call("clearInterval", id) }
+		val id = global.setInterval({ callback() }, ms)
+		return Closeable { global.clearInterval(id) }
 	}
 }

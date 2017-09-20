@@ -1,18 +1,8 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.async.invokeSuspend
 import com.soywiz.korio.error.ignoreErrors
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.error.noImpl
-import java.lang.Byte
-import java.lang.Enum
-import java.lang.Float
-import java.lang.reflect.Array
-import java.lang.reflect.Modifier
-import java.lang.reflect.ParameterizedType
-import java.lang.reflect.Type
-import java.util.*
-import kotlin.collections.LinkedHashMap
 
 object Dynamic {
 	@Suppress("UNCHECKED_CAST")

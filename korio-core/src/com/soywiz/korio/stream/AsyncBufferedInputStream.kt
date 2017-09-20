@@ -2,7 +2,6 @@ package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.ds.OptByteBuffer
-import java.io.ByteArrayOutputStream
 
 class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int = 0x2000) : AsyncInputStream {
 	private val buf = SyncProduceConsumerByteBuffer()

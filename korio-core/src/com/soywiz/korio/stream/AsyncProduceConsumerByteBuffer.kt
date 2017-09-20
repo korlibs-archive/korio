@@ -6,8 +6,6 @@ import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.math.Math
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.util.indexOf
-import java.io.ByteArrayOutputStream
-import java.util.*
 
 class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 	companion object {
@@ -67,7 +65,7 @@ class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 			val p = current.indexOf(currentPos, end)
 			val pp = if (p < 0) current.size else if (including) p + 1 else p
 			val len = pp - currentPos
-			if (len > 0) out.write(current, currentPos, len)
+			if (len > 0) out.append(current, currentPos, len)
 			currentPos += len
 			if (p >= 0) break // found!
 		}

@@ -8,9 +8,11 @@ import com.soywiz.korio.async.spawn
 import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.error.unsupported
+import com.soywiz.korio.lang.Closeable
+import com.soywiz.korio.lang.KClass
+import com.soywiz.korio.math.Math
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.use
-import java.io.Closeable
 
 abstract class Vfs {
 	open protected val absolutePath: String = ""
@@ -19,7 +21,7 @@ abstract class Vfs {
 
 	val root by lazy { VfsFile(this, "") }
 
-	open val supportedAttributeTypes = listOf<Class<out Attribute>>()
+	open val supportedAttributeTypes = listOf<KClass<out Attribute>>()
 
 	operator fun get(path: String) = root[path]
 
@@ -37,7 +39,7 @@ abstract class Vfs {
 
 	fun createNonExistsStat(path: String, extraInfo: Any? = null) = VfsStat(file(path), exists = false, isDirectory = false, size = 0L, device = -1L, inode = -1L, mode = 511, owner = "nobody", group = "nobody", createTime = 0L, modifiedTime = 0L, lastAccessTime = 0L, extraInfo = extraInfo)
 
-	suspend open fun <T> readSpecial(path: String, clazz: Class<T>): T {
+	suspend open fun <T> readSpecial(path: String, clazz: KClass<T>): T {
 		return (vfsSpecialReaders[clazz]?.readSpecial(this, path) as T) ?: invalidOp("Don't know how to readSpecial $clazz")
 	}
 
@@ -137,7 +139,7 @@ abstract class Vfs {
 
 		suspend override fun readRange(path: String, range: LongRange): ByteArray = initOnce().access(path).readRangeBytes(range)
 
-		suspend override fun <T> readSpecial(path: String, clazz: Class<T>): T = initOnce().access(path).readSpecial(clazz)
+		suspend override fun <T> readSpecial(path: String, clazz: KClass<T>): T = initOnce().access(path).readSpecial(clazz)
 
 		suspend override fun put(path: String, content: AsyncInputStream, attributes: List<Attribute>) = initOnce().access(path).put(content, *attributes.toTypedArray())
 		suspend override fun setSize(path: String, size: Long): Unit = initOnce().access(path).setSize(size)

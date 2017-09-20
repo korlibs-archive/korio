@@ -9,7 +9,6 @@ import com.soywiz.korio.util.OS
 import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.atomic.AtomicInteger
 import kotlin.coroutines.experimental.startCoroutine
 
 var _workerLazyPool: ExecutorService? = null
@@ -22,7 +21,6 @@ val workerLazyPool: ExecutorService by lazy {
 	//})
 	pool
 }
-val tasksInProgress = AtomicInteger(0)
 
 fun Executor.executeUpdatingTasksInProgress(action: () -> Unit) {
 	tasksInProgress.incrementAndGet()

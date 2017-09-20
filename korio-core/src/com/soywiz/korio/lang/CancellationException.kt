@@ -1,3 +1,3 @@
 package com.soywiz.korio.lang
 
-open class CancellationException : Exception()
+header class CancellationException : Exception()

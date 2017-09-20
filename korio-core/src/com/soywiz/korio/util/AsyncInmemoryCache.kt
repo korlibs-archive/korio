@@ -13,7 +13,7 @@ class AsyncInmemoryCache {
 
 	val cache = hashMapOf<String, AsyncInmemoryCache.Entry?>()
 
-	fun <T : Any> get(clazz: KClass<T>, key: String, ttlMs: Int) = AsyncInmemoryEntry(clazz, this, key, ttlMs)
+	fun <T : Any> get(clazz: KClass<T>, key: String, ttlMs: Int) = AsyncInmemoryEntry<T>(clazz, this, key, ttlMs)
 
 	//fun <T : Any?> getTyped(clazz: Class<T>, key: String = clazz, ttl: TimeSpan) = AsyncInmemoryEntry(clazz, this, key, ttl)
 

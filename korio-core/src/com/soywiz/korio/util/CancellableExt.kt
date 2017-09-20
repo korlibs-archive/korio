@@ -1,9 +1,9 @@
 package com.soywiz.korio.util
 
-import java.io.Closeable
-import java.util.concurrent.CancellationException
+import com.soywiz.korio.lang.CancellationException
+import com.soywiz.korio.lang.Closeable
 
-fun Iterable<Cancellable>.cancel(e: Throwable = CancellationException()): Unit = run { for (c in this) c.cancel(e)  }
+fun Iterable<Cancellable>.cancel(e: Throwable = CancellationException()): Unit = run { for (c in this) c.cancel(e) }
 fun Iterable<Cancellable>.cancellable() = Cancellable { this.cancel() }
 
 fun Iterable<Closeable>.close() = run { for (c in this) c.close() }

@@ -1,6 +1,6 @@
 package com.soywiz.korio.util
 
-import java.util.concurrent.CancellationException
+import com.soywiz.korio.lang.CancellationException
 
 interface Cancellable {
 	fun cancel(e: Throwable = CancellationException()): Unit

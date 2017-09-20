@@ -1,7 +1,9 @@
 package com.soywiz.korio.stream
 
+import com.soywiz.korio.lang.Charset
+import com.soywiz.korio.lang.Charsets
+import com.soywiz.korio.lang.toString
 import com.soywiz.korio.util.*
-import java.nio.charset.Charset
 
 class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 	val length: Int get() = ba.size
@@ -104,14 +106,14 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 	fun readStringz(len: Int, charset: Charset = Charsets.UTF_8): String {
 		val res = readBytes(len)
 		val index = res.indexOf(0.toByte())
-		return String(res, 0, if (index < 0) len else index, charset)
+		return res.copyOf(if (index < 0) len else index).toString(charset)
 	}
 
 	fun readStringz(charset: Charset = Charsets.UTF_8): String {
 		val startOffset = offset
 		val index = ba.indexOf(offset, 0.toByte())
 		val end = if (index >= 0) index else ba.size
-		val str = String(ba, startOffset, end - startOffset, charset)
+		val str = ba.copyOfRange(startOffset, end - startOffset).toString(charset)
 		offset = if (index >= 0) end + 1 else end
 		return str
 	}

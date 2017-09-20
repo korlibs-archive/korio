@@ -22,6 +22,7 @@ class Indenter(private val actions: ArrayList<Action> = arrayListOf<Indenter.Act
 		interface Text : Action {
 			val str: String
 		}
+
 		data class Marker(val data: Any) : Action
 		data class Inline(override val str: String) : Text
 		data class Line(override val str: String) : Text
@@ -63,6 +64,7 @@ class Indenter(private val actions: ArrayList<Action> = arrayListOf<Indenter.Act
 	fun line(str: String?) {
 		if (str != null) line(str)
 	}
+
 	fun mark(data: Any) = this.apply { this.actions.add(Action.Marker(data)) }
 
 	fun linedeferred(init: Indenter.() -> Unit): Indenter {
@@ -81,7 +83,7 @@ class Indenter(private val actions: ArrayList<Action> = arrayListOf<Indenter.Act
 		return this
 	}
 
-	inline fun line(str: String, after: String = "", after2:String = "", callback: () -> Unit): Indenter {
+	inline fun line(str: String, after: String = "", after2: String = "", callback: () -> Unit): Indenter {
 		line(if (str.isEmpty()) "{ $after" else "$str { $after")
 		indent(callback)
 		line("}$after2")
@@ -155,5 +157,6 @@ class Indenter(private val actions: ArrayList<Action> = arrayListOf<Indenter.Act
 		val out = toString(markHandler = null, doIndent = doIndent)
 		return if (indentChunk == "\t") out else out.replace("\t", indentChunk)
 	}
+
 	override fun toString(): String = toString(null, doIndent = true)
 }

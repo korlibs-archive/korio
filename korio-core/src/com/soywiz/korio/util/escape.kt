@@ -1,7 +1,9 @@
 package com.soywiz.korio.util
 
+import com.soywiz.korio.lang.format
+
 fun String.escape(): String {
-	val out = java.lang.StringBuilder()
+	val out = StringBuilder()
 	for (n in 0 until this.length) {
 		val c = this[n]
 		when (c) {
@@ -18,7 +20,7 @@ fun String.escape(): String {
 }
 
 fun String.uescape(): String {
-	val out = java.lang.StringBuilder()
+	val out = StringBuilder()
 	for (n in 0 until this.length) {
 		val c = this[n]
 		when (c) {
@@ -38,7 +40,7 @@ fun String.uescape(): String {
 }
 
 fun String.unescape(): String {
-	val out = java.lang.StringBuilder()
+	val out = StringBuilder()
 	var n = 0
 	while (n < this.length) {
 		val c = this[n++]
@@ -54,7 +56,7 @@ fun String.unescape(): String {
 					'u' -> {
 						val chars = this.substring(n, n + 4)
 						n += 4
-						out.append(Integer.parseInt(chars, 16).toChar())
+						out.append(chars.toInt(16).toChar())
 					}
 					else -> {
 						out.append("\\$c2")

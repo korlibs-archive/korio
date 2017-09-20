@@ -80,7 +80,7 @@ class HttpClientBrowserJs : HttpClient() {
 			val u8array = jsNew("Uint8Array", xhr["response"])
 			val out = ByteArray(u8array["length"].toInt())
 			out.asJsDynamic()["data"].call("set", u8array)
-			deferred.resolve(HttpClient.Response(
+			deferred.resolve(Response(
 				status = xhr["status"].toInt(),
 				statusText = xhr["statusText"].toJavaStringOrNull() ?: "",
 				headers = Http.Headers(xhr.call("getAllResponseHeaders").toJavaStringOrNull()),

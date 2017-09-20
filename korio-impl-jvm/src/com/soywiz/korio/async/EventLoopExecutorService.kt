@@ -9,7 +9,7 @@ class EventLoopExecutorService(val eventLoop: EventLoop) : ExecutorService {
 	var shutdown = false
 
 	override fun shutdown() = run { shutdown = true }
-	override fun shutdownNow(): MutableList<Runnable> = arrayListOf<Runnable>().apply { shutdown() }
+	override fun shutdownNow(): MutableList<Runnable> = ArrayList<Runnable>().apply { shutdown() }
 	override fun isShutdown(): Boolean = shutdown
 
 	override fun <T : Any?> submit(task: Callable<T>?): Future<T> {
@@ -31,8 +31,6 @@ class EventLoopExecutorService(val eventLoop: EventLoop) : ExecutorService {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 	}
 
-	override fun isTerminated(): Boolean = true
-
 	override fun <T : Any?> invokeAll(tasks: MutableCollection<out Callable<T>>?): MutableList<Future<T>> {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 	}
@@ -40,6 +38,8 @@ class EventLoopExecutorService(val eventLoop: EventLoop) : ExecutorService {
 	override fun <T : Any?> invokeAll(tasks: MutableCollection<out Callable<T>>?, timeout: Long, unit: TimeUnit?): MutableList<Future<T>> {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 	}
+
+	override fun isTerminated(): Boolean = true
 
 	override fun execute(command: Runnable) {
 		eventLoop.setImmediate { command.run() }

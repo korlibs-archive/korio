@@ -8,7 +8,7 @@ header object Math {
 	fun pow(a: Double, b: Double): Double
 	fun ceil(v: Double): Double
 	fun floor(v: Double): Double
-	fun round(v: Double): Double
+	fun round(v: Double): Long
 }
 
 object MathEx {

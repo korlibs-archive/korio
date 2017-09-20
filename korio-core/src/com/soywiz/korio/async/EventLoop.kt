@@ -4,15 +4,18 @@ package com.soywiz.korio.async
 
 import com.soywiz.korio.coroutine.*
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.lang.AtomicInteger
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.lang.printStackTrace
-import com.soywiz.korio.service.Services
 import com.soywiz.korio.time.TimeProvider
-import java.io.Closeable
 
-abstract class EventLoopFactory : Services.Impl() {
+abstract class EventLoopFactory {
 	abstract fun createEventLoop(): EventLoop
 }
+
+header val eventLoopFactoryDefaultImpl: EventLoopFactory
+
+val tasksInProgress = AtomicInteger(0)
 
 // @TODO: Check CoroutineDispatcher
 abstract class EventLoop : Closeable {
@@ -136,10 +139,11 @@ class EventLoopCoroutineContext(val eventLoop: EventLoop) : AbstractCoroutineCon
 	companion object Key : CoroutineContextKey<EventLoopCoroutineContext>
 }
 
-val CoroutineContext.eventLoop: EventLoop get() {
-	return this[EventLoopCoroutineContext.Key]?.eventLoop
-		?: invalidOp("No EventLoop associated to this CoroutineContext")
-}
+val CoroutineContext.eventLoop: EventLoop
+	get() {
+		return this[EventLoopCoroutineContext.Key]?.eventLoop
+			?: invalidOp("No EventLoop associated to this CoroutineContext")
+	}
 
 val Continuation<*>.eventLoop: EventLoop get() = this.context.eventLoop
 

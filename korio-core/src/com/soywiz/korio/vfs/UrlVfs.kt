@@ -1,16 +1,14 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.net.http.createHttpClient
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.LONG_ZERO_TO_MAX_RANGE
-import java.io.FileNotFoundException
-import java.net.URL
 
 fun UrlVfs(url: String): VfsFile = UrlVfs(url, Unit).root
-fun UrlVfs(url: URL): VfsFile = UrlVfs(url.toString(), Unit).root
 
 class UrlVfs(val url: String, val dummy: Unit) : Vfs() {
 	override val absolutePath: String = url

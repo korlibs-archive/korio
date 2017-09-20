@@ -1,19 +1,10 @@
 package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.AsyncThread
-import com.soywiz.korio.async.Korio
-import com.soywiz.korio.async.Promise
 import com.soywiz.korio.coroutine.withEventLoop
-import com.soywiz.korio.crypto.fromBase64
-import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.json.Json
-import com.soywiz.korio.service.Services
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.AsyncCloseable
-import java.io.IOException
-import java.net.URI
-import java.nio.charset.Charset
-import java.util.concurrent.atomic.AtomicLong
 
 abstract class HttpClient protected constructor() {
 	suspend abstract protected fun requestInternal(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null): Response
@@ -60,6 +51,15 @@ abstract class HttpClient protected constructor() {
 		val simulateBrowser: Boolean = false
 	)
 
+	private fun isUrlAbsolute(url: String): Boolean = url.matches(Regex("^\\w+://"))
+	private fun mergeUrls(base: String, append: String): String {
+		return if (isUrlAbsolute(append)) {
+			append
+		} else {
+			base + "/" + append
+		}
+	}
+
 	suspend fun request(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null, config: RequestConfig = RequestConfig()): Response {
 		val contentLength = content?.getLength() ?: 0L
 		var actualHeaders = headers
@@ -87,7 +87,7 @@ abstract class HttpClient protected constructor() {
 				//for (header in response.headers) println(header)
 				//println("Method: $method")
 				//println("Location: $location")
-				val resolvedRedirectLocation = URI(url).resolve(redirectLocation).toString()
+				val resolvedRedirectLocation = mergeUrls(url, redirectLocation).toString()
 				//println("Redirect: $redirectLocation")
 				//println("Redirect: ${URI(url).resolve(redirectLocation)}")
 
@@ -225,19 +225,17 @@ object HttpStats {
 	override fun toString(): String = "HttpStats(connections=$connections, Disconnections=$disconnections)"
 }
 
-open class HttpFactory : Services.Impl() {
+open class HttpFactory {
 	open fun createClient(): HttpClient = object : HttpClient() {
 		suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = TODO()
 	}
+
 	open fun createServer(): HttpServer {
 		throw RuntimeException("$this doesn't provide createServer, add a dependency with the service like `com.soywiz:korio-vertx:\$korVersion`")
 	}
 }
 
-val defaultHttpFactory by lazy { Services.load<HttpFactory>() }
-
-@Deprecated("Use defaultHttpFactory instead", ReplaceWith("defaultHttpFactory"))
-val httpFactory get() = defaultHttpFactory
+header val defaultHttpFactory: HttpFactory
 
 fun HttpFactory.createClientEndpoint(endpoint: String) = createClient().endpoint(endpoint)
 

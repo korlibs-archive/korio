@@ -1,14 +1,6 @@
 package com.soywiz.korio.util
 
 import com.soywiz.korio.error.invalidOp
-import java.lang.Boolean
-import java.lang.Byte
-import java.lang.Double
-import java.lang.Float
-import java.lang.Long
-import java.lang.Short
-import java.lang.reflect.Constructor
-import java.lang.reflect.Modifier
 
 // @TODO: This should use ASM library to create a class per class to be as fast as possible
 class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin.Boolean) {

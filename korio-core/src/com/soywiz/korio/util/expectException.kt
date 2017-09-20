@@ -1,8 +1,9 @@
 package com.soywiz.korio.util
 
+/*
 inline fun <reified T : Throwable> expectException(callback: () -> Unit) = expectException(T::class.java, callback)
 
-inline fun <T : Throwable> expectException(ex: Class<T>, callback: () -> Unit) {
+inline fun <T : Throwable> expectException(ex: KClass<T>, callback: () -> Unit) {
 	try {
 		callback()
 		throw ExpectedException("Expected $ex")
@@ -14,3 +15,4 @@ inline fun <T : Throwable> expectException(ex: Class<T>, callback: () -> Unit) {
 }
 
 class ExpectedException(msg: String) : Exception(msg)
+*/

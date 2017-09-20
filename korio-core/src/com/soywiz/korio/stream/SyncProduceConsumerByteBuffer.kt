@@ -2,12 +2,10 @@ package com.soywiz.korio.stream
 
 import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.lang.Semaphore
 import com.soywiz.korio.math.Math
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.util.indexOf
-import java.io.ByteArrayOutputStream
-import java.util.*
-import java.util.concurrent.Semaphore
 
 class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 	companion object {
@@ -24,7 +22,7 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 
 	val available: Int get() = availableInCurrent + availableInBuffers
 
-	fun produce(data: ByteArray) = synchronized(this) {
+	fun produce(data: ByteArray): Unit = synchronized(this) {
 		buffers += data
 		availableInBuffers += data.size
 		producedSema.release()

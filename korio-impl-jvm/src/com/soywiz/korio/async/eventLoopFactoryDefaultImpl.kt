@@ -1,14 +1,12 @@
 package com.soywiz.korio.async
 
+import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.util.compareToChain
-import java.io.Closeable
 import java.util.*
-import java.util.concurrent.TimeUnit
+
+impl val eventLoopFactoryDefaultImpl: EventLoopFactory = EventLoopFactoryJvmAndCSharp()
 
 class EventLoopFactoryJvmAndCSharp : EventLoopFactory() {
-	override val priority: Int = 1000
-	override val available: Boolean get() = true
-
 	override fun createEventLoop(): EventLoop = EventLoopJvmAndCSharp()
 }
 
