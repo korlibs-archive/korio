@@ -1,7 +1,10 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.AsyncSemaphore
+import com.soywiz.korio.ds.ByteArrayBuilder
 import com.soywiz.korio.ds.LinkedList
+import com.soywiz.korio.math.Math
+import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.util.indexOf
 import java.io.ByteArrayOutputStream
 import java.util.*
@@ -45,7 +48,7 @@ class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 			ensureCurrentBuffer()
 			val readInCurrent = Math.min(availableInCurrent, len)
 			if (readInCurrent <= 0) break
-			System.arraycopy(current, currentPos, data, outputPos, readInCurrent)
+			current.copyRangeTo(currentPos, data, outputPos, readInCurrent)
 			currentPos += readInCurrent
 			remaining -= readInCurrent
 			totalRead += readInCurrent
@@ -54,10 +57,10 @@ class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 		return totalRead
 	}
 
-	fun consume(len: Int): ByteArray = ByteArray(len).run { Arrays.copyOf(this, consume(this, 0, len)) }
+	fun consume(len: Int): ByteArray = ByteArray(len).run { this.copyOf(consume(this, 0, len)) }
 
 	fun consumeUntil(end: Byte, including: Boolean = true): ByteArray {
-		val out = ByteArrayOutputStream()
+		val out = ByteArrayBuilder()
 		while (true) {
 			ensureCurrentBuffer()
 			if (availableInCurrent <= 0) break // no more data!
@@ -74,7 +77,7 @@ class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 	private val producedSemaphore = AsyncSemaphore()
 
 	override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
-		produce(Arrays.copyOfRange(buffer, offset, offset + len))
+		produce(buffer.copyOfRange(offset, offset + len))
 	}
 
 	override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {

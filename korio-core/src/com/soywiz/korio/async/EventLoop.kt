@@ -10,8 +10,6 @@ import com.soywiz.korio.service.Services
 import com.soywiz.korio.time.TimeProvider
 import java.io.Closeable
 
-fun Korio(entry: suspend EventLoop.() -> Unit) = EventLoop.main(entry)
-
 abstract class EventLoopFactory : Services.Impl() {
 	abstract fun createEventLoop(): EventLoop
 }

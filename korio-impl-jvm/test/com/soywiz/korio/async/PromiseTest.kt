@@ -5,12 +5,13 @@ import org.junit.Assert
 import org.junit.Ignore
 import org.junit.Test
 import java.util.concurrent.CancellationException
+import kotlin.test.assertEquals
 
 class PromiseTest {
 	@Test
 	fun nullPromise() = syncTest {
 		val promise = Promise.resolved<String?>(null)
-		Assert.assertEquals(null, promise.await())
+		assertEquals(null, promise.await())
 	}
 
 	@Test
@@ -40,7 +41,7 @@ class PromiseTest {
 			out += e::class.java.name
 		}
 
-		Assert.assertEquals(
+		assertEquals(
 			"java.util.concurrent.CancellationException",
 			out
 		)
@@ -61,20 +62,20 @@ class PromiseTest {
 				out += "d"
 			}.await()
 		}
-		Assert.assertEquals("a", out)
+		assertEquals("a", out)
 		this@syncTest.step(1200)
-		Assert.assertEquals("ab", out)
+		assertEquals("ab", out)
 		this@syncTest.step(100)
-		Assert.assertEquals("ab", out)
+		assertEquals("ab", out)
 		prom.cancel()
 		this@syncTest.step(1200)
-		Assert.assertEquals("ab", out)
+		assertEquals("ab", out)
 	}
 
 	@Test
 	@Ignore
 	fun jvmUnsafeAwait() = syncTest {
-		Assert.assertEquals(10, async(coroutineContext) {
+		assertEquals(10, async(coroutineContext) {
 			sleep(20)
 			10
 		}.jvmSyncAwait())

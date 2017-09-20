@@ -164,8 +164,8 @@ val root = MountableVfs {
 	mount("/zip", resources["hello.zip"].openAsZip())
 	mount("/iso", resources["isotest.iso"].openAsIso())
 }
-Assert.assertEquals("ZIP!", root["/zip/hello/world.txt"].readString())
-Assert.assertEquals("ISO!", root["/iso/hello/world.txt"].readString())
+assertEquals("ZIP!", root["/zip/hello/world.txt"].readString())
+assertEquals("ISO!", root["/iso/hello/world.txt"].readString())
 
 (root.vfs as Mountable).unmount("/zip")
 ```

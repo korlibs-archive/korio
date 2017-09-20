@@ -5,8 +5,8 @@ import com.soywiz.korio.net.http.FakeHttpClientEndpoint
 import com.soywiz.korio.net.http.rest.rest
 import com.soywiz.korio.serialization.json.toJson
 import com.soywiz.korio.time.seconds
-import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class ElasticSearchTest {
 	data class Doc(val title: String, val body: String)
@@ -25,17 +25,17 @@ class ElasticSearchTest {
 		endpoint.addOkResponse(mapOf("_id" to myid, "_version" to myversion).toJson())
 
 
-		Assert.assertEquals(
+		assertEquals(
 			listOf("""POST:index-es/posts:{"title":"Hello","body":"World!"}"""),
 			endpoint.capture {
-				Assert.assertEquals(ElasticSearch.PutResult(myid, myversion), posts.put(Doc("Hello", "World!")))
+				assertEquals(ElasticSearch.PutResult(myid, myversion), posts.put(Doc("Hello", "World!")))
 			}
 		)
 
-		Assert.assertEquals(
+		assertEquals(
 			listOf("""PUT:index-es/posts/specific_id:{"title":"Hello","body":"World!"}"""),
 			endpoint.capture {
-				Assert.assertEquals(ElasticSearch.PutResult(myid, myversion), posts.put(Doc("Hello", "World!"), id = "specific_id"))
+				assertEquals(ElasticSearch.PutResult(myid, myversion), posts.put(Doc("Hello", "World!"), id = "specific_id"))
 			}
 		)
 	}
@@ -56,31 +56,31 @@ class ElasticSearchTest {
 		endpoint.addOkResponse(res1)
 		endpoint.addOkResponse(res1)
 
-		Assert.assertEquals(
+		assertEquals(
 			listOf("""POST:index-es/posts/_search:{"query":{"match_all":{}}}"""),
 			endpoint.capture {
 				val results = posts.search { match_all }
 
-				Assert.assertEquals(ElasticSearch.SearchResult(took = 77, timedOut = false, results = listOf(
+				assertEquals(ElasticSearch.SearchResult(took = 77, timedOut = false, results = listOf(
 					ElasticSearch.Result("myindex1", "collection1", "123", 0.5, Doc("Hello", "World")),
 					ElasticSearch.Result("myindex2", "collection2", "456", 0.25, Doc("Other", "Document"))
 				)), results)
 			}
 		)
 
-		Assert.assertEquals(
+		assertEquals(
 			listOf(Doc("Hello", "World"), Doc("Other", "Document")),
 			posts.searchList { match_all }
 		)
 
-		Assert.assertEquals(
+		assertEquals(
 			listOf("""POST:index-es/posts/_search:{"query":{"query_string":{"query":"yay!"}},"from":3,"size":10,"timeout":"2000ms"}"""),
 			endpoint.capture {
 				posts.search { query_string("yay!") LIMIT 10 SKIP 3 TIMEOUT 2.seconds }
 			}
 		)
 
-		Assert.assertEquals(
+		assertEquals(
 			listOf("""POST:index-es/posts/_search:{"query":{"query_string":{"query":"yay!"}},"from":3,"size":10,"timeout":"2000ms"}"""),
 			endpoint.capture {
 				posts.search { query_string("yay!") SIZE 10 FROM 3 TIMEOUT 2.seconds }
@@ -90,67 +90,67 @@ class ElasticSearchTest {
 
 	@Test
 	fun testDelete() = syncTest {
-		Assert.assertEquals(
+		assertEquals(
 			listOf("""DELETE:index-es/posts/hello:null"""),
 			endpoint.capture {
 				endpoint.addOkResponse("{}")
-				Assert.assertEquals(true, posts.delete("hello"))
+				assertEquals(true, posts.delete("hello"))
 			}
 		)
 
-		Assert.assertEquals(
+		assertEquals(
 			listOf("""DELETE:index-es/posts/hello:null"""),
 			endpoint.capture {
 				endpoint.addNotFoundResponse("{}")
-				Assert.assertEquals(false, posts.delete("hello"))
+				assertEquals(false, posts.delete("hello"))
 			}
 		)
 	}
 
 	@Test
 	fun testGetOrNull() = syncTest {
-		Assert.assertEquals(
+		assertEquals(
 			listOf("""GET:index-es/posts/hello:null"""),
 			endpoint.capture {
 				endpoint.addNotFoundResponse("{}")
 
-				Assert.assertEquals(null, posts.getOrNull("hello"))
+				assertEquals(null, posts.getOrNull("hello"))
 			}
 		)
 
-		Assert.assertEquals(
+		assertEquals(
 			listOf("""GET:index-es/posts/hello:null"""),
 			endpoint.capture {
 				endpoint.addOkResponse(mapOf(
 					"_source" to mapOf("title" to "hello", "body" to "world")
 				).toJson())
 
-				Assert.assertEquals(Doc("hello", "world"), posts.getOrNull("hello"))
+				assertEquals(Doc("hello", "world"), posts.getOrNull("hello"))
 			}
 		)
 	}
 
 	@Test
 	fun testIndexExists() = syncTest {
-		Assert.assertEquals(
+		assertEquals(
 			listOf("""HEAD:index-es:null"""),
 			endpoint.capture {
 				endpoint.addOkResponse("{}")
-				Assert.assertEquals(true, es["index-es"].exists())
+				assertEquals(true, es["index-es"].exists())
 			}
 		)
-		Assert.assertEquals(
+		assertEquals(
 			listOf("""HEAD:index-es:null"""),
 			endpoint.capture {
 				endpoint.addNotFoundResponse("{}")
-				Assert.assertEquals(false, es["index-es"].exists())
+				assertEquals(false, es["index-es"].exists())
 			}
 		)
 	}
 
 	@Test
 	fun testIndexCreate() = syncTest {
-		Assert.assertEquals(
+		assertEquals(
 			listOf("""PUT:index-es:{"settings":{"index":{"number_of_shards":8,"number_of_replicas":0}}}"""),
 			endpoint.capture {
 				endpoint.addOkResponse("{}")
@@ -161,7 +161,7 @@ class ElasticSearchTest {
 
 	@Test
 	fun testIndexEnsure() = syncTest {
-		Assert.assertEquals(
+		assertEquals(
 			listOf(
 				"""HEAD:index-es:null""",
 				"""PUT:index-es:{"settings":{"index":{"number_of_shards":8,"number_of_replicas":0}}}"""
@@ -173,7 +173,7 @@ class ElasticSearchTest {
 			}
 		)
 
-		Assert.assertEquals(
+		assertEquals(
 			listOf(
 				"""HEAD:index-es:null"""
 			),

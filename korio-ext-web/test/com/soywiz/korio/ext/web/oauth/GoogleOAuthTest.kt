@@ -2,8 +2,8 @@ package com.soywiz.korio.ext.web.oauth
 
 import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.net.http.FakeHttpClient
-import org.junit.Assert.assertEquals
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class GoogleOAuthTest {
 	val client = FakeHttpClient()

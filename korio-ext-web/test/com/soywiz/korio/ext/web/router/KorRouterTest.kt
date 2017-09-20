@@ -8,8 +8,8 @@ import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.vfs.MemoryVfsMix
 import com.soywiz.korio.vfs.VfsFile
-import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class KorRouterTest {
 	val injector = AsyncInjector()
@@ -45,17 +45,17 @@ class KorRouterTest {
 
 		router.registerRoutes<DemoRoute>()
 
-		Assert.assertEquals(
+		assertEquals(
 			"200:OK:Headers((Content-Length, [11]), (Content-Type, [text/html])):hello world",
 			router.testRoute(Http.Method.GET, "/hello/world")
 		)
 
-		Assert.assertEquals(
+		assertEquals(
 			"200:OK:Headers((Content-Length, [15]), (Content-Type, [text/plain])):hellotext world",
 			router.testRoute(Http.Method.GET, "/hellotext/world")
 		)
 
-		Assert.assertEquals(
+		assertEquals(
 			"""200:OK:Headers((Content-Length, [17]), (Content-Type, [application/json])):{"hello":"world"}""",
 			router.testRoute(Http.Method.GET, "/api/test")
 		)
@@ -78,29 +78,29 @@ class KorRouterTest {
 
 		router.registerRoutes<StaticRoute>()
 
-		Assert.assertEquals(
+		assertEquals(
 			"200:OK:Headers((Accept-Ranges, [bytes]), (Content-Length, [13]), (Content-Type, [text/plain]), (ETag, [b7a9adb9fec4116c29da690c45d9a67df535af9d-0-13]), (Last-Modified, [Thu, 01 Jan 1970 00:00:00 GMT])):User-agent: *",
 			router.testRoute(Http.Method.GET, "/robots.txt")
 		)
 
-		Assert.assertEquals(
+		assertEquals(
 			"200:OK:Headers((Accept-Ranges, [bytes]), (Content-Length, [13]), (Content-Type, [text/plain]), (ETag, [b7a9adb9fec4116c29da690c45d9a67df535af9d-0-13]), (Last-Modified, [Thu, 01 Jan 1970 00:00:00 GMT])):User-agent: *",
 			router.testRoute(Http.Method.GET, "/robots.txt?v=3.2.0")
 		)
 
-		Assert.assertEquals(
+		assertEquals(
 			"404:Not Found:Headers((Content-Length, [30]), (Content-Type, [text/html])):404 - Not Found - /donotexists",
 			router.testRoute(Http.Method.GET, "/donotexists")
 		)
 
 		// Partial content: GET
-		Assert.assertEquals(
+		assertEquals(
 			"206:Partial Content:Headers((Accept-Ranges, [bytes]), (Content-Length, [2]), (Content-Range, [bytes 1-2/13]), (Content-Type, [text/plain]), (ETag, [b7a9adb9fec4116c29da690c45d9a67df535af9d-0-13]), (Last-Modified, [Thu, 01 Jan 1970 00:00:00 GMT])):se",
 			router.testRoute(Http.Method.GET, "/robots.txt", Http.Headers("Range" to "bytes=1-2"))
 		)
 
 		// Partial content: HEAD
-		Assert.assertEquals(
+		assertEquals(
 			"206:Partial Content:Headers((Accept-Ranges, [bytes]), (Content-Length, [0]), (Content-Range, [bytes 1-2/13]), (Content-Type, [text/plain]), (ETag, [b7a9adb9fec4116c29da690c45d9a67df535af9d-0-13]), (Last-Modified, [Thu, 01 Jan 1970 00:00:00 GMT])):",
 			router.testRoute(Http.Method.HEAD, "/robots.txt", Http.Headers("Range" to "bytes=1-2"))
 		)
@@ -118,7 +118,7 @@ class KorRouterTest {
 
 		router.registerRoutes<TestRoute>()
 
-		Assert.assertEquals(
+		assertEquals(
 			"307:Temporary Redirect:Headers((Content-Type, [text/html]), (Location, [/target])):",
 			router.testRoute(Http.Method.GET, "/redir")
 		)
@@ -136,7 +136,7 @@ class KorRouterTest {
 
 		router.registerRoutes<DemoRoute>()
 
-		Assert.assertEquals(
+		assertEquals(
 			"200:OK:Headers((Content-Length, [13]), (Content-Type, [text/html])):hello world70",
 			router.testRoute(Http.Method.GET, "/test?name=world&demo=7&test=a")
 		)
@@ -153,7 +153,7 @@ class KorRouterTest {
 		router.registerCookies()
 		router.registerRoutes<DemoRoute>()
 
-		Assert.assertEquals(
+		assertEquals(
 			"200:OK:Headers((Content-Length, [4]), (Content-Type, [text/html]), (Set-Cookie, [hello=world])):demo",
 			router.testRoute(Http.Method.GET, "/", Http.Headers("Cookie" to "hello=world"))
 		)

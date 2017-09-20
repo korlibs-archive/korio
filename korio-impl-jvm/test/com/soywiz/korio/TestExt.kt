@@ -1,16 +1,18 @@
 package com.soywiz.korio
 
-import org.junit.Assert
+import kotlin.test.assertTrue
+import kotlin.test.fail
 
 inline fun <reified T : Throwable> expectException(callback: () -> Unit) {
 	try {
 		callback()
-		Assert.fail("Expected exception ${T::class.java.name} but nothing thrown")
+		fail("Expected exception ${T::class.java.name} but nothing thrown")
 	} catch (t: Throwable) {
 		if (t is T) {
-			Assert.assertTrue(true)
+			assertTrue(true)
 		} else {
-			Assert.fail("Expected exception ${T::class.java.name} but found $t")
+
+			fail("Expected exception ${T::class.java.name} but found $t")
 		}
 	}
 }

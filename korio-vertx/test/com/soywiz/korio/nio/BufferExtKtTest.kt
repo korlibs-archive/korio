@@ -1,13 +1,12 @@
 package com.soywiz.korio.nio
 
-import org.junit.Assert
 import org.junit.Test
-import java.nio.ByteBuffer
+import kotlin.test.assertEquals
 
 class BufferExtKtTest {
 	@Test
 	fun name() {
-		Assert.assertEquals(
+		assertEquals(
 			"Ab",
 			ByteBuffer.wrap(byteArrayOf('A'.toByte(), 'b'.toByte())).toString(Charsets.UTF_8)
 		)

@@ -6,8 +6,8 @@ import com.soywiz.korio.stream.toAsyncInputStream
 import com.soywiz.korio.stream.toAsyncOutputStream
 import com.soywiz.korio.stream.writeString
 import com.soywiz.korio.util.AsyncCloseable
-import org.junit.Assert.assertEquals
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class RedisTest {
 	@Test

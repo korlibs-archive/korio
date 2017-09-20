@@ -87,7 +87,7 @@ class HttpClientJvm : HttpClient() {
 							}
 							val read = stream.read(temp)
 							if (read <= 0) break
-							produceConsumer.produce(Arrays.copyOf(temp, read))
+							produceConsumer.produce(temp.copyOf(read))
 						}
 					}
 				} finally {

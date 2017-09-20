@@ -1,9 +1,8 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.async.sync
 import com.soywiz.korio.async.syncTest
-import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class ReadSpecialTest {
 	class CharArray2(val width: Int, val height: Int, val data: CharArray) {
@@ -24,8 +23,8 @@ class ReadSpecialTest {
 		val f2 = temp["korio.chararray2"]
 		f2.writeString("123456789")
 		val c2 = f2.readCharArray2()
-		Assert.assertEquals('1', c2[0, 0])
-		Assert.assertEquals('5', c2[1, 1])
-		Assert.assertEquals('9', c2[2, 2])
+		assertEquals('1', c2[0, 0])
+		assertEquals('5', c2[1, 1])
+		assertEquals('9', c2[2, 2])
 	}
 }

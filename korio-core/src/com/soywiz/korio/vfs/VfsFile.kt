@@ -7,6 +7,8 @@ import com.soywiz.korio.async.async
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.await
 import com.soywiz.korio.coroutine.withCoroutineContext
+import com.soywiz.korio.lang.Charset
+import com.soywiz.korio.lang.Charsets
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.LONG_ZERO_TO_MAX_RANGE
 import com.soywiz.korio.util.toLongRange

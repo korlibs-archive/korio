@@ -1,33 +1,33 @@
 package com.soywiz.korio.async
 
-import org.junit.Assert
 import org.junit.Test
 import java.util.concurrent.CancellationException
+import kotlin.test.assertEquals
 
 class SignalTest {
 	@Test
 	fun name() = syncTest {
 		var out = ""
 		val s = Signal<Int>()
-		Assert.assertEquals(0, s.listenerCount)
+		assertEquals(0, s.listenerCount)
 		val c1 = s.add { out += "[$it]" }
-		Assert.assertEquals(1, s.listenerCount)
+		assertEquals(1, s.listenerCount)
 		s(1)
 		val c2 = s.add { out += "{$it}" }
-		Assert.assertEquals(2, s.listenerCount)
+		assertEquals(2, s.listenerCount)
 		s(2)
 		s.once { out += "<$it>" }
-		Assert.assertEquals(3, s.listenerCount)
+		assertEquals(3, s.listenerCount)
 		s(3)
-		Assert.assertEquals(2, s.listenerCount)
+		assertEquals(2, s.listenerCount)
 		c2.close()
-		Assert.assertEquals(1, s.listenerCount)
+		assertEquals(1, s.listenerCount)
 		s(4)
 		c1.close()
-		Assert.assertEquals(0, s.listenerCount)
+		assertEquals(0, s.listenerCount)
 		s(5)
-		Assert.assertEquals(0, s.listenerCount)
-		Assert.assertEquals("[1][2]{2}[3]{3}<3>[4]", out)
+		assertEquals(0, s.listenerCount)
+		assertEquals("[1][2]{2}[3]{3}<3>[4]", out)
 	}
 
 	@Test
@@ -51,6 +51,6 @@ class SignalTest {
 		sleep(100)
 		s(3)
 		sleep(100)
-		Assert.assertEquals("12<cancel>", out)
+		assertEquals("12<cancel>", out)
 	}
 }

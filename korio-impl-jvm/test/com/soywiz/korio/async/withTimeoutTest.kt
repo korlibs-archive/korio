@@ -1,9 +1,8 @@
 package com.soywiz.korio.async
 
-import com.soywiz.korio.vfs.UrlVfs
-import org.junit.Assert
 import org.junit.Test
 import java.util.concurrent.CancellationException
+import kotlin.test.assertEquals
 
 class withTimeoutTest {
 	@Test
@@ -24,7 +23,7 @@ class withTimeoutTest {
 		}
 
 		sleep(300)
-		Assert.assertEquals("abc<CANCEL>", out)
+		assertEquals("abc<CANCEL>", out)
 	}
 
 	@Test
@@ -52,7 +51,7 @@ class withTimeoutTest {
 			out += "<CANCEL2>"
 		}
 		sleep(300)
-		Assert.assertEquals("0ab<CANCEL1><CANCEL2>", out)
+		assertEquals("0ab<CANCEL1><CANCEL2>", out)
 	}
 
 	@Test
@@ -67,6 +66,6 @@ class withTimeoutTest {
 		} catch (e: CancellationException) {
 			out += "<CANCEL>"
 		}
-		Assert.assertEquals("<CANCEL>", out)
+		assertEquals("<CANCEL>", out)
 	}
 }

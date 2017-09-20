@@ -1,12 +1,11 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.map
-import com.soywiz.korio.async.sync
 import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.async.toList
 import com.soywiz.korio.stream.openAsync
-import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class CopyToTreeTest {
 	@Test
@@ -17,7 +16,7 @@ class CopyToTreeTest {
 		))
 		val out = MemoryVfs()
 		mem.copyToTree(out)
-		Assert.assertEquals(
+		assertEquals(
 			"[/root.txt, /hello, /hello/world.txt]",
 			out.listRecursive().map { it.fullname }.toList().toString()
 		)

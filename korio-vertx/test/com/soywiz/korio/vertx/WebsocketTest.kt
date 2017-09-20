@@ -37,6 +37,6 @@ class WebsocketTest {
 		vx<Void> { server.close(it) }
 		ws.close()
 
-		Assert.assertEquals("CLIENT_RECV(hello)SERVER_RECV(hey there!)", out)
+		assertEquals("CLIENT_RECV(hello)SERVER_RECV(hey there!)", out)
 	}
 }

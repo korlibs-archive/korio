@@ -1,7 +1,7 @@
 package com.soywiz.korio.util
 
-import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class GenerateTest {
 	fun evens() = generate<Int> {
@@ -10,6 +10,6 @@ class GenerateTest {
 
 	@Test
 	fun name() {
-		Assert.assertEquals(listOf(0, 2, 4, 6), evens().take(4).toList())
+		assertEquals(listOf(0, 2, 4, 6), evens().take(4).toList())
 	}
 }

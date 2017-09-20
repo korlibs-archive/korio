@@ -7,9 +7,8 @@ import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.http.createHttpServer
 import com.soywiz.korio.stream.openAsync
-import com.soywiz.korio.util.use
-import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class HttpTest {
 	@Test
@@ -32,10 +31,10 @@ class HttpTest {
 		val client = HttpClient()
 
 		val result = client.request(Http.Method.GET, "http://127.0.0.1:$port/test").readAllBytes().toString(Charsets.UTF_8)
-		Assert.assertEquals("hello GET /test : ''", result)
+		assertEquals("hello GET /test : ''", result)
 
 		val result2 = client.request(Http.Method.PUT, "http://127.0.0.1:$port/test", content = "fromclient".openAsync()).readAllBytes().toString(Charsets.UTF_8)
-		Assert.assertEquals("hello PUT /test : 'fromclient'", result2)
+		assertEquals("hello PUT /test : 'fromclient'", result2)
 
 		server.close()
 	}

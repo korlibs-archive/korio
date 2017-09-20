@@ -12,6 +12,7 @@ import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
+import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.vfs.*
 import java.io.Closeable
 
@@ -24,7 +25,7 @@ class LocalVfsProviderJs : LocalVfsProvider() {
 			return object : AsyncStreamBase() {
 				suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 					val data = read(handle, position.toDouble(), len.toDouble())
-					System.arraycopy(data, 0, buffer, offset, data.size)
+					data.copyRangeTo(0, buffer, offset, data.size)
 					return data.size
 				}
 

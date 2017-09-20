@@ -1,3 +1,6 @@
 dependencies {
-	compile project(":korio-core")
+	//implement project(":korio-core")
+	//testImplement project(":korio-core")
+	implementation project(":korio-core")
+	testImplementation project(":korio-core")
 }

@@ -1,22 +1,17 @@
 package com.soywiz.korio.lang
 
-import java.util.*
-
 class Bytes(val byteArray: ByteArray) {
 	override fun equals(other: Any?): Boolean {
-		if (this === other) return true
-		if (other?.javaClass != javaClass) return false
-
-		other as Bytes
-
-		if (!Arrays.equals(byteArray, other.byteArray)) return false
-
-		return true
+		return when {
+			this === other -> true
+			other is Bytes -> this.byteArray.contentEquals(other.byteArray)
+			else -> false
+		}
 	}
 
-	override fun hashCode(): Int = Arrays.hashCode(byteArray)
+	override fun hashCode(): Int = byteArray.contentHashCode()
 
-	override fun toString(): String = Arrays.toString(byteArray)
+	override fun toString(): String = byteArray.contentToString()
 
 	fun toByteArray() = byteArray
 }

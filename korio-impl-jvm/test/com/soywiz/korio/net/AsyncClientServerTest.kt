@@ -3,13 +3,13 @@ package com.soywiz.korio.net
 import com.soywiz.korio.async.await
 import com.soywiz.korio.async.spawn
 import com.soywiz.korio.async.syncTest
-import com.soywiz.korio.async.take
 import com.soywiz.korio.stream.readString
 import com.soywiz.korio.stream.writeString
-import org.junit.Assert
 import org.junit.Ignore
 import org.junit.Test
 import java.util.*
+import kotlin.test.assertEquals
+import kotlin.test.assertTrue
 
 class AsyncClientServerTest {
 	companion object {
@@ -53,8 +53,8 @@ class AsyncClientServerTest {
 
 		clients.await()
 
-		Assert.assertEquals(clientsCount, counter)
-		Assert.assertEquals(clientsCount, correctEchoes.size)
-		Assert.assertTrue(correctEchoes.all { it })
+		assertEquals(clientsCount, counter)
+		assertEquals(clientsCount, correctEchoes.size)
+		assertTrue(correctEchoes.all { it })
 	}
 }

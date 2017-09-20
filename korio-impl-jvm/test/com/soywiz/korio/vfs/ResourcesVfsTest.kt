@@ -3,6 +3,7 @@ package com.soywiz.korio.vfs
 import com.soywiz.korio.async.*
 import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class ResourcesVfsTest {
 	@Test
@@ -11,7 +12,7 @@ class ResourcesVfsTest {
 			println(v)
 		}
 
-		Assert.assertEquals(
+		assertEquals(
 			"[a.txt, b.txt]",
 			ResourcesVfs["tresfolder"].list().filter { it.extensionLC == "txt" }.toList().map { it.basename }.sorted().toString()
 		)

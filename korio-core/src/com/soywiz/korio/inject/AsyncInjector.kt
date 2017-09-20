@@ -24,6 +24,7 @@ annotation class Optional
 
 class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Extra by Extra.Mixin() {
 	private val instancesByClass = hashMapOf<KClass<*>, Any?>()
+	var defaultProvider: (suspend (clazz: KClass<*>) -> Any)? = null
 
 	fun child() = AsyncInjector(this, level + 1)
 

@@ -6,6 +6,7 @@ import com.soywiz.korio.stream.slice
 import org.junit.Assert
 import org.junit.Test
 import java.io.File
+import kotlin.test.assertEquals
 
 class LocalVfsTest {
 	val temp = TempVfs()
@@ -17,15 +18,15 @@ class LocalVfsTest {
 		temp["korio.temp2"].writeFile(temp["korio.temp"])
 		temp["korio.temp3"].writeFile(temp["korio.temp"])
 		temp["korio.temp3"].writeStream(temp["korio.temp"].open().slice(0 until 3))
-		Assert.assertEquals(content, temp["korio.temp2"].readString())
-		Assert.assertEquals("HEL", temp["korio.temp3"].readString())
-		Assert.assertEquals(true, temp["korio.temp"].delete())
-		Assert.assertEquals(true, temp["korio.temp2"].delete())
-		Assert.assertEquals(true, temp["korio.temp3"].delete())
-		Assert.assertEquals(false, temp["korio.temp3"].delete())
-		Assert.assertEquals(File(System.getProperty("java.io.tmpdir"), "korio.temp3").absolutePath.replace('\\', '/'), temp["korio.temp3"].absolutePath)
-		Assert.assertEquals("1", temp.execToString(listOf("echo", "1")).trim())
-		//Assert.assertEquals("1", temp.execToString(listOf("pwd")).trim())
+		assertEquals(content, temp["korio.temp2"].readString())
+		assertEquals("HEL", temp["korio.temp3"].readString())
+		assertEquals(true, temp["korio.temp"].delete())
+		assertEquals(true, temp["korio.temp2"].delete())
+		assertEquals(true, temp["korio.temp3"].delete())
+		assertEquals(false, temp["korio.temp3"].delete())
+		assertEquals(File(System.getProperty("java.io.tmpdir"), "korio.temp3").absolutePath.replace('\\', '/'), temp["korio.temp3"].absolutePath)
+		assertEquals("1", temp.execToString(listOf("echo", "1")).trim())
+		//assertEquals("1", temp.execToString(listOf("pwd")).trim())
 		Unit
 	}
 

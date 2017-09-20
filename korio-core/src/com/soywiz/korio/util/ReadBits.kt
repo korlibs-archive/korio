@@ -2,8 +2,11 @@
 
 package com.soywiz.korio.util
 
-import java.nio.charset.Charset
-import java.util.*
+import com.soywiz.korio.lang.Charset
+import com.soywiz.korio.lang.Charsets
+import com.soywiz.korio.lang.toString
+import com.soywiz.korio.math.Math
+import com.soywiz.korio.math.MathEx
 
 private inline fun ByteArray._read8(o: Int): Int = this[o].toInt()
 
@@ -40,16 +43,16 @@ fun ByteArray.readS16_le(o: Int): Int = _read16_le(o).signExtend(16)
 fun ByteArray.readS24_le(o: Int): Int = _read24_le(o).signExtend(24)
 fun ByteArray.readS32_le(o: Int): Int = _read32_le(o)
 fun ByteArray.readS64_le(o: Int): Long = _read64_le(o)
-fun ByteArray.readF32_le(o: Int): Float = java.lang.Float.intBitsToFloat(_read32_le(o))
-fun ByteArray.readF64_le(o: Int): Double = java.lang.Double.longBitsToDouble(_read64_le(o))
+fun ByteArray.readF32_le(o: Int): Float = MathEx.intBitsToFloat(_read32_le(o))
+fun ByteArray.readF64_le(o: Int): Double = MathEx.longBitsToDouble(_read64_le(o))
 // BE
 fun ByteArray.readS16_be(o: Int): Int = _read16_be(o).signExtend(16)
 
 fun ByteArray.readS24_be(o: Int): Int = _read24_be(o).signExtend(24)
 fun ByteArray.readS32_be(o: Int): Int = _read32_be(o)
 fun ByteArray.readS64_be(o: Int): Long = _read64_be(o)
-fun ByteArray.readF32_be(o: Int): Float = java.lang.Float.intBitsToFloat(_read32_be(o))
-fun ByteArray.readF64_be(o: Int): Double = java.lang.Double.longBitsToDouble(_read64_be(o))
+fun ByteArray.readF32_be(o: Int): Float = MathEx.intBitsToFloat(_read32_be(o))
+fun ByteArray.readF64_be(o: Int): Double = MathEx.longBitsToDouble(_read64_be(o))
 
 fun ByteArray.readS16_LEBE(o: Int, little: Boolean): Int = if (little) readS16_le(o) else readS16_be(o)
 fun ByteArray.readS32_LEBE(o: Int, little: Boolean): Int = if (little) readS32_le(o) else readS32_be(o)
@@ -67,7 +70,7 @@ private inline fun <T> ByteArray.readTypedArray(o: Int, count: Int, elementSize:
 	return array
 }
 
-fun ByteArray.readByteArray(o: Int, count: Int): ByteArray = Arrays.copyOfRange(this, o, o + count)
+fun ByteArray.readByteArray(o: Int, count: Int): ByteArray = this.copyOfRange(o, o + count)
 
 fun ByteArray.readShortArray_le(o: Int, count: Int): ShortArray = this.readTypedArray(o, count, 2, { ShortArray(count) }, { array, n, pos -> array[n] = readS16_le(pos).toShort() })
 fun ByteArray.readCharArray_le(o: Int, count: Int): CharArray = this.readTypedArray(o, count, 2, { kotlin.CharArray(count) }, { array, n, pos -> array[n] = readS16_le(pos).toChar() })
@@ -90,7 +93,7 @@ fun ByteArray.readStringz(o: Int, size: Int, charset: Charset = Charsets.UTF_8):
 		if (this[idx] == 0.toByte()) break
 		idx++
 	}
-	return Arrays.copyOfRange(this, o, idx).toString(charset)
+	return this.copyOfRange(o, idx).toString(charset)
 }
 
 fun ByteArray.readStringz(o: Int, charset: Charset = Charsets.UTF_8): String {
@@ -98,5 +101,5 @@ fun ByteArray.readStringz(o: Int, charset: Charset = Charsets.UTF_8): String {
 }
 
 fun ByteArray.readString(o: Int, size: Int, charset: Charset = Charsets.UTF_8): String {
-	return String(this, o, size)
+	return this.copyOfRange(o, o + size).toString(charset)
 }
