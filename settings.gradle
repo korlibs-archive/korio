@@ -2,6 +2,9 @@
 rootProject.name = 'korio-root'
 
 include(
+		'kotlinx.arraybuffers',
+		'kotlinx.arraybuffers-impl-jvm',
+		'kotlinx.arraybuffers-impl-js',
 		'korio-core',
 		'korio-impl-jvm',
 		'korio-impl-js',
