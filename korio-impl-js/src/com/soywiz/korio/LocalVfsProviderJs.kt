@@ -1,6 +1,6 @@
 @file:Suppress("EXPERIMENTAL_FEATURE_WARNING")
 
-package com.soywiz.korio.vfs.js
+package com.soywiz.korio
 
 import com.jtransc.js.*
 import com.soywiz.korio.async.AsyncSequence

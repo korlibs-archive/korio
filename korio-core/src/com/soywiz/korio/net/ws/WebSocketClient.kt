@@ -1,11 +1,9 @@
 package com.soywiz.korio.net.ws
 
 import com.soywiz.korio.async.Signal
-import com.soywiz.korio.service.Services
-import java.io.IOException
-import java.net.URI
+import com.soywiz.korio.lang.IOException
 
-abstract class WebSocketClient protected constructor(val url: URI, val protocols: List<String>?, int: Boolean) {
+abstract class WebSocketClient protected constructor(val url: String, val protocols: List<String>?, int: Boolean) {
 	val onOpen = Signal<Unit>()
 	val onError = Signal<Throwable>()
 	val onClose = Signal<Unit>()
@@ -19,10 +17,12 @@ abstract class WebSocketClient protected constructor(val url: URI, val protocols
 	suspend open fun send(message: ByteArray): Unit = Unit
 }
 
-suspend fun WebSocketClient(url: URI, protocols: List<String>? = null, origin: String? = null, wskey: String? = "wskey", debug: Boolean = false) = websockets.create(url, protocols, origin = origin, wskey = wskey, debug = debug)
+suspend fun WebSocketClient(url: String, protocols: List<String>? = null, origin: String? = null, wskey: String? = "wskey", debug: Boolean = false) = websockets.create(url, protocols, origin = origin, wskey = wskey, debug = debug)
 
-abstract class WebSocketClientFactory : Services.Impl() {
-	suspend abstract fun create(url: URI, protocols: List<String>? = null, origin: String? = null, wskey: String? = null, debug: Boolean = false): WebSocketClient
+header val websockets: WebSocketClientFactory
+
+abstract class WebSocketClientFactory {
+	suspend abstract fun create(url: String, protocols: List<String>? = null, origin: String? = null, wskey: String? = null, debug: Boolean = false): WebSocketClient
 }
 
 class WebSocketException(message: String) : IOException(message)

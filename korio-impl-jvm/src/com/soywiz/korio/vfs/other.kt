@@ -1,16 +1,6 @@
-package com.soywiz.korio.vfs.cs
+package com.soywiz.korio.vfs
 
-import com.jtransc.annotation.JTranscAddMembers
-import com.jtransc.annotation.JTranscMethodBody
-import com.jtransc.cs.CSharp
-import com.soywiz.korio.async.AsyncSequence
-import com.soywiz.korio.async.Promise
-import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.AsyncStreamBase
-import com.soywiz.korio.stream.toAsyncStream
-import com.soywiz.korio.vfs.*
-import java.io.Closeable
-
+/*
 class LocalVfsProviderCSharp : LocalVfsProvider() {
 	override fun invoke(): LocalVfs = CSharpVisualVfs()
 }
@@ -126,3 +116,13 @@ suspend fun <T> CSharp.runTaskAsync(task: () -> T): T {
 
 	return deferred.promise.await()
 }
+
+class LocalVfsProviderHaxe : LocalVfsProvider() {
+	override val available: Boolean = JTranscSystem.isHaxe()
+
+	override fun invoke(): LocalVfs {
+		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+	}
+}
+
+*/

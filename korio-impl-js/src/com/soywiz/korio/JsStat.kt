@@ -1,4 +1,4 @@
-package com.soywiz.korio.vfs.js
+package com.soywiz.korio
 
 import com.soywiz.korio.vfs.Vfs
 import com.soywiz.korio.vfs.VfsStat
