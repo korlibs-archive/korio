@@ -2,7 +2,6 @@ package com.soywiz.korio.serialization.json
 
 import com.soywiz.korio.serialization.ObjectMapper
 import org.junit.Test
-import kotlin.jvm.JvmField
 import kotlin.test.assertEquals
 
 class JsonTest {
@@ -127,7 +126,7 @@ class JsonTest {
 		var a: Int = 10
 
 		companion object {
-			@JvmField
+			//@JvmField
 			var b: String = "test"
 		}
 	}

@@ -3,17 +3,17 @@ package com.soywiz.korio.ds
 class LinkedList2<T : LinkedList2.Node<T>> : MutableIterable<T> {
 	override fun iterator(): MutableIterator<T> = object : MutableIterator<T> {
 		var current: T? = null
-		var next: T? = synchronized(this@LinkedList2) { head }
+		var _next: T? = synchronized(this@LinkedList2) { head }
 
-		override fun hasNext(): Boolean = next != null
+		override fun hasNext(): Boolean = _next != null
 
 		override fun remove(): Unit = synchronized(this@LinkedList2) {
 			if (current != null) this@LinkedList2.remove(current!!)
 		}
 
 		override fun next(): T = synchronized(this@LinkedList2) {
-			val res = next
-			next = next?.next
+			val res = _next
+			_next = _next?.next
 			current = res
 			return@synchronized res!!
 		}

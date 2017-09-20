@@ -35,9 +35,9 @@ interface Http {
 			val CONNECT = Methods.CONNECT
 			val PATCH = Methods.PATCH
 
-			val values = listOf(OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH)
-			fun values() = values
-			val valuesMap = values.map { it.name to it }.toMap()
+			val _values = listOf(OPTIONS, GET, HEAD, POST, PUT, DELETE, TRACE, CONNECT, PATCH)
+			fun values() = _values
+			val valuesMap = _values.map { it.name to it }.toMap()
 
 			operator fun get(name: String): Method = valuesMap.getOrElse(name.toUpperCase().trim()) { CustomMethod(name) }
 			operator fun invoke(name: String): Method = this[name]

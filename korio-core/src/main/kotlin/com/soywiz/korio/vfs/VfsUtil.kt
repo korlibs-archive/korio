@@ -43,4 +43,4 @@ object VfsUtil {
 
 header val File_separatorChar: Char
 
-impl val File_separatorChar: Char = '/'
+//impl val File_separatorChar: Char = '/'

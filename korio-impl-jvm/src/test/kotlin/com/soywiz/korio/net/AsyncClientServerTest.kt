@@ -3,6 +3,7 @@ package com.soywiz.korio.net
 import com.soywiz.korio.async.await
 import com.soywiz.korio.async.spawn
 import com.soywiz.korio.async.syncTest
+import com.soywiz.korio.async.take
 import com.soywiz.korio.stream.readString
 import com.soywiz.korio.stream.writeString
 import org.junit.Ignore
