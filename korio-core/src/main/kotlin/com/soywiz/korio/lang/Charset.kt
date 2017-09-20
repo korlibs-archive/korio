@@ -5,9 +5,15 @@ import com.soywiz.korio.ds.ByteArrayBuilder
 abstract class Charset(val name: String) {
 	abstract fun encode(out: ByteArrayBuilder, src: CharSequence, start: Int = 0, end: Int = src.length)
 	abstract fun decode(out: StringBuilder, src: ByteArray, start: Int = 0, end: Int = src.size)
+
+	companion object {
+		fun forName(name: String): Charset {
+			return UTF8Charset
+		}
+	}
 }
 
-object UTFCharset : Charset("UTF-8") {
+object UTF8Charset : Charset("UTF-8") {
 	private fun createByte(codePoint: Int, shift: Int): Int = codePoint shr shift and 0x3F or 0x80
 
 	override fun encode(out: ByteArrayBuilder, src: CharSequence, start: Int, end: Int) {
@@ -55,7 +61,7 @@ object UTFCharset : Charset("UTF-8") {
 }
 
 object Charsets {
-	val UTF_8 = UTFCharset
+	val UTF_8 = UTF8Charset
 }
 
 fun String.toByteArray(charset: Charset = Charsets.UTF_8): ByteArray {

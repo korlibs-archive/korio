@@ -36,12 +36,12 @@ class PromiseTest {
 
 		try {
 			out += "" + p.await()
-		} catch (e: Throwable) {
-			out += e::class.java.name
+		} catch (e: CancellationException) {
+			out += "CancellationException"
 		}
 
 		assertEquals(
-			"java.util.concurrent.CancellationException",
+			"CancellationException",
 			out
 		)
 	}

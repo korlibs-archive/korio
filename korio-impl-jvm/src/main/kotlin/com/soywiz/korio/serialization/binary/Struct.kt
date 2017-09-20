@@ -74,7 +74,7 @@ class StructReflect<T>(val clazz: Class<T>) {
 			java.lang.String::class.java -> {
 				val encoding = field.getAnnotation(Encoding::class.java)
 				val count = field.getAnnotation(Count::class.java)
-				val charset = Charset(encoding.name)
+				val charset = Charset.forName(encoding.name)
 				Struct.Type.STRING(charset, count.count)
 			}
 			else -> {
