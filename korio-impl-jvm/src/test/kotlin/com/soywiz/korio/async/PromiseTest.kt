@@ -1,10 +1,9 @@
 package com.soywiz.korio.async
 
 import com.soywiz.korio.expectException
-import org.junit.Assert
+import com.soywiz.korio.lang.CancellationException
 import org.junit.Ignore
 import org.junit.Test
-import java.util.concurrent.CancellationException
 import kotlin.test.assertEquals
 
 class PromiseTest {
@@ -37,7 +36,7 @@ class PromiseTest {
 
 		try {
 			out += "" + p.await()
-		} catch(e: Throwable) {
+		} catch (e: Throwable) {
 			out += e::class.java.name
 		}
 

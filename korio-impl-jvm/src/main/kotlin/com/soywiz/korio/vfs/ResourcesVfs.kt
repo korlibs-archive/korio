@@ -11,7 +11,7 @@ import java.net.URLClassLoader
 impl val ResourcesVfs: VfsFile by lazy { ResourcesVfsProviderJvm()().root }
 
 class ResourcesVfsProviderJvm {
-	operator fun invoke(): Vfs = invoke()
+	operator fun invoke(): Vfs = invoke(ClassLoader.getSystemClassLoader())
 
 	operator fun invoke(classLoader: ClassLoader): Vfs {
 		val merged = MergedVfs()
