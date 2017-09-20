@@ -1,6 +1,6 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.lang.threadLocal
+import com.soywiz.korio.lang.tl.threadLocal
 
 val BYTES_EMPTY = byteArrayOf()
 const val BYTES_TEMP_SIZE = 0x10000

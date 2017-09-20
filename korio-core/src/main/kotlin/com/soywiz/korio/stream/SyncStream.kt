@@ -2,6 +2,7 @@ package com.soywiz.korio.stream
 
 import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.lang.*
+import com.soywiz.korio.lang.tl.threadLocal
 import com.soywiz.korio.math.Math
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.typedarray.fill
