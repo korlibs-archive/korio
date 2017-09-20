@@ -1,23 +1,6 @@
 package com.soywiz.korio.ext.amazon.dynamodb
 
-import com.soywiz.korio.crypto.fromBase64
-import com.soywiz.korio.crypto.toBase64
-import com.soywiz.korio.ds.AsyncPool
-import com.soywiz.korio.error.ignoreErrors
-import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.expr.QExpr
-import com.soywiz.korio.ext.amazon.AmazonAuth
-import com.soywiz.korio.net.http.Http
-import com.soywiz.korio.net.http.HttpClient
-import com.soywiz.korio.net.http.createHttpClient
-import com.soywiz.korio.serialization.json.Json
-import com.soywiz.korio.stream.openAsync
-import com.soywiz.korio.util.ClassFactory
-import com.soywiz.korio.util.Dynamic
-import com.soywiz.korio.util.TimeProvider
-import java.net.URL
-import java.util.*
-
+/*
 // http://docs.aws.amazon.com/amazondynamodb/latest/developerguide/Programming.LowLevelAPI.html
 // http://docs.aws.amazon.com/amazondynamodb/latest/APIReference/API_Operations.html
 // @TODO: Retry + Scale Capacity Units
@@ -345,3 +328,4 @@ class DynamoDB(
 	class ProvisionedThroughputExceededException(msg: String) : AmazonException(msg)
 	class ResourceInUseException(msg: String) : AmazonException(msg)
 }
+	*/

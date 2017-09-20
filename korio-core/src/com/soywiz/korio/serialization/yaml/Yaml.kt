@@ -4,13 +4,26 @@ import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.KClass
 import com.soywiz.korio.lang.Language
-import com.soywiz.korio.util.*
+import com.soywiz.korio.serialization.ObjectMapper
+import com.soywiz.korio.util.ListReader
+import com.soywiz.korio.util.StrReader
+import com.soywiz.korio.util.readStringLit
+import com.soywiz.korio.util.unquote
+import kotlin.collections.ArrayList
+import kotlin.collections.HashMap
+import kotlin.collections.LinkedHashMap
+import kotlin.collections.List
+import kotlin.collections.arrayListOf
+import kotlin.collections.isNotEmpty
+import kotlin.collections.last
+import kotlin.collections.plusAssign
+import kotlin.collections.set
 
 object Yaml {
 	fun decode(@Language("yaml") str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
-	inline fun <reified T : Any> decodeToType(@Language("yaml") s: String): T = decodeToType(s, T::class)
+	inline fun <reified T : Any> decodeToType(@Language("yaml") s: String, mapper: ObjectMapper): T = decodeToType(s, T::class, mapper)
 	@Suppress("UNCHECKED_CAST")
-	fun <T> decodeToType(@Language("yaml") s: String, clazz: KClass<T>): T = ClassFactory(clazz).create(decode(s))
+	fun <T> decodeToType(@Language("yaml") s: String, clazz: KClass<T>, mapper: ObjectMapper): T = mapper.create(decode(s), clazz)
 
 	fun read(str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
 

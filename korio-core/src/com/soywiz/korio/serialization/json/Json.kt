@@ -1,23 +1,29 @@
 package com.soywiz.korio.serialization.json
 
+import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.IOException
 import com.soywiz.korio.lang.KClass
 import com.soywiz.korio.lang.Language
-import com.soywiz.korio.util.*
+import com.soywiz.korio.serialization.ObjectMapper
+import com.soywiz.korio.util.Indenter
+import com.soywiz.korio.util.StrReader
+import com.soywiz.korio.util.readStringLit
+import com.soywiz.korio.util.toNumber
+import kotlin.collections.set
 
 object Json {
 	fun stringifyPretty(obj: Any?) = stringify(obj, pretty = true)
 	fun stringify(obj: Any?, pretty: Boolean = false) = if (pretty) encodePretty(obj) else encode(obj)
 	fun parse(@Language("json") s: String): Any? = StrReader(s).decode()
-	inline fun <reified T : Any> parseTyped(@Language("json") s: String): T = decodeToType(s, T::class)
+	inline fun <reified T : Any> parseTyped(@Language("json") s: String, mapper: ObjectMapper): T = decodeToType(s, T::class, mapper)
 
 	fun invalidJson(msg: String = "Invalid JSON"): Nothing = throw IOException(msg)
 
 	fun decode(@Language("json") s: String): Any? = StrReader(s).decode()
 
-	inline fun <reified T : Any> decodeToType(@Language("json") s: String): T = decodeToType(s, T::class)
+	inline fun <reified T : Any> decodeToType(@Language("json") s: String, mapper: ObjectMapper): T = decodeToType(s, T::class, mapper)
 	@Suppress("UNCHECKED_CAST")
-	fun <T> decodeToType(@Language("json") s: String, clazz: KClass<T>): T = ClassFactory(clazz).create(decode(s))
+	fun <T> decodeToType(@Language("json") s: String, clazz: KClass<T>, mapper: ObjectMapper): T = mapper.create(decode(s), clazz)
 
 	fun StrReader.decode(): Any? {
 		val ic = skipSpaces().read()
@@ -94,7 +100,11 @@ object Json {
 			is Enum<*> -> encodeString(obj.name, b)
 			is String -> encodeString(obj, b)
 			is Number -> b.append("$obj")
-			else -> encode(ClassFactory(obj::class).toMap(obj), b)
+			is CustomJsonSerializer -> obj.encodeToJson(b)
+			else -> {
+				invalidOp("Don't know how to serialize $obj")
+				//encode(ClassFactory(obj::class).toMap(obj), b)
+			}
 		}
 	}
 
@@ -134,7 +144,14 @@ object Json {
 			}
 			is String -> b.inline(encodeString(obj))
 			is Number -> b.inline("$obj")
-			else -> encodePretty(ClassFactory(obj::class).toMap(obj), b)
+		//else -> encodePretty(ClassFactory(obj::class).toMap(obj), b)
+			is CustomJsonSerializer -> {
+				b.inline(StringBuilder().apply { obj.encodeToJson(this) }.toString())
+			}
+			else -> {
+				invalidOp("Don't know how to serialize $obj")
+				//encode(ClassFactory(obj::class).toMap(obj), b)
+			}
 		}
 	}
 
@@ -152,4 +169,8 @@ object Json {
 		}
 		b.append('"')
 	}
+}
+
+interface CustomJsonSerializer {
+	fun encodeToJson(b: StringBuilder)
 }

@@ -1,6 +1,10 @@
 package com.soywiz.korio.serialization.binary
 
-/*
+import com.soywiz.korio.stream.MemorySyncStream
+import com.soywiz.korio.stream.*
+import org.junit.Test
+import kotlin.test.assertEquals
+
 class StructTest {
 	@Size(8)
 	@LE
@@ -122,4 +126,4 @@ class StructTest {
 		assertEquals("NoSizeNoOffsetArray(magic=1, items=[NoSizeNoOffset(magic=2, ver1=3, ver2=4), NoSizeNoOffset(magic=5, ver1=6, ver2=7)], v2=8)", info.toString())
 	}
 }
-*/
+

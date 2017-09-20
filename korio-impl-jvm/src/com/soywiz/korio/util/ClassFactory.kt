@@ -1,6 +1,8 @@
 package com.soywiz.korio.util
 
 import com.soywiz.korio.error.invalidOp
+import java.lang.reflect.Constructor
+import java.lang.reflect.Modifier
 
 // @TODO: This should use ASM library to create a class per class to be as fast as possible
 class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin.Boolean) {
@@ -15,7 +17,7 @@ class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin
 	}
 
 	companion object {
-		val cache = hashMapOf<Class<*>, ClassFactory<*>>()
+		val cache = HashMap<Class<*>, ClassFactory<*>>()
 		@Suppress("UNCHECKED_CAST")
 		operator fun <T> get(clazz: Class<out T>): ClassFactory<T> = cache.getOrPut(clazz) { ClassFactory(clazz, true) } as ClassFactory<T>
 
@@ -23,14 +25,14 @@ class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin
 
 		fun createDummyUnchecked(clazz: Class<*>): Any {
 			when (clazz) {
-				Boolean.TYPE -> return false
-				Byte.TYPE -> return 0.toByte()
-				Short.TYPE -> return 0.toShort()
-				Character.TYPE -> return 0.toChar()
-				Integer.TYPE -> return 0
-				Long.TYPE -> return 0L
-				Float.TYPE -> return 0f
-				Double.TYPE -> return 0.0
+				java.lang.Boolean.TYPE -> return false
+				java.lang.Byte.TYPE -> return 0.toByte()
+				java.lang.Short.TYPE -> return 0.toShort()
+				java.lang.Character.TYPE -> return 0.toChar()
+				java.lang.Integer.TYPE -> return 0
+				java.lang.Long.TYPE -> return 0L
+				java.lang.Float.TYPE -> return 0f
+				java.lang.Double.TYPE -> return 0.0
 			}
 			if (clazz.isArray) return java.lang.reflect.Array.newInstance(clazz.componentType, 0)
 			if (clazz.isAssignableFrom(Set::class.java)) return HashSet<Any>()

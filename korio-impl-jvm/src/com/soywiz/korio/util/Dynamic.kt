@@ -1,8 +1,15 @@
 package com.soywiz.korio.util
 
+import com.soywiz.korio.async.invokeSuspend
 import com.soywiz.korio.error.ignoreErrors
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.error.noImpl
+import java.lang.reflect.Array
+import java.lang.reflect.Modifier
+import java.lang.reflect.ParameterizedType
+import java.lang.reflect.Type
+import java.util.*
+import kotlin.collections.ArrayList
 
 object Dynamic {
 	@Suppress("UNCHECKED_CAST")
@@ -224,13 +231,13 @@ object Dynamic {
 		if (target.isPrimitive) {
 			when (target) {
 				java.lang.Boolean.TYPE -> return (str == "true" || str == "1") as T
-				Byte.TYPE -> return str.parseInt().toByte() as T
-				Character.TYPE -> return if (value is String && value.length >= 1) value[0] as T else str.parseInt().toChar() as T
+				java.lang.Byte.TYPE -> return str.parseInt().toByte() as T
+				java.lang.Character.TYPE -> return if (value is String && value.length >= 1) value[0] as T else str.parseInt().toChar() as T
 				java.lang.Short.TYPE -> return str.parseInt().toShort() as T
 				java.lang.Long.TYPE -> return str.parseLong() as T
-				Float.TYPE -> return str.toFloat() as T
+				java.lang.Float.TYPE -> return str.toFloat() as T
 				java.lang.Double.TYPE -> return str.parseDouble() as T
-				Integer.TYPE -> return str.parseInt() as T
+				java.lang.Integer.TYPE -> return str.parseInt() as T
 				else -> invalidOp("Unhandled primitive '${target.name}'")
 			}
 		}
@@ -243,7 +250,7 @@ object Dynamic {
 		if (target.isAssignableFrom(java.lang.Float::class.java)) return str.toFloat() as T
 		if (target.isAssignableFrom(java.lang.Double::class.java)) return str.toDouble() as T
 		if (target.isAssignableFrom(java.lang.String::class.java)) return (if (value == null) "" else str) as T
-		if (target.isEnum) return if (value != null) Enum.valueOf<AnyEnum>(target as Class<AnyEnum>, str) as T else target.enumConstants.first()
+		if (target.isEnum) return if (value != null) java.lang.Enum.valueOf<AnyEnum>(target as Class<AnyEnum>, str) as T else target.enumConstants.first()
 		if (value is Map<*, *>) {
 			val map = value as Map<Any?, *>
 			val resultClass = target as Class<Any>
@@ -326,7 +333,7 @@ object Dynamic {
 			is Iterable<*> -> value
 			else -> {
 				val clazz = value::class.java
-				val out = hashMapOf<Any?, Any?>()
+				val out = HashMap<Any?, Any?>()
 				for (field in clazz.declaredFields) {
 					if (Modifier.isStatic(field.modifiers)) continue
 					if (field.name.startsWith('$')) continue
@@ -460,7 +467,7 @@ object Dynamic {
 	}
 
 	fun <T> getTypedFields(sourceClass: Class<*>, source: Any?, clazz: Class<T>): List<T> {
-		val list = arrayListOf<T>()
+		val list = ArrayList<T>()
 		val expectStatic = source == null
 		for (field in sourceClass.allDeclaredFields) {
 			val isStatic = Modifier.isStatic(field.modifiers)

@@ -1,10 +1,13 @@
 package com.soywiz.korio.serialization.json
 
+import com.soywiz.korio.serialization.ObjectMapper
 import org.junit.Test
 import kotlin.jvm.JvmField
 import kotlin.test.assertEquals
 
 class JsonTest {
+	val mapper = ObjectMapper()
+
 	@Test
 	fun decode1() {
 		assertEquals(mapOf("a" to 1), Json.decode("""{"a":1}"""))
@@ -55,7 +58,7 @@ class JsonTest {
 
 	@Test
 	fun decodeToType1() {
-		assertEquals(Demo(1, "hello"), Json.decodeToType<Demo>("""{"a": 1, "b": "hello"}"""))
+		assertEquals(Demo(1, "hello"), Json.decodeToType<Demo>("""{"a": 1, "b": "hello"}""", mapper))
 	}
 
 	@Test
@@ -65,14 +68,14 @@ class JsonTest {
 
 	@Test
 	fun decodeTypedList() {
-		val result = Json.decodeToType<DemoList>("""{ "demos" : [{"a":1,"b":"A"}, {"a":2,"b":"B"}] }""")
+		val result = Json.decodeToType<DemoList>("""{ "demos" : [{"a":1,"b":"A"}, {"a":2,"b":"B"}] }""", mapper)
 		val demo = result.demos.first()
 		assertEquals(1, demo.a)
 	}
 
 	@Test
 	fun decodeTypedSet() {
-		val result = Json.decodeToType<DemoSet>("""{ "demos" : [{"a":1,"b":"A"}, {"a":2,"b":"B"}] }""")
+		val result = Json.decodeToType<DemoSet>("""{ "demos" : [{"a":1,"b":"A"}, {"a":2,"b":"B"}] }""", mapper)
 		val demo = result.demos.first()
 		assertEquals(1, demo.a)
 	}
@@ -80,16 +83,16 @@ class JsonTest {
 	@Test
 	fun decodeToPrim() {
 		//val resultStr = Json.encode(mapOf("items" to listOf(1, 2, 3, 4, 5)))
-		assertEquals(listOf(1, 2, 3, 4, 5), Json.decodeToType<List<Int>>("""[1, 2, 3, 4, 5]"""))
-		assertEquals(1, Json.decodeToType<Int>("1"))
-		assertEquals(true, Json.decodeToType<Boolean>("true"))
-		assertEquals("a", Json.decodeToType<String>("\"a\""))
-		assertEquals('a', Json.decodeToType<Char>("\"a\""))
+		assertEquals(listOf(1, 2, 3, 4, 5), Json.decodeToType<List<Int>>("""[1, 2, 3, 4, 5]""", mapper))
+		assertEquals(1, Json.decodeToType<Int>("1", mapper))
+		assertEquals(true, Json.decodeToType<Boolean>("true", mapper))
+		assertEquals("a", Json.decodeToType<String>("\"a\"", mapper))
+		assertEquals('a', Json.decodeToType<Char>("\"a\"", mapper))
 	}
 
 	@Test
 	fun decodeToPrimChar() {
-		assertEquals('a', Json.decodeToType<Char>("\"a\""))
+		assertEquals('a', Json.decodeToType<Char>("\"a\"", mapper))
 	}
 
 	@Test
@@ -107,7 +110,7 @@ class JsonTest {
 
 	@Test
 	fun testDecodeEnum() {
-		assertEquals(ClassWithEnum(MyEnum.WORLD), Json.decodeToType<ClassWithEnum>("""{"a":"WORLD"}"""))
+		assertEquals(ClassWithEnum(MyEnum.WORLD), Json.decodeToType<ClassWithEnum>("""{"a":"WORLD"}""", mapper))
 	}
 
 	@Test
@@ -115,7 +118,7 @@ class JsonTest {
 		data class V(val a: Int, val b: Int)
 		data class Demo(val v: Map<String, V>)
 
-		assertEquals(Demo(mapOf("z" to V(1, 2))), Json.decodeToType<Demo>("""{"v":{"z":{"a":1,"b":2}}}"""))
+		assertEquals(Demo(mapOf("z" to V(1, 2))), Json.decodeToType<Demo>("""{"v":{"z":{"a":1,"b":2}}}""", mapper))
 
 		assertEquals("""{"v":{"z1":{"a":1,"b":2},"z2":{"a":1,"b":2}}}""", Json.encode(Demo(mapOf("z1" to V(1, 2), "z2" to V(1, 2)))))
 	}

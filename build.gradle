@@ -1,6 +1,7 @@
 buildscript {
-	ext.compilerVersion = '1.1.50-eap-28'
-	ext.librariesVersion = '1.1.50-eap-28'
+	ext.kotlinVersion = '1.1.50-eap-28'
+	ext.compilerVersion = ext.kotlinVersion
+	ext.librariesVersion = ext.kotlinVersion
 	ext.eapChannel = 'https://dl.bintray.com/kotlin/kotlin-eap-1.1'
 	ext.serializationRepo = 'https://kotlin.bintray.com/kotlinx'
 	ext.serializationPluginVersion = '0.1'
@@ -34,10 +35,6 @@ buildscript {
 def file = new File(".").absolutePath
 
 allprojects {
-	configurations {
-		provided
-	}
-
 	repositories {
 		mavenLocal()
 		jcenter()
@@ -78,41 +75,11 @@ allprojects {
 		}
 	}
 
-	//dependencies {
-	//	compile libraries.kotlin_reflect
-	//}
-
-	/*
-	if (project.hasProperty('useAndroid')) {
-		project.apply plugin: 'com.android.library'
-		apply plugin: 'kotlin-android'
-	} else {
-		project.apply plugin: 'java'
-		apply plugin: 'kotlin'
-		compileJava.options.encoding = 'UTF-8'
-		compileTestJava.options.encoding = 'UTF-8'
-	}
-	*/
 	apply plugin: 'maven'
 	apply plugin: 'signing'
 	apply plugin: 'maven-publish'
 
-	//sourceCompatibility = 1.7
-	//targetCompatibility = 1.7
-
 	kotlin { experimental { coroutines 'enable' } }
-
-	configurations {
-		provided
-	}
-
-	sourceSets {
-		main.kotlin.srcDirs = ['src']
-		test.kotlin.srcDirs = ['test']
-		main.resources.srcDirs = ['resources']
-		test.resources.srcDirs = ['testresources']
-		main { compileClasspath += configurations.provided }
-	}
 
 	task javadoc2(type: Javadoc) {
 		failOnError = false

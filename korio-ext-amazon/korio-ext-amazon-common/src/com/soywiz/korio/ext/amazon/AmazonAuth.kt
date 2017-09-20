@@ -1,25 +1,17 @@
 package com.soywiz.korio.ext.amazon
 
 import com.soywiz.korio.crypto.toBase64
-import com.soywiz.korio.lang.Charsets
-import com.soywiz.korio.lang.IOException
-import com.soywiz.korio.lang.URL
-import com.soywiz.korio.lang.toByteArray
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.time.Locale
 import com.soywiz.korio.time.SimpleDateFormat
 import com.soywiz.korio.time.TimeZone
+import com.soywiz.korio.util.crypto.Mac
+import com.soywiz.korio.util.crypto.MessageDigest
+import com.soywiz.korio.util.crypto.SecretKeySpec
 import com.soywiz.korio.util.substr
 import com.soywiz.korio.util.toHexStringLower
-import com.soywiz.korio.vfs.LocalVfs
 import com.soywiz.korio.vfs.UserHomeVfs
-import java.io.IOException
-import java.net.URL
-import java.security.MessageDigest
-import java.text.SimpleDateFormat
-import java.util.*
-import javax.crypto.Mac
-import javax.crypto.spec.SecretKeySpec
 
 object AmazonAuth {
 	class Credentials(val accessKey: String, val secretKey: String)
@@ -29,8 +21,8 @@ object AmazonAuth {
 		var finalSecretKey = secretKey
 
 		if (finalAccessKey.isNullOrEmpty()) {
-			finalAccessKey = System.getenv("AWS_ACCESS_KEY_ID")?.trim()
-			finalSecretKey = System.getenv("AWS_SECRET_KEY")?.trim()
+			finalAccessKey = Environment["AWS_ACCESS_KEY_ID"]?.trim()
+			finalSecretKey = Environment["AWS_SECRET_KEY"]?.trim()
 		}
 
 		if (finalAccessKey.isNullOrEmpty()) {
@@ -46,7 +38,7 @@ object AmazonAuth {
 	}
 
 	object V1 {
-		val DATE_FORMAT = java.text.SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", java.util.Locale.ENGLISH).apply { timeZone = TimeZone.getTimeZone("UTC") }
+		val DATE_FORMAT = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH).apply { timeZone = TimeZone.getTimeZone("UTC") }
 
 		private fun macProcess(key: ByteArray, algo: String, data: ByteArray): ByteArray {
 			return Mac.getInstance(algo).apply { init(SecretKeySpec(key, algo)) }.doFinal(data)
@@ -118,11 +110,11 @@ object AmazonAuth {
 			val algorithm = "HmacSHA256"
 			val mac = Mac.getInstance(algorithm)
 			mac.init(SecretKeySpec(key, algorithm))
-			return mac.doFinal(data.toByteArray(charset("UTF8")))
+			return mac.doFinal(data.toByteArray(Charsets.UTF_8))
 		}
 
 		fun getSignatureKey(key: String, dateStamp: String, regionName: String, serviceName: String): ByteArray {
-			val kSecret = ("AWS4" + key).toByteArray(charset("UTF8"))
+			val kSecret = ("AWS4" + key).toByteArray(Charsets.UTF_8)
 			val kDate = HmacSHA256(dateStamp, kSecret)
 			val kRegion = HmacSHA256(regionName, kDate)
 			val kService = HmacSHA256(serviceName, kRegion)
@@ -164,7 +156,7 @@ object AmazonAuth {
 
 		fun signHeaders(accessKey: String, secretKey: String, method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray, region: String, service: String): Http.Headers {
 			return headers.withReplaceHeaders(
-					"Authorization" to getAuthorization(accessKey, secretKey, method, url, headers, payload, region, service)
+				"Authorization" to getAuthorization(accessKey, secretKey, method, url, headers, payload, region, service)
 			)
 		}
 	}

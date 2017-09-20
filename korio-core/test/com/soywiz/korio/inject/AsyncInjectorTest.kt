@@ -16,7 +16,7 @@ class AsyncInjectorTest {
 	@Test
 	fun testSimple() = syncTest {
 		val inject = AsyncInjector()
-		inject.map(10)
+		inject.mapTyped(10)
 		assertEquals(10, inject.get<Int>())
 	}
 
@@ -29,7 +29,7 @@ class AsyncInjectorTest {
 
 		val holder = Holder()
 		val inject = AsyncInjector()
-		inject.map(holder)
+		inject.mapTyped(holder)
 		val a0 = inject.get<A>()
 		val a1 = inject.child().child().get<A>()
 		assertEquals(0, a0.id)
@@ -95,7 +95,7 @@ class AsyncInjectorTest {
 		)
 
 		val inject = AsyncInjector()
-		inject.map(10)
+		inject.mapTyped(10)
 		val a = inject.get<A>()
 		assertEquals("mypath1", a.b1.path.path)
 		assertEquals("mypath2", a.b2.path.path)
@@ -105,7 +105,8 @@ class AsyncInjectorTest {
 
 	annotation class Path(val path: String)
 
-	@AsyncFactoryClass(BitmapFontLoader::class)
+	// e: java.lang.UnsupportedOperationException: Class literal annotation arguments are not yet supported: BitmapFontLoader
+	//@AsyncFactoryClass(BitmapFontLoader::class)
 	class BitmapFont(val path: String)
 
 	class BitmapFontLoader(val path: Path) : AsyncFactory<BitmapFont> {
@@ -128,7 +129,8 @@ class AsyncInjectorTest {
 	annotation class Path2A(val path1: String)
 	annotation class Path2B(val path2: String)
 
-	@AsyncFactoryClass(BitmapFontLoader2::class)
+	// e: java.lang.UnsupportedOperationException: Class literal annotation arguments are not yet supported: BitmapFontLoader
+	//@AsyncFactoryClass(BitmapFontLoader2::class)
 	class BitmapFont2(val path: String)
 
 	class BitmapFontLoader2(
@@ -177,8 +179,8 @@ class AsyncInjectorTest {
 			}
 		}
 
-		val inject = AsyncInjector().map(holder)
-		inject.map(10)
+		val inject = AsyncInjector().mapTyped(holder)
+		inject.mapTyped(10)
 		val demo = inject.get<Demo>()
 		assertEquals(10, demo.a)
 	}
@@ -215,7 +217,7 @@ class AsyncInjectorTest {
 
 		val injector = AsyncInjector()
 		injector.child()
-			.map(Mapped("hello") as Any)
+			.mapTyped<Mapped>(Mapped("hello"))
 			.get<MySingleton>()
 	}
 }

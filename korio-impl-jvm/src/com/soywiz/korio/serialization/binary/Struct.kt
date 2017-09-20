@@ -1,6 +1,16 @@
 package com.soywiz.korio.serialization.binary
 
-/*
+import com.soywiz.korio.lang.Charset
+import com.soywiz.korio.lang.toByteArray
+import com.soywiz.korio.lang.toString
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.SyncStream
+import com.soywiz.korio.stream.readBytes
+import com.soywiz.korio.stream.writeBytes
+import com.soywiz.korio.util.*
+import java.lang.reflect.Field
+import java.nio.ByteOrder
+
 interface Struct {
 	sealed class Type(val size: Int) {
 		object S1 : Type(1)
@@ -9,7 +19,7 @@ interface Struct {
 		object S8 : Type(8)
 		object F4 : Type(4)
 		object F8 : Type(8)
-		class CUSTOM(val elementClazz: KClass<Struct>) : Type(StructReflect[elementClazz].size)
+		class CUSTOM(val elementClazz: Class<Struct>) : Type(StructReflect[elementClazz].size)
 		class ARRAY(val elementType: Type, val count: Int) : Type(elementType.size * count)
 		class STRING(val charset: Charset, val count: Int) : Type(count)
 	}
@@ -34,7 +44,7 @@ annotation class Size(val size: Int)
 //@Target(AnnotationTarget.FIELD) annotation class U2
 //@Target(AnnotationTarget.FIELD) annotation class U4
 
-class StructReflect<T>(val clazz: KClass<T>) {
+class StructReflect<T>(val clazz: Class<T>) {
 	data class FieldInfo(
 		val field: Field,
 		val offset: Int,
@@ -64,7 +74,7 @@ class StructReflect<T>(val clazz: KClass<T>) {
 			java.lang.String::class.java -> {
 				val encoding = field.getAnnotation(Encoding::class.java)
 				val count = field.getAnnotation(Count::class.java)
-				val charset = Charset.forName(encoding.name)
+				val charset = Charset(encoding.name)
 				Struct.Type.STRING(charset, count.count)
 			}
 			else -> {
@@ -120,7 +130,7 @@ class StructReflect<T>(val clazz: KClass<T>) {
 	}
 
 	companion object {
-		val cache = hashMapOf<Class<*>, StructReflect<*>>()
+		val cache = HashMap<Class<*>, StructReflect<*>>()
 		@Suppress("UNCHECKED_CAST")
 		operator fun <T> get(clazz: Class<T>): StructReflect<T> {
 			return cache.getOrPut(clazz) {
@@ -156,15 +166,15 @@ fun ByteArray.readStructElement(offset: Int, type: Struct.Type, littleEndian: Bo
 				else -> {
 
 					val al = (0 until count).map { readStructElement(offset + elementSize * it, elementType, littleEndian) }
-					val out = Array.newInstance(al.first()::class.java, al.size)
-					for (n in 0 until count) Array.set(out, n, al[n])
+					val out = java.lang.reflect.Array.newInstance(al.first()::class.java, al.size)
+					for (n in 0 until count) java.lang.reflect.Array.set(out, n, al[n])
 					out
 				}
 			}
 		}
 		is Struct.Type.STRING -> {
 			val strBytes = readByteArray(offset, type.count)
-			Arrays.copyOf(strBytes, strBytes.indexOfElse(0)).toString(type.charset)
+			strBytes.copyOf(strBytes.indexOfElse(0)).toString(type.charset)
 		}
 	}
 }
@@ -197,11 +207,11 @@ fun ByteArray.writeStructElement(offset: Int, type: Struct.Type, value: Any, lit
 		is Struct.Type.ARRAY -> {
 			var co = offset
 			for (n in 0 until type.count) {
-				co += writeStructElement(co, type.elementType, Array.get(value, n), littleEndian)
+				co += writeStructElement(co, type.elementType, java.lang.reflect.Array.get(value, n), littleEndian)
 			}
 		}
 		is Struct.Type.STRING -> {
-			writeBytes(offset, Arrays.copyOf((value as String).toByteArray(type.charset), type.count))
+			writeBytes(offset, ((value as String).toByteArray(type.charset).copyOf(type.count)))
 		}
 	}
 	return type.size
@@ -228,4 +238,4 @@ suspend fun <T : Struct> AsyncStream.readStruct(clazz: Class<T>): T {
 }
 
 suspend fun <T : Struct> AsyncStream.writeStruct(obj: T) = this.writeBytes(obj.getStructBytes())
-*/
+

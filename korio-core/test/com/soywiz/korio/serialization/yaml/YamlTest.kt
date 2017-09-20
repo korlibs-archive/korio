@@ -1,10 +1,13 @@
 package com.soywiz.korio.serialization.yaml
 
+import com.soywiz.korio.serialization.ObjectMapper
 import org.junit.Test
 import kotlin.test.assertEquals
 
 // http://nodeca.github.io/js-yaml/
 class YamlTest {
+	val mapper = ObjectMapper()
+
 	@Test
 	fun basic() {
 		assertEquals("str", Yaml.read("str"))
@@ -134,7 +137,7 @@ class YamlTest {
 			ClassWithEnum(a = MyEnum.WORLD),
 			Yaml.decodeToType<ClassWithEnum>("""
 				|a: WORLD
-			""".trimMargin())
+			""".trimMargin(), mapper)
 		)
 	}
 

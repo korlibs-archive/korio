@@ -25,7 +25,7 @@ suspend fun RedisCommand.zadd(key: String, vararg scores: Pair<String, Double>):
 		args += score.second
 		args += score.first
 	}
-	return commandLong("zadd", key, *args.toArray())
+	return commandLong("zadd", key, *args.toTypedArray())
 }
 
 suspend fun RedisCommand.zadd(key: String, member: String, score: Double): Long = commandLong("zadd", key, score, member)

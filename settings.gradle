@@ -10,13 +10,13 @@ include(
 		'korio-core',
 		'korio-impl-jvm',
 		'korio-impl-js',
-		'korio-vertx',
+		//'korio-vertx',
 		'korio-ext-db-redis',
 		//'korio-ext-db-mongodb',
 		//'korio-ext-db-mysql',
 		'korio-ext-db-cassandra',
 		'korio-ext-db-elasticsearch',
-		'korio-ext-web',
+		//'korio-ext-web',
 		'korio-test',
 )
 

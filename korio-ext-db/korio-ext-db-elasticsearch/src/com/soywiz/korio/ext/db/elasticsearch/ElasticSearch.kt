@@ -1,5 +1,6 @@
 package com.soywiz.korio.ext.db.elasticsearch
 
+import com.soywiz.korio.lang.Dynamic
 import com.soywiz.korio.lang.KClass
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClientEndpoint
@@ -9,7 +10,6 @@ import com.soywiz.korio.net.http.rest.HttpRestClient
 import com.soywiz.korio.net.http.rest.createRestClient
 import com.soywiz.korio.net.http.rest.rest
 import com.soywiz.korio.time.TimeSpan
-import com.soywiz.korio.util.Dynamic
 
 class ElasticSearch(
 	rest: HttpRestClient = defaultHttpFactory.createRestClient("http://127.0.0.1:9200")
@@ -123,6 +123,7 @@ class ElasticSearch(
 
 		// operator
 		suspend fun set(id: String, document: T) = type.put(document, id)
+
 		suspend fun add(document: T): ElasticSearch.PutResult = type.put(document)
 		suspend fun put(document: T, id: String? = null): ElasticSearch.PutResult = type.put(document, id)
 		suspend fun delete(id: String) = type.delete(id)
@@ -132,6 +133,7 @@ class ElasticSearch(
 				Result<T>(it.index, it.type, it.id, it.score, Dynamic.dynamicCast(it.obj, clazz)!!)
 			})
 		}
+
 		suspend fun searchList(query: ElasticSearch.QueryBuilder.() -> ElasticSearch.Query = { ElasticSearch.Query(ElasticSearch.QueryBuilder) }): List<T> = search(query).results.map { it.obj }
 
 		// @TODO:

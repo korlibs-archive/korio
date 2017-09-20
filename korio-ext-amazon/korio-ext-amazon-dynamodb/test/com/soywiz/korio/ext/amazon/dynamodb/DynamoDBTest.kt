@@ -1,12 +1,6 @@
 package com.soywiz.korio.ext.amazon.dynamodb
 
-import com.soywiz.korio.async.syncTest
-import com.soywiz.korio.lang.URL
-import com.soywiz.korio.net.http.LogHttpClient
-import com.soywiz.korio.util.TimeProvider
-import org.junit.Test
-import kotlin.test.assertEquals
-
+/*
 class DynamoDBTest {
 	val httpClient = LogHttpClient()
 	val timeProvider = TimeProvider { 1486426548734L }
@@ -61,3 +55,4 @@ class DynamoDBTest {
 	//	//println(db.deleteItem("Test1", mapOf("test" to "hello")))
 	//}
 }
+*/

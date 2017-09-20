@@ -8,12 +8,14 @@ import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.error.InvalidOperationException
 import com.soywiz.korio.ext.web.sstatic.serveStatic
 import com.soywiz.korio.inject.AsyncInjector
+import com.soywiz.korio.lang.KClass
 import com.soywiz.korio.net.http.FakeHttpClient
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.http.httpError
 import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.serialization.querystring.QueryString
+import com.soywiz.korio.serialization.querystring.URLDecoder
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.copyTo
 import com.soywiz.korio.text.AsyncTextWriterContainer
@@ -141,7 +143,7 @@ class KorRouter(val injector: AsyncInjector, val requestConfig: HttpServer.Reque
 	}
 }
 
-suspend inline fun <reified T : Any> KorRouter.registerRoutes() = this.apply { this.registerRoutes(T::class.java) }
+suspend inline fun <reified T : Any> KorRouter.registerRoutes() = this.apply { this.registerRoutes(T::class) }
 //suspend fun HttpServer.router(router: KorRouter) = this.allHandler { router.accept(it) }
 
 suspend fun HttpServer.router(injector: AsyncInjector = AsyncInjector(), configurer: suspend KorRouter.() -> Unit): HttpServer {
@@ -355,7 +357,7 @@ suspend private fun registerWsRoute(router: KorRouter, instance: Any, method: Me
 	}
 }
 
-suspend fun KorRouter.registerRoutes(clazz: Class<*>) {
+suspend fun KorRouter.registerRoutes(clazz: KClass<*>) {
 	val router = this@registerRoutes
 
 	println("Registering route $clazz...")
