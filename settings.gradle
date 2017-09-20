@@ -15,5 +15,4 @@ include(
 		'korio-ext-db-cassandra',
 		'korio-ext-db-elasticsearch',
 		//'korio-ext-web',
-		'korio-test',
 )

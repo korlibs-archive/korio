@@ -1,4 +1,0 @@
-dependencies {
-	compile project(":korio-core")
-	compile libraries.kotlin_test_common
-}
