@@ -1,4 +1,0 @@
-dependencies {
-	compile project(":korio-core")
-	testCompile project(":korio-test")
-}

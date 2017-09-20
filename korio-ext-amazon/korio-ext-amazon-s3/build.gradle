@@ -1,4 +1,0 @@
-dependencies {
-	compile project(":korio-ext-amazon-common")
-	compile project(":korio-core")
-}

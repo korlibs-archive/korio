@@ -1,16 +1,14 @@
 //rootProject.buildFileName='build.gradle.kts'
 rootProject.name = 'korio-root'
 
-def includeProj(name, folder) {
-	include name
-	project(name).projectDir = file(folder)
-}
-
 include(
 		'korio-core',
 		'korio-impl-jvm',
 		'korio-impl-js',
 		//'korio-vertx',
+		'korio-ext-amazon-common',
+		'korio-ext-amazon-dynamodb',
+		'korio-ext-amazon-s3',
 		'korio-ext-db-redis',
 		//'korio-ext-db-mongodb',
 		//'korio-ext-db-mysql',
@@ -19,13 +17,3 @@ include(
 		//'korio-ext-web',
 		'korio-test',
 )
-
-includeProj(":korio-ext-amazon-common", "korio-ext-amazon/korio-ext-amazon-common")
-includeProj(":korio-ext-amazon-s3", "korio-ext-amazon/korio-ext-amazon-s3")
-includeProj(":korio-ext-amazon-dynamodb", "korio-ext-amazon/korio-ext-amazon-dynamodb")
-
-includeProj(":korio-ext-db-redis", "korio-ext-db/korio-ext-db-redis")
-//includeProj(":korio-ext-db-mongodb", "korio-ext-db/korio-ext-db-mongodb")
-//includeProj(":korio-ext-db-mysql", "korio-ext-db/korio-ext-db-mysql")
-includeProj(":korio-ext-db-cassandra", "korio-ext-db/korio-ext-db-cassandra")
-includeProj(":korio-ext-db-elasticsearch", "korio-ext-db/korio-ext-db-elasticsearch")
