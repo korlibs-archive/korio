@@ -1,19 +1,19 @@
 package com.soywiz.korio.serialization.xml
 
-import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class XmlTest {
 	@Test
 	fun name() {
 		val xml = Xml("<hello a=\"10\" Zz='20'><demo c='7' /></hello>")
-		Assert.assertEquals(10, xml.int("a"))
-		Assert.assertEquals(10, xml.int("A"))
-		Assert.assertEquals(20, xml.int("zZ"))
-		Assert.assertEquals("hello", xml.name)
-		Assert.assertEquals(7, xml["demo"].first().int("c"))
-		Assert.assertEquals(7, xml["Demo"].first().int("c"))
-		Assert.assertEquals("""<hello a="10" Zz="20"><demo c="7"/></hello>""", xml.toString())
+		assertEquals(10, xml.int("a"))
+		assertEquals(10, xml.int("A"))
+		assertEquals(20, xml.int("zZ"))
+		assertEquals("hello", xml.name)
+		assertEquals(7, xml["demo"].first().int("c"))
+		assertEquals(7, xml["Demo"].first().int("c"))
+		assertEquals("""<hello a="10" Zz="20"><demo c="7"/></hello>""", xml.toString())
 	}
 
 	@Test
@@ -23,7 +23,7 @@ class XmlTest {
 
 	@Test
 	fun name3() {
-		Assert.assertEquals("""<test z="1" b="2"/>""", Xml.Tag("test", mapOf("z" to 1, "b" to 2), listOf()).outerXml)
+		assertEquals("""<test z="1" b="2"/>""", Xml.Tag("test", mapOf("z" to 1, "b" to 2), listOf()).outerXml)
 
 	}
 

@@ -14,4 +14,7 @@ header object Math {
 object MathEx {
 	fun floatToIntBits(item: Float): Int = TODO()
 	fun doubleToLongBits(v: Double): Long = TODO()
+	fun reverseBytes(v: Long): Long = TODO()
+	fun reverseBytes(v: Int): Int = TODO()
+	fun reverseBytes(v: Short): Short = TODO()
 }

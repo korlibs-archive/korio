@@ -1,10 +1,9 @@
 package com.soywiz.korio.net.http
 
-import java.text.ParseException
-import java.text.SimpleDateFormat
-import java.util.*
+import com.soywiz.korio.time.Date
 
 object HttpDate {
+	/*
 	val GMT = TimeZone.getTimeZone("GMT")
 	val format = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss z", Locale.US).apply {
 		timeZone = GMT
@@ -15,4 +14,11 @@ object HttpDate {
 	fun format(): String = format(Calendar.getInstance().time)
 	fun parse(str: String): Date = format.parse(str)
 	fun parseOrNull(str: String?): Date? = try { str?.let { format.parse(str) } } catch (e: ParseException) { null }
+	*/
+	fun format(date: Long): String = TODO()
+
+	fun format(date: Date): String = TODO()
+	fun format(): String = TODO()
+	fun parse(str: String): Date = TODO()
+	fun parseOrNull(str: String?): Date? = TODO()
 }

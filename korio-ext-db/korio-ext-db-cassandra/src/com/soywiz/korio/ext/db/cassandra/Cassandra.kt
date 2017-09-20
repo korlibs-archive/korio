@@ -4,21 +4,18 @@ import com.soywiz.korio.async.AsyncQueue
 import com.soywiz.korio.async.ProduceConsumer
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.go
-import com.soywiz.korio.lang.Bytes
-import com.soywiz.korio.lang.toBytes
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
-import org.intellij.lang.annotations.Language
-import java.util.*
 
 // https://raw.githubusercontent.com/apache/cassandra/trunk/doc/native_protocol_v3.spec
 class Cassandra private constructor(
-		private val reader: AsyncInputStream,
-		private val writer: AsyncOutputStream,
-		private val close: AsyncCloseable,
-		private val bufferSize: Int = 0x1000,
-		private val debug: Boolean = false
+	private val reader: AsyncInputStream,
+	private val writer: AsyncOutputStream,
+	private val close: AsyncCloseable,
+	private val bufferSize: Int = 0x1000,
+	private val debug: Boolean = false
 ) {
 	object Opcodes {
 		const val ERROR = 0x00
@@ -96,7 +93,7 @@ class Cassandra private constructor(
 			override fun interpret(data: ByteArray) = data
 		}
 
-		object TIMESTAMP : ColumnType <ByteArray> {
+		object TIMESTAMP : ColumnType<ByteArray> {
 			override fun interpret(data: ByteArray) = data
 		}
 
@@ -164,11 +161,11 @@ class Cassandra private constructor(
 	}
 
 	data class Column(
-			val index: Int,
-			val ksname: String,
-			val tablename: String,
-			val name: String,
-			val type: ColumnType<*>
+		val index: Int,
+		val ksname: String,
+		val tablename: String,
+		val name: String,
+		val type: ColumnType<*>
 	) {
 		fun interpret(data: ByteArray): Any? = type.interpret(data)
 	}
@@ -184,8 +181,8 @@ class Cassandra private constructor(
 	}
 
 	data class Row(
-			val columns: Columns,
-			val data: List<ByteArray>
+		val columns: Columns,
+		val data: List<ByteArray>
 	) : Map<String, Any?> {
 		data class MyEntry(override val key: String, override val value: Any?) : Map.Entry<String, Any?>
 
@@ -213,27 +210,27 @@ class Cassandra private constructor(
 	}
 
 	data class Rows(
-			val columns: Columns,
-			val rows: List<Row>
+		val columns: Columns,
+		val rows: List<Row>
 	) : Collection<Row> by rows {
 		operator fun get(index: Int) = rows[index]
 	}
 
 	data class Packet(
-			val version: Int = 3,
-			val flags: Int = 0,
-			val stream: Int = 0,
-			val opcode: Int,
-			val payloadBytes: Bytes
+		val version: Int = 3,
+		val flags: Int = 0,
+		val stream: Int = 0,
+		val opcode: Int,
+		val payloadBytes: Bytes
 	) {
 		val payload = payloadBytes.byteArray
 
 		constructor(
-				version: Int = 3,
-				flags: Int = 0,
-				stream: Int = 0,
-				opcode: Int,
-				payload: ByteArray
+			version: Int = 3,
+			flags: Int = 0,
+			stream: Int = 0,
+			opcode: Int,
+			payload: ByteArray
 		) : this(version, flags, stream, opcode, payload.toBytes())
 
 		companion object {
@@ -268,11 +265,11 @@ class Cassandra private constructor(
 		}
 
 		suspend fun create(
-				reader: AsyncInputStream,
-				writer: AsyncOutputStream,
-				close: AsyncCloseable,
-				bufferSize: Int = 0x1000,
-				debug: Boolean = false
+			reader: AsyncInputStream,
+			writer: AsyncOutputStream,
+			close: AsyncCloseable,
+			bufferSize: Int = 0x1000,
+			debug: Boolean = false
 		): Cassandra {
 			val cc = Cassandra(reader, writer, close, bufferSize, debug)
 			go {
@@ -354,14 +351,14 @@ class Cassandra private constructor(
 		ready.await()
 		return allocStream { channel ->
 			writePacket(Packet(
-					opcode = Opcodes.QUERY,
-					stream = channel.id,
-					payload = MemorySyncStreamToByteArray {
-						val flags = 0
-						writeCassandraLongString(query)
-						write16_be(consistency.value)
-						write8(flags)
-					}
+				opcode = Opcodes.QUERY,
+				stream = channel.id,
+				payload = MemorySyncStreamToByteArray {
+					val flags = 0
+					writeCassandraLongString(query)
+					write16_be(consistency.value)
+					write8(flags)
+				}
 			))
 			val result = channel.data.consume()
 			val res = if (result != null) interpretPacket(result) else Unit
@@ -459,14 +456,14 @@ class Cassandra private constructor(
 
 	private suspend fun sendStartup() {
 		writePacket(Packet(
-				opcode = Opcodes.STARTUP,
-				stream = 0,
-				payload = MemorySyncStreamToByteArray {
-					writeCassandraStringMap(mapOf(
-							"CQL_VERSION" to "3.0.0"
-							//"COMPRESSION"
-					))
-				}
+			opcode = Opcodes.STARTUP,
+			stream = 0,
+			payload = MemorySyncStreamToByteArray {
+				writeCassandraStringMap(mapOf(
+					"CQL_VERSION" to "3.0.0"
+					//"COMPRESSION"
+				))
+			}
 		))
 	}
 

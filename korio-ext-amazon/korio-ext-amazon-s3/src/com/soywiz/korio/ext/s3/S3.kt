@@ -2,22 +2,24 @@ package com.soywiz.korio.ext.s3
 
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.ext.amazon.AmazonAuth
+import com.soywiz.korio.lang.Environment
+import com.soywiz.korio.lang.URL
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.toAsyncStream
+import com.soywiz.korio.time.Date
 import com.soywiz.korio.util.TimeProvider
 import com.soywiz.korio.vfs.*
-import java.net.URL
 
 // http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html#ConstructingTheAuthenticationHeader
 class S3(val credentials: AmazonAuth.Credentials?, val endpoint: String, val httpClient: HttpClient, val timeProvider: TimeProvider) : Vfs() {
 	override fun getAbsolutePath(path: String) = parsePath(path).absolutePath
-	override val supportedAttributeTypes = listOf(ACL::class.java, MimeType::class.java)
+	override val supportedAttributeTypes = listOf(ACL::class, MimeType::class)
 
 	companion object {
-		suspend operator fun invoke(region: String = System.getenv("AWS_DEFAULT_REGION") ?: "eu-west-1", accessKey: String? = null, secretKey: String? = null, httpClient: HttpClient = HttpClient(), timeProvider: TimeProvider = TimeProvider()): S3 {
+		suspend operator fun invoke(region: String = Environment.get("AWS_DEFAULT_REGION") ?: "eu-west-1", accessKey: String? = null, secretKey: String? = null, httpClient: HttpClient = HttpClient(), timeProvider: TimeProvider = TimeProvider()): S3 {
 			return S3(AmazonAuth.getCredentials(accessKey, secretKey), "s3-$region.amazonaws.com", httpClient, timeProvider)
 		}
 	}
@@ -59,16 +61,16 @@ class S3(val credentials: AmazonAuth.Credentials?, val endpoint: String, val htt
 		//val contentLength = content.getAvailable()
 
 		request(
-				Http.Method.PUT,
-				path,
-				contentType = contentType.mime,
-				headers = Http.Headers(
-						"content-type" to contentType.mime,
-						"content-length" to "${content.getLength()}", // @TODO: @KOTLIN @BUG error: java.lang.VerifyError: Bad type on operand stack
-						//"content-length" to "$contentLength",
-						"x-amz-acl" to access.text
-				),
-				content = content
+			Http.Method.PUT,
+			path,
+			contentType = contentType.mime,
+			headers = Http.Headers(
+				"content-type" to contentType.mime,
+				"content-length" to "${content.getLength()}", // @TODO: @KOTLIN @BUG error: java.lang.VerifyError: Bad type on operand stack
+				//"content-length" to "$contentLength",
+				"x-amz-acl" to access.text
+			),
+			content = content
 		)
 
 		return content.getLength()
@@ -77,11 +79,11 @@ class S3(val credentials: AmazonAuth.Credentials?, val endpoint: String, val htt
 	suspend fun request(method: Http.Method, path: String, contentType: String = "", contentMd5: String = "", headers: Http.Headers = Http.Headers(), content: AsyncStream? = null): HttpClient.Response {
 		val npath = parsePath(path)
 		return httpClient.request(
-				method, npath.absolutePath,
-				headers = genHeaders(method, npath, headers.withReplaceHeaders(
-						"date" to AmazonAuth.V1.DATE_FORMAT.format(java.util.Date(timeProvider.currentTimeMillis()))
-				)),
-				content = content
+			method, npath.absolutePath,
+			headers = genHeaders(method, npath, headers.withReplaceHeaders(
+				"date" to AmazonAuth.V1.DATE_FORMAT.format(Date(timeProvider.currentTimeMillis()))
+			)),
+			content = content
 		)
 	}
 

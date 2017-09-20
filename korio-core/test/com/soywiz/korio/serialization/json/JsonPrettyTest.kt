@@ -1,23 +1,23 @@
 package com.soywiz.korio.serialization.json
 
-import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class JsonPrettyTest {
 	@Test
 	fun encode1() {
-		Assert.assertEquals("1", Json.encodePretty(1))
-		Assert.assertEquals("null", Json.encodePretty(null))
-		Assert.assertEquals("true", Json.encodePretty(true))
-		Assert.assertEquals("false", Json.encodePretty(false))
-		Assert.assertEquals("{\n}", Json.encodePretty(mapOf<String, Any?>()))
-		Assert.assertEquals("[\n]", Json.encodePretty(listOf<Any?>()))
-		Assert.assertEquals("\"a\"", Json.encodePretty("a"))
+		assertEquals("1", Json.encodePretty(1))
+		assertEquals("null", Json.encodePretty(null))
+		assertEquals("true", Json.encodePretty(true))
+		assertEquals("false", Json.encodePretty(false))
+		assertEquals("{\n}", Json.encodePretty(mapOf<String, Any?>()))
+		assertEquals("[\n]", Json.encodePretty(listOf<Any?>()))
+		assertEquals("\"a\"", Json.encodePretty("a"))
 	}
 
 	@Test
 	fun encode2() {
-		Assert.assertEquals("""
+		assertEquals("""
 			|[
 			|	1,
 			|	2,
@@ -25,7 +25,7 @@ class JsonPrettyTest {
 			|]
 		""".trimMargin(), Json.encodePretty(listOf(1, 2, 3)))
 
-		Assert.assertEquals("""
+		assertEquals("""
 			|{
 			|	"a": 1,
 			|	"b": 2
@@ -41,7 +41,7 @@ class JsonPrettyTest {
 
 	@Test
 	fun encodeTyped() {
-		Assert.assertEquals("""
+		assertEquals("""
 			|{
 			|	"a": 1,
 			|	"b": "test"
@@ -52,7 +52,7 @@ class JsonPrettyTest {
 
 	@Test
 	fun encodeMix() {
-		Assert.assertEquals("""
+		assertEquals("""
 				|{
 				|	"a": [
 				|		1,
@@ -71,14 +71,14 @@ class JsonPrettyTest {
 				|	}
 				|}
 			""".trimMargin(), Json.encodePretty(mapOf(
-				"a" to listOf(1, 2, 3, 4),
-				"b" to listOf(5, 6),
-				"c" to mapOf(
-					"a" to true,
-					"b" to null,
-					"c" to "hello"
-				)
-			))
+			"a" to listOf(1, 2, 3, 4),
+			"b" to listOf(5, 6),
+			"c" to mapOf(
+				"a" to true,
+				"b" to null,
+				"c" to "hello"
+			)
+		))
 		)
 	}
 }

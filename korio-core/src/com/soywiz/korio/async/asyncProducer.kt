@@ -11,12 +11,9 @@ import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.lang.CancellationException
 import com.soywiz.korio.math.Math
 import com.soywiz.korio.typedarray.ByteArrayBliting
+import com.soywiz.korio.typedarray.copyRangeTo
 
 typealias CancelHandler = Signal<Unit>
-
-fun test() {
-	println("wow!")
-}
 
 interface Consumer<T> : Closeable {
 	suspend fun consume(cancel: CancelHandler? = null): T?
@@ -128,7 +125,7 @@ class AsyncConsumerStream(val consumer: Consumer<ByteArray>) : AsyncInputStream 
 		ensureNonEmptyBuffer()
 		if (eof) return -1
 		val actualRead = Math.min(len, available)
-		ByteArrayBliting.arraycopy(current, currentPos, buffer, offset, actualRead)
+		current.copyRangeTo(currentPos, buffer, offset, actualRead)
 		currentPos += actualRead
 		return actualRead
 	}

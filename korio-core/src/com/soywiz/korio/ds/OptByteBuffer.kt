@@ -2,9 +2,12 @@ package com.soywiz.korio.ds
 
 import com.soywiz.korio.typedarray.copyRangeTo
 
-class OptByteBuffer {
+typealias OptByteBuffer = ByteArrayBuilder
+
+class ByteArrayBuilder {
+	private val chunks = arrayListOf<ByteArray>()
+
 	var size: Int = 0; private set
-	val chunks = arrayListOf<ByteArray>()
 
 	constructor() {
 
@@ -23,16 +26,18 @@ class OptByteBuffer {
 		size += chunk.size
 	}
 
+	// @TODO: Optimize this. Maybe storing ranges instead of full arrays?
 	fun append(chunk: ByteArray, offset: Int, length: Int) {
 		val achunk = chunk.copyOfRange(offset, offset + length)
 		chunks += achunk
 		size += achunk.size
 	}
 
-	fun append(buffer: OptByteBuffer) {
+	fun append(buffer: ByteArrayBuilder) {
 		for (c in buffer.chunks) append(c)
 	}
 
+	// @TODO: Optimize this. Maybe using a temporal array for this + storing ranges in arrays?
 	fun append(v: Byte) {
 		append(byteArrayOf(v))
 	}

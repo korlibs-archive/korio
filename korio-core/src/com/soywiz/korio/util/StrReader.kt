@@ -1,6 +1,7 @@
 package com.soywiz.korio.util
 
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.math.Math
 import com.soywiz.korio.serialization.json.Json
 
 class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
@@ -77,9 +78,9 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 		return null
 	}
 
-	fun skipSpaces() = this.apply { this.skipWhile { Character.isWhitespace(it) } }
+	fun skipSpaces() = this.apply { this.skipWhile { it.isWhitespace() } }
 
-	fun matchIdentifier() = matchWhile { Character.isLetterOrDigit(it) || it == '-' || it == '~' || it == ':' || it == '_' }
+	fun matchIdentifier() = matchWhile { it.isLetterDigitOrUnderscore() || it == '-' || it == '~' || it == ':' }
 	fun matchSingleOrDoubleQuoteString(): String? {
 		when (this.peekChar()) {
 			'\'', '"' -> {

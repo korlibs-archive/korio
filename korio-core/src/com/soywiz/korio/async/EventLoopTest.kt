@@ -1,7 +1,7 @@
 package com.soywiz.korio.async
 
-import java.io.Closeable
-import java.util.*
+import com.soywiz.korio.ds.LinkedList
+import com.soywiz.korio.lang.Closeable
 
 class EventLoopFactoryTest : EventLoopFactory() {
 	override val available = true
@@ -14,7 +14,7 @@ class EventLoopTest : EventLoop() {
 	override var time: Long = 0L; private set
 
 	private var tasks = LinkedList<() -> Unit>()
-	private val lock = Object()
+	private val lock = Any()
 	private val timers = TreeMap<Long, ArrayList<() -> Unit>>()
 
 	override fun setIntervalInternal(ms: Int, callback: () -> Unit): Closeable {

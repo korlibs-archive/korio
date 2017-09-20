@@ -1,8 +1,7 @@
 package com.soywiz.korio.util
 
-import org.junit.Assert
-import org.junit.Assert.*
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class RedirectFieldTest {
 	class A {
@@ -17,12 +16,12 @@ class RedirectFieldTest {
 	@Test
 	fun redirect() {
 		val b = B(A())
-		Assert.assertEquals(b.z, 10)
-		Assert.assertEquals(b.a.z, 10)
-		Assert.assertEquals(b.y, 10)
+		assertEquals(b.z, 10)
+		assertEquals(b.a.z, 10)
+		assertEquals(b.y, 10)
 		b.z = 20
-		Assert.assertEquals(b.z, 20)
-		Assert.assertEquals(b.a.z, 20)
-		Assert.assertEquals(b.y, 20)
+		assertEquals(b.z, 20)
+		assertEquals(b.a.z, 20)
+		assertEquals(b.y, 20)
 	}
 }

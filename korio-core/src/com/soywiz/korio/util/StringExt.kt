@@ -1,19 +1,21 @@
 package com.soywiz.korio.util
 
-import java.io.ByteArrayOutputStream
-import java.nio.charset.Charset
+import com.soywiz.korio.ds.ByteArrayBuilder
+import com.soywiz.korio.lang.Charset
+import com.soywiz.korio.lang.Charsets
+import com.soywiz.korio.lang.toByteArray
 
 fun String.toBytez(len: Int, charset: Charset = Charsets.UTF_8): ByteArray {
-	val out = ByteArrayOutputStream()
-	out.write(this.toByteArray(charset))
-	while (out.size() < len) out.write(0)
+	val out = ByteArrayBuilder()
+	out.append(this.toByteArray(charset))
+	while (out.size < len) out.append(0.toByte())
 	return out.toByteArray()
 }
 
 fun String.toBytez(charset: Charset = Charsets.UTF_8): ByteArray {
-	val out = ByteArrayOutputStream()
-	out.write(this.toByteArray(charset))
-	out.write(0)
+	val out = ByteArrayBuilder()
+	out.append(this.toByteArray(charset))
+	out.append(0.toByte())
 	return out.toByteArray()
 }
 
@@ -31,7 +33,7 @@ fun String.splitInChunks(size: Int): List<String> {
 	val out = arrayListOf<String>()
 	var pos = 0
 	while (pos < this.length) {
-		out += this.substring(pos, Math.min(this.length, pos + size))
+		out += this.substring(pos, com.soywiz.korio.math.Math.min(this.length, pos + size))
 		pos += size
 	}
 	return out
@@ -56,8 +58,11 @@ fun String.transform(transform: (Char) -> String): String {
 }
 
 fun Any?.toBetterString(): String {
+	/*
 	if (this == null) return "null"
 	val clazz = this::class.java
 	if (clazz.isArray) return "" + ReflectedArray(this).toList()
+	return "$this"
+	*/
 	return "$this"
 }

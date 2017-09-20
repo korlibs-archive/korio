@@ -3,9 +3,11 @@ package com.soywiz.korio.async
 import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
+import com.soywiz.korio.ds.LinkedList
+import com.soywiz.korio.lang.CancellationException
+import com.soywiz.korio.lang.Console
+import com.soywiz.korio.lang.printStackTrace
 import com.soywiz.korio.util.Cancellable
-import java.util.*
-import java.util.concurrent.CancellationException
 
 class Promise<T : Any?> : Cancellable {
 	class Deferred<T : Any?> {
@@ -70,7 +72,7 @@ class Promise<T : Any?> : Cancellable {
 			this.done = true
 
 			if (error != null && synchronized(resolvedHandlers) { this.rejectedHandlers.isEmpty() } && error !is CancellationException) {
-				System.err.println("## Not handled Promise exception:")
+				Console.error("## Not handled Promise exception:")
 				error.printStackTrace()
 			}
 

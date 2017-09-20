@@ -1,8 +1,8 @@
 package com.soywiz.korio.querystring
 
 import com.soywiz.korio.serialization.querystring.QueryString
-import org.junit.Assert.*
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class QueryStringTest {
 	private fun assertIdem(str: String) {

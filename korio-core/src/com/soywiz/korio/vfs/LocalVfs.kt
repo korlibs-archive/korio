@@ -15,9 +15,11 @@ fun JailedLocalVfs(base: String): VfsFile = LocalVfs(base).jail()
 
 fun CacheVfs() = LocalVfs(localVfsProvider.getCacheFolder()).jail()
 fun ExternalStorageVfs() = LocalVfs(localVfsProvider.getExternalStorageFolder()).jail()
+fun UserHomeVfs() = LocalVfs(localVfsProvider.getExternalStorageFolder()).jail()
 
 abstract class LocalVfsProvider : Services.Impl() {
 	abstract operator fun invoke(): LocalVfs
 	open fun getCacheFolder(): String = System.getProperty("java.io.tmpdir")
 	open fun getExternalStorageFolder(): String = System.getProperty("java.io.tmpdir")
 }
+

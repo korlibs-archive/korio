@@ -1,7 +1,7 @@
 package com.soywiz.korio.async
 
-import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class AsyncQueueTest {
 	@Test
@@ -11,11 +11,11 @@ class AsyncQueueTest {
 		queue { sleep(100); out += "a" }
 		queue { sleep(100); out += "b" }
 		step(0)
-		Assert.assertEquals("", out)
+		assertEquals("", out)
 		step(100)
-		Assert.assertEquals("a", out)
+		assertEquals("a", out)
 		step(100)
-		Assert.assertEquals("ab", out)
+		assertEquals("ab", out)
 	}
 
 	@Test
@@ -26,10 +26,10 @@ class AsyncQueueTest {
 		queue1 { sleep(100); out += "a" }
 		queue2 { sleep(100); out += "b" }
 		step(0)
-		Assert.assertEquals("", out)
+		assertEquals("", out)
 		step(100)
-		Assert.assertEquals("ab", out)
+		assertEquals("ab", out)
 		step(100)
-		Assert.assertEquals("ab", out)
+		assertEquals("ab", out)
 	}
 }

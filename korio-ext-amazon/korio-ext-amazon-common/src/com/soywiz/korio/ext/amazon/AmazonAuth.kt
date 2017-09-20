@@ -1,10 +1,18 @@
 package com.soywiz.korio.ext.amazon
 
 import com.soywiz.korio.crypto.toBase64
+import com.soywiz.korio.lang.Charsets
+import com.soywiz.korio.lang.IOException
+import com.soywiz.korio.lang.URL
+import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.net.http.Http
+import com.soywiz.korio.time.Locale
+import com.soywiz.korio.time.SimpleDateFormat
+import com.soywiz.korio.time.TimeZone
 import com.soywiz.korio.util.substr
 import com.soywiz.korio.util.toHexStringLower
 import com.soywiz.korio.vfs.LocalVfs
+import com.soywiz.korio.vfs.UserHomeVfs
 import java.io.IOException
 import java.net.URL
 import java.security.MessageDigest
@@ -27,8 +35,8 @@ object AmazonAuth {
 
 		if (finalAccessKey.isNullOrEmpty()) {
 			try {
-				val userHome = System.getProperty("user.home")
-				val credentials = LocalVfs("$userHome/.aws")["credentials"].readString()
+				val userHome = UserHomeVfs()
+				val credentials = userHome[".aws/credentials"].readString()
 				finalAccessKey = (Regex("aws_access_key_id\\s+=\\s+(.*)").find(credentials)?.groupValues?.getOrElse(1) { "" } ?: "").trim()
 				finalSecretKey = (Regex("aws_secret_access_key\\s+=\\s+(.*)").find(credentials)?.groupValues?.getOrElse(1) { "" } ?: "").trim()
 			} catch (e: IOException) {

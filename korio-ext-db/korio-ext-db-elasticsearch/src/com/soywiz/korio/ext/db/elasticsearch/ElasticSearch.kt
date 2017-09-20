@@ -1,5 +1,6 @@
 package com.soywiz.korio.ext.db.elasticsearch
 
+import com.soywiz.korio.lang.KClass
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClientEndpoint
 import com.soywiz.korio.net.http.HttpFactory
@@ -68,8 +69,8 @@ class ElasticSearch(
 		name: String
 	) : CommonType(esi, name) {
 
-		fun <T : Any> typed(clazz: Class<T>) = TypedType(this, clazz)
-		inline fun <reified T : Any> typed() = TypedType(this, T::class.java)
+		fun <T : Any> typed(clazz: KClass<T>): TypedType<T> = TypedType(this, clazz)
+		inline fun <reified T : Any> typed(): TypedType<T> = TypedType(this, T::class)
 
 		suspend fun delete(id: String): Boolean {
 			return try {
@@ -103,7 +104,7 @@ class ElasticSearch(
 
 	class TypedType<T : Any>(
 		val type: Type,
-		val clazz: Class<T>
+		val clazz: KClass<T>
 	) {
 		// operator
 		suspend fun get(id: String): T {
@@ -128,7 +129,7 @@ class ElasticSearch(
 		suspend fun search(query: ElasticSearch.QueryBuilder.() -> ElasticSearch.Query = { ElasticSearch.Query(ElasticSearch.QueryBuilder) }): SearchResult<T> {
 			val result = type.search(query)
 			return SearchResult(result.took, result.timedOut, result.results.map {
-				Result(it.index, it.type, it.id, it.score, Dynamic.dynamicCast(it.obj, clazz)!!)
+				Result<T>(it.index, it.type, it.id, it.score, Dynamic.dynamicCast(it.obj, clazz)!!)
 			})
 		}
 		suspend fun searchList(query: ElasticSearch.QueryBuilder.() -> ElasticSearch.Query = { ElasticSearch.Query(ElasticSearch.QueryBuilder) }): List<T> = search(query).results.map { it.obj }
@@ -200,7 +201,7 @@ abstract class ElasticSearchResource(internal val rest: HttpRestClient, val reso
 			val id = Dynamic.toString(Dynamic.getAnySync(hit, "_id"))
 			val score = Dynamic.toDouble(Dynamic.getAnySync(hit, "_score"))
 			val source = Dynamic.getAnySync(hit, "_source")
-			ElasticSearch.Result<Any>(index, type, id, score, source ?: Object())
+			ElasticSearch.Result<Any>(index, type, id, score, source ?: Any())
 		}
 
 		//println(result)

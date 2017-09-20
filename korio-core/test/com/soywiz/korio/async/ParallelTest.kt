@@ -1,14 +1,14 @@
 package com.soywiz.korio.async
 
-import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class ParallelTest {
 	@Test
 	fun empty() = syncTest {
 		val out = ""
 		parallel()
-		Assert.assertEquals("", out)
+		assertEquals("", out)
 	}
 
 	@Test
@@ -17,7 +17,7 @@ class ParallelTest {
 		parallel(
 			{ sleep(100); out += "a" }
 		)
-		Assert.assertEquals("a", out)
+		assertEquals("a", out)
 	}
 
 	@Test
@@ -27,6 +27,6 @@ class ParallelTest {
 			{ sleep(100); out += "a" },
 			{ sleep(200); out += "b" }
 		)
-		Assert.assertEquals("ab", out)
+		assertEquals("ab", out)
 	}
 }

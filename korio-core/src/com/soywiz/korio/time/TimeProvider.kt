@@ -7,3 +7,6 @@ header object STimeProvider {
 object TimeProvider {
 	fun now(): Long = STimeProvider.now()
 }
+
+class Date(val time: Long) {
+}

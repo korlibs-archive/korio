@@ -1,7 +1,7 @@
 package com.soywiz.korio.util
 
-import org.junit.Assert.*
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class DynamicNodeTest {
 	@Test

@@ -1,6 +1,6 @@
 package com.soywiz.korio.util
 
-import java.util.*
+import com.soywiz.korio.math.Math
 
 class ByteArrayBuffer(var data: ByteArray, size: Int = data.size) {
 	constructor(initialCapacity: Int = 4096) : this(ByteArray(initialCapacity), 0)
@@ -15,11 +15,11 @@ class ByteArrayBuffer(var data: ByteArray, size: Int = data.size) {
 
 	fun ensure(expected: Int) {
 		if (data.size < expected) {
-			data = Arrays.copyOf(data, Math.max(expected, (data.size + 7) * 5))
+			data = data.copyOf(Math.max(expected, (data.size + 7) * 5))
 		}
 		_size = Math.max(size, expected)
 	}
 
 	fun toByteArraySlice(position: Long = 0) = ByteArraySlice(data, position.toInt(), size)
-	fun toByteArray(): ByteArray = Arrays.copyOf(data, size)
+	fun toByteArray(): ByteArray = data.copyOf(size)
 }

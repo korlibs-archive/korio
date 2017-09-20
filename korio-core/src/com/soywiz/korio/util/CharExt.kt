@@ -1,5 +1,8 @@
 package com.soywiz.korio.util
 
+fun Char.isDigit(): Boolean = TODO()
+fun Char.isLetter(): Boolean = TODO()
+fun Char.isLetterOrDigit(): Boolean = TODO()
 fun Char.isLetterOrUnderscore(): Boolean = this.isLetter() || this == '_' || this == '$'
 fun Char.isLetterDigitOrUnderscore(): Boolean = this.isLetterOrDigit() || this == '_' || this == '$'
 fun Char.isLetterOrDigitOrDollar(): Boolean = this.isLetterOrDigit() || this == '$'

@@ -1,4 +1,4 @@
 dependencies {
 	compile project(":korio-core")
-	compile "junit:junit:4.11"
+	compile libraries.kotlin_test_common
 }

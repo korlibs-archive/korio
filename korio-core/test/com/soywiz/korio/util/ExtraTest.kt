@@ -1,7 +1,7 @@
 package com.soywiz.korio.util
 
-import org.junit.Assert
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class ExtraTest {
 	class Demo : Extra by Extra.Mixin() {
@@ -14,10 +14,10 @@ class ExtraTest {
 	@Test
 	fun name() {
 		val demo = Demo()
-		Assert.assertEquals(0, demo.demo)
-		Assert.assertEquals(9, demo.demo2)
+		assertEquals(0, demo.demo)
+		assertEquals(9, demo.demo2)
 		demo.demo = 7
-		Assert.assertEquals(7, demo.demo)
-		Assert.assertEquals("{demo=7, demo2=9}", demo.extra.toString())
+		assertEquals(7, demo.demo)
+		assertEquals("{demo=7, demo2=9}", demo.extra.toString())
 	}
 }

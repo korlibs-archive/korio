@@ -1,7 +1,8 @@
 package com.soywiz.korio.stream
 
-import org.junit.Assert.*
+import com.soywiz.korio.lang.format
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class FastByteArrayInputStreamTest {
 	@Test

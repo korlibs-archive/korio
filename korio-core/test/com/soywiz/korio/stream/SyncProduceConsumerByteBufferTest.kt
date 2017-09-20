@@ -1,8 +1,8 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.util.toHexString
-import org.junit.Assert.assertEquals
 import org.junit.Test
+import kotlin.test.assertEquals
 
 class SyncProduceConsumerByteBufferTest {
 	@Test
