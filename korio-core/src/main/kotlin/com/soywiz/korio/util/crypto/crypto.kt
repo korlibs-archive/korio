@@ -5,7 +5,13 @@ class MessageDigest {
 		fun getInstance(name: String) = MessageDigest()
 	}
 
-	fun digest(data: ByteArray): ByteArray = TODO()
+	fun update(data: ByteArray, offset: Int = 0, count: Int = data.size): Unit = TODO()
+
+	fun digest(): ByteArray = TODO()
+	fun digest(data: ByteArray): ByteArray {
+		update(data)
+		return digest()
+	}
 }
 
 class Mac {

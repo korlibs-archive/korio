@@ -7,6 +7,7 @@ import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.stream.AsyncInputOpenable
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.openAsync
+import com.soywiz.korio.util.crypto.MessageDigest
 import com.soywiz.korio.util.use
 
 abstract class AsyncHash {
@@ -28,15 +29,14 @@ abstract class AsyncHash {
 
 	class MessageDigestHash(val algo: String) : AsyncHash() {
 		suspend override fun hashSync(content: AsyncInputStream): ByteArray {
-			TODO()
-			//val temp = ByteArray(0x1000)
-			//val md = MessageDigest.getInstance(algo)
-			//while (true) {
-			//	val read = content.read(temp, 0, temp.size)
-			//	if (read <= 0) break
-			//	md.update(temp, 0, read)
-			//}
-			//return md.digest()
+			val temp = ByteArray(0x1000)
+			val md = MessageDigest.getInstance(algo)
+			while (true) {
+				val read = content.read(temp, 0, temp.size)
+				if (read <= 0) break
+				md.update(temp, 0, read)
+			}
+			return md.digest()
 		}
 	}
 

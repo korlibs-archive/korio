@@ -4,18 +4,20 @@ rootProject.name = 'korio-root'
 include(
 		'kotlinx.arraybuffers',
 		'kotlinx.arraybuffers-impl-jvm',
-		'kotlinx.arraybuffers-impl-js',
+		//'kotlinx.arraybuffers-impl-js',
 		'korio-core',
 		'korio-impl-jvm',
-		'korio-impl-js',
+		//'korio-impl-js',
+
+		//'korio-ext-amazon-common',
+		//'korio-ext-amazon-dynamodb',
+		//'korio-ext-amazon-s3',
+		//'korio-ext-db-redis',
+		//'korio-ext-db-cassandra',
+		//'korio-ext-db-elasticsearch',
+
 		//'korio-vertx',
-		'korio-ext-amazon-common',
-		'korio-ext-amazon-dynamodb',
-		'korio-ext-amazon-s3',
-		'korio-ext-db-redis',
 		//'korio-ext-db-mongodb',
 		//'korio-ext-db-mysql',
-		'korio-ext-db-cassandra',
-		'korio-ext-db-elasticsearch',
 		//'korio-ext-web',
 )

@@ -1,18 +1,10 @@
 package com.soywiz.korio.util
 
-fun Char.isDigit(): Boolean = TODO()
-fun Char.isLetter(): Boolean = TODO()
-fun Char.isLetterOrDigit(): Boolean = TODO()
+fun Char.isDigit(): Boolean = this in '0'..'9'
+fun Char.isLetter(): Boolean = this in 'a'..'z' || this in 'A'..'Z'
+fun Char.isLetterOrDigit(): Boolean = isLetter() || isDigit()
 fun Char.isLetterOrUnderscore(): Boolean = this.isLetter() || this == '_' || this == '$'
 fun Char.isLetterDigitOrUnderscore(): Boolean = this.isLetterOrDigit() || this == '_' || this == '$'
 fun Char.isLetterOrDigitOrDollar(): Boolean = this.isLetterOrDigit() || this == '$'
-
 val Char.isNumeric: Boolean get() = this.isDigit() || this == '.' || this == 'e' || this == '-'
-
-// @TODO: Make a proper table
-// 0x20, 0x7e
-//return this.isLetterDigitOrUnderscore() || this == '.' || this == '/' || this == '\'' || this == '"' || this == '(' || this == ')' || this == '[' || this == ']' || this == '+' || this == '-' || this == '*' || this == '/'
-fun Char.isPrintable(): Boolean = when (this) {
-	in '\u0020'..'\u007e', in '\u00a1'..'\u00ff' -> true
-	else -> false
-}
+fun Char.isPrintable(): Boolean = this in '\u0020'..'\u007e' || this in '\u00a1'..'\u00ff'

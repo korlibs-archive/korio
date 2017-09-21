@@ -15,12 +15,13 @@ class Date(val time: Long) {
 
 	companion object {
 		fun UTC(year: Int, month: Int, day: Int, hours: Int, minutes: Int, seconds: Int): Long =
-			//DateBuilder.getTimestamp(year, month, day, hours, minutes, seconds, 0)
-		TODO()
+			DateBuilder.getTimestamp(year, month, day, hours, minutes, seconds, 0)
+		//TODO()
 	}
 }
 
-/*
+
+// @TODO: Does this cause a problem when compiling?
 object DateBuilder {
 	private val TicksInMillisecond = 10000L
 	private val TicksInSecond = TicksInMillisecond * 1000L
@@ -54,4 +55,4 @@ object DateBuilder {
 		return (totalSeconds * TicksInSecond)
 	}
 }
-	*/
+
