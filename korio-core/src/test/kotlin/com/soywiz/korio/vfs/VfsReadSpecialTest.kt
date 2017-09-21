@@ -13,6 +13,10 @@ class MySpecialClass_VfsSpecialReader : VfsSpecialReader<MySpecialClass>(MySpeci
 }
 
 class VfsReadSpecialTest {
+	init {
+		registerVfsSpecialReader(MySpecialClass_VfsSpecialReader())
+	}
+
 	@Test
 	fun testReadSpecial() = syncTest {
 		val mem = MemoryVfs(mapOf())

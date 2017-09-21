@@ -55,35 +55,34 @@ object Base64 {
 
 	@Suppress("UNUSED_CHANGED_VALUE")
 	fun encode(src: ByteArray): String {
-		val out = CharArray((src.size * 4) / 3 + 4)
-		var opos = 0
+		val out = StringBuilder((src.size * 4) / 3 + 4)
 		var ipos = 0
 		val extraBytes = src.size % 3
 		while (ipos < src.size - 2) {
 			val num = src.readU24_be(ipos)
 			ipos += 3
 
-			out[opos++] = TABLE[(num ushr 18) and 0x3F]
-			out[opos++] = TABLE[(num ushr 12) and 0x3F]
-			out[opos++] = TABLE[(num ushr 6) and 0x3F]
-			out[opos++] = TABLE[(num ushr 0) and 0x3F]
+			out.append(TABLE[(num ushr 18) and 0x3F])
+			out.append(TABLE[(num ushr 12) and 0x3F])
+			out.append(TABLE[(num ushr 6) and 0x3F])
+			out.append(TABLE[(num ushr 0) and 0x3F])
 		}
 
 		if (extraBytes == 1) {
 			val num = src.readU8(ipos++)
-			out[opos++] = TABLE[num ushr 2]
-			out[opos++] = TABLE[(num shl 4) and 0x3F]
-			out[opos++] = '='
-			out[opos++] = '='
+			out.append(TABLE[num ushr 2])
+			out.append(TABLE[(num shl 4) and 0x3F])
+			out.append('=')
+			out.append('=')
 		} else if (extraBytes == 2) {
 			val tmp = (src.readU8(ipos++) shl 8) or src.readU8(ipos++)
-			out[opos++] = TABLE[tmp ushr 10]
-			out[opos++] = TABLE[(tmp ushr 4) and 0x3F]
-			out[opos++] = TABLE[(tmp shl 2) and 0x3F]
-			out[opos++] = '='
+			out.append(TABLE[tmp ushr 10])
+			out.append(TABLE[(tmp ushr 4) and 0x3F])
+			out.append(TABLE[(tmp shl 2) and 0x3F])
+			out.append('=')
 		}
 
-		return out.copyOf(opos).toString()
+		return out.toString()
 	}
 }
 

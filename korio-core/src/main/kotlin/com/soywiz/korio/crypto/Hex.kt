@@ -21,12 +21,11 @@ object Hex {
 	fun encodeUpper(src: ByteArray): String = encodeBase(src, DIGITS_UPPER)
 
 	private fun encodeBase(data: ByteArray, digits: String = DIGITS): String {
-		val out = CharArray(data.size * 2)
-		var m = 0
+		val out = StringBuilder(data.size * 2)
 		for (n in data.indices) {
 			val v = data[n].toInt() and 0xFF
-			out[m++] = digits[(v ushr 4) and 0xF]
-			out[m++] = digits[(v ushr 0) and 0xF]
+			out.append(digits[(v ushr 4) and 0xF])
+			out.append(digits[(v ushr 0) and 0xF])
 		}
 		return out.toString()
 	}

@@ -1,3 +1,7 @@
 package com.soywiz.korio.typedarray
 
-impl fun ByteArray.fill(value: Byte, from: Int, to: Int) {}
+import java.util.*
+
+impl fun ByteArray.fill(value: Byte, from: Int, to: Int) {
+	Arrays.fill(this, from, to, value)
+}

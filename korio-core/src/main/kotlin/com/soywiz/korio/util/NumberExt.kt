@@ -2,6 +2,7 @@
 
 package com.soywiz.korio.util
 
+import com.soywiz.korio.crypto.Hex
 import com.soywiz.korio.math.Math
 
 inline fun Int.mask(): Int = (1 shl this) - 1
@@ -108,3 +109,18 @@ fun Double.toIntRound() = Math.round(this).toInt()
 
 val Int.isOdd get() = (this % 2) == 1
 val Int.isEven get() = (this % 2) == 0
+
+fun Long.toString(radix: Int): String {
+	var temp = this
+	if (temp == 0L) {
+		return "0"
+	} else {
+		var out = ""
+		while (temp != 0L) {
+			val digit = temp % radix
+			temp /= radix
+			out += Hex.DIGITS_UPPER[digit.toInt()]
+		}
+		return out.reversed()
+	}
+}
