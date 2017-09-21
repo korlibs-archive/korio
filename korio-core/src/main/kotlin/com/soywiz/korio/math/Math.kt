@@ -11,12 +11,13 @@ header object Math {
 	fun round(v: Double): Long
 }
 
-object MathEx {
-	fun floatToIntBits(v: Float): Int = TODO()
-	fun doubleToLongBits(v: Double): Long = TODO()
-	fun reverseBytes(v: Long): Long = TODO()
-	fun reverseBytes(v: Int): Int = TODO()
-	fun reverseBytes(v: Short): Short = TODO()
-	fun intBitsToFloat(v: Int): Float = TODO()
-	fun longBitsToDouble(v: Long): Double = TODO()
+header object MathEx {
+	fun floatToIntBits(v: Float): Int
+	fun doubleToLongBits(v: Double): Long
+	fun intBitsToFloat(v: Int): Float
+	fun longBitsToDouble(v: Long): Double
+
+	fun reverseBytes(v: Long): Long
+	fun reverseBytes(v: Int): Int
+	fun reverseBytes(v: Short): Short
 }

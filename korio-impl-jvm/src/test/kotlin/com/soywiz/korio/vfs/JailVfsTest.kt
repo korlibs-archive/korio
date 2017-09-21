@@ -11,10 +11,10 @@ import kotlin.test.assertEquals
 class JailVfsTest {
 	@Test
 	fun name() = syncTest {
-		val mem = MemoryVfs(mapOf(
-			"hello/secret.txt" to "SECRET!".toByteArray().openAsync(),
-			"hello/world/test.txt" to "HELLO WORLD!".toByteArray().openAsync()
-		))
+		val mem = MemoryVfsMix(
+			"hello/secret.txt" to "SECRET!",
+			"hello/world/test.txt" to "HELLO WORLD!"
+		)
 
 		assertEquals(
 			"[/hello, /hello/secret.txt, /hello/world, /hello/world/test.txt]",

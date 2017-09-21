@@ -55,7 +55,7 @@ data class KorCookie(
 	override fun toString(): String {
 		val out = StringBuilder()
 		out.append("$name=$value")
-		if (expire != 0L) out.append("; Expires=${HttpDate.format(Date(expire))}")
+		if (expire != 0L) out.append("; Expires=${HttpDate.format(expire)}")
 		if (maxAge != 0L) out.append("; Max-Age=$maxAge")
 		if (domain != null) out.append("; Domain=$domain")
 		if (path != null) out.append("; Path=$path")

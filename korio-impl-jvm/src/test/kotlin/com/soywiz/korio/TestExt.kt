@@ -11,7 +11,6 @@ inline fun <reified T : Throwable> expectException(callback: () -> Unit) {
 		if (t is T) {
 			assertTrue(true)
 		} else {
-
 			fail("Expected exception ${T::class.java.name} but found $t")
 		}
 	}

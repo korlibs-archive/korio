@@ -5,9 +5,9 @@ import com.soywiz.korio.async.toList
 import com.soywiz.korio.serialization.xml.readXml
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.readAvailable
+import com.soywiz.korio.time.SimpleDateFormat
 import org.junit.Ignore
 import org.junit.Test
-import java.text.SimpleDateFormat
 import kotlin.test.assertEquals
 
 @Suppress("EXPERIMENTAL_FEATURE_WARNING")

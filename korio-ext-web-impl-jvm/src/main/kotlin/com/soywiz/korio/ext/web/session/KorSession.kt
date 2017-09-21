@@ -9,6 +9,7 @@ import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.util.Dynamic
 import com.soywiz.korio.util.Extra
 import java.util.*
+import kotlin.collections.HashMap
 
 abstract class SessionProvider {
 	abstract suspend fun get(sessionId: String): String?
@@ -20,7 +21,7 @@ abstract class SessionProvider {
  * Also an in-memory session provider should be use just for debugging purposes in local development.
  */
 class MemorySessionProvider : SessionProvider() {
-	val memory = hashMapOf<String, String>()
+	val memory = HashMap<String, String>()
 
 	suspend override fun get(sessionId: String): String? {
 		return memory[sessionId]
@@ -75,7 +76,7 @@ class KorSession(
 
 	suspend fun set(key: String, value: Any?) {
 		prepareOnce()
-		if (obj == null) obj = hashMapOf<String, Any?>()
+		if (obj == null) obj = HashMap<String, Any?>()
 		obj.dynamicSet(key, value)
 	}
 

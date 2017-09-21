@@ -8,7 +8,7 @@ import io.netty.channel.socket.SocketChannel
 import io.netty.channel.socket.nio.NioServerSocketChannel
 import io.netty.handler.codec.http.*
 
-
+/*
 object NettyHttpFactory {
 	@JvmStatic
 	fun main(args: Array<String>) {
@@ -134,3 +134,4 @@ class NettyHttpServer {
 		}
 	}
 }
+*/

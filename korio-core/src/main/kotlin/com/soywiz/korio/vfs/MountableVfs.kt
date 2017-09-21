@@ -28,7 +28,7 @@ suspend fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile = kori
 		}
 
 		private fun resort() {
-			mounts.sortBy { it.first.length }
+			mounts.sortBy { -it.first.length }
 		}
 
 		override suspend fun access(path: String): VfsFile {

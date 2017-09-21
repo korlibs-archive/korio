@@ -1,26 +1,23 @@
 package com.soywiz.korio.time
 
-import com.soywiz.korio.error.invalidArg
-
 header fun currentTimeMillis(): Long
+header fun dateToTimestamp(year: Int, month: Int, day: Int, hours: Int, minutes: Int, seconds: Int): Long
 
 object TimeProvider {
 	fun now(): Long = currentTimeMillis()
 }
 
-class Date(val time: Long) {
-	constructor(year: Int, month: Int, day: Int, hours: Int, minutes: Int, seconds: Int) : this(-1) {
-		TODO()
-	}
+header open class Date(time: Long) {
+	open fun getTime(): Long
 
-	companion object {
-		fun UTC(year: Int, month: Int, day: Int, hours: Int, minutes: Int, seconds: Int): Long =
-			DateBuilder.getTimestamp(year, month, day, hours, minutes, seconds, 0)
-		//TODO()
-	}
+	constructor(year: Int, month: Int, day: Int, hours: Int, minutes: Int, seconds: Int)
 }
 
+val Date.time: Long get() = getTime()
 
+header fun UTC(year: Int, month: Int, day: Int, hours: Int, minutes: Int, seconds: Int): Long
+
+/*
 // @TODO: Does this cause a problem when compiling?
 object DateBuilder {
 	private val TicksInMillisecond = 10000L
@@ -55,4 +52,4 @@ object DateBuilder {
 		return (totalSeconds * TicksInSecond)
 	}
 }
-
+*/

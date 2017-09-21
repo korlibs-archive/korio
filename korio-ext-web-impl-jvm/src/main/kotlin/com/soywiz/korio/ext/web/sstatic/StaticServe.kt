@@ -1,7 +1,6 @@
 package com.soywiz.korio.ext.web.sstatic
 
 import com.soywiz.korio.crypto.AsyncHash
-import com.soywiz.korio.error.ignoreErrors
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpDate
@@ -13,7 +12,6 @@ import com.soywiz.korio.util.use
 import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.mimeType
 import java.io.FileNotFoundException
-import java.util.*
 
 
 object StaticServe {
@@ -23,7 +21,7 @@ object StaticServe {
 		val parts = str.split('=', limit = 2).map { it.trim() }
 		if (parts[0] != "bytes") invalidOp("Just supported bytes")
 		val ranges = parts[1].split(',')
-		val out = arrayListOf<LongRange>()
+		val out = ArrayList<LongRange>()
 		for (range in ranges) {
 			if (range.startsWith("-")) {
 				out += (size + range.toLong()) until size
@@ -66,7 +64,7 @@ object StaticServe {
 		}
 		//println("[c]")
 		res.replaceHeader("Content-Type", file.mimeType().mime)
-		res.replaceHeader("Last-Modified", HttpDate.format(Date(fileStat.modifiedTime)))
+		res.replaceHeader("Last-Modified", HttpDate.format(fileStat.modifiedTime))
 		res.replaceHeader("ETag", generateETag(file.absolutePath, fileStat.modifiedTime, fileStat.size))
 		//println("[d]")
 

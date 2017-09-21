@@ -1,3 +1,5 @@
 package com.soywiz.korio.lang
 
-header class CancellationException : Exception()
+header open class RuntimeException : Exception()
+header open class IllegalStateException : RuntimeException()
+header open class CancellationException : IllegalStateException()

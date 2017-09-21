@@ -17,4 +17,5 @@ class SimpleDateFormat(val format: String, val locale: Locale = Locale.ENGLISH) 
 	var timeZone: TimeZone = TimeZone.UTC
 
 	fun format(date: Date): String = TODO()
+	fun parse(str: String): Date = TODO()
 }

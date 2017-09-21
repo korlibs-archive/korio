@@ -8,26 +8,22 @@ import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.error.InvalidOperationException
 import com.soywiz.korio.ext.web.sstatic.serveStatic
 import com.soywiz.korio.inject.AsyncInjector
-import com.soywiz.korio.lang.KClass
-import com.soywiz.korio.net.http.FakeHttpClient
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.http.httpError
 import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.serialization.querystring.QueryString
-import com.soywiz.korio.serialization.querystring.URLDecoder
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.copyTo
 import com.soywiz.korio.text.AsyncTextWriterContainer
 import com.soywiz.korio.util.Dynamic
 import com.soywiz.korio.util.Extra
 import com.soywiz.korio.vfs.VfsFile
-import com.soywiz.korio.vfs.mimeType
 import java.io.FileNotFoundException
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import java.net.URLDecoder
 import java.nio.file.InvalidPathException
+import kotlin.reflect.KClass
 
 object RoutePriority {
 	const val HIGHEST = -1000
@@ -55,13 +51,13 @@ fun HttpServer.Request.getParam(name: String): String? {
 }
 
 open class KorBaseRoute(val bpath: String, val priority: Int) {
-	val matchNames = arrayListOf<String>()
+	val matchNames = ArrayList<String>()
 	val regex = Regex(Regex.escapeReplacement(bpath)
-			.replace("*", ".*")
-			.replace(Regex(":(\\w+)")) {
-				matchNames += it.groupValues[1]
-				"([^/]+)"
-			})
+		.replace("*", ".*")
+		.replace(Regex(":(\\w+)")) {
+			matchNames += it.groupValues[1]
+			"([^/]+)"
+		})
 
 	open fun matches(req: HttpServer.BaseRequest): Boolean {
 		return regex.matches(req.path)
@@ -82,7 +78,7 @@ data class KorRoute(val method: Http.Method, val path: String, val bpriority: In
 		for ((index, key) in matchNames.withIndex()) {
 			val value = m.groupValues[index + 1]
 			//println("extra:$key -> $value")
-			req.extraParams[key] = URLDecoder.decode(value, "UTF-8")
+			req.extraParams[key] = com.soywiz.korio.serialization.querystring.URLDecoder.decode(value, "UTF-8")
 		}
 
 		handler(req)
@@ -98,9 +94,9 @@ data class KorWsRoute(val path: String, val bpriority: Int = 0, val handler: sus
 }
 
 class KorRouter(val injector: AsyncInjector, val requestConfig: HttpServer.RequestConfig) : Extra by Extra.Mixin() {
-	val interceptors = arrayListOf<suspend (HttpServer.Request, Map<String, String>) -> Unit>()
-	val httpRoutes = arrayListOf<KorRoute>()
-	val wsRoutes = arrayListOf<KorWsRoute>()
+	val interceptors = ArrayList<suspend (HttpServer.Request, Map<String, String>) -> Unit>()
+	val httpRoutes = ArrayList<KorRoute>()
+	val wsRoutes = ArrayList<KorWsRoute>()
 	var dirty = false
 
 	fun route(method: Http.Method, path: String, priority: Int = 0, handler: suspend (HttpServer.Request) -> Unit): KorRouter {
@@ -208,8 +204,8 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 				if (bodyOverflow) throw RuntimeException("Too big request payload: $totalRequestSize")
 
 				//var deferred: Promise.Deferred<Any>? = null
-				val args = arrayListOf<Any?>()
-				val mapArgs = hashMapOf<String, String>()
+				val args = ArrayList<Any?>()
+				val mapArgs = HashMap<String, String>()
 				for ((indexedParamType, annotations) in method.parameterTypes.withIndex().zip(method.parameterAnnotations)) {
 					val (index, paramType) = indexedParamType
 					val param = annotations.filterIsInstance<Param>().firstOrNull()
@@ -279,7 +275,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 					is VfsFile -> {
 						res.serveStatic(finalResult)
 					}
-					// @TODO: Korte should allow to return this interface
+				// @TODO: Korte should allow to return this interface
 					is AsyncTextWriterContainer -> {
 						// @TODO: Use chunked to avoid wasting memory!
 						val buffer = StringBuffer()
@@ -338,7 +334,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 
 suspend private fun registerWsRoute(router: KorRouter, instance: Any, method: Method, route: WsRoute) {
 	router.wsroute(route.path, route.priority) { ws ->
-		val args = arrayListOf<Any?>()
+		val args = ArrayList<Any?>()
 		for ((indexedParamType, annotations) in method.parameterTypes.withIndex().zip(method.parameterAnnotations)) {
 			val (index, paramType) = indexedParamType
 			when {
@@ -374,7 +370,7 @@ suspend fun KorRouter.registerRoutes(clazz: KClass<*>) {
 	//	println(m)
 	//}
 
-	for (method in clazz.declaredMethods) {
+	for (method in clazz.java.declaredMethods) {
 		//println("   method: $method")
 		val route = method.getAnnotation(Route::class.java)
 		if (route != null) {
