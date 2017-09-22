@@ -24,7 +24,7 @@ class JvmWebSocketClient(url: URI, protocols: List<String>?, val origin: String?
 	val defaultPort = when (url.scheme) {
 		"ws" -> 80
 		"wss" -> 443
-		else -> throw IllegalArgumentException("Just supported ws:// and ws:// protocols but found '${url.scheme}'")
+		else -> throw IllegalArgumentException("Just supported ws:// and wss:// protocols but found '${url.scheme}'")
 	}
 	val port = url.portWithDefault(defaultPort)
 	private var handsakeDone = false
