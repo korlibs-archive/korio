@@ -1,5 +1,5 @@
 dependencies {
-	compile project(":korio-impl-jvm")
+	compile project(":korio-jvm")
 	compile project(":korio-ext-web")
 	compile "io.vertx:vertx-core:$vertxVersion"
 	compile "io.vertx:vertx-web:$vertxVersion"

@@ -45,27 +45,18 @@ allprojects {
 	group 'com.soywiz'
 	version "$korVersion"
 
-	if (project.name.contains('impl')) {
-		if (project.name.contains('impl-js')) {
-			apply plugin: 'kotlin-platform-js'
-			dependencies {
-				compile libraries.kotlin_stdlib_js
-				testCompile libraries.kotlin_test_js
-			}
-		} else if (project.name.contains('impl-jvm')) {
-			apply plugin: 'kotlin-platform-jvm'
-			dependencies {
-				compile libraries.kotlin_stdlib_jvm
-				testCompile libraries.kotlin_test_jvm
-				testCompile 'junit:junit:4.12'
-			}
-		} else {
-			apply plugin: 'kotlin-platform-jvm'
-			dependencies {
-				compile libraries.kotlin_stdlib_jvm
-				testCompile libraries.kotlin_test_jvm
-				testCompile 'junit:junit:4.12'
-			}
+	if (project.name.contains('-js')) {
+		apply plugin: 'kotlin-platform-js'
+		dependencies {
+			compile libraries.kotlin_stdlib_js
+			testCompile libraries.kotlin_test_js
+		}
+	} else if (project.name.contains('-jvm')) {
+		apply plugin: 'kotlin-platform-jvm'
+		dependencies {
+			compile libraries.kotlin_stdlib_jvm
+			testCompile libraries.kotlin_test_jvm
+			testCompile 'junit:junit:4.12'
 		}
 	} else {
 		apply plugin: 'kotlin-platform-common'
