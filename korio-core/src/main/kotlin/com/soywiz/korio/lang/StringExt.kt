@@ -26,3 +26,22 @@ fun String.format(vararg params: Any): String {
 		str2
 	}
 }
+
+fun String.splitKeep(regex: Regex): List<String> {
+	val str = this
+	val out = arrayListOf<String>()
+	var lastPos = 0
+	for (part in regex.findAll(this)) {
+		val prange = part.range
+		if (lastPos != prange.start) {
+			out += str.substring(lastPos, prange.start)
+		}
+		out += str.substring(prange)
+		lastPos = prange.endInclusive + 1
+	}
+	if (lastPos != str.length) {
+		out += str.substring(lastPos)
+	}
+	return out
+}
+

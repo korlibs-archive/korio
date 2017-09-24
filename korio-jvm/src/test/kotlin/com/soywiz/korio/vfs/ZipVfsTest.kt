@@ -5,7 +5,7 @@ import com.soywiz.korio.async.toList
 import com.soywiz.korio.serialization.xml.readXml
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.readAvailable
-import com.soywiz.korio.time.SimpleDateFormat
+import com.soywiz.korio.time.SimplerDateFormat
 import org.junit.Ignore
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -37,7 +37,7 @@ class ZipVfsTest {
 
 		assertEquals(
 			"2016-12-26 18:24:52",
-			SimpleDateFormat("YYYY-MM-dd HH:mm:ss").format(helloZip["hello/world.txt"].stat().createDate)
+			SimplerDateFormat("YYYY-MM-dd HH:mm:ss").format(helloZip["hello/world.txt"].stat().createTime)
 		)
 	}
 

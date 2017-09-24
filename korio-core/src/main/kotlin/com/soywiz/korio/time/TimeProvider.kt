@@ -7,15 +7,21 @@ object TimeProvider {
 	fun now(): Long = currentTimeMillis()
 }
 
-header open class Date(time: Long) {
-	open fun getTime(): Long
-
-	constructor(year: Int, month: Int, day: Int, hours: Int, minutes: Int, seconds: Int)
+header class UTCDate(time: Long) {
+	companion object {
+		operator fun invoke(year: Int, month: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate
+	}
+	val time: Long
+	val fullYear: Int
+	val dayOfMonth: Int
+	val dayOfWeek: Int
+	val month0: Int
+	val hours: Int
+	val minutes: Int
+	val seconds: Int
 }
 
-val Date.time: Long get() = getTime()
-
-header fun UTC(year: Int, month: Int, day: Int, hours: Int, minutes: Int, seconds: Int): Long
+//header fun UTCDate(time: Long): Date
 
 /*
 // @TODO: Does this cause a problem when compiling?

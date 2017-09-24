@@ -9,8 +9,7 @@ import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.lang.IOException
 import com.soywiz.korio.math.Math
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.time.Date
-import com.soywiz.korio.time.UTC
+import com.soywiz.korio.time.UTCDate
 import com.soywiz.korio.util.*
 
 suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
@@ -191,8 +190,8 @@ private class DosFileDateTime(var time: Int, var date: Int) {
 	val day: Int get() = date.getBits(0, 5)
 	val month: Int get() = date.getBits(5, 4)
 	val year: Int get() = 1980 + date.getBits(9, 7)
-	val utcTimestamp: Long by lazy { UTC(year - 1900, month - 1, day, hours, minutes, seconds) }
-	val javaDate: Date by lazy { Date(utcTimestamp) }
+	val utcTimestamp: Long by lazy { UTCDate(year - 1900, month - 1, day, hours, minutes, seconds).time }
+	val javaDate: UTCDate by lazy { UTCDate(utcTimestamp) }
 }
 
 suspend fun VfsFile.openAsZip() = ZipVfs(this.open(VfsOpenMode.READ), this)
