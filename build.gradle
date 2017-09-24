@@ -45,25 +45,45 @@ allprojects {
 	group 'com.soywiz'
 	version "$korVersion"
 
-	if (project.name.contains('-js')) {
-		apply plugin: 'kotlin-platform-js'
-		dependencies {
-			compile libraries.kotlin_stdlib_js
-			testCompile libraries.kotlin_test_js
-		}
-	} else if (project.name.contains('-jvm')) {
-		apply plugin: 'kotlin-platform-jvm'
-		dependencies {
-			compile libraries.kotlin_stdlib_jvm
-			testCompile libraries.kotlin_test_jvm
-			testCompile 'junit:junit:4.12'
-		}
-	} else {
-		apply plugin: 'kotlin-platform-common'
-		dependencies {
-			compile libraries.kotlin_stdlib_common
-			testCompile libraries.kotlin_test_common
-		}
+	def type
+
+	switch (project.name) {
+		case "korio":
+		case "kotlinx.arraybuffers":
+			type = "jvm";
+			break;
+		default:
+			if (project.name.endsWith('-js')) {
+				type = "js";
+			} else {
+				type = "common";
+			}
+			break;
+	}
+
+	switch (type) {
+		case "js":
+			apply plugin: 'kotlin-platform-js'
+			dependencies {
+				compile libraries.kotlin_stdlib_js
+				testCompile libraries.kotlin_test_js
+			}
+			break;
+		case "jvm":
+			apply plugin: 'kotlin-platform-jvm'
+			dependencies {
+				compile libraries.kotlin_stdlib_jvm
+				testCompile libraries.kotlin_test_jvm
+				testCompile 'junit:junit:4.12'
+			}
+			break;
+		default:
+			apply plugin: 'kotlin-platform-common'
+			dependencies {
+				compile libraries.kotlin_stdlib_common
+				testCompile libraries.kotlin_test_common
+			}
+			break;
 	}
 
 	apply plugin: 'maven'

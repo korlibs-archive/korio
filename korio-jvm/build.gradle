@@ -1,7 +1,0 @@
-dependencies {
-	compile project(":kotlinx.arraybuffers-jvm")
-	implement project(":korio-core")
-	//testImplement project(":korio-core")
-	//implementation project(":korio-core")
-	testImplementation project(":korio-core")
-}

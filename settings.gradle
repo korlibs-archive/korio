@@ -2,11 +2,11 @@
 rootProject.name = 'korio-root'
 
 include(
+		'kotlinx.arraybuffers-common',
 		'kotlinx.arraybuffers',
-		'kotlinx.arraybuffers-jvm',
 		//'kotlinx.arraybuffers-js',
 		'korio-core',
-		'korio-jvm',
+		'korio',
 		//'korio-impl-js',
 
 		//'korio-ext-amazon-common',
