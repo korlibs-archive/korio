@@ -1,6 +1,6 @@
 package com.soywiz.korio.inject
 
-import kotlin.reflect.KClass
+import com.soywiz.korio.lang.KClass
 
 fun AsyncInjector.jvmAutomapping(): AsyncInjector = this.apply {
 	this.fallbackProvider = object : AsyncObjectProvider() {

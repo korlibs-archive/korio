@@ -13,8 +13,8 @@ import java.util.*
 impl class UTCDate impl constructor(impl val time: Long) {
 	companion impl object {
 		private val UTC_OFFSET = Date(2000, 1, 1, 0, 0, 0).time - Date.UTC(2000, 1, 1, 0, 0, 0)
-		impl operator fun invoke(year: Int, month: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate {
-			return UTCDate(java.util.Date.UTC(year - 1900, month, day, hours, minutes, seconds))
+		impl operator fun invoke(fullYear: Int, month0: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate {
+			return UTCDate(java.util.Date.UTC(fullYear - 1900, month0, day, hours, minutes, seconds))
 		}
 	}
 

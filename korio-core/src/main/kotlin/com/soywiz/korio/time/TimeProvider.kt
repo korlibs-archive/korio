@@ -9,7 +9,7 @@ object TimeProvider {
 
 header class UTCDate(time: Long) {
 	companion object {
-		operator fun invoke(year: Int, month: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate
+		operator fun invoke(fullYear: Int, month0: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate
 	}
 	val time: Long
 	val fullYear: Int

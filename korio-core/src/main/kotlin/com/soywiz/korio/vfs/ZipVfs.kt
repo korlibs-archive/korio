@@ -183,15 +183,22 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 	return Impl().root
 }
 
-private class DosFileDateTime(var time: Int, var date: Int) {
-	val seconds: Int get() = 2 * date.getBits(0, 5)
-	val minutes: Int get() = 2 * date.getBits(5, 6)
-	val hours: Int get() = 2 * date.getBits(11, 5)
-	val day: Int get() = date.getBits(0, 5)
-	val month: Int get() = date.getBits(5, 4)
-	val year: Int get() = 1980 + date.getBits(9, 7)
-	val utcTimestamp: Long by lazy { UTCDate(year - 1900, month - 1, day, hours, minutes, seconds).time }
-	val javaDate: UTCDate by lazy { UTCDate(utcTimestamp) }
+private class DosFileDateTime(var dosTime: Int, var dosDate: Int) {
+	val seconds: Int get() = 2 * dosTime.getBits(0, 5)
+	val minutes: Int get() = dosTime.getBits(5, 6)
+	val hours: Int get() = dosTime.getBits(11, 5)
+	val day: Int get() = dosDate.getBits(0, 5)
+	val month1: Int get() = dosDate.getBits(5, 4)
+	val fullYear: Int get() = 1980 + dosDate.getBits(9, 7)
+
+	init {
+		//println("DosFileDateTime: $fullYear-$month1-$day $hours-$minutes-$seconds")
+	}
+
+	val date: UTCDate by lazy {
+		UTCDate(fullYear, month1 - 1, day, hours, minutes, seconds)
+	}
+	val utcTimestamp: Long by lazy { date.time }
 }
 
 suspend fun VfsFile.openAsZip() = ZipVfs(this.open(VfsOpenMode.READ), this)

@@ -41,7 +41,7 @@ class SimplerDateFormat(val format: String) {
 				"z" -> "GMT"
 				"d" -> "%d".format(dd.dayOfMonth)
 				"dd" -> "%02d".format(dd.dayOfMonth)
-				"MM" -> "%02d".format(dd.dayOfMonth + 1)
+				"MM" -> "%02d".format(dd.month0 + 1)
 				"MMM" -> englishMonths[dd.month0].substr(0, 3).capitalize()
 				"yyyy" -> "%04d".format(dd.fullYear)
 				"YYYY" -> "%04d".format(dd.fullYear)
@@ -79,6 +79,6 @@ class SimplerDateFormat(val format: String) {
 			}
 		}
 		//println("year=$year, month=$month, day=$day, hour=$hour, minute=$minute, second=$second")
-		return UTCDate(year, month, day, hour, minute, second).time
+		return UTCDate(year, month - 1, day, hour, minute, second).time
 	}
 }

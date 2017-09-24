@@ -27,8 +27,11 @@ class AsyncInjectorTest {
 			val id: Int = holder.lastId++
 		}
 
+		val provider = ManualAsyncObjectProvider()
+		provider.registerSingleton { A(get()) }
+
 		val holder = Holder()
-		val inject = AsyncInjector()
+		val inject = AsyncInjector(provider = provider)
 		inject.mapTyped(holder)
 		val a0 = inject.get<A>()
 		val a1 = inject.child().child().get<A>()
