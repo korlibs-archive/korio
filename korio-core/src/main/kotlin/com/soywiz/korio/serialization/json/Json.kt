@@ -4,6 +4,7 @@ import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.IOException
 import com.soywiz.korio.lang.KClass
 import com.soywiz.korio.lang.Language
+import com.soywiz.korio.lang.classOf
 import com.soywiz.korio.serialization.ObjectMapper
 import com.soywiz.korio.util.Indenter
 import com.soywiz.korio.util.StrReader
@@ -12,8 +13,18 @@ import com.soywiz.korio.util.toNumber
 import kotlin.collections.set
 
 object Json {
-	fun stringifyPretty(obj: Any?, mapper: ObjectMapper) = stringify(obj, mapper, pretty = true)
-	fun stringify(obj: Any?, mapper: ObjectMapper, pretty: Boolean = false) = if (pretty) encodePretty(obj, mapper) else encode(obj, mapper)
+	inline fun <reified T> encodePretty(obj: T, mapper: ObjectMapper) = stringifyPretty<T>(obj, mapper)
+	inline fun <reified T> encode(obj: T, mapper: ObjectMapper, pretty: Boolean = false): String = stringify(obj, mapper, pretty)
+
+	inline fun <reified T> stringifyPretty(obj: T, mapper: ObjectMapper) = stringify<T>(obj, mapper, pretty = true)
+	inline fun <reified T> stringify(obj: T, mapper: ObjectMapper, pretty: Boolean = false): String {
+		return if (pretty) {
+			encodePrettyUntyped(mapper.toUntyped(classOf<T>(), obj))
+		} else {
+			encodeUntyped(mapper.toUntyped(classOf<T>(), obj))
+		}
+	}
+
 	fun parse(@Language("json") s: String): Any? = StrReader(s).decode()
 	inline fun <reified T : Any> parseTyped(@Language("json") s: String, mapper: ObjectMapper): T = decodeToType(s, T::class, mapper)
 
@@ -73,9 +84,9 @@ object Json {
 	}
 
 	@Language("json")
-	fun encode(obj: Any?, mapper: ObjectMapper) = StringBuilder().apply { encode(obj, this, mapper) }.toString()
+	fun encodeUntyped(obj: Any?) = StringBuilder().apply { encodeUntyped(obj, this) }.toString()
 
-	fun encode(obj: Any?, b: StringBuilder, mapper: ObjectMapper) {
+	fun encodeUntyped(obj: Any?, b: StringBuilder) {
 		when (obj) {
 			null -> b.append("null")
 			is Boolean -> b.append(if (obj) "true" else "false")
@@ -83,9 +94,9 @@ object Json {
 				b.append('{')
 				for ((i, v) in obj.entries.withIndex()) {
 					if (i != 0) b.append(',')
-					encode(v.key, b, mapper)
+					encodeUntyped(v.key, b)
 					b.append(':')
-					encode(v.value, b, mapper)
+					encodeUntyped(v.value, b)
 				}
 				b.append('}')
 			}
@@ -93,7 +104,7 @@ object Json {
 				b.append('[')
 				for ((i, v) in obj.withIndex()) {
 					if (i != 0) b.append(',')
-					encode(v, b, mapper)
+					encodeUntyped(v, b)
 				}
 				b.append(']')
 			}
@@ -108,11 +119,11 @@ object Json {
 		}
 	}
 
-	fun encodePretty(obj: Any?, mapper: ObjectMapper, indentChunk: String = "\t"): String = Indenter().apply {
-		encodePretty(obj, mapper, this)
+	fun encodePrettyUntyped(obj: Any?, indentChunk: String = "\t"): String = Indenter().apply {
+		encodePrettyUntyped(obj, this)
 	}.toString(doIndent = true, indentChunk = indentChunk)
 
-	fun encodePretty(obj: Any?, mapper: ObjectMapper, b: Indenter) {
+	fun encodePrettyUntyped(obj: Any?, b: Indenter) {
 		when (obj) {
 			null -> b.inline("null")
 			is Boolean -> b.inline(if (obj) "true" else "false")
@@ -124,7 +135,7 @@ object Json {
 						if (i != 0) b.line(",")
 						b.inline(encodeString("" + v.key))
 						b.inline(": ")
-						encodePretty(v.value, mapper, b)
+						encodePrettyUntyped(v.value, b)
 						if (i == entries.size - 1) b.line("")
 					}
 				}
@@ -136,7 +147,7 @@ object Json {
 					val entries = obj.toList()
 					for ((i, v) in entries.withIndex()) {
 						if (i != 0) b.line(",")
-						encodePretty(v, mapper, b)
+						encodePrettyUntyped(v, b)
 						if (i == entries.size - 1) b.line("")
 					}
 				}

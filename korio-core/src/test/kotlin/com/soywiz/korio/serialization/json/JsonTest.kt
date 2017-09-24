@@ -33,6 +33,13 @@ class JsonTest {
 		mapper.registerType { DemoList(it["demos"].toDynamicList().map { it.gen<Demo>() }.toArrayList()) }
 		mapper.registerType { DemoSet(it["demos"].toDynamicList().map { it.gen<Demo>() }.toSet()) }
 		mapper.registerType { ClassWithEnum(it["a"]?.gen() ?: MyEnum.HELLO) }
+
+		mapper.registerUntypeEnum<MyEnum>()
+		mapper.registerUntype<ClassWithEnum> { mapOf("a" to it.a.gen()) }
+		mapper.registerUntype<Demo2> { mapOf("a" to it.a.gen()) }
+		mapper.registerUntype<Demo> { mapOf("a" to it.a.gen(), "b" to it.b.gen()) }
+		mapper.registerUntype<DemoList> { mapOf("demos" to it.demos.gen()) }
+		mapper.registerUntype<DemoSet> { mapOf("demos" to it.demos.gen()) }
 	}
 
 	@Test
@@ -58,7 +65,7 @@ class JsonTest {
 	@Test
 	fun encode1() {
 		assertEquals("1", Json.encode(1, mapper))
-		assertEquals("null", Json.encode(null, mapper))
+		assertEquals("null", Json.encode<Any?>(null, mapper))
 		assertEquals("true", Json.encode(true, mapper))
 		assertEquals("false", Json.encode(false, mapper))
 		assertEquals("{}", Json.encode(mapOf<String, Any?>(), mapper))
@@ -150,6 +157,10 @@ class JsonTest {
 	fun testEncodeMap() {
 		data class V(val a: Int, val b: Int)
 		data class Demo(val v: Map<String, V>)
+
+		mapper.registerUntype<V> { mapOf("a" to it.a.gen(), "b" to it.b.gen()) }
+		mapper.registerUntype<Demo> { mapOf("v" to it.v.gen()) }
+
 		assertEquals("""{"v":{"z1":{"a":1,"b":2},"z2":{"a":1,"b":2}}}""", Json.encode(Demo(mapOf("z1" to V(1, 2), "z2" to V(1, 2))), mapper))
 	}
 }
