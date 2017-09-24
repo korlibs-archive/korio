@@ -59,17 +59,17 @@ class SimplerDateFormat(val format: String) {
 		var minute = 0
 		var hour = 0
 		var day = 1
-		var month = 0
-		var year = 1970
+		var month0 = 0
+		var fullYear = 1970
 		val result = rx2.find(str) ?: invalidOp("Not a valid format: '$str' for '$format'")
 		for ((name, value) in parts.zip(result.groupValues.drop(1))) {
 			when (name) {
 				"EEE" -> Unit // day of week (Sun)
 				"z" -> Unit // timezone (GMT)
 				"d", "dd" -> day = value.toInt()
-				"MM" -> month = value.toInt()
-				"MMM" -> month = englishMonths3.indexOf(value.toLowerCase())
-				"yyyy", "YYYY" -> year = value.toInt()
+				"MM" -> month0 = value.toInt() - 1
+				"MMM" -> month0 = englishMonths3.indexOf(value.toLowerCase())
+				"yyyy", "YYYY" -> fullYear = value.toInt()
 				"HH" -> hour = value.toInt()
 				"mm" -> minute = value.toInt()
 				"ss" -> second = value.toInt()
@@ -79,6 +79,6 @@ class SimplerDateFormat(val format: String) {
 			}
 		}
 		//println("year=$year, month=$month, day=$day, hour=$hour, minute=$minute, second=$second")
-		return UTCDate(year, month - 1, day, hour, minute, second).time
+		return UTCDate(fullYear, month0, day, hour, minute, second).time
 	}
 }

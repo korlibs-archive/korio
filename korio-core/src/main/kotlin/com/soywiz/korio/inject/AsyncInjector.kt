@@ -1,9 +1,9 @@
 package com.soywiz.korio.inject
 
-import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.KClass
 import com.soywiz.korio.lang.classOf
 import com.soywiz.korio.util.Extra
+
 //import kotlin.reflect.KClass
 
 @Target(AnnotationTarget.CLASS)
@@ -20,115 +20,112 @@ annotation class Inject
 @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.FIELD)
 annotation class Optional
 
-abstract class AsyncObjectProvider {
-	enum class Type { Singleton, Prototype, AsyncFactoryClass, None }
+inline fun <reified T> createAnnotation(map: Map<String, Any?>): T = CreateAnnotation.createAnnotation(classOf<T>(), map)
+inline fun <reified T> createAnnotation(vararg map: Pair<String, Any?>): T = CreateAnnotation.createAnnotation(classOf<T>(), map.toMap())
 
-	suspend fun hasType(clazz: KClass<*>): Boolean = getType(clazz) != Type.None
-	abstract suspend fun getType(clazz: KClass<*>): Type
-	abstract suspend fun <T : Any> createInstance(injector: AsyncInjector, clazz: KClass<T>): T
+interface AsyncObjectProvider<T> {
+	suspend fun get(injector: AsyncInjector): T
 }
 
-class ManualAsyncObjectProvider : AsyncObjectProvider() {
-	val types = hashMapOf<KClass<*>, Type>()
-	val generators = hashMapOf<KClass<*>, suspend AsyncInjector.() -> Any?>()
-
-	fun <T> registerType(type: Type, clazz: KClass<T>, generator: suspend AsyncInjector.() -> T) {
-		types[clazz] = type
-		generators[clazz] = generator
-	}
-
-	fun <T> registerSingleton(clazz: KClass<T>, generator: suspend AsyncInjector.() -> T) {
-		registerType(Type.Singleton, clazz, generator)
-	}
-
-	fun <T> registerPrototype(clazz: KClass<T>, generator: suspend AsyncInjector.() -> T) {
-		registerType(Type.Prototype, clazz, generator)
-	}
-
-	inline fun <reified T> registerType(type: Type, noinline generator: suspend AsyncInjector.() -> T) = registerType(type, T::class, generator)
-	inline fun <reified T> registerSingleton(noinline generator: suspend AsyncInjector.() -> T) = registerSingleton(T::class, generator)
-	inline fun <reified T> registerPrototype(noinline generator: suspend AsyncInjector.() -> T) = registerPrototype(T::class, generator)
-
-	override suspend fun getType(clazz: KClass<*>): Type = types[clazz] ?: Type.None
-
-	override suspend fun <T : Any> createInstance(injector: AsyncInjector, clazz: KClass<T>): T =
-		generators[clazz]?.invoke(injector) as? T? ?: invalidOp("Can't generate $clazz")
+class PrototypeAsyncObjectProvider<T>(val generator: suspend AsyncInjector.() -> T) : AsyncObjectProvider<T> {
+	override suspend fun get(injector: AsyncInjector): T = injector.created(generator(injector))
 }
 
-class AsyncInjector(val parent: AsyncInjector? = null, val provider: AsyncObjectProvider = ManualAsyncObjectProvider(), val level: Int = 0) : Extra by Extra.Mixin() {
-	private val instancesByClass = hashMapOf<KClass<*>, Any?>()
+class FactoryAsyncObjectProvider<T>(val generator: suspend AsyncInjector.() -> AsyncFactory<T>) : AsyncObjectProvider<T> {
+	override suspend fun get(injector: AsyncInjector): T = injector.created(generator(injector).create())
+}
 
-	data class Item<T : Any>(val isSingleton: Boolean, val generate: suspend (clazz: KClass<T>) -> T)
+class SingletonAsyncObjectProvider<T>(val generator: suspend AsyncInjector.() -> T) : AsyncObjectProvider<T> {
+	var value: T? = null
+	override suspend fun get(injector: AsyncInjector): T {
+		if (value == null) value = injector.created(generator(injector))
+		return value!!
+	}
+}
 
-	var fallbackProvider: AsyncObjectProvider? = null
+class InstanceAsyncObjectProvider<T>(val instance: T) : AsyncObjectProvider<T> {
+	override suspend fun get(injector: AsyncInjector): T = instance
+}
 
-	val actualFallbackProvider: AsyncObjectProvider? get() = fallbackProvider ?: parent?.actualFallbackProvider
-
-	fun child() = AsyncInjector(this, provider, level + 1)
+class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Extra by Extra.Mixin() {
+	var fallbackProvider: ((clazz: KClass<*>) -> AsyncObjectProvider<*>)? = null
+	val providersByClass = hashMapOf<KClass<*>, AsyncObjectProvider<*>>()
 
 	val root: AsyncInjector = parent?.root ?: this
+	val nearestFallbackProvider get() = fallbackProvider ?: parent?.fallbackProvider
+
+	fun child() = AsyncInjector(this, level + 1)
 
 	suspend inline fun <reified T : Any> get(): T = get<T>(classOf<T>())
-	suspend inline fun <reified T : Any> gen(): T = get<T>(classOf<T>())
+	suspend inline fun <reified T : Any> getOrNull(): T? = getOrNull<T>(classOf<T>())
 
-	inline fun <reified T : Any> mapTyped(instance: T): AsyncInjector = map(instance, T::class)
-	fun <T : Any> map(instance: T, clazz: KClass<T>): AsyncInjector = this.apply { instancesByClass[clazz] = instance as Any }
+	inline fun <reified T : Any> mapInstance(instance: T): AsyncInjector = mapInstance(instance, T::class)
+	inline fun <reified T : Any> mapFactory(noinline gen: suspend AsyncInjector.() -> AsyncFactory<T>) = mapFactory(classOf<T>(), gen)
+	inline fun <reified T : Any> mapSingleton(noinline gen: suspend AsyncInjector.() -> T) = mapSingleton(classOf<T>(), gen)
+	inline fun <reified T : Any> mapPrototype(noinline gen: suspend AsyncInjector.() -> T) = mapPrototype(classOf<T>(), gen)
 
-	init {
-		mapTyped<AsyncInjector>(this)
+	inline fun <reified T : Any> mapAnnotation(vararg items: Pair<String, Any?>) = mapInstance<T>(createAnnotation<T>(*items))
+
+	fun <T : Any> mapInstance(instance: T, clazz: KClass<T>): AsyncInjector = this.apply {
+		providersByClass[clazz] = InstanceAsyncObjectProvider<T>(instance as T)
 	}
 
-	@Suppress("UNCHECKED_CAST")
-	suspend fun <T : Any> get(clazz: KClass<T>, ctx: RequestContext = RequestContext(clazz)): T = getOrNull<T>(clazz, ctx) ?: create(clazz, ctx) ?: invalidOp("Class '$clazz' doesn't have constructors $ctx")
+	fun <T : Any> mapFactory(clazz: KClass<T>, gen: suspend AsyncInjector.() -> AsyncFactory<T>): AsyncInjector = this.apply {
+		providersByClass[clazz] = FactoryAsyncObjectProvider<T>(gen)
+	}
+
+	fun <T : Any> mapSingleton(clazz: KClass<T>, gen: suspend AsyncInjector.() -> T): AsyncInjector = this.apply {
+		providersByClass[clazz] = SingletonAsyncObjectProvider<T>(gen)
+	}
+
+	fun <T : Any> mapPrototype(clazz: KClass<T>, gen: suspend AsyncInjector.() -> T): AsyncInjector = this.apply {
+		providersByClass[clazz] = PrototypeAsyncObjectProvider<T>(gen)
+	}
+
+	init {
+		mapInstance(this)
+	}
 
 	data class RequestContext(val initialClazz: KClass<*>)
 
+	fun <T> getProviderOrNull(clazz: KClass<T>, ctx: RequestContext = RequestContext(clazz)): AsyncObjectProvider<T>? = (
+		providersByClass[clazz]
+			?: parent?.getProviderOrNull<T>(clazz, ctx)
+			?: nearestFallbackProvider?.invoke(clazz)
+		) as? AsyncObjectProvider<T>?
+
+	fun <T> getProvider(clazz: KClass<T>, ctx: RequestContext = RequestContext(clazz)): AsyncObjectProvider<T> =
+		getProviderOrNull<T>(clazz, ctx) ?:
+			throw AsyncInjector.NotMappedException(
+				clazz, ctx.initialClazz, ctx, "Class '$clazz' doesn't have constructors $ctx"
+			)
+
 	@Suppress("UNCHECKED_CAST")
 	suspend fun <T : Any> getOrNull(clazz: KClass<T>, ctx: RequestContext = RequestContext(clazz)): T? {
-		return when (provider.getType(clazz)) {
-			AsyncObjectProvider.Type.Prototype -> {
-				val instance = create<T>(clazz, ctx)
-				instancesByClass[clazz] = instance
-				instance
-			}
-			AsyncObjectProvider.Type.Singleton -> {
-				val root = root
-				//val root = this
-				if (!has(clazz)) {
-					val instance = create(clazz, ctx) ?: return null
-					root.instancesByClass[clazz] = instance
-					instance
-				} else {
-					(instancesByClass[clazz] ?: parent?.getOrNull<T>(clazz, ctx)) as T?
-				}
-			}
-			AsyncObjectProvider.Type.AsyncFactoryClass -> {
-				create(clazz, ctx)
-			}
-			else -> {
-				(instancesByClass[clazz] ?: parent?.getOrNull<T>(clazz, ctx)) as T?
-			}
-		}
+		return getProviderOrNull<T>(clazz)?.get(this)
 	}
-
-	fun has(clazz: KClass<*>): Boolean = instancesByClass.containsKey(clazz) || parent?.has(clazz) ?: false
 
 	@Suppress("UNCHECKED_CAST")
-	suspend fun <T : Any> create(clazz: KClass<T>, ctx: RequestContext = RequestContext(clazz)): T? {
-		val obj = if (provider.hasType(clazz)) {
-			provider.createInstance<T>(this, clazz)
-		} else {
-			actualFallbackProvider?.createInstance<T>(this, clazz)
-		}
-		if (obj is AsyncDependency) {
-			obj.init()
-		}
-		return obj
+	suspend fun <T : Any> get(clazz: KClass<T>, ctx: RequestContext = RequestContext(clazz)): T {
+		return getProvider<T>(clazz).get(this)
 	}
 
-	class NotMappedException(val clazz: KClass<*>, val requestedByClass: KClass<*>, val ctx: RequestContext) : RuntimeException("Not mapped ${clazz} requested by ${requestedByClass} in $ctx")
+	fun <T> has(clazz: KClass<T>): Boolean = getProviderOrNull<T>(clazz) != null
 
-	override fun toString(): String = "AsyncInjector(level=$level, instances=${instancesByClass.size})"
+	class NotMappedException(
+		val clazz: KClass<*>,
+		val requestedByClass: KClass<*>,
+		val ctx: RequestContext,
+		val msg: String = "Not mapped $clazz requested by $requestedByClass in $ctx"
+	) : RuntimeException(msg)
+
+	override fun toString(): String = "AsyncInjector(level=$level)"
+
+	suspend internal fun <T> created(instance: T): T {
+		if (instance is AsyncDependency) instance.init()
+		if (instance is InjectorAsyncDependency) instance.init(this)
+		return instance
+	}
 }
 
 interface AsyncFactory<T> {
@@ -145,4 +142,8 @@ annotation class AsyncFactoryClass<T>(val clazz: kotlin.reflect.KClass<out Async
 
 interface AsyncDependency {
 	suspend fun init(): Unit
+}
+
+interface InjectorAsyncDependency {
+	suspend fun init(injector: AsyncInjector): Unit
 }

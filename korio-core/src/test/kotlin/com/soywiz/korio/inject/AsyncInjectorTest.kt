@@ -16,7 +16,7 @@ class AsyncInjectorTest {
 	@Test
 	fun testSimple() = syncTest {
 		val inject = AsyncInjector()
-		inject.mapTyped(10)
+		inject.mapInstance(10)
 		assertEquals(10, inject.get<Int>())
 	}
 
@@ -27,12 +27,10 @@ class AsyncInjectorTest {
 			val id: Int = holder.lastId++
 		}
 
-		val provider = ManualAsyncObjectProvider()
-		provider.registerSingleton { A(get()) }
-
 		val holder = Holder()
-		val inject = AsyncInjector(provider = provider)
-		inject.mapTyped(holder)
+		val inject = AsyncInjector()
+		inject.mapSingleton { A(get()) }
+		inject.mapInstance(holder)
 		val a0 = inject.get<A>()
 		val a1 = inject.child().child().get<A>()
 		assertEquals(0, a0.id)
@@ -54,7 +52,7 @@ class AsyncInjectorTest {
 	}
 
 	@Prototype
-	class SingletonA(val s: SingletonS) {
+	class PrototypeB(val s: SingletonS) {
 		val id: Int = lastId++
 	}
 
@@ -62,6 +60,7 @@ class AsyncInjectorTest {
 	fun testPrototype() = syncTest {
 		lastId = 0
 		val inject = AsyncInjector()
+		inject.mapPrototype { PrototypeA() }
 		val a0 = inject.get<PrototypeA>()
 		val a1 = inject.child().child().get<PrototypeA>()
 		assertEquals(0, a0.id)
@@ -72,12 +71,15 @@ class AsyncInjectorTest {
 	fun testPrototypeSingleton() = syncTest {
 		lastId = 0
 		val inject = AsyncInjector()
-		val a0 = inject.get<SingletonA>()
-		val a1 = inject.child().child().get<SingletonA>()
-		assertEquals(0, a0.s.id)
-		assertEquals(0, a1.s.id)
-		assertEquals(1, a0.id)
-		assertEquals(2, a1.id)
+		inject.mapPrototype { PrototypeA() }
+		inject.mapSingleton { SingletonS() }
+		inject.mapPrototype { PrototypeB(get()) }
+		val a0 = inject.getOrNull<PrototypeB>()
+		val a1 = inject.child().child().getOrNull<PrototypeB>()
+		assertEquals(0, a0?.s?.id)
+		assertEquals(0, a1?.s?.id)
+		assertEquals(1, a0?.id)
+		assertEquals(2, a1?.id)
 	}
 
 	@Test
@@ -98,7 +100,15 @@ class AsyncInjectorTest {
 		)
 
 		val inject = AsyncInjector()
-		inject.mapTyped(10)
+		inject.mapPrototype { B(get(), get()) }
+		inject.mapSingleton {
+			A(
+				child().apply { mapInstance<Path>(createAnnotation("path" to "mypath1")) }.get(),
+				child().apply { mapInstance<Path>(createAnnotation("path" to "mypath2")) }.get()
+			)
+		}
+		inject.mapInstance(10)
+
 		val a = inject.get<A>()
 		assertEquals("mypath1", a.b1.path.path)
 		assertEquals("mypath2", a.b2.path.path)
@@ -107,6 +117,8 @@ class AsyncInjectorTest {
 	}
 
 	annotation class Path(val path: String)
+
+	fun AsyncInjector.mapPath(path: String) = mapAnnotation<Path>("path" to path)
 
 	// e: java.lang.UnsupportedOperationException: Class literal annotation arguments are not yet supported: BitmapFontLoader
 	//@AsyncFactoryClass(BitmapFontLoader::class)
@@ -124,6 +136,8 @@ class AsyncInjectorTest {
 		)
 
 		val inject = AsyncInjector()
+		inject.mapFactory { BitmapFontLoader(get()) }
+		inject.mapSingleton { Demo(child().apply { mapPath("path/to/font") }.get()) }
 		val demo = inject.get<Demo>()
 		assertEquals("path/to/font", demo.font.path)
 	}
@@ -140,7 +154,11 @@ class AsyncInjectorTest {
 		@Optional val pathA: Path2A?,
 		@Optional val pathB: Path2B?
 	) : AsyncFactory<BitmapFont2> {
-		override suspend fun create() = if (pathA != null) BitmapFont2(pathA.path1) else if (pathB != null) BitmapFont2(pathB.path2) else invalidOp
+		override suspend fun create(): BitmapFont2 = when {
+			pathA != null -> BitmapFont2(pathA.path1)
+			pathB != null -> BitmapFont2(pathB.path2)
+			else -> invalidOp("Boath pathA and pathB are null")
+		}
 	}
 
 	@Test
@@ -152,6 +170,15 @@ class AsyncInjectorTest {
 		)
 
 		val inject = AsyncInjector()
+		inject.mapFactory {
+			BitmapFontLoader2(getOrNull(), getOrNull())
+		}
+		inject.mapSingleton {
+			Demo2(
+				child().apply { mapAnnotation<Path2A>("path1" to "path/to/font/A") }.get(),
+				child().apply { mapAnnotation<Path2B>("path2" to "path/to/font/B") }.get()
+			)
+		}
 		val demo = inject.get<Demo2>()
 		assertEquals("path/to/font/A", demo.fontA.path)
 		assertEquals("path/to/font/B", demo.fontB.path)
@@ -164,8 +191,8 @@ class AsyncInjectorTest {
 		val holder = Holder()
 
 		open class Base : AsyncDependency {
-			@Inject lateinit private var injector: AsyncInjector
-			@Inject lateinit private var holder: Holder
+			@Inject lateinit var injector: AsyncInjector
+			@Inject lateinit var holder: Holder
 
 			override suspend fun init() {
 				holder.log += "Base.init<" + injector.get<Int>() + ">"
@@ -182,8 +209,9 @@ class AsyncInjectorTest {
 			}
 		}
 
-		val inject = AsyncInjector().mapTyped(holder)
-		inject.mapTyped(10)
+		val inject = AsyncInjector().mapInstance(holder)
+		inject.mapInstance(10)
+		inject.mapSingleton<Demo> { val demo = Demo(get()); demo.injector = get(); demo.holder = get(); demo }
 		val demo = inject.get<Demo>()
 		assertEquals(10, demo.a)
 	}
@@ -196,6 +224,7 @@ class AsyncInjectorTest {
 		}
 
 		val injector = AsyncInjector()
+		injector.mapSingleton { MySingleton() }
 		injector.child().get<MySingleton>().a = 20
 		assertEquals(20, injector.get<MySingleton>().a)
 	}
@@ -208,6 +237,7 @@ class AsyncInjectorTest {
 			class MySingleton(val unmapped: Unmapped)
 
 			val injector = AsyncInjector()
+			injector.mapSingleton { MySingleton(get()) }
 			injector.child().get<MySingleton>()
 		}
 	}
@@ -219,8 +249,9 @@ class AsyncInjectorTest {
 		class MySingleton(val mapped: Mapped)
 
 		val injector = AsyncInjector()
+		injector.mapSingleton { MySingleton(get()) }
 		injector.child()
-			.mapTyped<Mapped>(Mapped("hello"))
+			.mapInstance<Mapped>(Mapped("hello"))
 			.get<MySingleton>()
 	}
 }

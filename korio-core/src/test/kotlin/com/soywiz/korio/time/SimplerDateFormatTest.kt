@@ -19,6 +19,7 @@ class SimplerDateFormatTest {
 
 	@Test
 	fun testParseFormat() {
-		assertEquals("Sun, 06 Nov 1994 08:49:37 GMT", format.format(format.parse("Sun, 06 Nov 1994 08:49:37 GMT")))
+		val dateStr = "Sun, 06 Nov 1994 08:49:37 GMT"
+		assertEquals(dateStr, format.format(format.parse(dateStr)))
 	}
 }
