@@ -14,8 +14,18 @@ import com.soywiz.korio.util.nonNullMap
  * Bools, Numbers, Strings, Lists and Maps (json supported)
  */
 class ObjectMapper {
+	@Suppress("NOTHING_TO_INLINE")
 	class TypeContext(val map: ObjectMapper) : DynamicContext {
 		inline fun <reified T> Any?.gen(): T = map.toTyped(this, T::class)
+		inline fun <reified T> Any?.genList(): ArrayList<T> {
+			return ArrayList(this.toDynamicList().map { it.gen<T>() }.toList())
+		}
+		inline fun <reified T> Any?.genSet(): HashSet<T> {
+			return HashSet(this.toDynamicList().map { it.gen<T>() }.toSet())
+		}
+		inline fun <reified K, reified V> Any?.genMap(): HashMap<K, V> {
+			return HashMap(this.toDynamicMap().map { it.key.gen<K>() to it.value.gen<V>() }.toMap())
+		}
 	}
 
 	@Suppress("NOTHING_TO_INLINE")

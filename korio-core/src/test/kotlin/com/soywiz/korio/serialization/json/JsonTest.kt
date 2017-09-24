@@ -30,16 +30,16 @@ class JsonTest {
 		mapper.registerEnum(MyEnum.values())
 		mapper.registerType { Demo(it["a"].gen(), it["b"].gen()) }
 		mapper.registerType { Demo2().apply { a = it["a"].gen() } }
-		mapper.registerType { DemoList(it["demos"].toDynamicList().map { it.gen<Demo>() }.toArrayList()) }
-		mapper.registerType { DemoSet(it["demos"].toDynamicList().map { it.gen<Demo>() }.toSet()) }
+		mapper.registerType { DemoList(it["demos"].genList<Demo>()) }
+		mapper.registerType { DemoSet(it["demos"].genSet<Demo>()) }
 		mapper.registerType { ClassWithEnum(it["a"]?.gen() ?: MyEnum.HELLO) }
 
 		mapper.registerUntypeEnum<MyEnum>()
-		mapper.registerUntype<ClassWithEnum> { mapOf("a" to it.a.gen()) }
-		mapper.registerUntype<Demo2> { mapOf("a" to it.a.gen()) }
 		mapper.registerUntype<Demo> { mapOf("a" to it.a.gen(), "b" to it.b.gen()) }
+		mapper.registerUntype<Demo2> { mapOf("a" to it.a.gen()) }
 		mapper.registerUntype<DemoList> { mapOf("demos" to it.demos.gen()) }
 		mapper.registerUntype<DemoSet> { mapOf("demos" to it.demos.gen()) }
+		mapper.registerUntype<ClassWithEnum> { mapOf("a" to it.a.gen()) }
 	}
 
 	@Test
@@ -92,10 +92,6 @@ class JsonTest {
 	@Test
 	fun decodeUnicode() {
 		assertEquals("aeb", Json.decode(""" "a\u0065b" """))
-	}
-
-	fun <T> Iterable<T>.toArrayList(): ArrayList<T> {
-		return ArrayList<T>().apply { addAll(this@toArrayList) }
 	}
 
 	@Test
