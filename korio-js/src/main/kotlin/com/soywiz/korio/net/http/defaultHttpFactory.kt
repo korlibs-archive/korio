@@ -1,17 +1,32 @@
 package com.soywiz.korio.net.http
 
-impl var defaultHttpFactory: HttpFactory = object : HttpFactory() {
-}
+import com.soywiz.korio.async.Promise
+import com.soywiz.korio.global
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.openAsync
+import com.soywiz.korio.stream.readAll
+import com.soywiz.korio.util.OS
+import org.khronos.webgl.ArrayBuffer
+import org.khronos.webgl.Int8Array
+import org.khronos.webgl.Uint8Array
+import org.khronos.webgl.get
+import org.w3c.xhr.ARRAYBUFFER
+import org.w3c.xhr.XMLHttpRequest
+import org.w3c.xhr.XMLHttpRequestResponseType
 
-/*
-class HttpFactoryJs : HttpFactory() {
-	override fun createClient(): HttpClient = if (OS.isNodejs) HttpClientNodeJs() else HttpClientBrowserJs()
+impl var defaultHttpFactory: HttpFactory = object : HttpFactory() {
+	override fun createClient(): HttpClient {
+		return if (OS.isNodejs) HttpClientNodeJs() else HttpClientBrowserJs()
+	}
+
 	override fun createServer(): HttpServer = HttpSeverNodeJs()
 }
 
 class HttpSeverNodeJs : HttpServer() {
 	// @TODO: Implement in nodejs!
 }
+
+fun jsRequire(name: String) = global.require(name)
 
 class HttpClientNodeJs : HttpClient() {
 	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = Promise.create { deferred ->
@@ -20,84 +35,89 @@ class HttpClientNodeJs : HttpClient() {
 		val http = jsRequire("http")
 		val jsurl = jsRequire("url")
 		val info = jsurl.call("parse", url)
-		val reqHeaders = jsObject()
+		val reqHeaders = js("{}")
 
 		for (header in headers) reqHeaders[header.first] = header.second
 
-		val r = http.call("request", jsObject(
-			"method" to method.name,
-			"host" to info["hostname"],
-			"port" to info["port"],
-			"path" to info["path"],
-			"agent" to false,
-			"encoding" to null,
-			"headers" to reqHeaders
-		), jsFunctionRaw1 { res ->
-			val statusCode = res["statusCode"].toInt()
-			val statusMessage = res["statusMessage"].toJavaStringOrNull() ?: ""
-			val jsHeadersObj = res["headers"]
-			val body = jsArray()
-			res.call("on", "data", jsFunctionRaw1 { d -> body.call("push", d) })
-			res.call("on", "end", jsFunctionRaw0 {
+		val req = js("{}")
+		req.method = method.name
+		req.host = info["hostname"]
+		req.port = info["port"]
+		req.path = info["path"]
+		req.agent = false
+		req.encoding = null
+		req.headers = reqHeaders
+
+		val r = http.request(req, { res ->
+			val statusCode = res.statusCode.toInt()
+			val statusMessage = res.statusMessage.toJavaStringOrNull() ?: ""
+			val jsHeadersObj = res.headers
+			val body = js("[]")
+			res.call("on", "data", { d -> body.call("push", d) })
+			res.call("on", "end", {
 				val r = global["Buffer"].call("concat", body)
-				val u8array = jsNew("Int8Array", r)
-				val out = u8array.toByteArray()
+				val u8array = Int8Array(r as ArrayBuffer)
+				val out = ByteArray(u8array.length)
+				for (n in 0 until u8array.length) out[n] = u8array[n]
 
 				deferred.resolve(Response(
 					status = statusCode,
 					statusText = statusMessage,
-					headers = Http.Headers((jsHeadersObj?.toObjectMap() ?: mapOf()).mapValues { it.value.toJavaStringOrNull() ?: "" }),
+					headers = Http.Headers(
+						hashMapOf()
+						//(jsHeadersObj?.toObjectMap() ?: HashMap()).mapValues { it.value.toJavaStringOrNull() ?: "" }
+					),
 					content = out.openAsync()
 				))
 			})
-		}).call("on", "error", jsFunctionRaw1 { e ->
+		}).on("error", { e ->
 			deferred.reject(RuntimeException("Error: ${e.toJavaString()}"))
 		})
 
 		deferred.onCancel {
-			r.call("abort")
+			r.abort()
 		}
 
 		if (content != null) {
-			r.call("end", content.readAll().toTypedArray())
+			r.end(content.readAll().toTypedArray())
 		} else {
-			r.call("end")
+			r.end()
 		}
-
+		Unit
 	}
 }
 
 class HttpClientBrowserJs : HttpClient() {
 	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = Promise.create { deferred ->
-		val xhr = jsNew("XMLHttpRequest")
-		xhr.call("open", method.name, url, true)
-		xhr["responseType"] = "arraybuffer"
+		val xhr = XMLHttpRequest()
+		xhr.open(method.name, url, true)
+		xhr.responseType = XMLHttpRequestResponseType.ARRAYBUFFER
 
-		xhr["onload"] = jsFunctionRaw1 { e ->
-			val u8array = jsNew("Uint8Array", xhr["response"])
-			val out = ByteArray(u8array["length"].toInt())
-			out.asJsDynamic()["data"].call("set", u8array)
+		xhr.onload = { e ->
+			val u8array = Uint8Array(xhr.response as ArrayBuffer)
+			val out = ByteArray(u8array.length)
+			out.asDynamic()["data"].set(u8array)
 			deferred.resolve(Response(
-				status = xhr["status"].toInt(),
-				statusText = xhr["statusText"].toJavaStringOrNull() ?: "",
-				headers = Http.Headers(xhr.call("getAllResponseHeaders").toJavaStringOrNull()),
+				status = xhr.status.toInt(),
+				statusText = xhr.statusText ?: "",
+				headers = Http.Headers(xhr.getAllResponseHeaders()),
 				content = out.openAsync()
 			))
 		}
 
-		xhr["onerror"] = jsFunctionRaw1 { e ->
-			deferred.reject(RuntimeException("Error ${xhr["status"].toJavaString()} opening $url"))
+		xhr.onerror = { e ->
+			deferred.reject(RuntimeException("Error ${xhr.status} opening $url"))
 		}
 
-		for (header in headers) xhr.call("setRequestHeader", header.first, header.second)
+		for (header in headers) xhr.setRequestHeader(header.first, header.second)
 
-		deferred.onCancel { xhr.call("abort") }
+		deferred.onCancel { xhr.abort() }
 
 		if (content != null) {
-			xhr.call("send", content.readAll().toJsTypedArray())
+			xhr.send(content.readAll())
 		} else {
-			xhr.call("send")
+			xhr.send()
 		}
 	}
 }
-*/
+

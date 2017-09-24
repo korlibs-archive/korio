@@ -1,6 +1,7 @@
 package com.soywiz.korio.async
 
 import com.soywiz.korio.ds.LinkedList
+import com.soywiz.korio.global
 import com.soywiz.korio.lang.Closeable
 import kotlin.browser.window
 
@@ -9,8 +10,6 @@ impl val eventLoopFactoryDefaultImpl: EventLoopFactory = EventLoopFactoryJs()
 class EventLoopFactoryJs : EventLoopFactory() {
 	override fun createEventLoop(): EventLoop = EventLoopJs()
 }
-
-val global = window
 
 @Suppress("unused")
 class EventLoopJs : EventLoop() {

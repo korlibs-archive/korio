@@ -12,8 +12,7 @@ object OS {
 	val isLinux by lazy { name.contains("nix") || name.contains("nux") || name.contains("aix") }
 	val isMac by lazy { name.contains("mac") }
 
-	val isJs: Boolean get() = (name.contains("js"))
-
-	val isNodejs: Boolean get() = (name.contains("node.js"))
+	val isJs: Boolean by lazy { name.contains("js") }
+	val isNodejs: Boolean by lazy { (name.contains("node.js")) }
 	val isBrowserJs: Boolean get() = isJs && !isNodejs
 }
