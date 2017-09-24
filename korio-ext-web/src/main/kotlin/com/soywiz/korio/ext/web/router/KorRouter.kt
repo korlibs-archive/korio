@@ -11,6 +11,7 @@ import com.soywiz.korio.inject.AsyncInjector
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.http.httpError
+import com.soywiz.korio.serialization.ObjectMapper
 import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.serialization.querystring.QueryString
 import com.soywiz.korio.stream.AsyncStream
@@ -198,6 +199,8 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 		}
 
 		async {
+			val mapper = router.injector.getOrNull<ObjectMapper>() ?: ObjectMapper()
+
 			try {
 				bodyHandler.promise.await()
 
@@ -284,7 +287,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 					}
 					else -> {
 						res.replaceHeader("Content-Type", "application/json")
-						res.end(Json.encode(finalResult))
+						res.end(Json.encode(finalResult, mapper))
 					}
 				}
 			} catch (tt: Throwable) {
@@ -353,12 +356,12 @@ suspend private fun registerWsRoute(router: KorRouter, instance: Any, method: Me
 	}
 }
 
-suspend fun KorRouter.registerRoutes(clazz: KClass<*>) {
+suspend fun <T : Any> KorRouter.registerRoutes(clazz: KClass<T>) {
 	val router = this@registerRoutes
 
 	println("Registering route $clazz...")
 
-	val instance = injector.get(clazz)
+	val instance = injector.get<T>(clazz)
 
 	//println("   [1]")
 

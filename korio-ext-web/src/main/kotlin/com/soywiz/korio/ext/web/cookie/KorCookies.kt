@@ -38,7 +38,7 @@ data class KorCookie(
 					cookie.value = value
 				} else {
 					when (key.toLowerCase()) {
-						"expires" -> cookie.expire = HttpDate.parseOrNull(value)?.time ?: 0L
+						"expires" -> cookie.expire = HttpDate.parseOrNull(value) ?: 0L
 						"max-age" -> cookie.maxAge = value?.toLongOrNull() ?: 0L
 						"domain" -> cookie.domain = value
 						"path" -> cookie.path = value

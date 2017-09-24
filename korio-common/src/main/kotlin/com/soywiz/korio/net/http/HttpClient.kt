@@ -235,7 +235,7 @@ open class HttpFactory {
 	}
 }
 
-header val defaultHttpFactory: HttpFactory
+header var defaultHttpFactory: HttpFactory
 
 fun HttpFactory.createClientEndpoint(endpoint: String) = createClient().endpoint(endpoint)
 

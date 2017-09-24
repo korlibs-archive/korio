@@ -17,11 +17,9 @@ impl class SimplerMessageDigest impl constructor(name: String) {
 	}
 }
 
-impl class SimplerMac impl constructor(name: String) {
-	val mac = Mac.getInstance(name)
-
-	impl suspend fun init(key: ByteArray, algorithm: String): Unit = executeInWorker {
-		mac.init(SecretKeySpec(key, algorithm))
+impl class SimplerMac impl constructor(name: String, key: ByteArray) {
+	val mac = Mac.getInstance(name).apply {
+		init(SecretKeySpec(key, name))
 	}
 
 	impl suspend fun update(data: ByteArray, offset: Int, size: Int) = executeInWorker {

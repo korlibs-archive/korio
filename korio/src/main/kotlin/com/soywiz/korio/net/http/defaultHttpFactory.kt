@@ -10,9 +10,7 @@ import java.net.BindException
 import java.net.HttpURLConnection
 import java.net.URL
 
-impl val defaultHttpFactory: HttpFactory by lazy { HttpFactoryJvm() }
-
-class HttpFactoryJvm : HttpFactory() {
+impl var defaultHttpFactory: HttpFactory = object : HttpFactory() {
 	init {
 		System.setProperty("http.keepAlive", "false")
 	}

@@ -29,10 +29,6 @@ impl class UTCDate impl constructor(impl val time: Long) {
 	impl val seconds: Int get() = jdate.seconds
 }
 
-
-@Suppress("DEPRECATION")
-impl fun dateToTimestamp(year: Int, month: Int, day: Int, hours: Int, minutes: Int, seconds: Int): Long {
-	return java.util.Date.UTC(year, month, day, hours, minutes, seconds)
+impl object STimeProvider {
+	impl fun currentTimeMillis(): Long = System.currentTimeMillis()
 }
-
-impl fun currentTimeMillis(): Long = System.currentTimeMillis()

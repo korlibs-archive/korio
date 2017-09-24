@@ -70,7 +70,7 @@ open class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 				synchronized(this) {
 					consumers -= consumer
 				}
-				c.resumeWithException(CancellationException())
+				c.resumeWithException(CancellationException(""))
 			}
 		}
 		synchronized(this) {

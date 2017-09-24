@@ -1,10 +1,11 @@
 package com.soywiz.korio.time
 
-header fun currentTimeMillis(): Long
-header fun dateToTimestamp(year: Int, month: Int, day: Int, hours: Int, minutes: Int, seconds: Int): Long
+header object STimeProvider {
+	fun currentTimeMillis(): Long
+}
 
 object TimeProvider {
-	fun now(): Long = currentTimeMillis()
+	fun now(): Long = STimeProvider.currentTimeMillis()
 }
 
 header class UTCDate(time: Long) {

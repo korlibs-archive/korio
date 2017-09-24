@@ -110,7 +110,7 @@ class Promise<T : Any?> : Cancellable {
 
 	override fun cancel(e: Throwable) {
 		onCancel(e)
-		complete(null, CancellationException())
+		complete(null, CancellationException(""))
 	}
 
 	suspend fun await(): T = korioSuspendCoroutine(this::then)

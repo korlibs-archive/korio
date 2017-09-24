@@ -8,7 +8,7 @@ include(
 
 		'korio-common',
 		'korio',
-		'korio-impl-js',
+		'korio-js',
 
 		'korio-ext-amazon-common',
 		'korio-ext-amazon-dynamodb',

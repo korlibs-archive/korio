@@ -6,8 +6,8 @@ import com.soywiz.korio.serialization.ObjectMapper
 import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.stream.openAsync
 
-class HttpRestClient(val endpoint: HttpClientEndpoint, val mapper: ObjectMapper) {
-	suspend fun request(method: Http.Method, path: String, request: Any?): Any {
+class HttpRestClient(val endpoint: HttpClientEndpoint) {
+	suspend fun request(method: Http.Method, path: String, request: Any?, mapper: ObjectMapper = ObjectMapper()): Any {
 		val requestContent = request?.let { Json.encode(it, mapper) }
 		val result = endpoint.request(
 			method,
@@ -34,6 +34,6 @@ class HttpRestClient(val endpoint: HttpClientEndpoint, val mapper: ObjectMapper)
 	suspend fun post(path: String, request: Any): Any = request(Http.Method.POST, path, request)
 }
 
-fun HttpClientEndpoint.rest(mapper: ObjectMapper) = HttpRestClient(this, mapper)
-fun HttpClient.rest(endpoint: String, mapper: ObjectMapper) = HttpRestClient(this.endpoint(endpoint), mapper)
-fun HttpFactory.createRestClient(endpoint: String, mapper: ObjectMapper) = createClient().endpoint(endpoint).rest(mapper)
+fun HttpClientEndpoint.rest() = HttpRestClient(this)
+fun HttpClient.rest(endpoint: String) = HttpRestClient(this.endpoint(endpoint))
+fun HttpFactory.createRestClient(endpoint: String, mapper: ObjectMapper) = createClient().endpoint(endpoint).rest()

@@ -9,7 +9,7 @@ import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.toAsyncStream
-import com.soywiz.korio.time.Date
+import com.soywiz.korio.time.UTCDate
 import com.soywiz.korio.util.TimeProvider
 import com.soywiz.korio.vfs.*
 
@@ -81,7 +81,7 @@ class S3(val credentials: AmazonAuth.Credentials?, val endpoint: String, val htt
 		return httpClient.request(
 			method, npath.absolutePath,
 			headers = genHeaders(method, npath, headers.withReplaceHeaders(
-				"date" to AmazonAuth.V1.DATE_FORMAT.format(Date(timeProvider.currentTimeMillis()))
+				"date" to AmazonAuth.V1.DATE_FORMAT.format(UTCDate(timeProvider.currentTimeMillis()))
 			)),
 			content = content
 		)
@@ -99,7 +99,7 @@ class S3(val credentials: AmazonAuth.Credentials?, val endpoint: String, val htt
 		return ParsedPath(parts[0].trim('/'), parts.getOrElse(1) { "" }.trim('/'))
 	}
 
-	private fun genHeaders(method: Http.Method, path: ParsedPath, headers: Http.Headers = Http.Headers()): Http.Headers {
+	suspend private fun genHeaders(method: Http.Method, path: ParsedPath, headers: Http.Headers = Http.Headers()): Http.Headers {
 		if (credentials != null) {
 			return headers.withReplaceHeaders("Authorization" to AmazonAuth.V1.getAuthorization(credentials.accessKey, credentials.secretKey, method, path.cannonical, headers))
 		} else {

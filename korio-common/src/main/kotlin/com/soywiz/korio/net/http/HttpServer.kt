@@ -80,8 +80,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		}
 	}
 
-	val requestConfig = RequestConfig(
-	)
+	val requestConfig = RequestConfig()
 
 	data class RequestConfig(
 		val beforeSendHeadersInterceptors: LinkedHashMap<String, suspend (Request) -> Unit> = LinkedHashMap()

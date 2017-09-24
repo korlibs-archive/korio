@@ -1,7 +1,7 @@
 package com.soywiz.korio.ext.db.elasticsearch
 
-import com.soywiz.korio.lang.Dynamic
 import com.soywiz.korio.lang.KClass
+import com.soywiz.korio.lang.classOf
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClientEndpoint
 import com.soywiz.korio.net.http.HttpFactory
@@ -9,14 +9,17 @@ import com.soywiz.korio.net.http.defaultHttpFactory
 import com.soywiz.korio.net.http.rest.HttpRestClient
 import com.soywiz.korio.net.http.rest.createRestClient
 import com.soywiz.korio.net.http.rest.rest
+import com.soywiz.korio.serialization.ObjectMapper
 import com.soywiz.korio.time.TimeSpan
+import com.soywiz.korio.util.Dynamic
 
 class ElasticSearch(
-	rest: HttpRestClient = defaultHttpFactory.createRestClient("http://127.0.0.1:9200")
+	val mapper: ObjectMapper,
+	rest: HttpRestClient = defaultHttpFactory.createRestClient("http://127.0.0.1:9200", mapper)
 ) : ElasticSearchResource(rest, "") {
 
-	constructor(endpoint: String = "http://127.0.0.1:9200", httpFactory: HttpFactory = defaultHttpFactory) : this(httpFactory.createRestClient(endpoint))
-	constructor(endpoint: HttpClientEndpoint) : this(endpoint.rest())
+	constructor(endpoint: String = "http://127.0.0.1:9200", httpFactory: HttpFactory = defaultHttpFactory, mapper: ObjectMapper) : this(mapper, httpFactory.createRestClient(endpoint, mapper))
+	constructor(endpoint: HttpClientEndpoint, mapper: ObjectMapper) : this(mapper, endpoint.rest())
 
 	operator fun get(index: String) = ElasticSearch.Index(this, index)
 	operator fun get(index: String, type: String) = ElasticSearch.Type(this[index], type)
@@ -26,7 +29,7 @@ class ElasticSearch(
 	data class PutResult(val id: String, val version: Long)
 
 	class Index(
-		es: ElasticSearch,
+		val es: ElasticSearch,
 		name: String
 	) : ElasticSearchResource(es.rest, name) {
 		operator fun get(type: String) = ElasticSearch.Type(this, type)
@@ -69,8 +72,8 @@ class ElasticSearch(
 		name: String
 	) : CommonType(esi, name) {
 
-		fun <T : Any> typed(clazz: KClass<T>): TypedType<T> = TypedType(this, clazz)
-		inline fun <reified T : Any> typed(): TypedType<T> = TypedType(this, T::class)
+		fun <T : Any> typed(clazz: KClass<T>): TypedType<T> = TypedType(this, clazz, esi.es.mapper)
+		inline fun <reified T : Any> typed(): TypedType<T> = typed<T>(classOf<T>())
 
 		suspend fun delete(id: String): Boolean {
 			return try {
@@ -104,12 +107,13 @@ class ElasticSearch(
 
 	class TypedType<T : Any>(
 		val type: Type,
-		val clazz: KClass<T>
+		val clazz: KClass<T>,
+		val mapper: ObjectMapper
 	) {
 		// operator
 		suspend fun get(id: String): T {
 			val result = type.get(id)
-			return Dynamic.dynamicCast(Dynamic.getAnySync(result, "_source") ?: mapOf<String, Any>(), clazz)!!
+			return mapper.toTyped<T>(Dynamic.getAnySync(result, "_source") ?: mapOf<String, Any>(), clazz)
 		}
 
 		suspend fun getOrNull(id: String): T? = try {
@@ -130,7 +134,7 @@ class ElasticSearch(
 		suspend fun search(query: ElasticSearch.QueryBuilder.() -> ElasticSearch.Query = { ElasticSearch.Query(ElasticSearch.QueryBuilder) }): SearchResult<T> {
 			val result = type.search(query)
 			return SearchResult(result.took, result.timedOut, result.results.map {
-				Result<T>(it.index, it.type, it.id, it.score, Dynamic.dynamicCast(it.obj, clazz)!!)
+				Result<T>(it.index, it.type, it.id, it.score, mapper.toTyped<T>(clazz, it.obj))
 			})
 		}
 

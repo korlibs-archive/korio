@@ -9,7 +9,7 @@ suspend fun withTimeout(ms: Int, name: String = "timeout", callback: suspend () 
 	var cancelled = false
 	val timer = c.eventLoop.setTimeout(ms) {
 		//c.cancel(TimeoutException())
-		c.cancel(CancellationException())
+		c.cancel(CancellationException(""))
 		//c.resumeWithException(TimeoutException(name))
 	}
 	c.onCancel {

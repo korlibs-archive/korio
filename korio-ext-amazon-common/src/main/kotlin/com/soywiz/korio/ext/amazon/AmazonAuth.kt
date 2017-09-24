@@ -1,12 +1,12 @@
 package com.soywiz.korio.ext.amazon
 
 import com.soywiz.korio.crypto.AsyncHash
+import com.soywiz.korio.crypto.SimplerMac
+import com.soywiz.korio.crypto.finalize
 import com.soywiz.korio.crypto.toBase64
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpDate
-import com.soywiz.korio.crypto.Mac
-import com.soywiz.korio.crypto.SecretKeySpec
 import com.soywiz.korio.util.substr
 import com.soywiz.korio.util.toHexStringLower
 import com.soywiz.korio.vfs.UserHomeVfs
@@ -39,7 +39,7 @@ object AmazonAuth {
 		val DATE_FORMAT = HttpDate
 
 		suspend private fun macProcess(key: ByteArray, algo: String, data: ByteArray): ByteArray {
-			return Mac.getInstance(algo).apply { init(SecretKeySpec(key, algo)) }.doFinal(data)
+			return SimplerMac(algo, key).finalize(data)
 		}
 
 		suspend fun macProcessStringsB64(key: String, algo: String, data: String): String {
@@ -99,16 +99,12 @@ object AmazonAuth {
 
 		suspend fun HMAC(key: ByteArray, data: ByteArray): ByteArray {
 			val algorithm = "HmacSHA256"
-			val mac = Mac.getInstance(algorithm)
-			mac.init(SecretKeySpec(key, algorithm))
-			return mac.doFinal(data)
+			return SimplerMac(algorithm, key).finalize(data)
 		}
 
 		suspend fun HmacSHA256(data: String, key: ByteArray): ByteArray {
 			val algorithm = "HmacSHA256"
-			val mac = Mac.getInstance(algorithm)
-			mac.init(SecretKeySpec(key, algorithm))
-			return mac.doFinal(data.toByteArray(Charsets.UTF_8))
+			return SimplerMac(algorithm, key).finalize(data.toByteArray(Charsets.UTF_8))
 		}
 
 		suspend fun getSignatureKey(key: String, dateStamp: String, regionName: String, serviceName: String): ByteArray {
