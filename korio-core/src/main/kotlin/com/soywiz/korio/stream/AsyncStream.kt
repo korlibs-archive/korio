@@ -274,12 +274,12 @@ suspend fun AsyncInputStream.readStringz(charset: Charset = Charsets.UTF_8): Str
 }
 
 suspend fun AsyncInputStream.readStringz(len: Int, charset: Charset = Charsets.UTF_8): String {
-	val res = readBytes(len)
+	val res = readBytesExact(len)
 	val index = res.indexOf(0.toByte())
 	return res.copyOf(if (index < 0) len else index).toString(charset)
 }
 
-suspend fun AsyncInputStream.readString(len: Int, charset: Charset = Charsets.UTF_8): String = readBytes(len).toString(charset)
+suspend fun AsyncInputStream.readString(len: Int, charset: Charset = Charsets.UTF_8): String = readBytesExact(len).toString(charset)
 
 suspend fun AsyncOutputStream.writeStringz(str: String, charset: Charset = Charsets.UTF_8) = this.writeBytes(str.toBytez(charset))
 suspend fun AsyncOutputStream.writeStringz(str: String, len: Int, charset: Charset = Charsets.UTF_8) = this.writeBytes(str.toBytez(len, charset))
@@ -309,7 +309,7 @@ suspend private fun AsyncInputStream.readTempExact(len: Int, temp: ByteArray = B
 suspend fun AsyncInputStream.read(data: ByteArray): Int = read(data, 0, data.size)
 suspend fun AsyncInputStream.read(data: UByteArray): Int = read(data.data, 0, data.size)
 
-@Deprecated("Use readBytesPartial instead", ReplaceWith("readBytesUpTo(len)"))
+@Deprecated("Use readBytesUpTo instead", ReplaceWith("readBytesUpTo(len)"))
 suspend fun AsyncInputStream.readBytes(len: Int): ByteArray = readBytesUpTo(len)
 
 suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {

@@ -10,9 +10,15 @@ class EventLoopFactoryTest : EventLoopFactory() {
 class EventLoopTest : EventLoop() {
 	override var time: Long = 0L; private set
 
+	data class Entry(val el: EventLoopTest, val time: Long, val handler: () -> Unit) : Closeable {
+		override fun close() {
+			el.timers -= this
+		}
+	}
+
 	private var tasks = LinkedList<() -> Unit>()
 	private val lock = Any()
-	private val timers = HashMap<Long, ArrayList<() -> Unit>>()
+	private val timers = ArrayList<Entry>()
 
 	override fun setIntervalInternal(ms: Int, callback: () -> Unit): Closeable {
 		var cancelled = false
@@ -30,42 +36,33 @@ class EventLoopTest : EventLoop() {
 		}
 	}
 
-	override fun setTimeoutInternal(ms: Int, callback: () -> Unit): Closeable {
-		val items = synchronized(lock) { timers.getOrPut(this.time + ms) { ArrayList() } }
-		items += callback
-		return Closeable {
-			items -= callback
-		}
+	override fun setTimeoutInternal(ms: Int, callback: () -> Unit): Closeable = synchronized(lock) {
+		val entry = Entry(this, this.time + ms, callback)
+		timers += entry
+		entry
 	}
 
 	var executing = false
-	fun executeTasks() {
-		if (executing) return
+	fun executeTasks() = synchronized(lock) {
+		if (executing) return@synchronized
 		executing = true
 		try {
-			var checkTimers = true
-			while (synchronized(lock) { tasks.isNotEmpty() || checkTimers }) {
-				val task = synchronized(lock) { if (tasks.isNotEmpty()) tasks.removeFirst() else null }
-				if (task != null) task()
-
-				val handlers = synchronized(lock) {
-					if (timers.isNotEmpty()) {
-						val item = timers.entries.first()
-						if (time >= item.key) {
-							timers.remove(item.key)
-							item.value.toList()
-						} else {
-							checkTimers = false
-							null
-						}
-					} else {
-						checkTimers = false
-						null
-					}
+			do {
+				var count = 0
+				if (tasks.isNotEmpty()) {
+					tasks.removeFirst()()
+					count++
 				}
 
-				if (handlers != null) for (handler in handlers) handler()
-			}
+				val stimers = timers.filter { time >= it.time }
+				if (stimers.isEmpty()) break
+				for (entry in stimers) {
+					entry.close()
+					entry.handler()
+					count++
+				}
+				count += timers.count { time >= it.time }
+			} while (count > 0)
 		} finally {
 			executing = false
 		}
