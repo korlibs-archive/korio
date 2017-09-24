@@ -19,14 +19,14 @@ buildscript {
 	ext {
 		libraries = [
 				kotlin_stdlib_common: "org.jetbrains.kotlin:kotlin-stdlib-common:$librariesVersion",
-				kotlin_stdlib_jvm: "org.jetbrains.kotlin:kotlin-stdlib:$librariesVersion",
-				kotlin_stdlib_js: "org.jetbrains.kotlin:kotlin-stdlib-js:$librariesVersion",
+				kotlin_stdlib_jvm   : "org.jetbrains.kotlin:kotlin-stdlib:$librariesVersion",
+				kotlin_stdlib_js    : "org.jetbrains.kotlin:kotlin-stdlib-js:$librariesVersion",
 
-				kotlin_test_common: "org.jetbrains.kotlin:kotlin-test-common:$librariesVersion",
-				kotlin_test_jvm: "org.jetbrains.kotlin:kotlin-test:$librariesVersion",
-				kotlin_test_js: "org.jetbrains.kotlin:kotlin-test-js:$librariesVersion",
+				kotlin_test_common  : "org.jetbrains.kotlin:kotlin-test-common:$librariesVersion",
+				kotlin_test_jvm     : "org.jetbrains.kotlin:kotlin-test:$librariesVersion",
+				kotlin_test_js      : "org.jetbrains.kotlin:kotlin-test-js:$librariesVersion",
 
-				kotlin_reflect: "org.jetbrains.kotlin:kotlin-reflect:$librariesVersion",
+				kotlin_reflect      : "org.jetbrains.kotlin:kotlin-reflect:$librariesVersion",
 		]
 	}
 
@@ -50,6 +50,14 @@ allprojects {
 	switch (project.name) {
 		case "korio":
 		case "kotlinx.arraybuffers":
+		case "korio-ext-web":
+			// Should be a platform-common library in the future!
+		case "korio-ext-db-elasticsearch":
+		case "korio-ext-db-cassandra":
+		case "korio-ext-db-redis":
+		case "korio-ext-amazon-s3":
+		case "korio-ext-amazon-common":
+		case "korio-ext-amazon-dynamodb":
 			type = "jvm";
 			break;
 		default:

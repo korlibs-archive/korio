@@ -1,14 +1,12 @@
 package com.soywiz.korio.ext.amazon
 
+import com.soywiz.korio.crypto.AsyncHash
 import com.soywiz.korio.crypto.toBase64
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.http.Http
-import com.soywiz.korio.time.Locale
-import com.soywiz.korio.time.SimpleDateFormat
-import com.soywiz.korio.time.TimeZone
-import com.soywiz.korio.util.crypto.Mac
-import com.soywiz.korio.util.crypto.MessageDigest
-import com.soywiz.korio.util.crypto.SecretKeySpec
+import com.soywiz.korio.net.http.HttpDate
+import com.soywiz.korio.crypto.Mac
+import com.soywiz.korio.crypto.SecretKeySpec
 import com.soywiz.korio.util.substr
 import com.soywiz.korio.util.toHexStringLower
 import com.soywiz.korio.vfs.UserHomeVfs
@@ -38,22 +36,22 @@ object AmazonAuth {
 	}
 
 	object V1 {
-		val DATE_FORMAT = SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss zzz", Locale.ENGLISH).apply { timeZone = TimeZone.getTimeZone("UTC") }
+		val DATE_FORMAT = HttpDate
 
-		private fun macProcess(key: ByteArray, algo: String, data: ByteArray): ByteArray {
+		suspend private fun macProcess(key: ByteArray, algo: String, data: ByteArray): ByteArray {
 			return Mac.getInstance(algo).apply { init(SecretKeySpec(key, algo)) }.doFinal(data)
 		}
 
-		fun macProcessStringsB64(key: String, algo: String, data: String): String {
+		suspend fun macProcessStringsB64(key: String, algo: String, data: String): String {
 			return macProcess(key.toByteArray(), algo, data.toByteArray()).toBase64()
 		}
 
-		fun getAuthorization(accessKey: String, secretKey: String, method: Http.Method, cannonicalPath: String, headers: Http.Headers): String {
+		suspend fun getAuthorization(accessKey: String, secretKey: String, method: Http.Method, cannonicalPath: String, headers: Http.Headers): String {
 			val contentType = headers["content-type"] ?: ""
 			val contentMd5 = headers["content-md5"] ?: ""
 			val date = headers["date"] ?: ""
 
-			val amzHeaders = hashMapOf<String, String>()
+			val amzHeaders = HashMap<String, String>()
 
 			for ((key, value) in headers) {
 				val k = key.toLowerCase()
@@ -71,13 +69,13 @@ object AmazonAuth {
 
 	// http://docs.aws.amazon.com/general/latest/gr/signature-v4-examples.html
 	object V4 {
-		val DATE_FORMAT = SimpleDateFormat("YYYYMMdd'T'HHmmss'Z'", Locale.ENGLISH).apply { timeZone = TimeZone.getTimeZone("UTC") }
+		//val DATE_FORMAT = SimplerDateFormat("YYYYMMdd'T'HHmmss'Z'")
 
-		fun getSignedHeaders(headers: Http.Headers): String {
+		suspend fun getSignedHeaders(headers: Http.Headers): String {
 			return headers.toListGrouped().map { it.first.toLowerCase() to it.second.map(String::trim).joinToString(",") }.sortedBy { it.first }.map { it.first }.joinToString(";")
 		}
 
-		fun getCannonicalRequest(method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray): String {
+		suspend fun getCannonicalRequest(method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray): String {
 			var CanonicalRequest = ""
 			CanonicalRequest += method.name + "\n"
 			CanonicalRequest += "/" + url.path.trim('/') + "\n"
@@ -91,29 +89,29 @@ object AmazonAuth {
 			return CanonicalRequest
 		}
 
-		fun getCannonicalRequestHash(method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray): ByteArray {
+		suspend fun getCannonicalRequestHash(method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray): ByteArray {
 			return SHA256(getCannonicalRequest(method, url, headers, payload).toByteArray(Charsets.UTF_8))
 		}
 
-		fun SHA256(data: ByteArray): ByteArray {
-			return MessageDigest.getInstance("SHA-256").digest(data);
+		suspend fun SHA256(data: ByteArray): ByteArray {
+			return AsyncHash.SHA256.hash(data)
 		}
 
-		fun HMAC(key: ByteArray, data: ByteArray): ByteArray {
+		suspend fun HMAC(key: ByteArray, data: ByteArray): ByteArray {
 			val algorithm = "HmacSHA256"
 			val mac = Mac.getInstance(algorithm)
 			mac.init(SecretKeySpec(key, algorithm))
 			return mac.doFinal(data)
 		}
 
-		fun HmacSHA256(data: String, key: ByteArray): ByteArray {
+		suspend fun HmacSHA256(data: String, key: ByteArray): ByteArray {
 			val algorithm = "HmacSHA256"
 			val mac = Mac.getInstance(algorithm)
 			mac.init(SecretKeySpec(key, algorithm))
 			return mac.doFinal(data.toByteArray(Charsets.UTF_8))
 		}
 
-		fun getSignatureKey(key: String, dateStamp: String, regionName: String, serviceName: String): ByteArray {
+		suspend fun getSignatureKey(key: String, dateStamp: String, regionName: String, serviceName: String): ByteArray {
 			val kSecret = ("AWS4" + key).toByteArray(Charsets.UTF_8)
 			val kDate = HmacSHA256(dateStamp, kSecret)
 			val kRegion = HmacSHA256(regionName, kDate)
@@ -122,7 +120,7 @@ object AmazonAuth {
 			return kSigning
 		}
 
-		fun getStringToSign(method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray, region: String, service: String): String {
+		suspend fun getStringToSign(method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray, region: String, service: String): String {
 			val date = headers["X-Amz-Date"]!!
 			val ddate = date.substr(0, 8)
 			var StringToSign = ""
@@ -133,7 +131,7 @@ object AmazonAuth {
 			return StringToSign
 		}
 
-		fun getSignature(key: String, method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray, region: String, service: String): String {
+		suspend fun getSignature(key: String, method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray, region: String, service: String): String {
 			val date = headers["X-Amz-Date"]!!
 			val ddate = date.substr(0, 8)
 			val derivedSigningKey = getSignatureKey(key, ddate, region, service)
@@ -144,7 +142,7 @@ object AmazonAuth {
 			return HMAC(derivedSigningKey, stringToSign.toByteArray(Charsets.UTF_8)).toHexStringLower()
 		}
 
-		fun getAuthorization(accessKey: String, secretKey: String, method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray, region: String, service: String): String {
+		suspend fun getAuthorization(accessKey: String, secretKey: String, method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray, region: String, service: String): String {
 			val date = headers["X-Amz-Date"]!!
 			val ddate = date.substr(0, 8)
 			val signedHeaders = getSignedHeaders(headers)
@@ -154,7 +152,7 @@ object AmazonAuth {
 			return "AWS4-HMAC-SHA256 Credential=$accessKey/$ddate/$region/$service/aws4_request, SignedHeaders=$signedHeaders, Signature=$signature"
 		}
 
-		fun signHeaders(accessKey: String, secretKey: String, method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray, region: String, service: String): Http.Headers {
+		suspend fun signHeaders(accessKey: String, secretKey: String, method: Http.Method, url: URL, headers: Http.Headers, payload: ByteArray, region: String, service: String): Http.Headers {
 			return headers.withReplaceHeaders(
 				"Authorization" to getAuthorization(accessKey, secretKey, method, url, headers, payload, region, service)
 			)

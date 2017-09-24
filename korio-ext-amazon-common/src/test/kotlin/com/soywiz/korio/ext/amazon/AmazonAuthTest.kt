@@ -1,5 +1,6 @@
 package com.soywiz.korio.ext.amazon
 
+import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.lang.Charsets
 import com.soywiz.korio.lang.URL
 import com.soywiz.korio.lang.toByteArray
@@ -25,7 +26,7 @@ class AmazonAuthTest {
 	// http://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
 	// Task 1: Create a Canonical Request for Signature Version 4
 	@Test
-	fun task1Test() {
+	fun task1Test() = syncTest {
 		val expected = listOf(
 			"GET",
 			"/",
@@ -50,7 +51,7 @@ class AmazonAuthTest {
 	// http://docs.aws.amazon.com/general/latest/gr/sigv4-create-string-to-sign.html
 	// Task 2: Create a String to Sign for Signature Version 4
 	@Test
-	fun task2Test() {
+	fun task2Test() = syncTest {
 		assertEquals(
 			listOf(
 				"AWS4-HMAC-SHA256",
@@ -65,7 +66,7 @@ class AmazonAuthTest {
 	// http://docs.aws.amazon.com/general/latest/gr/sigv4-calculate-signature.html
 	// Task 3: Calculate the Signature for AWS Signature Version 4
 	@Test
-	fun task3Test() {
+	fun task3Test() = syncTest {
 		assertEquals(
 			"f4780e2d9f65fa895f9c67b32ce1baf0b0d8a43505a000a1a9e090d414db404d",
 			AmazonAuth.V4.getSignatureKey(secretKey, "20120215", "us-east-1", "iam").toHexStringLower()
@@ -73,7 +74,7 @@ class AmazonAuthTest {
 	}
 
 	@Test
-	fun task4Test() {
+	fun task4Test() = syncTest {
 		assertEquals(
 			"AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20150830/us-east-1/iam/aws4_request, SignedHeaders=content-type;host;x-amz-date, Signature=5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7",
 			AmazonAuth.V4.getAuthorization(accessKey, secretKey, method, url, headers, payload, region, service)

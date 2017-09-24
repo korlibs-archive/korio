@@ -7,7 +7,6 @@ import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.stream.AsyncInputOpenable
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.openAsync
-import com.soywiz.korio.util.crypto.SimplerMessageDigest
 import com.soywiz.korio.util.use
 import com.soywiz.korio.util.write32_le
 
@@ -15,6 +14,7 @@ abstract class AsyncHash {
 	companion object {
 		val MD5 by lazy { MessageDigestHash("MD5") }
 		val SHA1 by lazy { MessageDigestHash("SHA1") }
+		val SHA256 by lazy { MessageDigestHash("SHA-256") }
 		val CRC32 by lazy { CRC32Hash() }
 	}
 
@@ -31,7 +31,7 @@ abstract class AsyncHash {
 	class MessageDigestHash(val algo: String) : AsyncHash() {
 		suspend override fun hashSync(content: AsyncInputStream): ByteArray {
 			val temp = ByteArray(0x1000)
-			val md = SimplerMessageDigest.getInstance(algo)
+			val md = SimplerMessageDigest(algo)
 			while (true) {
 				val read = content.read(temp, 0, temp.size)
 				if (read <= 0) break

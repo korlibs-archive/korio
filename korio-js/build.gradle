@@ -1,4 +1,4 @@
 dependencies {
 	compile project(":kotlinx.arraybuffers-js")
-	implement project(":korio-core")
+	implement project(":korio-common")
 }

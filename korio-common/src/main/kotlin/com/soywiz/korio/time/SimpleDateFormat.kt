@@ -38,7 +38,7 @@ class SimplerDateFormat(val format: String) {
 		for (name in parts2) {
 			out += when (name) {
 				"EEE" -> englishDaysOfWeek[dd.dayOfWeek].substr(0, 3).capitalize()
-				"z" -> "GMT"
+				"z", "zzz" -> "GMT"
 				"d" -> "%d".format(dd.dayOfMonth)
 				"dd" -> "%02d".format(dd.dayOfMonth)
 				"MM" -> "%02d".format(dd.month0 + 1)
@@ -65,7 +65,7 @@ class SimplerDateFormat(val format: String) {
 		for ((name, value) in parts.zip(result.groupValues.drop(1))) {
 			when (name) {
 				"EEE" -> Unit // day of week (Sun)
-				"z" -> Unit // timezone (GMT)
+				"z", "zzz" -> Unit // timezone (GMT)
 				"d", "dd" -> day = value.toInt()
 				"MM" -> month0 = value.toInt() - 1
 				"MMM" -> month0 = englishMonths3.indexOf(value.toLowerCase())
