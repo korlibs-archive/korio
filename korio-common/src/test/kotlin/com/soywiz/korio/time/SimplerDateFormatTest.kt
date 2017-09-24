@@ -9,12 +9,12 @@ class SimplerDateFormatTest {
 
 	@Test
 	fun testParse() {
-		assertEquals(784111777000L, format.parse("Sun, 06 Nov 1994 08:49:37 GMT"))
+		assertEquals(784111777000, format.parse("Sun, 06 Nov 1994 08:49:37 GMT"))
 	}
 
 	@Test
 	fun testFormat() {
-		assertEquals("Sun, 06 Nov 1994 08:49:37 GMT", format.format(784111777000L))
+		assertEquals("Sun, 06 Nov 1994 08:49:37 GMT", format.format(784111777000))
 	}
 
 	@Test

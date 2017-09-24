@@ -10,7 +10,6 @@ object HttpDate {
 
 	fun format(date: Long): String = _format.format(date)
 	fun format(date: UTCDate): String = _format.format(date.time)
-	//fun format(): String = format(Calendar.getInstance().time)
 	fun format(): String = format(STimeProvider.currentTimeMillis())
 
 	fun parse(str: String): Long = _format.parse(str)
