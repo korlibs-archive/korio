@@ -1,17 +1,17 @@
 package com.soywiz.korio.util.crypto
 
-class MessageDigest {
+class SimplerMessageDigest(val name: String) {
 	companion object {
-		fun getInstance(name: String) = MessageDigest()
+		fun getInstance(name: String) = SimplerMessageDigest(name)
 	}
 
 	fun update(data: ByteArray, offset: Int = 0, count: Int = data.size): Unit = TODO()
-
 	fun digest(): ByteArray = TODO()
-	fun digest(data: ByteArray): ByteArray {
-		update(data)
-		return digest()
-	}
+}
+
+fun SimplerMessageDigest.digest(data: ByteArray): ByteArray {
+	update(data)
+	return digest()
 }
 
 class Mac {

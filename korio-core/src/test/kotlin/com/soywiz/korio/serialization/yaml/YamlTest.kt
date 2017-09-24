@@ -133,6 +133,9 @@ class YamlTest {
 
 	@Test
 	fun decodeToType() {
+		mapper.registerEnum(MyEnum.values())
+		mapper.registerType { ClassWithEnum(it["size"]?.gen() ?: 70, it["a"]?.gen() ?: MyEnum.HELLO) }
+
 		assertEquals(
 			ClassWithEnum(a = MyEnum.WORLD),
 			Yaml.decodeToType<ClassWithEnum>("""

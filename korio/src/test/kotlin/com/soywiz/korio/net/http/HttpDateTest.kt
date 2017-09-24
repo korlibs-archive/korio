@@ -7,7 +7,7 @@ class HttpDateTest {
 	@Test
 	fun name() {
 		assertEquals(
-			"Mon, 18 Sep 2017 23:58:45 GMT",
+			"Tue, 19 Sep 2017 00:58:45 GMT",
 			HttpDate.format(1505779125916L)
 		)
 	}

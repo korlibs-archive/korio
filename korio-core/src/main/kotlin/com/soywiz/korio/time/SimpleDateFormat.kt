@@ -7,7 +7,7 @@ import com.soywiz.korio.util.substr
 
 class SimplerDateFormat(val format: String) {
 	companion object {
-		private val rx = Regex("[\\w\\+\\-]+")
+		private val rx = Regex("[\\w]+")
 		private val englishDaysOfWeek = listOf(
 			"sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"
 		)

@@ -1,3 +1,5 @@
 package com.soywiz.korio.serialization.json
 
-fun Map<*, *>.toJson() = Json.encode(this)
+import com.soywiz.korio.serialization.ObjectMapper
+
+fun Map<*, *>.toJson(mapper: ObjectMapper) = Json.encode(this, mapper)

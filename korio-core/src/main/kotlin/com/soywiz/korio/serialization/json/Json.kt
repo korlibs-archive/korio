@@ -12,8 +12,8 @@ import com.soywiz.korio.util.toNumber
 import kotlin.collections.set
 
 object Json {
-	fun stringifyPretty(obj: Any?) = stringify(obj, pretty = true)
-	fun stringify(obj: Any?, pretty: Boolean = false) = if (pretty) encodePretty(obj) else encode(obj)
+	fun stringifyPretty(obj: Any?, mapper: ObjectMapper) = stringify(obj, mapper, pretty = true)
+	fun stringify(obj: Any?, mapper: ObjectMapper, pretty: Boolean = false) = if (pretty) encodePretty(obj, mapper) else encode(obj, mapper)
 	fun parse(@Language("json") s: String): Any? = StrReader(s).decode()
 	inline fun <reified T : Any> parseTyped(@Language("json") s: String, mapper: ObjectMapper): T = decodeToType(s, T::class, mapper)
 
@@ -23,7 +23,7 @@ object Json {
 
 	inline fun <reified T : Any> decodeToType(@Language("json") s: String, mapper: ObjectMapper): T = decodeToType(s, T::class, mapper)
 	@Suppress("UNCHECKED_CAST")
-	fun <T> decodeToType(@Language("json") s: String, clazz: KClass<T>, mapper: ObjectMapper): T = mapper.create(decode(s), clazz)
+	fun <T> decodeToType(@Language("json") s: String, clazz: KClass<T>, mapper: ObjectMapper): T = mapper.toTyped(decode(s), clazz)
 
 	fun StrReader.decode(): Any? {
 		val ic = skipSpaces().read()
@@ -73,9 +73,9 @@ object Json {
 	}
 
 	@Language("json")
-	fun encode(obj: Any?) = StringBuilder().apply { encode(obj, this) }.toString()
+	fun encode(obj: Any?, mapper: ObjectMapper) = StringBuilder().apply { encode(obj, this, mapper) }.toString()
 
-	fun encode(obj: Any?, b: StringBuilder) {
+	fun encode(obj: Any?, b: StringBuilder, mapper: ObjectMapper) {
 		when (obj) {
 			null -> b.append("null")
 			is Boolean -> b.append(if (obj) "true" else "false")
@@ -83,9 +83,9 @@ object Json {
 				b.append('{')
 				for ((i, v) in obj.entries.withIndex()) {
 					if (i != 0) b.append(',')
-					encode(v.key, b)
+					encode(v.key, b, mapper)
 					b.append(':')
-					encode(v.value, b)
+					encode(v.value, b, mapper)
 				}
 				b.append('}')
 			}
@@ -93,7 +93,7 @@ object Json {
 				b.append('[')
 				for ((i, v) in obj.withIndex()) {
 					if (i != 0) b.append(',')
-					encode(v, b)
+					encode(v, b, mapper)
 				}
 				b.append(']')
 			}
@@ -108,11 +108,11 @@ object Json {
 		}
 	}
 
-	fun encodePretty(obj: Any?, indentChunk: String = "\t"): String = Indenter().apply {
-		encodePretty(obj, this)
+	fun encodePretty(obj: Any?, mapper: ObjectMapper, indentChunk: String = "\t"): String = Indenter().apply {
+		encodePretty(obj, mapper, this)
 	}.toString(doIndent = true, indentChunk = indentChunk)
 
-	fun encodePretty(obj: Any?, b: Indenter) {
+	fun encodePretty(obj: Any?, mapper: ObjectMapper, b: Indenter) {
 		when (obj) {
 			null -> b.inline("null")
 			is Boolean -> b.inline(if (obj) "true" else "false")
@@ -124,7 +124,7 @@ object Json {
 						if (i != 0) b.line(",")
 						b.inline(encodeString("" + v.key))
 						b.inline(": ")
-						encodePretty(v.value, b)
+						encodePretty(v.value, mapper, b)
 						if (i == entries.size - 1) b.line("")
 					}
 				}
@@ -136,7 +136,7 @@ object Json {
 					val entries = obj.toList()
 					for ((i, v) in entries.withIndex()) {
 						if (i != 0) b.line(",")
-						encodePretty(v, b)
+						encodePretty(v, mapper, b)
 						if (i == entries.size - 1) b.line("")
 					}
 				}

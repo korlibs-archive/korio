@@ -5,7 +5,35 @@ import org.junit.Test
 import kotlin.test.assertEquals
 
 class JsonTest {
+	enum class MyEnum { DEMO, HELLO, WORLD }
+	data class ClassWithEnum(val a: MyEnum = MyEnum.HELLO)
+
+	class Demo2 {
+		var a: Int = 10
+
+		companion object {
+			//@JvmField
+			var b: String = "test"
+		}
+	}
+
+	data class Demo(val a: Int, val b: String)
+
+	data class DemoList(val demos: ArrayList<Demo>)
+
+	data class DemoSet(val demos: Set<Demo>)
+
 	val mapper = ObjectMapper()
+
+	init {
+		// GENERATED. THIS CODE SHOULD BE GENERATED.
+		mapper.registerEnum(MyEnum.values())
+		mapper.registerType { Demo(it["a"].gen(), it["b"].gen()) }
+		mapper.registerType { Demo2().apply { a = it["a"].gen() } }
+		mapper.registerType { DemoList(it["demos"].toDynamicList().map { it.gen<Demo>() }.toArrayList()) }
+		mapper.registerType { DemoSet(it["demos"].toDynamicList().map { it.gen<Demo>() }.toSet()) }
+		mapper.registerType { ClassWithEnum(it["a"]?.gen() ?: MyEnum.HELLO) }
+	}
 
 	@Test
 	fun decode1() {
@@ -29,30 +57,24 @@ class JsonTest {
 
 	@Test
 	fun encode1() {
-		assertEquals("1", Json.encode(1))
-		assertEquals("null", Json.encode(null))
-		assertEquals("true", Json.encode(true))
-		assertEquals("false", Json.encode(false))
-		assertEquals("{}", Json.encode(mapOf<String, Any?>()))
-		assertEquals("[]", Json.encode(listOf<Any?>()))
-		assertEquals("\"a\"", Json.encode("a"))
+		assertEquals("1", Json.encode(1, mapper))
+		assertEquals("null", Json.encode(null, mapper))
+		assertEquals("true", Json.encode(true, mapper))
+		assertEquals("false", Json.encode(false, mapper))
+		assertEquals("{}", Json.encode(mapOf<String, Any?>(), mapper))
+		assertEquals("[]", Json.encode(listOf<Any?>(), mapper))
+		assertEquals("\"a\"", Json.encode("a", mapper))
 	}
 
 	@Test
 	fun encode2() {
-		assertEquals("[1,2,3]", Json.encode(listOf(1, 2, 3)))
-		assertEquals("""{"a":1,"b":2}""", Json.encode(hashMapOf("a" to 1, "b" to 2)))
+		assertEquals("[1,2,3]", Json.encode(listOf(1, 2, 3), mapper))
+		assertEquals("""{"a":1,"b":2}""", Json.encode(hashMapOf("a" to 1, "b" to 2), mapper))
 	}
-
-	data class Demo(val a: Int, val b: String)
-
-	data class DemoList(val demos: ArrayList<Demo>)
-
-	data class DemoSet(val demos: Set<Demo>)
 
 	@Test
 	fun encodeTyped() {
-		assertEquals("""{"a":1,"b":"test"}""", Json.encode(Demo(1, "test")))
+		assertEquals("""{"a":1,"b":"test"}""", Json.encode(Demo(1, "test"), mapper))
 	}
 
 	@Test
@@ -63,6 +85,10 @@ class JsonTest {
 	@Test
 	fun decodeUnicode() {
 		assertEquals("aeb", Json.decode(""" "a\u0065b" """))
+	}
+
+	fun <T> Iterable<T>.toArrayList(): ArrayList<T> {
+		return ArrayList<T>().apply { addAll(this@toArrayList) }
 	}
 
 	@Test
@@ -95,16 +121,13 @@ class JsonTest {
 	}
 
 	@Test
-	fun decodeWithStaticMembers() {
-		assertEquals("""{"a":10}""", Json.encode(Demo2()))
+	fun encodeWithStaticMembers() {
+		assertEquals("""{"a":10}""", Json.encode(Demo2(), mapper))
 	}
-
-	enum class MyEnum { DEMO, HELLO, WORLD }
-	data class ClassWithEnum(val a: MyEnum = MyEnum.HELLO)
 
 	@Test
 	fun testEncodeEnum() {
-		assertEquals("""{"a":"HELLO"}""", Json.encode(ClassWithEnum()))
+		assertEquals("""{"a":"HELLO"}""", Json.encode(ClassWithEnum(), mapper))
 	}
 
 	@Test
@@ -117,17 +140,16 @@ class JsonTest {
 		data class V(val a: Int, val b: Int)
 		data class Demo(val v: Map<String, V>)
 
-		assertEquals(Demo(mapOf("z" to V(1, 2))), Json.decodeToType<Demo>("""{"v":{"z":{"a":1,"b":2}}}""", mapper))
+		mapper.registerType { V(it["a"].gen(), it["b"].gen()) }
+		mapper.registerType { Demo(it["v"].toDynamicMap().map { it.key.toString() to it.value.gen<V>() }.toMap()) }
 
-		assertEquals("""{"v":{"z1":{"a":1,"b":2},"z2":{"a":1,"b":2}}}""", Json.encode(Demo(mapOf("z1" to V(1, 2), "z2" to V(1, 2)))))
+		assertEquals(Demo(mapOf("z" to V(1, 2))), Json.decodeToType<Demo>("""{"v":{"z":{"a":1,"b":2}}}""", mapper))
 	}
 
-	class Demo2 {
-		var a: Int = 10
-
-		companion object {
-			//@JvmField
-			var b: String = "test"
-		}
+	@Test
+	fun testEncodeMap() {
+		data class V(val a: Int, val b: Int)
+		data class Demo(val v: Map<String, V>)
+		assertEquals("""{"v":{"z1":{"a":1,"b":2},"z2":{"a":1,"b":2}}}""", Json.encode(Demo(mapOf("z1" to V(1, 2), "z2" to V(1, 2))), mapper))
 	}
 }
