@@ -55,13 +55,11 @@ class EventLoopTest : EventLoop() {
 				}
 
 				val stimers = timers.filter { time >= it.time }
-				if (stimers.isEmpty()) break
 				for (entry in stimers) {
 					entry.close()
 					entry.handler()
 					count++
 				}
-				count += timers.count { time >= it.time }
 			} while (count > 0)
 		} finally {
 			executing = false
