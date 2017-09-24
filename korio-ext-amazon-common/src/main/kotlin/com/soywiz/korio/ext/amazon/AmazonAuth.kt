@@ -4,12 +4,14 @@ import com.soywiz.korio.crypto.AsyncHash
 import com.soywiz.korio.crypto.SimplerMac
 import com.soywiz.korio.crypto.finalize
 import com.soywiz.korio.crypto.toBase64
-import com.soywiz.korio.lang.*
+import com.soywiz.korio.lang.Environment
+import com.soywiz.korio.lang.IOException
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpDate
 import com.soywiz.korio.util.substr
 import com.soywiz.korio.util.toHexStringLower
 import com.soywiz.korio.vfs.UserHomeVfs
+import java.net.URL
 
 object AmazonAuth {
 	class Credentials(val accessKey: String, val secretKey: String)

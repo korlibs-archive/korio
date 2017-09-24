@@ -3,7 +3,6 @@ package com.soywiz.korio.ext.s3
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.ext.amazon.AmazonAuth
 import com.soywiz.korio.lang.Environment
-import com.soywiz.korio.lang.URL
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.stream.AsyncInputStream
@@ -89,7 +88,6 @@ class S3(val credentials: AmazonAuth.Credentials?, val endpoint: String, val htt
 
 	data class ParsedPath(val bucket: String, val key: String) {
 		val absolutePath = "https://$bucket.s3.amazonaws.com/$key"
-		val url = URL(absolutePath)
 		val cannonical = "/$bucket/$key"
 	}
 

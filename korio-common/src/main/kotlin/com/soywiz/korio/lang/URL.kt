@@ -18,7 +18,7 @@ class URL(val url: String) {
 	val user = userPassParts.getOrElse(0) { "" }
 	val password = userPassParts.getOrElse(1) { "" }
 	val host = fullHostParts.last()
-	val path = fullPath
+	val path = "/" + fullPath
 	val query = queryString
 }
 

@@ -2,11 +2,11 @@ package com.soywiz.korio.ext.amazon
 
 import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.lang.Charsets
-import com.soywiz.korio.lang.URL
 import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.util.toHexStringLower
 import org.junit.Test
+import java.net.URL
 import kotlin.test.assertEquals
 
 class AmazonAuthTest {

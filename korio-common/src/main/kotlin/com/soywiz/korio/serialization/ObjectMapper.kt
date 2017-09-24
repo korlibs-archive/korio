@@ -4,7 +4,6 @@ import com.soywiz.korio.error.invalidArg
 import com.soywiz.korio.lang.DynamicContext
 import com.soywiz.korio.lang.KClass
 import com.soywiz.korio.lang.classOf
-import com.soywiz.korio.util.nonNullMap
 
 /**
  * Register classes and how to type and untype them.
@@ -14,15 +13,20 @@ import com.soywiz.korio.util.nonNullMap
  * Bools, Numbers, Strings, Lists and Maps (json supported)
  */
 class ObjectMapper {
+	val _typers = HashMap<KClass<*>, TypeContext.(Any?) -> Any?>()
+	val _untypers = HashMap<KClass<*>, UntypeContext.(Any?) -> Any?>()
+
 	@Suppress("NOTHING_TO_INLINE")
 	class TypeContext(val map: ObjectMapper) : DynamicContext {
 		inline fun <reified T> Any?.gen(): T = map.toTyped(this, T::class)
 		inline fun <reified T> Any?.genList(): ArrayList<T> {
 			return ArrayList(this.toDynamicList().map { it.gen<T>() }.toList())
 		}
+
 		inline fun <reified T> Any?.genSet(): HashSet<T> {
 			return HashSet(this.toDynamicList().map { it.gen<T>() }.toSet())
 		}
+
 		inline fun <reified K, reified V> Any?.genMap(): HashMap<K, V> {
 			return HashMap(this.toDynamicMap().map { it.key.gen<K>() to it.value.gen<V>() }.toMap())
 		}
@@ -41,15 +45,12 @@ class ObjectMapper {
 	private val typeCtx = TypeContext(this)
 	private val untypeCtx = UntypeContext(this)
 
-	private val typers = HashMap<KClass<*>, TypeContext.(Any?) -> Any?>()
-	private val untypers = HashMap<KClass<*>, UntypeContext.(Any?) -> Any?>()
-
 	fun <T> registerType(clazz: KClass<T>, generate: TypeContext.(Any?) -> T) = this.apply {
-		typers[clazz] = generate
+		_typers[clazz] = generate
 	}
 
 	fun <T> toTyped(obj: Any?, clazz: KClass<T>): T {
-		val generator = typers[clazz] ?: invalidArg("Unregistered $clazz")
+		val generator = _typers[clazz] ?: invalidArg("Unregistered $clazz")
 		return generator(typeCtx, obj) as T
 	}
 
@@ -78,10 +79,10 @@ class ObjectMapper {
 		is Iterable<*> -> ArrayList(obj.map { toUntyped(it) })
 		is Map<*, *> -> HashMap(obj.map { toUntyped(it.key) to toUntyped(it.value) }.toMap())
 		else -> {
-			val unt = untypers[clazz]
+			val unt = _untypers[clazz]
 			if (unt == null) {
-				println("Untypers: " + untypers.size)
-				for (u in untypers) {
+				println("Untypers: " + _untypers.size)
+				for (u in _untypers) {
 					println(" - " + u.key)
 				}
 
@@ -100,11 +101,26 @@ class ObjectMapper {
 	inline fun <reified T : Enum<T>> registerEnum(values: Array<T>) = registerEnum(classOf<T>(), values)
 
 	fun <T> registerUntype(clazz: KClass<T>, untyper: UntypeContext.(T) -> Any?) {
-		untypers[clazz] = untyper as UntypeContext.(Any?) -> Any?
+		_untypers[clazz] = untyper as UntypeContext.(Any?) -> Any?
 	}
 
 	inline fun <reified T> registerUntype(noinline untyper: UntypeContext.(T) -> Any?) = registerUntype(classOf<T>(), untyper)
 
 	inline fun <reified T : Enum<T>> registerUntypeEnum() = registerUntype<T> { it.name }
 	//inline fun <reified T> registerUntypeObj(vararg props: KPro<T>) = registerUntype(classOf<T>(), untyper)
+
+	inline fun <T> scoped(callback: () -> T): T {
+		val oldTypers = _typers.toMap()
+		val oldUntypers = _untypers.toMap()
+		try {
+			return callback()
+		} finally {
+			_typers.clear()
+			_typers.putAll(oldTypers)
+			_untypers.clear()
+			_untypers.putAll(oldUntypers)
+		}
+	}
 }
+
+val Mapper = ObjectMapper()
