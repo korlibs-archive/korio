@@ -1,4 +1,4 @@
-## Korio: Kotlin cORoutines I/O : Streams + Async TCP Client/Server + Virtual File System for JVM, Kotlin-JS, Android, Jtransc+Node.JS and Jtransc+Browser
+## Korio: Kotlin cORoutines I/O : Streams + Async TCP Client/Server + Virtual File System for JVM, Kotlin-JS (Browser & Node.JS), JTransc (Browser & Node.JS)
 
 [![Build Status](https://travis-ci.org/korlibs/korio.svg?branch=master)](https://travis-ci.org/korlibs/korio)
 [![Maven Version](https://img.shields.io/github/tag/korlibs/korio.svg?style=flat&label=maven)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22korio%22)
@@ -164,8 +164,8 @@ val root = MountableVfs {
 	mount("/zip", resources["hello.zip"].openAsZip())
 	mount("/iso", resources["isotest.iso"].openAsIso())
 }
-Assert.assertEquals("ZIP!", root["/zip/hello/world.txt"].readString())
-Assert.assertEquals("ISO!", root["/iso/hello/world.txt"].readString())
+assertEquals("ZIP!", root["/zip/hello/world.txt"].readString())
+assertEquals("ISO!", root["/iso/hello/world.txt"].readString())
 
 (root.vfs as Mountable).unmount("/zip")
 ```

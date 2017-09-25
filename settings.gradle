@@ -1,36 +1,40 @@
 //rootProject.buildFileName='build.gradle.kts'
 rootProject.name = 'korio-root'
 
-def includeProj(name, folder) {
-	include name
-	project(name).projectDir = file(folder)
-}
-
 include(
-		'korio-core',
+		'kotlinx.arraybuffers-common',
+		'kotlinx.arraybuffers',
+		'kotlinx.arraybuffers-js',
+
+		'korio-common',
 		'korio',
-		'korio-kotlinjs',
-		'korio-android',
-		'korio-vertx',
-		'korio-ktor',
-		'korio-jtransc-example',
+		'korio-js',
+
+		'korio-ext-amazon-common',
+		'korio-ext-amazon-dynamodb',
+		'korio-ext-amazon-s3',
 		'korio-ext-db-redis',
-		'korio-ext-db-mongodb',
-		'korio-ext-db-mysql',
 		'korio-ext-db-cassandra',
 		'korio-ext-db-elasticsearch',
+
+		'korio-vertx',
 		'korio-ext-web',
-		'korio-junit',
+
+		'korio-example-common',
+		'korio-example-js',
+		'korio-example-jvm',
 )
 
-includeProj(":korio-ext-amazon-common", "korio-ext-amazon/korio-ext-amazon-common")
-includeProj(":korio-ext-amazon-s3", "korio-ext-amazon/korio-ext-amazon-s3")
-includeProj(":korio-ext-amazon-dynamodb", "korio-ext-amazon/korio-ext-amazon-dynamodb")
+// JUST JS to complete tests early
+/*
+include(
+		'kotlinx.arraybuffers-common',
+		'kotlinx.arraybuffers-js',
 
-includeProj(":korio-ext-db-redis", "korio-ext-db/korio-ext-db-redis")
-includeProj(":korio-ext-db-mongodb", "korio-ext-db/korio-ext-db-mongodb")
-includeProj(":korio-ext-db-mysql", "korio-ext-db/korio-ext-db-mysql")
-includeProj(":korio-ext-db-cassandra", "korio-ext-db/korio-ext-db-cassandra")
-includeProj(":korio-ext-db-elasticsearch", "korio-ext-db/korio-ext-db-elasticsearch")
+		'korio-common',
+		'korio-js',
 
-includeProj(":korio-ext-web", "korio-ext-web")
+		'korio-example-common',
+		'korio-example-js',
+)
+*/

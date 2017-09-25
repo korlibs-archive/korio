@@ -1,7 +1,4 @@
-apply plugin: 'kotlin'
-
 dependencies {
-	compile project(":korio")
 	compile project(":korio-ext-web")
 	compile "io.vertx:vertx-core:$vertxVersion"
 	compile "io.vertx:vertx-web:$vertxVersion"
