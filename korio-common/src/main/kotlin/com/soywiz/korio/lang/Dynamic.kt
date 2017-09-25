@@ -50,6 +50,7 @@ interface DynamicContext {
 	fun Any?.toShort() = Dynamic.toShort(this)
 	fun Any?.toInt() = Dynamic.toInt(this)
 	fun Any?.toLong() = Dynamic.toLong(this)
+	fun Any?.toFloat() = Dynamic.toFloat(this)
 	fun Any?.toDouble() = Dynamic.toDouble(this)
 	fun Any?.toNumber() = Dynamic.toNumber(this)
 	fun Any?.toDynamicList() = Dynamic.toList(this)

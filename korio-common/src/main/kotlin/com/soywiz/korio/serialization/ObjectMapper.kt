@@ -61,8 +61,9 @@ class ObjectMapper {
 		registerType(Short::class) { it.toShort() }
 		registerType(Int::class) { it.toInt() }
 		registerType(Long::class) { it.toLong() }
+		registerType(Float::class) { it.toFloat() }
 		registerType(Double::class) { it.toDouble() }
-		registerType(Number::class) { it.toNumber() }
+		//registerType(Number::class) { it.toNumber() } // @TODO: This produces an undefined error in kotlin-js
 		registerType(Set::class) { it.toDynamicList().toSet() }
 		registerType(List::class) { it.toDynamicList() }
 		registerType(MutableList::class) { it.toDynamicList().toMutableList() }

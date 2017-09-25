@@ -1,0 +1,100 @@
+apply plugin: 'kotlin2js'
+
+buildscript {
+	ext.web_dir = 'web'
+	ext.webPath = 'web'
+}
+
+dependencies {
+	compile project(":korio-js")
+	implement project(":korio-example-common")
+}
+
+compileKotlin2Js {
+	kotlinOptions.outputFile = "${projectDir}/$webPath/output.js"
+	//kotlinOptions.moduleKind = "amd"
+	//kotlinOptions.moduleKind = "umd"
+	kotlinOptions.moduleKind = "commonjs"
+	kotlinOptions.sourceMap = true
+}
+
+
+clean {
+	delete new File("${projectDir}/$webPath")
+}
+
+build.doLast {
+	configurations.compile.each { File file ->
+		copy {
+			includeEmptyDirs = false
+
+			from zipTree(file.absolutePath)
+			into "${projectDir}/$webPath"
+			include { fileTreeElement ->
+				def path = fileTreeElement.path
+				(path.endsWith(".js") || path.endsWith(".js.map")) && (path.startsWith("META-INF/resources/") || !path.startsWith("META-INF/"))
+			}
+		}
+	}
+
+	copy {
+		from sourceSets.main.resources.srcDirs
+		into "${projectDir}/$webPath"
+	}
+}
+
+/*
+clean.doFirst() {
+	delete("${web_dir}")
+}
+
+build.doLast() {
+	// Copy kotlin.js and kotlin-meta.js from jar into web directory
+	configurations.compile.each { File file ->
+		copy {
+			includeEmptyDirs = false
+
+			from zipTree(file.absolutePath)
+			into "${projectDir}/${web_dir}/lib"
+			include { fileTreeElement ->
+				def path = fileTreeElement.path
+				path.endsWith(".js") && (path.startsWith("META-INF/resources/") || !path.startsWith("META-INF/"))
+			}
+		}
+	}
+
+	// Unpack build contents
+	// TODO Remove this step when a CDN link is available.
+	copy {
+		File artifact = new File("build/libs/${project.name}-${project.version}.jar")
+		includeEmptyDirs = false
+
+		from zipTree(artifact)
+		into "${web_dir}"
+		include { fileTreeElement ->
+			def path = fileTreeElement.path
+			!(path.startsWith("META-INF/") || path.startsWith("${project.name}"))
+		}
+	}
+
+	// Copy scripts to web directory
+	copy {
+		includeEmptyDirs = false
+		from new File("build/classes/main")
+		into "${web_dir}/lib"
+	}
+
+	copy {
+		includeEmptyDirs = false
+		from new File("build/classes/test")
+		into "${web_dir}/lib"
+	}
+
+	copy {
+		includeEmptyDirs = false
+		from new File("build/resources/test")
+		into "${web_dir}"
+	}
+
+}
+*/

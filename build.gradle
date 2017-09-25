@@ -58,6 +58,8 @@ allprojects {
 		case "korio-ext-amazon-s3":
 		case "korio-ext-amazon-common":
 		case "korio-ext-amazon-dynamodb":
+		//
+		case "korio-example-jvm":
 			type = "jvm";
 			break;
 		default:

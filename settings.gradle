@@ -21,4 +21,8 @@ include(
 		'korio-ext-db-mongodb',
 		'korio-ext-db-mysql',
 		'korio-ext-web',
+
+		'korio-example-common',
+		'korio-example-js',
+		'korio-example-jvm',
 )

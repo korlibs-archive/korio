@@ -3,7 +3,8 @@ package com.soywiz.korio.ext.db.elasticsearch
 import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.net.http.FakeHttpClientEndpoint
 import com.soywiz.korio.net.http.rest.rest
-import com.soywiz.korio.serialization.json.toJson
+import com.soywiz.korio.serialization.ObjectMapper
+import com.soywiz.korio.serialization.json.toJsonUntyped
 import com.soywiz.korio.time.seconds
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -11,9 +12,10 @@ import kotlin.test.assertEquals
 class ElasticSearchTest {
 	data class Doc(val title: String, val body: String)
 
+	val mapper = ObjectMapper()
 	val endpoint = FakeHttpClientEndpoint()
 	//val es = ElasticSearch(defaultHttpFactory.createClientEndpoint("http://127.0.0.1:9200"))
-	val es = ElasticSearch(endpoint.rest())
+	val es = ElasticSearch(mapper, endpoint.rest())
 	val posts = es.typed<Doc>("index-es", "posts")
 	val posts2 = es["index-es", "posts"].typed<Doc>()
 
@@ -21,8 +23,8 @@ class ElasticSearchTest {
 	fun testPut() = syncTest {
 		val myid = "myid"
 		val myversion = 7L
-		endpoint.addOkResponse(mapOf("_id" to myid, "_version" to myversion).toJson())
-		endpoint.addOkResponse(mapOf("_id" to myid, "_version" to myversion).toJson())
+		endpoint.addOkResponse(mapOf("_id" to myid, "_version" to myversion).toJsonUntyped())
+		endpoint.addOkResponse(mapOf("_id" to myid, "_version" to myversion).toJsonUntyped())
 
 
 		assertEquals(
@@ -51,7 +53,7 @@ class ElasticSearchTest {
 					mapOf("_index" to "myindex2", "_type" to "collection2", "_id" to "456", "_score" to 0.25, "_source" to mapOf("title" to "Other", "body" to "Document"))
 				)
 			)
-		).toJson()
+		).toJsonUntyped()
 		endpoint.addOkResponse(res1)
 		endpoint.addOkResponse(res1)
 		endpoint.addOkResponse(res1)
@@ -123,7 +125,7 @@ class ElasticSearchTest {
 			endpoint.capture {
 				endpoint.addOkResponse(mapOf(
 					"_source" to mapOf("title" to "hello", "body" to "world")
-				).toJson())
+				).toJsonUntyped())
 
 				assertEquals(Doc("hello", "world"), posts.getOrNull("hello"))
 			}

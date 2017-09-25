@@ -1,0 +1,8 @@
+apply plugin: "application"
+
+mainClassName = "com.soywiz.korio.example.MainJVM"
+
+dependencies {
+	compile project(":korio")
+	implement project(":korio-example-common")
+}
