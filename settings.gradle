@@ -1,7 +1,6 @@
 //rootProject.buildFileName='build.gradle.kts'
 rootProject.name = 'korio-root'
 
-/*
 include(
 		'kotlinx.arraybuffers-common',
 		'kotlinx.arraybuffers',
@@ -27,9 +26,9 @@ include(
 		'korio-example-js',
 		'korio-example-jvm',
 )
-*/
 
 // JUST JS to complete tests early
+/*
 include(
 		'kotlinx.arraybuffers-common',
 		'kotlinx.arraybuffers-js',
@@ -40,3 +39,4 @@ include(
 		'korio-example-common',
 		'korio-example-js',
 )
+*/
