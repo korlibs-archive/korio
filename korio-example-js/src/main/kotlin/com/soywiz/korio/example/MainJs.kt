@@ -1,3 +1,5 @@
 package com.soywiz.korio.example
 
-fun main() = MainCommon.main()
+object MainJs {
+	fun main() = MainCommon.main()
+}

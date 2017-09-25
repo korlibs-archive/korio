@@ -12,9 +12,9 @@ dependencies {
 
 compileKotlin2Js {
 	kotlinOptions.outputFile = "${projectDir}/$webPath/output.js"
-	//kotlinOptions.moduleKind = "amd"
+	kotlinOptions.moduleKind = "amd"
 	//kotlinOptions.moduleKind = "umd"
-	kotlinOptions.moduleKind = "commonjs"
+	//kotlinOptions.moduleKind = "commonjs"
 	kotlinOptions.sourceMap = true
 }
 
