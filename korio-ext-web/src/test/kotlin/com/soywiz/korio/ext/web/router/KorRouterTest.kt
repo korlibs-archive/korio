@@ -81,12 +81,12 @@ class KorRouterTest {
 		router.registerRoutes<StaticRoute>()
 
 		assertEquals(
-			"200:OK:Headers((Accept-Ranges, [bytes]), (Content-Length, [13]), (Content-Type, [text/plain]), (ETag, [b7a9adb9fec4116c29da690c45d9a67df535af9d-0-13]), (Last-Modified, [Thu, 01 Jan 1970 00:00:00 GMT])):User-agent: *",
+			"200:OK:Headers((Accept-Ranges, [bytes]), (Content-Length, [13]), (Content-Type, [text/plain]), (ETag, [b7a9adb9fec4116c29da690c45d9a67df535af9d-0-13]), (Last-Modified, [Thu, 01 Jan 1970 00:00:00 UTC])):User-agent: *",
 			router.testRoute(Http.Method.GET, "/robots.txt")
 		)
 
 		assertEquals(
-			"200:OK:Headers((Accept-Ranges, [bytes]), (Content-Length, [13]), (Content-Type, [text/plain]), (ETag, [b7a9adb9fec4116c29da690c45d9a67df535af9d-0-13]), (Last-Modified, [Thu, 01 Jan 1970 00:00:00 GMT])):User-agent: *",
+			"200:OK:Headers((Accept-Ranges, [bytes]), (Content-Length, [13]), (Content-Type, [text/plain]), (ETag, [b7a9adb9fec4116c29da690c45d9a67df535af9d-0-13]), (Last-Modified, [Thu, 01 Jan 1970 00:00:00 UTC])):User-agent: *",
 			router.testRoute(Http.Method.GET, "/robots.txt?v=3.2.0")
 		)
 
@@ -97,13 +97,13 @@ class KorRouterTest {
 
 		// Partial content: GET
 		assertEquals(
-			"206:Partial Content:Headers((Accept-Ranges, [bytes]), (Content-Length, [2]), (Content-Range, [bytes 1-2/13]), (Content-Type, [text/plain]), (ETag, [b7a9adb9fec4116c29da690c45d9a67df535af9d-0-13]), (Last-Modified, [Thu, 01 Jan 1970 00:00:00 GMT])):se",
+			"206:Partial Content:Headers((Accept-Ranges, [bytes]), (Content-Length, [2]), (Content-Range, [bytes 1-2/13]), (Content-Type, [text/plain]), (ETag, [b7a9adb9fec4116c29da690c45d9a67df535af9d-0-13]), (Last-Modified, [Thu, 01 Jan 1970 00:00:00 UTC])):se",
 			router.testRoute(Http.Method.GET, "/robots.txt", Http.Headers("Range" to "bytes=1-2"))
 		)
 
 		// Partial content: HEAD
 		assertEquals(
-			"206:Partial Content:Headers((Accept-Ranges, [bytes]), (Content-Length, [0]), (Content-Range, [bytes 1-2/13]), (Content-Type, [text/plain]), (ETag, [b7a9adb9fec4116c29da690c45d9a67df535af9d-0-13]), (Last-Modified, [Thu, 01 Jan 1970 00:00:00 GMT])):",
+			"206:Partial Content:Headers((Accept-Ranges, [bytes]), (Content-Length, [0]), (Content-Range, [bytes 1-2/13]), (Content-Type, [text/plain]), (ETag, [b7a9adb9fec4116c29da690c45d9a67df535af9d-0-13]), (Last-Modified, [Thu, 01 Jan 1970 00:00:00 UTC])):",
 			router.testRoute(Http.Method.HEAD, "/robots.txt", Http.Headers("Range" to "bytes=1-2"))
 		)
 	}

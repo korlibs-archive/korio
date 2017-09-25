@@ -110,9 +110,8 @@ suspend fun <T> executeInWorkerSafe(task: suspend () -> T): T {
 	val ctx = getCoroutineContext()
 	val deferred = Promise.Deferred<T>()
 	workerLazyPool.executeUpdatingTasksInProgress {
-		go(ctx) {
+		go<Unit>(ctx) {
 			try {
-
 				deferred.resolve(task())
 			} catch (t: Throwable) {
 				deferred.reject(t)
@@ -150,4 +149,10 @@ suspend fun <T> executeInWorker(task: suspend CheckRunning.() -> T): T = suspend
 			tasksInProgress.decrementAndGet()
 		}
 	}
+}
+
+// @TODO: Using executeInWorker was breaking AsyncHash and tests for static routing
+suspend fun <T> executeInWorkerSafer(task: suspend () -> T): T {
+	// @TODO: Implement this
+	return task()
 }
