@@ -14,7 +14,7 @@ import io.vertx.core.http.HttpClientResponse
 import io.vertx.core.http.HttpMethod
 import java.net.URL
 
-class VertxHttpClientFactory : HttpFactory() {
+class VertxHttpClientFactory : HttpFactory {
 	override val available: Boolean = true
 	override val priority: Int = 500
 

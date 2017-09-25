@@ -125,7 +125,7 @@ class LocalVfsProviderHaxe : LocalVfsProvider() {
 	}
 }
 
-class HttpFactoryCSharp : HttpFactory() {
+class HttpFactoryCSharp : HttpFactory {
 	override fun createClient(): HttpClient = CSharpHttpClient()
 }
 

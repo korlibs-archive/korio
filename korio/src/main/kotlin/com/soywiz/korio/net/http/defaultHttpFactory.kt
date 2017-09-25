@@ -10,12 +10,16 @@ import java.net.BindException
 import java.net.HttpURLConnection
 import java.net.URL
 
-impl var defaultHttpFactory: HttpFactory = object : HttpFactory() {
-	init {
-		System.setProperty("http.keepAlive", "false")
-	}
+impl object DefaultHttpFactoryFactory {
+	impl fun createFactory(): HttpFactory = object : HttpFactory {
+		init {
+			System.setProperty("http.keepAlive", "false")
+		}
 
-	override fun createClient(): HttpClient = HttpClientJvm()
+		override fun createClient(): HttpClient = HttpClientJvm()
+
+		override fun createServer(): HttpServer = TODO()
+	}
 }
 
 class HttpClientJvm : HttpClient() {

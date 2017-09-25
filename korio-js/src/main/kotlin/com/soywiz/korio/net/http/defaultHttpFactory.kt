@@ -14,12 +14,14 @@ import org.w3c.xhr.ARRAYBUFFER
 import org.w3c.xhr.XMLHttpRequest
 import org.w3c.xhr.XMLHttpRequestResponseType
 
-impl var defaultHttpFactory: HttpFactory = object : HttpFactory() {
-	override fun createClient(): HttpClient {
-		return if (OS.isNodejs) HttpClientNodeJs() else HttpClientBrowserJs()
-	}
+impl object DefaultHttpFactoryFactory {
+	impl fun createFactory(): HttpFactory = object : HttpFactory {
+		override fun createClient(): HttpClient {
+			return if (OS.isNodejs) HttpClientNodeJs() else HttpClientBrowserJs()
+		}
 
-	override fun createServer(): HttpServer = HttpSeverNodeJs()
+		override fun createServer(): HttpServer = HttpSeverNodeJs()
+	}
 }
 
 class HttpSeverNodeJs : HttpServer() {
@@ -96,10 +98,11 @@ class HttpClientBrowserJs : HttpClient() {
 		xhr.onload = { e ->
 			val u8array = Uint8Array(xhr.response as ArrayBuffer)
 			val out = ByteArray(u8array.length)
-			out.asDynamic()["data"].set(u8array)
+			for (n in out.indices) out[n] = u8array[n]
+			//js("debugger;")
 			deferred.resolve(Response(
 				status = xhr.status.toInt(),
-				statusText = xhr.statusText ?: "",
+				statusText = xhr.statusText,
 				headers = Http.Headers(xhr.getAllResponseHeaders()),
 				content = out.openAsync()
 			))

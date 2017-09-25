@@ -12,8 +12,8 @@ dependencies {
 
 compileKotlin2Js {
 	kotlinOptions.outputFile = "${projectDir}/$webPath/output.js"
-	kotlinOptions.moduleKind = "amd"
-	//kotlinOptions.moduleKind = "umd"
+	//kotlinOptions.moduleKind = "amd"
+	kotlinOptions.moduleKind = "umd"
 	//kotlinOptions.moduleKind = "commonjs"
 	kotlinOptions.sourceMap = true
 }
@@ -98,3 +98,12 @@ build.doLast() {
 
 }
 */
+
+idea {
+	module {
+		excludeDirs = [file("web")]
+		//["classes", "docs", "dependency-cache", "libs", "reports", "resources", "test-results", "tmp", "web"].each {
+		//	excludeDirs << file("$buildDir/$it")
+		//}
+	}
+}

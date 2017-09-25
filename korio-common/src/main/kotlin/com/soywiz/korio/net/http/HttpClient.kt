@@ -16,14 +16,24 @@ abstract class HttpClient protected constructor() {
 		val content: AsyncInputStream
 	) {
 		val success = status < 400
-		suspend fun readAllBytes() = content.readAll()
+		suspend fun readAllBytes(): ByteArray {
+			//println(content)
+			val allContent = content.readAll()
+			//println("Response.readAllBytes:" + allContent)
+			//Debugger.enterDebugger()
+			return allContent
+		}
 
 		val responseCharset by lazy {
 			// @TODO: Detect charset from headers with default to UTF-8
 			Charsets.UTF_8
 		}
 
-		suspend fun readAllString(charset: Charset = responseCharset) = readAllBytes().toString(charset)
+		suspend fun readAllString(charset: Charset = responseCharset): String {
+			val bytes = readAllBytes()
+			//Debugger.enterDebugger()
+			return bytes.toString(charset)
+		}
 
 		suspend fun checkErrors(): Response = this.apply {
 			if (!success) throw Http.HttpException(status, readAllString(), statusText)
@@ -225,17 +235,22 @@ object HttpStats {
 	override fun toString(): String = "HttpStats(connections=$connections, Disconnections=$disconnections)"
 }
 
-open class HttpFactory {
-	open fun createClient(): HttpClient = object : HttpClient() {
-		suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = TODO()
-	}
-
-	open fun createServer(): HttpServer {
-		throw RuntimeException("$this doesn't provide createServer, add a dependency with the service like `com.soywiz:korio-vertx:\$korVersion`")
-	}
+interface HttpFactory {
+	fun createClient(): HttpClient
+	fun createServer(): HttpServer
 }
 
-header var defaultHttpFactory: HttpFactory
+header object DefaultHttpFactoryFactory {
+	fun createFactory(): HttpFactory
+}
+
+class ProxiedHttpFactory(var parent: HttpFactory) : HttpFactory by parent
+
+val defaultHttpFactory: ProxiedHttpFactory by lazy { ProxiedHttpFactory(DefaultHttpFactoryFactory.createFactory()) }
+
+fun setDefaultHttpFactory(factory: HttpFactory) {
+	defaultHttpFactory.parent = factory
+}
 
 fun HttpFactory.createClientEndpoint(endpoint: String) = createClient().endpoint(endpoint)
 
