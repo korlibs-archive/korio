@@ -18,8 +18,6 @@ include(
 		'korio-ext-db-elasticsearch',
 
 		'korio-vertx',
-		'korio-ext-db-mongodb',
-		'korio-ext-db-mysql',
 		'korio-ext-web',
 
 		'korio-example-common',
