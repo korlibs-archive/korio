@@ -1,11 +1,12 @@
 package com.soywiz.korio.util
 
+import com.soywiz.korio.ds.lmapOf
 import kotlin.reflect.KProperty
 
 interface Extra {
-	var extra: HashMap<String, Any?>?
+	var extra: LinkedHashMap<String, Any?>?
 
-	class Mixin(override var extra: HashMap<String, Any?>? = null) : Extra
+	class Mixin(override var extra: LinkedHashMap<String, Any?>? = null) : Extra
 
 	@Suppress("UNCHECKED_CAST", "NOTHING_TO_INLINE")
 
@@ -22,7 +23,7 @@ interface Extra {
 
 		inline operator fun setValue(thisRef: Extra, property: KProperty<*>, value: T): Unit = run {
 			//beforeSet(value)
-			if (thisRef.extra == null) thisRef.extra = hashMapOf()
+			if (thisRef.extra == null) thisRef.extra = lmapOf()
 			thisRef.extra?.set(name ?: property.name, value as Any?)
 			//afterSet(value)
 		}
@@ -41,7 +42,7 @@ interface Extra {
 
 		inline operator fun setValue(thisRef: T2, property: KProperty<*>, value: T): Unit = run {
 			//beforeSet(value)
-			if (thisRef.extra == null) thisRef.extra = LinkedHashMap()
+			if (thisRef.extra == null) thisRef.extra = lmapOf()
 			thisRef.extra?.set(name ?: property.name, value as Any?)
 			//afterSet(value)
 		}
@@ -52,7 +53,7 @@ interface Extra {
 class extraProperty<T : Any?>(val name: String, val default: T) {
 	inline operator fun getValue(thisRef: Extra, property: KProperty<*>): T = (thisRef.extra?.get(name) as T?) ?: default
 	inline operator fun setValue(thisRef: Extra, property: KProperty<*>, value: T): Unit = run {
-		if (thisRef.extra == null) thisRef.extra = LinkedHashMap()
+		if (thisRef.extra == null) thisRef.extra = lmapOf()
 		thisRef.extra?.set(name, value as Any?)
 	}
 }

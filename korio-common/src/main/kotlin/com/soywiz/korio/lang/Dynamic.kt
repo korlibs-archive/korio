@@ -1,5 +1,7 @@
 package com.soywiz.korio.lang
 
+import com.soywiz.korio.ds.lmapOf
+
 object Dynamic {
 	fun get(obj: Any?, key: Any?): Any? = when (obj) {
 		null -> null
@@ -17,9 +19,9 @@ object Dynamic {
 	}
 
 	fun toMap(obj: Any?): Map<Any?, Any?> = when (obj) {
-		null -> HashMap()
+		null -> lmapOf()
 		is Map<*, *> -> obj as Map<Any?, Any?>
-		else -> HashMap()
+		else -> lmapOf()
 	}
 
 	fun toNumber(obj: Any?): Number = when (obj) {

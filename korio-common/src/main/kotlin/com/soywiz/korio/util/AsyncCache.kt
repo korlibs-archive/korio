@@ -3,10 +3,11 @@ package com.soywiz.korio.util
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.async
 import com.soywiz.korio.coroutine.withCoroutineContext
+import com.soywiz.korio.ds.lmapOf
 
 class AsyncCache {
 	@PublishedApi
-	internal val promises = LinkedHashMap<String, Promise<*>>()
+	internal val promises = lmapOf<String, Promise<*>>()
 
 	@Suppress("UNCHECKED_CAST")
 	suspend operator fun <T> invoke(key: String, gen: suspend () -> T): T = withCoroutineContext {

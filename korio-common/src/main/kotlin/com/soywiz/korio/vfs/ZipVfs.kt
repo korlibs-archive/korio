@@ -5,6 +5,7 @@ import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.compression.Inflater
 import com.soywiz.korio.coroutine.withCoroutineContext
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.lang.IOException
 import com.soywiz.korio.math.Math
@@ -53,8 +54,8 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 		}
 	}
 
-	val files = LinkedHashMap<String, ZipEntry>()
-	val filesPerFolder = LinkedHashMap<String, LinkedHashMap<String, ZipEntry>>()
+	val files = lmapOf<String, ZipEntry>()
+	val filesPerFolder = lmapOf<String, MutableMap<String, ZipEntry>>()
 
 	data.apply {
 		//println(s)
@@ -98,7 +99,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 				val baseFolder = normalizedName.substringBeforeLast('/', "")
 				val baseName = normalizedName.substringAfterLast('/')
 
-				val folder = filesPerFolder.getOrPut(baseFolder) { LinkedHashMap() }
+				val folder = filesPerFolder.getOrPut(baseFolder) { lmapOf() }
 				val entry = ZipEntry(
 					path = name,
 					compressionMethod = compressionMethod,
@@ -115,7 +116,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 					val f = components[m - 1]
 					val c = components[m]
 					if (c !in files) {
-						val folder2 = filesPerFolder.getOrPut(f) { LinkedHashMap() }
+						val folder2 = filesPerFolder.getOrPut(f) { lmapOf() }
 						val entry2 = ZipEntry(path = c, compressionMethod = 0, isDirectory = true, time = DosFileDateTime(0, 0), inode = 0L, offset = 0, headerEntry = byteArrayOf().openAsync(), compressedSize = 0L, uncompressedSize = 0L)
 						folder2[PathInfo(c).basename] = entry2
 						files[c] = entry2
@@ -170,7 +171,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 
 		suspend override fun list(path: String): AsyncSequence<VfsFile> = withCoroutineContext {
 			asyncGenerate(this@withCoroutineContext) {
-				for ((name, entry) in filesPerFolder[path.normalizeName()] ?: LinkedHashMap()) {
+				for ((name, entry) in filesPerFolder[path.normalizeName()] ?: lmapOf()) {
 					//yield(entry.toStat(this@Impl[entry.path]))
 					yield(vfs[entry.path])
 				}

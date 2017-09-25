@@ -1,5 +1,6 @@
 package com.soywiz.korio.serialization.xml
 
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.Language
 import com.soywiz.korio.util.Indenter
 import com.soywiz.korio.util.toCaseInsensitiveTreeMap
@@ -18,11 +19,11 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 		}
 
 		fun Text(text: String): Xml {
-			return Xml(Xml.Type.TEXT, "_text_", mapOf(), listOf(), text)
+			return Xml(Xml.Type.TEXT, "_text_", lmapOf(), listOf(), text)
 		}
 
 		fun Comment(text: String): Xml {
-			return Xml(Xml.Type.COMMENT, "_comment_", mapOf(), listOf(), text)
+			return Xml(Xml.Type.COMMENT, "_comment_", lmapOf(), listOf(), text)
 		}
 
 		//operator fun invoke(@Language("xml") str: String): Xml = parse(str)

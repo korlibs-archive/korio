@@ -1,6 +1,7 @@
 package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.Promise
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.global
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.openAsync
@@ -66,8 +67,8 @@ class HttpClientNodeJs : HttpClient() {
 					status = statusCode,
 					statusText = statusMessage,
 					headers = Http.Headers(
-						hashMapOf()
-						//(jsHeadersObj?.toObjectMap() ?: HashMap()).mapValues { it.value.toJavaStringOrNull() ?: "" }
+						lmapOf()
+						//(jsHeadersObj?.toObjectMap() ?: lmapOf()).mapValues { it.value.toJavaStringOrNull() ?: "" }
 					),
 					content = out.openAsync()
 				))

@@ -1,5 +1,6 @@
 package com.soywiz.korio.serialization.json
 
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.IOException
 import com.soywiz.korio.lang.KClass
@@ -41,7 +42,7 @@ object Json {
 		val ic = skipSpaces().read()
 		when (ic) {
 			'{' -> {
-				val out = LinkedHashMap<String, Any?>()
+				val out = lmapOf<String, Any?>()
 				obj@ while (true) {
 					when (skipSpaces().read()) {
 						'}' -> break@obj; ',' -> continue@obj; else -> unread()

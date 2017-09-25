@@ -1,6 +1,7 @@
 package com.soywiz.korio.util
 
 import com.soywiz.korio.async.invokeSuspend
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.ignoreErrors
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.error.noImpl
@@ -257,7 +258,7 @@ object Dynamic {
 			val resultClass = target as Class<Any>
 			if (resultClass.isAssignableFrom(Map::class.java)) {
 				if (genericType is ParameterizedType) {
-					val result = LinkedHashMap<Any?, Any?>()
+					val result = lmapOf<Any?, Any?>()
 					val keyType = genericType.actualTypeArguments[0] as? Class<*>?
 					val valueType = genericType.actualTypeArguments[1] as? Class<*>?
 					for (entry in value.entries) {
@@ -334,7 +335,7 @@ object Dynamic {
 			is Iterable<*> -> value
 			else -> {
 				val clazz = value::class.java
-				val out = HashMap<Any?, Any?>()
+				val out = lmapOf<Any?, Any?>()
 				for (field in clazz.declaredFields) {
 					if (Modifier.isStatic(field.modifiers)) continue
 					if (field.name.startsWith('$')) continue

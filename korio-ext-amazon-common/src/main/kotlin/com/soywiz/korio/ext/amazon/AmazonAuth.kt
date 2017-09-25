@@ -4,6 +4,7 @@ import com.soywiz.korio.crypto.AsyncHash
 import com.soywiz.korio.crypto.SimplerMac
 import com.soywiz.korio.crypto.finalize
 import com.soywiz.korio.crypto.toBase64
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.Environment
 import com.soywiz.korio.lang.IOException
 import com.soywiz.korio.net.http.Http
@@ -53,7 +54,7 @@ object AmazonAuth {
 			val contentMd5 = headers["content-md5"] ?: ""
 			val date = headers["date"] ?: ""
 
-			val amzHeaders = HashMap<String, String>()
+			val amzHeaders = lmapOf<String, String>()
 
 			for ((key, value) in headers) {
 				val k = key.toLowerCase()

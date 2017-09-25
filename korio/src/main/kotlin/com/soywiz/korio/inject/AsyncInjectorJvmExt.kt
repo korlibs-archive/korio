@@ -1,16 +1,22 @@
 package com.soywiz.korio.inject
 
+import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.KClass
-import java.lang.reflect.Proxy
+import com.soywiz.korio.util.allDeclaredFields
+import java.lang.reflect.Modifier
 
 fun AsyncInjector.jvmAutomapping(): AsyncInjector = this.apply {
-	this.fallbackProvider = { clazz ->
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-		/*
-			val isPrototype = clazz.java.getAnnotation(Prototype::class.java) != null
-			val isSingleton = clazz.java.getAnnotation(Singleton::class.java) != null
-			val isAsyncFactoryClass = clazz.java.getAnnotation(AsyncFactoryClass::class.java) != null
+	this.fallbackProvider = { kclazz, ctx -> fallback(this, kclazz, ctx) }
+}
 
+private suspend fun fallback(injector: AsyncInjector, kclazz: KClass<*>, ctx: AsyncInjector.RequestContext): AsyncObjectProvider<*> {
+	val clazz = (kclazz as kotlin.reflect.KClass<*>).java
+
+	val isPrototype = clazz.getAnnotation(Prototype::class.java) != null
+	val isSingleton = clazz.getAnnotation(Singleton::class.java) != null
+	val isAsyncFactoryClass = clazz.getAnnotation(AsyncFactoryClass::class.java) != null
+
+	val generator: suspend AsyncInjector.() -> Any? = {
 		try {
 			// @TODO: Performance: Cache all this!
 			// Use: ClassFactory and stuff
@@ -18,7 +24,7 @@ fun AsyncInjector.jvmAutomapping(): AsyncInjector = this.apply {
 			val loaderClass = clazz.getAnnotation(AsyncFactoryClass::class.java)
 			val actualClass = loaderClass?.clazz?.java ?: clazz
 			if (actualClass.isInterface || Modifier.isAbstract(actualClass.modifiers)) invalidOp("Can't instantiate abstract or interface: $actualClass in $ctx")
-			val constructor = actualClass.declaredConstructors.firstOrNull() ?: return null
+			val constructor = actualClass.declaredConstructors.firstOrNull() ?: invalidOp("No available constructor for $clazz")
 			val out = arrayListOf<Any?>()
 			val allInstances = arrayListOf<Any?>()
 
@@ -30,7 +36,7 @@ fun AsyncInjector.jvmAutomapping(): AsyncInjector = this.apply {
 					for (annotation in annotations) {
 						when (annotation) {
 							is Optional -> isOptional = true
-							else -> i.map(annotation as Any, annotation.annotationClass.java as Class<Any>)
+							else -> i.mapInstance(annotation as Any, annotation.annotationClass)
 						}
 					}
 					i
@@ -38,9 +44,9 @@ fun AsyncInjector.jvmAutomapping(): AsyncInjector = this.apply {
 					this
 				}
 				if (isOptional) {
-					out += if (i.has(paramType)) i.getOrNull(paramType, ctx) else null
+					out.add(if (i.has<Any?>(paramType)) i.getOrNull(paramType, ctx) else null)
 				} else {
-					out += i.getOrNull(paramType, ctx) ?: throw AsyncInjector.NotMappedException(paramType, actualClass, ctx)
+					out.add(i.getOrNull(paramType, ctx) ?: throw AsyncInjector.NotMappedException(paramType, actualClass, ctx))
 				}
 			}
 			allInstances.addAll(out)
@@ -58,7 +64,7 @@ fun AsyncInjector.jvmAutomapping(): AsyncInjector = this.apply {
 					for (annotation in field.annotations) {
 						when (annotation) {
 							is Optional -> isOptional = true
-							else -> i.map(annotation as Any, annotation.annotationClass.java as Class<Any>)
+							else -> i.mapInstance(annotation as Any, annotation.annotationClass)
 						}
 					}
 					i
@@ -67,11 +73,11 @@ fun AsyncInjector.jvmAutomapping(): AsyncInjector = this.apply {
 				}
 				field.isAccessible = true
 				val res = if (isOptional) {
-					if (i.has(field.type)) i.get(field.type, ctx) else null
+					if (i.has<Any>(field.type.kotlin)) i.get(field.type, ctx) else null
 				} else {
 					i.get(field.type, ctx)
 				}
-				allInstances += res
+				allInstances.add(res)
 				field.set(instance, res)
 			}
 
@@ -84,15 +90,22 @@ fun AsyncInjector.jvmAutomapping(): AsyncInjector = this.apply {
 			}
 
 			if (loaderClass != null) {
-				return (instance as AsyncFactory<T>).create()
+				(instance as AsyncFactory<Any?>).create()
 			} else {
-				return instance as T
+				instance
 			}
 		} catch (e: Throwable) {
 			println("$this error while creating '$clazz': (${e.message}):")
 			e.printStackTrace()
 			throw e
 		}
-		*/
+	}
+
+	return when {
+		isPrototype -> PrototypeAsyncObjectProvider(generator)
+		isSingleton -> SingletonAsyncObjectProvider(generator)
+		isAsyncFactoryClass -> FactoryAsyncObjectProvider(generator as suspend AsyncInjector.() -> AsyncFactory<Any?>)
+		//else -> invalidOp("Unmapped jvmAutomapping: $clazz")
+		else -> PrototypeAsyncObjectProvider(generator)
 	}
 }

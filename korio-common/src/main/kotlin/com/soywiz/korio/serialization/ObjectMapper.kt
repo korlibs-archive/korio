@@ -1,5 +1,7 @@
 package com.soywiz.korio.serialization
 
+import com.soywiz.korio.ds.lmapOf
+import com.soywiz.korio.ds.toLinkedMap
 import com.soywiz.korio.error.invalidArg
 import com.soywiz.korio.lang.DynamicContext
 import com.soywiz.korio.lang.KClass
@@ -13,8 +15,8 @@ import com.soywiz.korio.lang.classOf
  * Bools, Numbers, Strings, Lists and Maps (json supported)
  */
 class ObjectMapper {
-	val _typers = HashMap<KClass<*>, TypeContext.(Any?) -> Any?>()
-	val _untypers = HashMap<KClass<*>, UntypeContext.(Any?) -> Any?>()
+	val _typers = lmapOf<KClass<*>, TypeContext.(Any?) -> Any?>()
+	val _untypers = lmapOf<KClass<*>, UntypeContext.(Any?) -> Any?>()
 
 	@Suppress("NOTHING_TO_INLINE")
 	class TypeContext(val map: ObjectMapper) : DynamicContext {
@@ -27,8 +29,8 @@ class ObjectMapper {
 			return HashSet(this.toDynamicList().map { it.gen<T>() }.toSet())
 		}
 
-		inline fun <reified K, reified V> Any?.genMap(): HashMap<K, V> {
-			return HashMap(this.toDynamicMap().map { it.key.gen<K>() to it.value.gen<V>() }.toMap())
+		inline fun <reified K, reified V> Any?.genMap(): MutableMap<K, V> {
+			return this.toDynamicMap().map { it.key.gen<K>() to it.value.gen<V>() }.toLinkedMap()
 		}
 	}
 
@@ -78,7 +80,7 @@ class ObjectMapper {
 		is Number -> obj
 		is String -> obj
 		is Iterable<*> -> ArrayList(obj.map { toUntyped(it) })
-		is Map<*, *> -> HashMap(obj.map { toUntyped(it.key) to toUntyped(it.value) }.toMap())
+		is Map<*, *> -> obj.map { toUntyped(it.key) to toUntyped(it.value) }.toLinkedMap()
 		else -> {
 			val unt = _untypers[clazz]
 			if (unt == null) {

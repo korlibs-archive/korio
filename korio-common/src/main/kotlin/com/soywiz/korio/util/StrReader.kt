@@ -1,5 +1,6 @@
 package com.soywiz.korio.util
 
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.math.Math
 import com.soywiz.korio.serialization.json.Json
@@ -132,7 +133,7 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 			//fun invoke(lits:Array<String>): Literals = fromList(lits)
 			fun fromList(lits: Array<String>): Literals {
 				val lengths = lits.map { it.length }.sorted().reversed().distinct().toTypedArray()
-				val map = hashMapOf<String, Boolean>()
+				val map = lmapOf<String, Boolean>()
 				for (lit in lits) map[lit] = true
 				return Literals(lits, map, lengths)
 			}

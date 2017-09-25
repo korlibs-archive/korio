@@ -1,5 +1,6 @@
 package com.soywiz.korio.ext.web.session
 
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.ext.web.cookie.KorCookies
 import com.soywiz.korio.ext.web.cookie.cookies
 import com.soywiz.korio.ext.web.cookie.registerCookies
@@ -22,7 +23,7 @@ abstract class SessionProvider {
  * Also an in-memory session provider should be use just for debugging purposes in local development.
  */
 class MemorySessionProvider : SessionProvider() {
-	val memory = HashMap<String, String>()
+	val memory = lmapOf<String, String>()
 
 	suspend override fun get(sessionId: String): String? {
 		return memory[sessionId]
@@ -77,7 +78,7 @@ class KorSession(
 
 	suspend fun set(key: String, value: Any?) {
 		prepareOnce()
-		if (obj == null) obj = HashMap<String, Any?>()
+		if (obj == null) obj = lmapOf<String, Any?>()
 		obj.dynamicSet(key, value)
 	}
 

@@ -17,7 +17,7 @@ class MapList<K, V>() : Iterable<Pair<K, List<V>>> {
 		for ((k, values) in items) for (v in values) append(k, v)
 	}
 
-	val map = hashMapOf<K, ArrayList<V>>()
+	val map = lmapOf<K, ArrayList<V>>()
 
 	fun append(key: K, value: V): MapList<K, V> {
 		map.getOrPut(key) { arrayListOf() }

@@ -3,6 +3,7 @@ package com.soywiz.korio.util
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.async
 import com.soywiz.korio.coroutine.withCoroutineContext
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.inject.Prototype
 import com.soywiz.korio.lang.KClass
 import com.soywiz.korio.time.STimeProvider
@@ -11,7 +12,7 @@ import com.soywiz.korio.time.STimeProvider
 class AsyncInmemoryCache {
 	data class Entry(val timestamp: Long, val data: Promise<Any?>)
 
-	val cache = hashMapOf<String, AsyncInmemoryCache.Entry?>()
+	val cache = lmapOf<String, Entry?>()
 
 	fun <T : Any> get(clazz: KClass<T>, key: String, ttlMs: Int) = AsyncInmemoryEntry<T>(clazz, this, key, ttlMs)
 

@@ -1,5 +1,7 @@
 package com.soywiz.korio.util
 
+import com.soywiz.korio.ds.lmapOf
+
 fun <K, V> Map<K, V>.flip(): Map<V, K> = this.map { Pair(it.value, it.key) }.toMap()
 
 fun <K, V> Map<K, V>.toTreeMap(comparator: Comparator<K>): Map<K, V> {
@@ -19,9 +21,9 @@ fun <T> Map<String, T>.toCaseInsensitiveTreeMap(): Map<String, T> {
 }
 
 class CaseInsensitiveHashMap<T>(
-	private val mapOrig: HashMap<String, T> = HashMap<String, T>(),
-	private val lcToOrig: HashMap<String, String> = HashMap<String, String>(),
-	private val mapLC: HashMap<String, T> = HashMap<String, T>()
+	private val mapOrig: MutableMap<String, T> = lmapOf(),
+	private val lcToOrig: MutableMap<String, String> = lmapOf(),
+	private val mapLC: MutableMap<String, T> = lmapOf()
 ) : MutableMap<String, T> by mapOrig {
 	override fun containsKey(key: String): Boolean = mapLC.containsKey(key.toLowerCase())
 

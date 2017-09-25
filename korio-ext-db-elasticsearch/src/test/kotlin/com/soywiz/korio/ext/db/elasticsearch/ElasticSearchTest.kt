@@ -1,6 +1,7 @@
 package com.soywiz.korio.ext.db.elasticsearch
 
 import com.soywiz.korio.async.syncTest
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.net.http.FakeHttpClientEndpoint
 import com.soywiz.korio.net.http.rest.rest
 import com.soywiz.korio.serialization.ObjectMapper
@@ -19,12 +20,17 @@ class ElasticSearchTest {
 	val posts = es.typed<Doc>("index-es", "posts")
 	val posts2 = es["index-es", "posts"].typed<Doc>()
 
+	init {
+		mapper.registerType { Doc(it["title"].gen(), it["body"].gen()) }
+		mapper.registerUntype<Doc> { lmapOf("title" to it.title, "body" to it.body) }
+	}
+
 	@Test
 	fun testPut() = syncTest {
 		val myid = "myid"
 		val myversion = 7L
-		endpoint.addOkResponse(mapOf("_id" to myid, "_version" to myversion).toJsonUntyped())
-		endpoint.addOkResponse(mapOf("_id" to myid, "_version" to myversion).toJsonUntyped())
+		endpoint.addOkResponse(lmapOf("_id" to myid, "_version" to myversion).toJsonUntyped())
+		endpoint.addOkResponse(lmapOf("_id" to myid, "_version" to myversion).toJsonUntyped())
 
 
 		assertEquals(
@@ -44,13 +50,13 @@ class ElasticSearchTest {
 
 	@Test
 	fun testSearch() = syncTest {
-		val res1 = mapOf(
+		val res1 = lmapOf(
 			"took" to 77,
 			"timed_out" to false,
-			"hits" to mapOf(
+			"hits" to lmapOf(
 				"hits" to listOf(
-					mapOf("_index" to "myindex1", "_type" to "collection1", "_id" to "123", "_score" to 0.5, "_source" to mapOf("title" to "Hello", "body" to "World")),
-					mapOf("_index" to "myindex2", "_type" to "collection2", "_id" to "456", "_score" to 0.25, "_source" to mapOf("title" to "Other", "body" to "Document"))
+					lmapOf("_index" to "myindex1", "_type" to "collection1", "_id" to "123", "_score" to 0.5, "_source" to lmapOf("title" to "Hello", "body" to "World")),
+					lmapOf("_index" to "myindex2", "_type" to "collection2", "_id" to "456", "_score" to 0.25, "_source" to lmapOf("title" to "Other", "body" to "Document"))
 				)
 			)
 		).toJsonUntyped()
@@ -123,8 +129,8 @@ class ElasticSearchTest {
 		assertEquals(
 			listOf("""GET:index-es/posts/hello:null"""),
 			endpoint.capture {
-				endpoint.addOkResponse(mapOf(
-					"_source" to mapOf("title" to "hello", "body" to "world")
+				endpoint.addOkResponse(lmapOf(
+					"_source" to lmapOf("title" to "hello", "body" to "world")
 				).toJsonUntyped())
 
 				assertEquals(Doc("hello", "world"), posts.getOrNull("hello"))

@@ -1,5 +1,6 @@
 package com.soywiz.korio.ext.db.elasticsearch
 
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.KClass
 import com.soywiz.korio.lang.classOf
 import com.soywiz.korio.net.http.Http
@@ -41,9 +42,9 @@ class ElasticSearch(
 		}
 
 		suspend fun create(numberOfShards: Int = 8, numberOfReplicas: Int = 0) {
-			val result = rest.put(resourcePath, mapOf(
-				"settings" to mapOf(
-					"index" to mapOf(
+			val result = rest.put(resourcePath, lmapOf(
+				"settings" to lmapOf(
+					"index" to lmapOf(
 						"number_of_shards" to numberOfShards,
 						"number_of_replicas" to numberOfReplicas
 					)
@@ -125,16 +126,18 @@ class ElasticSearch(
 			}
 		}
 
-		// operator
-		suspend fun set(id: String, document: T) = type.put(document, id)
+		private fun T.untype(): Any = mapper.toUntyped(clazz, this) as Any
 
-		suspend fun add(document: T): ElasticSearch.PutResult = type.put(document)
-		suspend fun put(document: T, id: String? = null): ElasticSearch.PutResult = type.put(document, id)
+		// operator
+		suspend fun set(id: String, document: T) = type.put(document.untype(), id)
+
+		suspend fun add(document: T): ElasticSearch.PutResult = type.put(document.untype())
+		suspend fun put(document: T, id: String? = null): ElasticSearch.PutResult = type.put(document.untype(), id)
 		suspend fun delete(id: String) = type.delete(id)
 		suspend fun search(query: ElasticSearch.QueryBuilder.() -> ElasticSearch.Query = { ElasticSearch.Query(ElasticSearch.QueryBuilder) }): SearchResult<T> {
 			val result = type.search(query)
 			return SearchResult(result.took, result.timedOut, result.results.map {
-				Result<T>(it.index, it.type, it.id, it.score, mapper.toTyped<T>(clazz, it.obj))
+				Result<T>(it.index, it.type, it.id, it.score, mapper.toTyped<T>(it.obj, clazz))
 			})
 		}
 
@@ -165,25 +168,25 @@ class ElasticSearch(
 	}
 
 	object QueryBuilder {
-		val match_all get() = Query(mapOf("match_all" to mapOf<String, String>()))
+		val match_all get() = Query(lmapOf("match_all" to mapOf<String, String>()))
 
 		fun query_string(
 			query: String,
 			use_dis_max: Boolean? = null,
 			fields: List<String>? = null
 		): Query {
-			val map = LinkedHashMap<String, Any>()
+			val map = lmapOf<String, Any>()
 			map["query"] = query
 			if (use_dis_max != null) map["use_dis_max"] = use_dis_max
 			if (fields != null) map["fields"] = fields
-			return Query(mapOf("query_string" to map))
+			return Query(lmapOf("query_string" to map))
 		}
 	}
 }
 
 abstract class ElasticSearchResource(internal val rest: HttpRestClient, val resourcePath: String) {
 	suspend fun search(query: ElasticSearch.QueryBuilder.() -> ElasticSearch.Query = { ElasticSearch.Query(ElasticSearch.QueryBuilder) }): ElasticSearch.SearchResult<Any> {
-		val search = LinkedHashMap<String, Any>()
+		val search = lmapOf<String, Any>()
 
 		val q = query(ElasticSearch.QueryBuilder)
 

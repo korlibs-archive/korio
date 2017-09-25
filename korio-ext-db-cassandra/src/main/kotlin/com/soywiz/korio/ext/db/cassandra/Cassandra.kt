@@ -4,6 +4,7 @@ import com.soywiz.korio.async.AsyncQueue
 import com.soywiz.korio.async.ProduceConsumer
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.go
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.stream.*
@@ -291,7 +292,7 @@ class Cassandra private constructor(
 		val data = ProduceConsumer<Packet>()
 	}
 
-	val channels = arrayListOf<Channel>()
+	val channels = ArrayList<Channel>()
 	private val availableChannels = Pool {
 		synchronized(this) {
 			Channel(channels.size).apply { channels += this }
@@ -405,7 +406,7 @@ class Cassandra private constructor(
 
 						val global_table_spec = if (Global_tables_spec) Pair(s.readCassandraString(), s.readCassandraString()) else null
 
-						val columnsList = arrayListOf<Column>()
+						val columnsList = ArrayList<Column>()
 						for (n in 0 until columns_count) {
 							val spec = global_table_spec ?: Pair(s.readCassandraString(), s.readCassandraString())
 							val name = s.readCassandraString()
@@ -418,7 +419,7 @@ class Cassandra private constructor(
 						val rowsList = ArrayList<Row>()
 						val rows_count = s.readS32_be()
 						for (n in 0 until rows_count) {
-							val cells = arrayListOf<ByteArray>()
+							val cells = ArrayList<ByteArray>()
 							for (m in 0 until columns_count) {
 								cells += s.readCassandraBytes()
 							}
@@ -459,7 +460,7 @@ class Cassandra private constructor(
 			opcode = Opcodes.STARTUP,
 			stream = 0,
 			payload = MemorySyncStreamToByteArray {
-				writeCassandraStringMap(mapOf(
+				writeCassandraStringMap(lmapOf(
 					"CQL_VERSION" to "3.0.0"
 					//"COMPRESSION"
 				))

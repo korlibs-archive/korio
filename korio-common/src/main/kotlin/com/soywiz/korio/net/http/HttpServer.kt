@@ -3,6 +3,7 @@ package com.soywiz.korio.net.http
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.asyncGenerate3
 import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.querystring.QueryString
@@ -83,7 +84,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 	val requestConfig = RequestConfig()
 
 	data class RequestConfig(
-		val beforeSendHeadersInterceptors: LinkedHashMap<String, suspend (Request) -> Unit> = LinkedHashMap()
+		val beforeSendHeadersInterceptors: MutableMap<String, suspend (Request) -> Unit> = lmapOf()
 	) : Extra by Extra.Mixin() {
 		// TODO:
 		fun registerComponent(component: Any, dependsOn: List<Any>): Unit = TODO()

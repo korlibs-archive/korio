@@ -1,6 +1,7 @@
 package com.soywiz.korio.serialization.yaml
 
 import com.soywiz.korio.ds.LinkedList
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.KClass
 import com.soywiz.korio.lang.Language
@@ -44,7 +45,7 @@ object Yaml {
 
 	private fun read(s: ListReader<Token>, level: Int): Any? = s.run {
 		var list: ArrayList<Any?>? = null
-		var map: HashMap<String, Any?>? = null
+		var map: MutableMap<String, Any?>? = null
 
 		val levelStr = if (TRACE) "  ".repeat(level) else ""
 
@@ -105,7 +106,7 @@ object Yaml {
 							if (TRACE) println("${levelStr}LIT: $key")
 							return parseStr(kkey)
 						} else {
-							if (map == null) map = LinkedHashMap()
+							if (map == null) map = lmapOf()
 							if (s.read().str != ":") invalidOp
 							if (TRACE) println("${levelStr}MAP[$key]...")
 							val value = read(s, level + 1)

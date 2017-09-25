@@ -1,5 +1,7 @@
 package com.soywiz.korio.vfs
 
+import com.soywiz.korio.ds.lmapOf
+
 class MimeType(val mime: String, val exts: List<String>) : Vfs.Attribute {
 	companion object {
 		val APPLICATION_OCTET_STREAM = MimeType("application/octet-stream", listOf("bin"))
@@ -12,7 +14,7 @@ class MimeType(val mime: String, val exts: List<String>) : Vfs.Attribute {
 		val TEXT_CSS = MimeType("text/css", listOf("css"))
 		val TEXT_JS = MimeType("application/javascript", listOf("js"))
 
-		private val byExtensions = hashMapOf<String, MimeType>()
+		private val byExtensions = lmapOf<String, MimeType>()
 
 		fun register(mimeType: MimeType) {
 			for (ext in mimeType.exts) byExtensions[ext] = mimeType

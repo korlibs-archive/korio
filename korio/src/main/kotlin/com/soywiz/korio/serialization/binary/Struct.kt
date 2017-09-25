@@ -1,5 +1,6 @@
 package com.soywiz.korio.serialization.binary
 
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.Charset
 import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.lang.toString
@@ -130,7 +131,7 @@ class StructReflect<T>(val clazz: Class<T>) {
 	}
 
 	companion object {
-		val cache = HashMap<Class<*>, StructReflect<*>>()
+		val cache = lmapOf<Class<*>, StructReflect<*>>()
 		@Suppress("UNCHECKED_CAST")
 		operator fun <T> get(clazz: Class<T>): StructReflect<T> {
 			return cache.getOrPut(clazz) {

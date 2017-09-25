@@ -1,4 +1,4 @@
 dependencies {
 	compile project(":korio")
-	//compile project(":korio-common")
+	compile project(":korio-common")
 }

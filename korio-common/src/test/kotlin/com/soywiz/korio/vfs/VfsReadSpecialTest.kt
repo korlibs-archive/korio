@@ -1,6 +1,7 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.syncTest
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.util.expectException
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -19,7 +20,7 @@ class VfsReadSpecialTest {
 
 	@Test
 	fun testReadSpecial() = syncTest {
-		val mem = MemoryVfs(mapOf())
+		val mem = MemoryVfs(lmapOf())
 		assertEquals(
 			MySpecialClass(mem.vfs, "/test.txt"),
 			mem["test.txt"].readSpecial<MySpecialClass>()
@@ -28,7 +29,7 @@ class VfsReadSpecialTest {
 
 	@Test
 	fun testReadSpecial2() = syncTest {
-		val mem = MemoryVfs(mapOf())
+		val mem = MemoryVfs(lmapOf())
 		val root = MergedVfs(listOf(mem))
 		assertEquals(
 			MySpecialClass(mem.vfs, "/test.txt"),
@@ -39,7 +40,7 @@ class VfsReadSpecialTest {
 	@Test
 	fun testReadSpecialNonHandled() = syncTest {
 		expectException<Throwable> {
-			val mem = MemoryVfs(mapOf())
+			val mem = MemoryVfs(lmapOf())
 			mem["test.txt"].readSpecial<MySpecialClass2>()
 		}
 	}

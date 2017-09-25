@@ -96,13 +96,13 @@ class DynamoDB(
 	fun <T> typed(clazz: Class<T>, tableName: String) = Typed(this, clazz, tableName)
 
 	private fun serializeItem(obj: Any?): Any? = when (obj) {
-		null -> mapOf(Kind.NULL.type to null)
-		is String -> mapOf(Kind.STRING.type to obj)
-		is ByteArray -> mapOf(Kind.BINARY.type to obj.toBase64())
-		is Byte, is Short, is Int, is Double, is Long, is Float -> mapOf(Kind.NUMBER.type to obj)
-		is Boolean -> mapOf(Kind.BOOL.type to obj)
-		is Map<*, *> -> mapOf(Kind.MAP.type to obj.map { "${it.key}" to serializeItem(it.value) })
-		is List<*> -> mapOf(Kind.LIST.type to obj.map { serializeItem(it) })
+		null -> linkedMapOf2(Kind.NULL.type to null)
+		is String -> linkedMapOf2(Kind.STRING.type to obj)
+		is ByteArray -> linkedMapOf2(Kind.BINARY.type to obj.toBase64())
+		is Byte, is Short, is Int, is Double, is Long, is Float -> linkedMapOf2(Kind.NUMBER.type to obj)
+		is Boolean -> linkedMapOf2(Kind.BOOL.type to obj)
+		is Map<*, *> -> linkedMapOf2(Kind.MAP.type to obj.map { "${it.key}" to serializeItem(it.value) })
+		is List<*> -> linkedMapOf2(Kind.LIST.type to obj.map { serializeItem(it) })
 		else -> TODO("Unsupported type '$obj'")
 	}
 
@@ -161,7 +161,7 @@ class DynamoDB(
 
 	class Ctx {
 		var lastId: Int = 0
-		var args = hashMapOf<String, Any?>()
+		var args = lmapOf<String, Any?>()
 	}
 
 	fun QExpr.build(ctx: Ctx): String {
@@ -191,7 +191,7 @@ class DynamoDB(
 
 		val exprRes = expr(QExpr.Builder()).buildWithCtx()
 
-		val info = hashMapOf(
+		val info = lmapOf(
 				"TableName" to tableName,
 				"KeyConditionExpression" to exprRes.first,
 				"ExpressionAttributeValues" to serializeObject(exprRes.second),

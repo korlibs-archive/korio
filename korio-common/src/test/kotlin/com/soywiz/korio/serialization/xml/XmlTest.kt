@@ -1,5 +1,6 @@
 package com.soywiz.korio.serialization.xml
 
+import com.soywiz.korio.ds.lmapOf
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -23,7 +24,7 @@ class XmlTest {
 
 	@Test
 	fun name3() {
-		assertEquals("""<test z="1" b="2"/>""", Xml.Tag("test", mapOf("z" to 1, "b" to 2), listOf()).outerXml)
+		assertEquals("""<test z="1" b="2"/>""", Xml.Tag("test", lmapOf("z" to 1, "b" to 2), listOf()).outerXml)
 
 	}
 

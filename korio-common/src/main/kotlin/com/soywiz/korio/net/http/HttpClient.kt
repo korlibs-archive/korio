@@ -2,6 +2,7 @@ package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.coroutine.withEventLoop
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.stream.*
@@ -165,7 +166,7 @@ class LogHttpClient(val redirect: HttpClient? = null) : HttpClient() {
 }
 
 object HttpStatusMessage {
-	val CODES = mapOf(
+	val CODES = lmapOf(
 		100 to "Continue",
 		101 to "Switching Protocols",
 		200 to "OK",
@@ -246,10 +247,11 @@ header object DefaultHttpFactoryFactory {
 
 class ProxiedHttpFactory(var parent: HttpFactory) : HttpFactory by parent
 
-val defaultHttpFactory: ProxiedHttpFactory by lazy { ProxiedHttpFactory(DefaultHttpFactoryFactory.createFactory()) }
+val _defaultHttpFactory: ProxiedHttpFactory by lazy { ProxiedHttpFactory(DefaultHttpFactoryFactory.createFactory()) }
+val defaultHttpFactory: HttpFactory get() = _defaultHttpFactory
 
 fun setDefaultHttpFactory(factory: HttpFactory) {
-	defaultHttpFactory.parent = factory
+	_defaultHttpFactory.parent = factory
 }
 
 fun HttpFactory.createClientEndpoint(endpoint: String) = createClient().endpoint(endpoint)

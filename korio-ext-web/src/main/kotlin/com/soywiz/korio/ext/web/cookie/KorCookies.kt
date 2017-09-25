@@ -1,5 +1,7 @@
 package com.soywiz.korio.ext.web.cookie
 
+import com.soywiz.korio.ds.lmapOf
+import com.soywiz.korio.ds.toLinkedMap
 import com.soywiz.korio.ext.web.router.KorRouter
 import com.soywiz.korio.net.http.HttpDate
 import com.soywiz.korio.net.http.HttpServer
@@ -67,7 +69,7 @@ data class KorCookie(
 }
 
 data class KorCookies(
-	val items: HashMap<String, KorCookie>
+	val items: MutableMap<String, KorCookie>
 ) {
 	fun getCookieSure(name: String): KorCookie {
 		return items.getOrPut(name) { KorCookie(name) }
@@ -75,11 +77,11 @@ data class KorCookies(
 
 	companion object {
 		operator fun invoke(vararg cookies: KorCookie): KorCookies {
-			return KorCookies(LinkedHashMap(cookies.map { it.name to it }.toMap()))
+			return KorCookies(cookies.map { it.name to it }.toLinkedMap())
 		}
 
 		fun parseCookies(cookies: List<String>): KorCookies {
-			val out = LinkedHashMap<String, KorCookie>()
+			val out = lmapOf<String, KorCookie>()
 			for (cookie in cookies) {
 				val c = KorCookie.parse(cookie)
 				out[c.name] = c

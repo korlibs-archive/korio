@@ -1,5 +1,6 @@
 package com.soywiz.korio.vfs
 
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.net.http.Http
@@ -40,7 +41,7 @@ class UrlVfs(val url: String, val dummy: Unit) : Vfs() {
 				val res = client.request(
 					Http.Method.GET,
 					fullUrl,
-					Http.Headers(mapOf("range" to "bytes=$position-${position + len - 1}"))
+					Http.Headers(lmapOf("range" to "bytes=$position-${position + len - 1}"))
 				)
 				val out = res.content.read(buffer, offset, len)
 				return out
@@ -59,7 +60,7 @@ class UrlVfs(val url: String, val dummy: Unit) : Vfs() {
 	suspend override fun readRange(path: String, range: LongRange): ByteArray = client.requestAsBytes(
 		Http.Method.GET,
 		getFullUrl(path),
-		Http.Headers(if (range == LONG_ZERO_TO_MAX_RANGE) mapOf() else mapOf("range" to "bytes=${range.start}-${range.endInclusive}"))
+		Http.Headers(if (range == LONG_ZERO_TO_MAX_RANGE) lmapOf() else lmapOf("range" to "bytes=${range.start}-${range.endInclusive}"))
 	).content
 
 	class HttpHeaders(val headers: Http.Headers) : Attribute

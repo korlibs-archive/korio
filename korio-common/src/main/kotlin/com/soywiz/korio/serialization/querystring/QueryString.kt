@@ -1,6 +1,7 @@
 package com.soywiz.korio.serialization.querystring
 
 import com.soywiz.korio.ds.ByteArrayBuilder
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.Charset
 import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.lang.toString
@@ -8,7 +9,7 @@ import com.soywiz.korio.util.substr
 
 object QueryString {
 	fun decode(str: CharSequence): Map<String, List<String>> {
-		val out = LinkedHashMap<String, ArrayList<String>>()
+		val out = lmapOf<String, ArrayList<String>>()
 		for (chunk in str.split('&')) {
 			val parts = chunk.split('=', limit = 2)
 			val key = URLDecoder.decode(parts[0], "UTF-8")

@@ -1,8 +1,10 @@
 package com.soywiz.korio.ext.web.router
 
 import com.soywiz.korio.async.syncTest
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.ext.web.cookie.registerCookies
 import com.soywiz.korio.inject.AsyncInjector
+import com.soywiz.korio.inject.jvmAutomapping
 import com.soywiz.korio.net.http.FakeRequest
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpServer
@@ -12,7 +14,7 @@ import org.junit.Test
 import kotlin.test.assertEquals
 
 class KorRouterTest {
-	val injector = AsyncInjector()
+	val injector = AsyncInjector().jvmAutomapping()
 	val requestConfig = HttpServer.RequestConfig()
 	val router = KorRouter(injector, requestConfig)
 
@@ -40,7 +42,7 @@ class KorRouterTest {
 			}
 
 			@Route(Http.Methods.GET, "/api/test")
-			fun test2() = mapOf("hello" to "world")
+			fun test2() = lmapOf("hello" to "world")
 		}
 
 		router.registerRoutes<DemoRoute>()

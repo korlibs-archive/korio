@@ -1,5 +1,6 @@
 package com.soywiz.korio.inject
 
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.KClass
 import com.soywiz.korio.lang.classOf
 import com.soywiz.korio.util.Extra
@@ -48,8 +49,8 @@ class InstanceAsyncObjectProvider<T>(val instance: T) : AsyncObjectProvider<T> {
 }
 
 class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Extra by Extra.Mixin() {
-	var fallbackProvider: ((clazz: KClass<*>) -> AsyncObjectProvider<*>)? = null
-	val providersByClass = hashMapOf<KClass<*>, AsyncObjectProvider<*>>()
+	var fallbackProvider: (suspend (clazz: KClass<*>, ctx: RequestContext) -> AsyncObjectProvider<*>)? = null
+	val providersByClass = lmapOf<KClass<*>, AsyncObjectProvider<*>>()
 
 	val root: AsyncInjector = parent?.root ?: this
 	val nearestFallbackProvider get() = fallbackProvider ?: parent?.fallbackProvider
@@ -88,13 +89,13 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Ext
 
 	data class RequestContext(val initialClazz: KClass<*>)
 
-	fun <T> getProviderOrNull(clazz: KClass<T>, ctx: RequestContext = RequestContext(clazz)): AsyncObjectProvider<T>? = (
+	suspend fun <T> getProviderOrNull(clazz: KClass<T>, ctx: RequestContext = RequestContext(clazz)): AsyncObjectProvider<T>? = (
 		providersByClass[clazz]
 			?: parent?.getProviderOrNull<T>(clazz, ctx)
-			?: nearestFallbackProvider?.invoke(clazz)
+			?: nearestFallbackProvider?.invoke(clazz, ctx)
 		) as? AsyncObjectProvider<T>?
 
-	fun <T> getProvider(clazz: KClass<T>, ctx: RequestContext = RequestContext(clazz)): AsyncObjectProvider<T> =
+	suspend fun <T> getProvider(clazz: KClass<T>, ctx: RequestContext = RequestContext(clazz)): AsyncObjectProvider<T> =
 		getProviderOrNull<T>(clazz, ctx) ?:
 			throw AsyncInjector.NotMappedException(
 				clazz, ctx.initialClazz, ctx, "Class '$clazz' doesn't have constructors $ctx"
@@ -110,7 +111,7 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Ext
 		return getProvider<T>(clazz).get(this)
 	}
 
-	fun <T> has(clazz: KClass<T>): Boolean = getProviderOrNull<T>(clazz) != null
+	suspend fun <T> has(clazz: KClass<T>): Boolean = getProviderOrNull<T>(clazz) != null
 
 	class NotMappedException(
 		val clazz: KClass<*>,

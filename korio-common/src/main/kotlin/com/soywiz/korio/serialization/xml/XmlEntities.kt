@@ -1,12 +1,13 @@
 package com.soywiz.korio.serialization.xml
 
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.util.StrReader
 import com.soywiz.korio.util.flip
 import com.soywiz.korio.util.transform
 
 object XmlEntities {
 	// Predefined entities in XML 1.0
-	private val charToEntity = mapOf('"' to "&quot;", '\'' to "&apos;", '<' to "&lt;", '>' to "&gt;", '&' to "&amp;")
+	private val charToEntity = lmapOf('"' to "&quot;", '\'' to "&apos;", '<' to "&lt;", '>' to "&gt;", '&' to "&amp;")
 	private val entities = StrReader.Literals.fromList(charToEntity.values.toTypedArray())
 	private val entityToChar = charToEntity.flip()
 

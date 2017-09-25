@@ -1,5 +1,6 @@
 package com.soywiz.korio.serialization.json
 
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.serialization.ObjectMapper
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -35,16 +36,16 @@ class JsonTest {
 		mapper.registerType { ClassWithEnum(it["a"]?.gen() ?: MyEnum.HELLO) }
 
 		mapper.registerUntypeEnum<MyEnum>()
-		mapper.registerUntype<Demo> { mapOf("a" to it.a.gen(), "b" to it.b.gen()) }
-		mapper.registerUntype<Demo2> { mapOf("a" to it.a.gen()) }
-		mapper.registerUntype<DemoList> { mapOf("demos" to it.demos.gen()) }
-		mapper.registerUntype<DemoSet> { mapOf("demos" to it.demos.gen()) }
-		mapper.registerUntype<ClassWithEnum> { mapOf("a" to it.a.gen()) }
+		mapper.registerUntype<Demo> { lmapOf("a" to it.a.gen(), "b" to it.b.gen()) }
+		mapper.registerUntype<Demo2> { lmapOf("a" to it.a.gen()) }
+		mapper.registerUntype<DemoList> { lmapOf("demos" to it.demos.gen()) }
+		mapper.registerUntype<DemoSet> { lmapOf("demos" to it.demos.gen()) }
+		mapper.registerUntype<ClassWithEnum> { lmapOf("a" to it.a.gen()) }
 	}
 
 	@Test
 	fun decode1() {
-		assertEquals(mapOf("a" to 1), Json.decode("""{"a":1}"""))
+		assertEquals(lmapOf("a" to 1), Json.decode("""{"a":1}"""))
 		assertEquals(-1e7, Json.decode("""-1e7"""))
 	}
 
@@ -76,7 +77,7 @@ class JsonTest {
 	@Test
 	fun encode2() {
 		assertEquals("[1,2,3]", Json.encode(listOf(1, 2, 3), mapper))
-		assertEquals("""{"a":1,"b":2}""", Json.encode(hashMapOf("a" to 1, "b" to 2), mapper))
+		assertEquals("""{"a":1,"b":2}""", Json.encode(lmapOf("a" to 1, "b" to 2), mapper))
 	}
 
 	@Test
@@ -110,7 +111,7 @@ class JsonTest {
 
 	@Test
 	fun decodeToPrim() {
-		//val resultStr = Json.encode(mapOf("items" to listOf(1, 2, 3, 4, 5)))
+		//val resultStr = Json.encode(linkedMapOf2("items" to listOf(1, 2, 3, 4, 5)))
 		assertEquals(listOf(1, 2, 3, 4, 5), Json.decodeToType<List<Int>>("""[1, 2, 3, 4, 5]""", mapper))
 		assertEquals(1, Json.decodeToType<Int>("1", mapper))
 		assertEquals(true, Json.decodeToType<Boolean>("true", mapper))
@@ -146,7 +147,7 @@ class JsonTest {
 		mapper.registerType { V(it["a"].gen(), it["b"].gen()) }
 		mapper.registerType { Demo(it["v"].toDynamicMap().map { it.key.toString() to it.value.gen<V>() }.toMap()) }
 
-		assertEquals(Demo(mapOf("z" to V(1, 2))), Json.decodeToType<Demo>("""{"v":{"z":{"a":1,"b":2}}}""", mapper))
+		assertEquals(Demo(lmapOf("z" to V(1, 2))), Json.decodeToType<Demo>("""{"v":{"z":{"a":1,"b":2}}}""", mapper))
 	}
 
 	@Test
@@ -154,9 +155,9 @@ class JsonTest {
 		data class V(val a: Int, val b: Int)
 		data class Demo(val v: Map<String, V>)
 
-		mapper.registerUntype<V> { mapOf("a" to it.a.gen(), "b" to it.b.gen()) }
-		mapper.registerUntype<Demo> { mapOf("v" to it.v.gen()) }
+		mapper.registerUntype<V> { lmapOf("a" to it.a.gen(), "b" to it.b.gen()) }
+		mapper.registerUntype<Demo> { lmapOf("v" to it.v.gen()) }
 
-		assertEquals("""{"v":{"z1":{"a":1,"b":2},"z2":{"a":1,"b":2}}}""", Json.encode(Demo(mapOf("z1" to V(1, 2), "z2" to V(1, 2))), mapper))
+		assertEquals("""{"v":{"z1":{"a":1,"b":2},"z2":{"a":1,"b":2}}}""", Json.encode(Demo(lmapOf("z1" to V(1, 2), "z2" to V(1, 2))), mapper))
 	}
 }

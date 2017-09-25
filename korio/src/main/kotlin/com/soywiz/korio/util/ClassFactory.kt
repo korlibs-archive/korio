@@ -1,5 +1,6 @@
 package com.soywiz.korio.util
 
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
 import java.lang.reflect.Constructor
 import java.lang.reflect.Modifier
@@ -17,7 +18,7 @@ class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin
 	}
 
 	companion object {
-		val cache = HashMap<Class<*>, ClassFactory<*>>()
+		val cache = lmapOf<Class<*>, ClassFactory<*>>()
 		@Suppress("UNCHECKED_CAST")
 		operator fun <T> get(clazz: Class<out T>): ClassFactory<T> = cache.getOrPut(clazz) { ClassFactory(clazz, true) } as ClassFactory<T>
 
@@ -37,7 +38,7 @@ class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin
 			if (clazz.isArray) return java.lang.reflect.Array.newInstance(clazz.componentType, 0)
 			if (clazz.isAssignableFrom(Set::class.java)) return HashSet<Any>()
 			if (clazz.isAssignableFrom(List::class.java)) return ArrayList<Any>()
-			if (clazz.isAssignableFrom(Map::class.java)) return HashMap<Any, Any>()
+			if (clazz.isAssignableFrom(Map::class.java)) return lmapOf<Any, Any>()
 			if (clazz.isEnum) return clazz.enumConstants.first()
 			return ClassFactory[clazz].createDummy()
 		}

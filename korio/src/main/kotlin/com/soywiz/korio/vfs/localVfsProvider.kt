@@ -3,6 +3,7 @@ package com.soywiz.korio.vfs
 import com.soywiz.korio.async.*
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import com.soywiz.korio.coroutine.withCoroutineContext
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
@@ -29,7 +30,7 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 		suspend override fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler): Int = executeInWorker {
 			val actualCmd = if (OS.isWindows) listOf("cmd", "/c") + cmdAndArgs else cmdAndArgs
 			val pb = ProcessBuilder(actualCmd)
-			pb.environment().putAll(mapOf())
+			pb.environment().putAll(lmapOf())
 			pb.directory(resolveFile(path))
 
 			val p = pb.start()

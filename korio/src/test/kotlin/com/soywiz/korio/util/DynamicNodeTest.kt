@@ -1,12 +1,13 @@
 package com.soywiz.korio.util
 
+import com.soywiz.korio.ds.lmapOf
 import org.junit.Test
 import kotlin.test.assertEquals
 
 class DynamicNodeTest {
 	@Test
 	fun name() {
-		val info = DynamicNode(mapOf("hello" to "Carlos", "world" to 10, "list" to listOf(0, 10, 20, 30)))
+		val info = DynamicNode(lmapOf("hello" to "Carlos", "world" to 10, "list" to listOf(0, 10, 20, 30)))
 		assertEquals("Carlos", info["hello"].asString())
 		assertEquals(10, info["world"].toInt())
 		assertEquals(0, info["list"][0].toInt())

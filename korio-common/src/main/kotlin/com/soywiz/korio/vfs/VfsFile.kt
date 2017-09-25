@@ -8,6 +8,7 @@ import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.await
 import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.ds.ByteArrayBuilder
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.LONG_ZERO_TO_MAX_RANGE
@@ -149,8 +150,8 @@ class VfsFile(
 		}
 	}
 
-	suspend fun exec(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), handler: VfsProcessHandler = VfsProcessHandler()): Int = vfs.exec(path, cmdAndArgs, env, handler)
-	suspend fun execToString(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), charset: Charset = Charsets.UTF_8, captureError: Boolean = false, throwOnError: Boolean = true): String {
+	suspend fun exec(cmdAndArgs: List<String>, env: Map<String, String> = lmapOf(), handler: VfsProcessHandler = VfsProcessHandler()): Int = vfs.exec(path, cmdAndArgs, env, handler)
+	suspend fun execToString(cmdAndArgs: List<String>, env: Map<String, String> = lmapOf(), charset: Charset = Charsets.UTF_8, captureError: Boolean = false, throwOnError: Boolean = true): String {
 		val out = ByteArrayBuilder()
 		val err = ByteArrayBuilder()
 
@@ -175,7 +176,7 @@ class VfsFile(
 
 	suspend fun execToString(vararg cmdAndArgs: String, charset: Charset = Charsets.UTF_8): String = execToString(cmdAndArgs.toList(), charset = charset)
 
-	suspend fun passthru(cmdAndArgs: List<String>, env: Map<String, String> = mapOf(), charset: Charset = Charsets.UTF_8): Int {
+	suspend fun passthru(cmdAndArgs: List<String>, env: Map<String, String> = lmapOf(), charset: Charset = Charsets.UTF_8): Int {
 		return exec(cmdAndArgs.toList(), env, object : VfsProcessHandler() {
 			suspend override fun onOut(data: ByteArray) {
 				Console.out_print(data.toString(charset))
@@ -187,7 +188,7 @@ class VfsFile(
 		})
 	}
 
-	suspend fun passthru(vararg cmdAndArgs: String, env: Map<String, String> = mapOf(), charset: Charset = Charsets.UTF_8): Int = passthru(cmdAndArgs.toList(), env, charset)
+	suspend fun passthru(vararg cmdAndArgs: String, env: Map<String, String> = lmapOf(), charset: Charset = Charsets.UTF_8): Int = passthru(cmdAndArgs.toList(), env, charset)
 
 	suspend fun watch(handler: suspend (VfsFileEvent) -> Unit): Closeable = withCoroutineContext {
 		vfs.watch(path) { event -> async { handler(event) } }

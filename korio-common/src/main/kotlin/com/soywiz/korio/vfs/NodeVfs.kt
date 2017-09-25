@@ -6,6 +6,7 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.Signal
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.coroutine.withCoroutineContext
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.stream.AsyncStream
@@ -41,8 +42,8 @@ open class NodeVfs(val caseSensitive: Boolean = true) : Vfs() {
 		}
 
 		var data: Any? = null
-		val children = LinkedHashMap<String, Node>()
-		val childrenLC = LinkedHashMap<String, Node>()
+		val children = lmapOf<String, Node>()
+		val childrenLC = lmapOf<String, Node>()
 		val root: Node get() = parent?.root ?: this
 		var stream: AsyncStream? = null
 

@@ -31,8 +31,8 @@ class DynamoDBTest {
 	//	val db = DynamoDB("eu-west-1", endpoint = URL("http://127.0.0.1:8000"))
 	//	//val db = DynamoDB("eu-west-1")
 	//	//db.deleteTableIfExists("Test2")
-	//	//db.createTable("Test2", mapOf("test" to DynamoDB.Kind.STRING, "demo" to DynamoDB.Kind.STRING), hashKey = "test", rangeKey = "demo")
-	//	//db.putItems("Test1", mapOf("test" to "hello"), mapOf("test1" to "hello"), mapOf("test2" to "hello"), mapOf("test3" to "hello"))
+	//	//db.createTable("Test2", linkedMapOf2("test" to DynamoDB.Kind.STRING, "demo" to DynamoDB.Kind.STRING), hashKey = "test", rangeKey = "demo")
+	//	//db.putItems("Test1", linkedMapOf2("test" to "hello"), mapOf("test1" to "hello"), mapOf("test2" to "hello"), mapOf("test3" to "hello"))
 	//	/*
 	//	db.putItem("Test1", mapOf("test" to "hello"))
 	//	for (n in 0 until 100) {

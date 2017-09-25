@@ -1,5 +1,6 @@
 package com.soywiz.korio.serialization.yaml
 
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.serialization.ObjectMapper
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -34,7 +35,7 @@ class YamlTest {
 	@Test
 	fun name2() {
 		assertEquals(
-			mapOf("hr" to 65, "avg" to 0.278, "rbi" to 147),
+			lmapOf("hr" to 65, "avg" to 0.278, "rbi" to 147),
 			Yaml.read("""
 				hr:  65    # Home runs
 				avg: 0.278 # Batting average
@@ -54,7 +55,7 @@ class YamlTest {
 	@Test
 	fun name4() {
 		assertEquals(
-			listOf(mapOf("a" to 1), mapOf("a" to 2)),
+			listOf(lmapOf("a" to 1), lmapOf("a" to 2)),
 			Yaml.read("""
 				|-
 				|	a: 1
@@ -68,12 +69,12 @@ class YamlTest {
 	fun name5() {
 		assertEquals(
 			listOf(
-				mapOf(
+				lmapOf(
 					"name" to "Mark McGwire",
 					"hr" to 65,
 					"avg" to 0.278
 				),
-				mapOf(
+				lmapOf(
 					"name" to "Sammy Sosa",
 					"hr" to 63,
 					"avg" to 0.288
@@ -95,7 +96,7 @@ class YamlTest {
 	@Test
 	fun name6() {
 		assertEquals(
-			mapOf(
+			lmapOf(
 				"hr" to listOf("Mark McGwire", "Sammy Sosa"),
 				"rbi" to listOf("Sammy Sosa", "Ken Griffey")
 			),
@@ -114,7 +115,7 @@ class YamlTest {
 	@Test
 	fun name7() {
 		assertEquals(
-			mapOf(
+			lmapOf(
 				"null" to null,
 				"booleans" to listOf(true, false),
 				"string" to "012345"

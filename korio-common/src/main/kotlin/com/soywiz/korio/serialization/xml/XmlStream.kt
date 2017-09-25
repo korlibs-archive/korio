@@ -1,5 +1,6 @@
 package com.soywiz.korio.serialization.xml
 
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.util.StrReader
 import com.soywiz.korio.util.substr
 
@@ -65,7 +66,7 @@ object XmlStream {
 							r.skipSpaces()
 							val name = r.matchIdentifier()!!
 							r.skipSpaces()
-							val attributes = LinkedHashMap<String, String>()
+							val attributes = lmapOf<String, String>()
 							while (r.peekChar() != '?' && r.peekChar() != '/' && r.peekChar() != '>') {
 								val key = r.matchIdentifier() ?: throw IllegalArgumentException("Malformed document or unsupported xml construct around ~${r.peek(10)}~")
 								r.skipSpaces()

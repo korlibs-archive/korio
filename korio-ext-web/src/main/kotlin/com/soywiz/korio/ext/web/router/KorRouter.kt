@@ -5,6 +5,7 @@ import com.soywiz.korio.async.async
 import com.soywiz.korio.async.invokeSuspend
 import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.InvalidOperationException
 import com.soywiz.korio.ext.web.sstatic.serveStatic
 import com.soywiz.korio.inject.AsyncInjector
@@ -41,7 +42,7 @@ annotation class Get(val name: String, val limit: Int = -1)
 annotation class Post(val name: String, val limit: Int = -1)
 annotation class Header(val name: String, val limit: Int = -1)
 
-val HttpServer.Request.extraParams by Extra.Property<HashMap<String, String>> { LinkedHashMap() }
+val HttpServer.Request.extraParams by Extra.Property<MutableMap<String, String>> { lmapOf() }
 
 fun HttpServer.Request.pathParam(name: String): String? {
 	return this.extraParams[name]
@@ -208,7 +209,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 
 				//var deferred: Promise.Deferred<Any>? = null
 				val args = ArrayList<Any?>()
-				val mapArgs = HashMap<String, String>()
+				val mapArgs = lmapOf<String, String>()
 				for ((indexedParamType, annotations) in method.parameterTypes.withIndex().zip(method.parameterAnnotations)) {
 					val (index, paramType) = indexedParamType
 					val param = annotations.filterIsInstance<Param>().firstOrNull()
