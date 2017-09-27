@@ -1,10 +1,12 @@
 package com.soywiz.korio.util
 
 import com.soywiz.korio.ds.lmapOf
+import com.soywiz.korio.ds.toLinkedMap
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.serialization.ObjectMapper
 import java.lang.reflect.Constructor
 import java.lang.reflect.Modifier
+import java.util.*
 import kotlin.reflect.KClass
 
 // @TODO: This should use ASM library to create a class per class to be as fast as possible
@@ -23,6 +25,8 @@ class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin
 		val cache = lmapOf<Class<*>, ClassFactory<*>>()
 		@Suppress("UNCHECKED_CAST")
 		operator fun <T> get(clazz: Class<out T>): ClassFactory<T> = cache.getOrPut(clazz) { ClassFactory(clazz, true) } as ClassFactory<T>
+
+		fun <T : Any> getForInstance(obj: T): ClassFactory<T> = get(obj.javaClass)
 
 		operator fun <T> invoke(clazz: Class<out T>): ClassFactory<T> = ClassFactory[clazz]
 
@@ -86,14 +90,33 @@ class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin
 	}
 }
 
-fun ObjectMapper.jvmFallback() {
+object JvmTyper {
+	fun untype(obj: Any?): Any? = when (obj) {
+		null -> obj
+		is Boolean, is String, is Number -> obj
+		is Iterable<*> -> obj.map { untype(it) }.toMutableList()
+		is Map<*, *> -> obj.map { untype(it.key) to untype(it.value) }.toLinkedMap()
+		else -> {
+			if (obj.javaClass.isArray) {
+				val len = java.lang.reflect.Array.getLength(obj)
+				(0 until len).map { untype(java.lang.reflect.Array.get(obj, it)) }.toMutableList()
+			} else {
+				val out = hashMapOf<String, Any?>()
+				val cf = ClassFactory.getForInstance(obj)
+				for (field in cf.fields) out[field.name] = untype(field.get(obj))
+				out
+			}
+		}
+	}
+}
+
+fun ObjectMapper.jvmFallback() = this.apply {
 	this.fallbackTyper = { clazz, obj ->
 		val jclazz = (clazz as KClass<*>).java
 		val cf = ClassFactory[jclazz]
 		cf.create(obj)
 	}
 	this.fallbackUntyper = { obj ->
-		val jclazz = obj.javaClass
-		ClassFactory[jclazz].toMap(obj)
+		JvmTyper.untype(obj)!!
 	}
 }
