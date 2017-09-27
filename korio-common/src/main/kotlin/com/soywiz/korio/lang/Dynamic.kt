@@ -1,14 +1,21 @@
 package com.soywiz.korio.lang
 
 import com.soywiz.korio.ds.lmapOf
+import com.soywiz.korio.serialization.Mapper
 
 object Dynamic {
 	fun get(obj: Any?, key: Any?): Any? = when (obj) {
+		null, is Map<*, *>, is List<*> -> getUntyped(obj, key)
+		else -> getUntyped(Mapper.toUntyped(obj), key)
+	}
+
+	fun getUntyped(obj: Any?, key: Any?): Any? = when (obj) {
 		null -> null
 		is Map<*, *> -> obj[key]
 		is List<*> -> obj[toInt(key)]
 		else -> null
 	}
+
 	fun toString(obj: Any?): String = obj?.toString() ?: "null"
 
 	fun toList(obj: Any?): List<Any?> = when (obj) {
@@ -38,6 +45,7 @@ object Dynamic {
 		(obj is String) && (obj.length == 1) -> obj.first()
 		else -> toNumber(obj).toChar()
 	}
+
 	fun toShort(obj: Any?): Short = toNumber(obj).toShort()
 	fun toInt(obj: Any?): Int = toNumber(obj).toInt()
 	fun toLong(obj: Any?): Long = toNumber(obj).toLong()

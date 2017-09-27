@@ -2,8 +2,10 @@ package com.soywiz.korio.util
 
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.serialization.ObjectMapper
 import java.lang.reflect.Constructor
 import java.lang.reflect.Modifier
+import kotlin.reflect.KClass
 
 // @TODO: This should use ASM library to create a class per class to be as fast as possible
 class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin.Boolean) {
@@ -81,5 +83,17 @@ class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin
 
 	fun createDummyArgs(constructor: Constructor<*>): Array<Any> {
 		return constructor.parameterTypes.map { createDummyUnchecked(it) }.toTypedArray()
+	}
+}
+
+fun ObjectMapper.jvmFallback() {
+	this.fallbackTyper = { clazz, obj ->
+		val jclazz = (clazz as KClass<*>).java
+		val cf = ClassFactory[jclazz]
+		cf.create(obj)
+	}
+	this.fallbackUntyper = { obj ->
+		val jclazz = obj.javaClass
+		ClassFactory[jclazz].toMap(obj)
 	}
 }

@@ -17,6 +17,8 @@ import com.soywiz.korio.lang.classOf
 class ObjectMapper {
 	val _typers = lmapOf<KClass<*>, TypeContext.(Any?) -> Any?>()
 	val _untypers = lmapOf<KClass<*>, UntypeContext.(Any?) -> Any?>()
+	var fallbackTyper: ((KClass<*>, Any) -> Any)? = null
+	var fallbackUntyper: ((Any) -> Any)? = null
 
 	@Suppress("NOTHING_TO_INLINE")
 	class TypeContext(val map: ObjectMapper) : DynamicContext {
@@ -83,15 +85,18 @@ class ObjectMapper {
 		is Map<*, *> -> obj.map { toUntyped(it.key) to toUntyped(it.value) }.toLinkedMap()
 		else -> {
 			val unt = _untypers[clazz]
-			if (unt == null) {
+			if ((unt == null) && (fallbackUntyper != null)) {
+				fallbackUntyper?.invoke(obj)
+			} else if ((unt == null)) {
 				println("Untypers: " + _untypers.size)
 				for (u in _untypers) {
 					println(" - " + u.key)
 				}
 
 				invalidArg("Don't know how to untype $clazz")
+			} else {
+				unt.invoke(untypeCtx, obj)
 			}
-			unt.invoke(untypeCtx, obj)
 		}
 	}
 
