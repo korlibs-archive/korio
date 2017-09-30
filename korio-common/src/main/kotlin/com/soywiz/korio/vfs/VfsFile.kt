@@ -14,6 +14,7 @@ import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.LONG_ZERO_TO_MAX_RANGE
 import com.soywiz.korio.util.toLongRange
 import com.soywiz.korio.util.use
+import kotlin.reflect.KClass
 
 class VfsFile(
 	val vfs: Vfs,
@@ -69,8 +70,8 @@ class VfsFile(
 		return open(mode).use { callback.await(this) }
 	}
 
-	inline suspend fun <reified T> readSpecial(): T = vfs.readSpecial(path, T::class)
-	suspend fun <T> readSpecial(clazz: KClass<T>): T = vfs.readSpecial(path, clazz)
+	inline suspend fun <reified T : Any> readSpecial(): T = vfs.readSpecial(path, T::class)
+	suspend fun <T : Any> readSpecial(clazz: KClass<T>): T = vfs.readSpecial(path, clazz)
 	suspend fun readRangeBytes(range: LongRange): ByteArray = vfs.readRange(path, range)
 	suspend fun readRangeBytes(range: IntRange): ByteArray = vfs.readRange(path, range.toLongRange())
 

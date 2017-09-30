@@ -1,7 +1,7 @@
 package com.soywiz.korio.inject
 
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.lang.KClass
+import kotlin.reflect.KClass
 import com.soywiz.korio.util.allDeclaredFields
 import java.lang.reflect.Modifier
 
@@ -36,7 +36,7 @@ private suspend fun fallback(injector: AsyncInjector, kclazz: KClass<*>, ctx: As
 					for (annotation in annotations) {
 						when (annotation) {
 							is Optional -> isOptional = true
-							else -> i.mapInstance(annotation as Any, annotation.annotationClass)
+							else -> i.mapInstance(annotation as Any, annotation.annotationClass as KClass<Any>)
 						}
 					}
 					i
@@ -44,9 +44,9 @@ private suspend fun fallback(injector: AsyncInjector, kclazz: KClass<*>, ctx: As
 					this
 				}
 				if (isOptional) {
-					out.add(if (i.has<Any?>(paramType)) i.getOrNull(paramType, ctx) else null)
+					out.add(if (i.has(paramType.kotlin)) i.getOrNull(paramType.kotlin, ctx) else null)
 				} else {
-					out.add(i.getOrNull(paramType, ctx) ?: throw AsyncInjector.NotMappedException(paramType, actualClass, ctx))
+					out.add(i.getOrNull(paramType.kotlin, ctx) ?: throw AsyncInjector.NotMappedException(paramType.kotlin, actualClass.kotlin, ctx))
 				}
 			}
 			allInstances.addAll(out)
@@ -64,7 +64,7 @@ private suspend fun fallback(injector: AsyncInjector, kclazz: KClass<*>, ctx: As
 					for (annotation in field.annotations) {
 						when (annotation) {
 							is Optional -> isOptional = true
-							else -> i.mapInstance(annotation as Any, annotation.annotationClass)
+							else -> i.mapInstance(annotation as Any, annotation.annotationClass as KClass<Any>)
 						}
 					}
 					i
@@ -73,9 +73,9 @@ private suspend fun fallback(injector: AsyncInjector, kclazz: KClass<*>, ctx: As
 				}
 				field.isAccessible = true
 				val res = if (isOptional) {
-					if (i.has<Any>(field.type.kotlin)) i.get(field.type, ctx) else null
+					if (i.has(field.type.kotlin)) i.get(field.type.kotlin, ctx) else null
 				} else {
-					i.get(field.type, ctx)
+					i.get(field.type.kotlin, ctx)
 				}
 				allInstances.add(res)
 				field.set(instance, res)

@@ -1,8 +1,6 @@
 package com.soywiz.korio.ext.db.elasticsearch
 
 import com.soywiz.korio.ds.lmapOf
-import com.soywiz.korio.lang.KClass
-import com.soywiz.korio.lang.classOf
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClientEndpoint
 import com.soywiz.korio.net.http.HttpFactory
@@ -13,6 +11,7 @@ import com.soywiz.korio.net.http.rest.rest
 import com.soywiz.korio.serialization.ObjectMapper
 import com.soywiz.korio.time.TimeSpan
 import com.soywiz.korio.util.Dynamic
+import kotlin.reflect.KClass
 
 class ElasticSearch(
 	val mapper: ObjectMapper,
@@ -74,7 +73,7 @@ class ElasticSearch(
 	) : CommonType(esi, name) {
 
 		fun <T : Any> typed(clazz: KClass<T>): TypedType<T> = TypedType(this, clazz, esi.es.mapper)
-		inline fun <reified T : Any> typed(): TypedType<T> = typed<T>(classOf<T>())
+		inline fun <reified T : Any> typed(): TypedType<T> = typed<T>(T::class)
 
 		suspend fun delete(id: String): Boolean {
 			return try {

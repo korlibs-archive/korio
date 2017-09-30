@@ -25,6 +25,10 @@ actual object Arrays {
 		System.arraycopy(src, srcPos, dst, dstPos, count)
 	}
 
+	actual fun fill(src: BooleanArray, value: Boolean, from: Int, to: Int) {
+		java.util.Arrays.fill(src, from, to, value)
+	}
+
 	actual fun fill(src: ByteArray, value: Byte, from: Int, to: Int) {
 		java.util.Arrays.fill(src, from, to, value)
 	}

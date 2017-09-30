@@ -3,7 +3,7 @@ package com.soywiz.korio.serialization.yaml
 import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.lang.KClass
+import kotlin.reflect.KClass
 import com.soywiz.korio.lang.Language
 import com.soywiz.korio.serialization.ObjectMapper
 import com.soywiz.korio.util.ListReader
@@ -23,7 +23,7 @@ object Yaml {
 	fun decode(@Language("yaml") str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
 	inline fun <reified T : Any> decodeToType(@Language("yaml") s: String, mapper: ObjectMapper): T = decodeToType(s, T::class, mapper)
 	@Suppress("UNCHECKED_CAST")
-	fun <T> decodeToType(@Language("yaml") s: String, clazz: KClass<T>, mapper: ObjectMapper): T = mapper.toTyped(decode(s), clazz)
+	fun <T : Any> decodeToType(@Language("yaml") s: String, clazz: KClass<T>, mapper: ObjectMapper): T = mapper.toTyped(decode(s), clazz)
 
 	fun read(str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
 

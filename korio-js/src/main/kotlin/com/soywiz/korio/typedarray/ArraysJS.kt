@@ -25,6 +25,10 @@ actual object Arrays {
 		for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
 	}
 
+	actual fun fill(src: BooleanArray, value: Boolean, from: Int, to: Int) {
+		for (n in from until to) src[n] = value
+	}
+
 	actual fun fill(src: ByteArray, value: Byte, from: Int, to: Int) {
 		for (n in from until to) src[n] = value
 	}

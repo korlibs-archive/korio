@@ -4,8 +4,7 @@ import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.ds.toLinkedMap
 import com.soywiz.korio.error.invalidArg
 import com.soywiz.korio.lang.DynamicContext
-import com.soywiz.korio.lang.KClass
-import com.soywiz.korio.lang.classOf
+import kotlin.reflect.KClass
 
 /**
  * Register classes and how to type and untype them.
@@ -22,38 +21,38 @@ class ObjectMapper {
 
 	@Suppress("NOTHING_TO_INLINE")
 	class TypeContext(val map: ObjectMapper) : DynamicContext {
-		inline fun <reified T> Any?.gen(): T = map.toTyped(this, T::class)
-		inline fun <reified T> Any?.genList(): ArrayList<T> {
+		inline fun <reified T : Any> Any?.gen(): T = map.toTyped(this, T::class)
+		inline fun <reified T : Any> Any?.genList(): ArrayList<T> {
 			return ArrayList(this.toDynamicList().map { it.gen<T>() }.toList())
 		}
 
-		inline fun <reified T> Any?.genSet(): HashSet<T> {
+		inline fun <reified T : Any> Any?.genSet(): HashSet<T> {
 			return HashSet(this.toDynamicList().map { it.gen<T>() }.toSet())
 		}
 
-		inline fun <reified K, reified V> Any?.genMap(): MutableMap<K, V> {
+		inline fun <reified K : Any, reified V : Any> Any?.genMap(): MutableMap<K, V> {
 			return this.toDynamicMap().map { it.key.gen<K>() to it.value.gen<V>() }.toLinkedMap()
 		}
 	}
 
 	@Suppress("NOTHING_TO_INLINE")
 	class UntypeContext(val map: ObjectMapper) {
-		inline fun <reified T> T.gen(): Any? = map.toUntyped(this)
+		inline fun <reified T : Any> T.gen(): Any? = map.toUntyped(this)
 		inline fun Boolean.gen(): Any? = this
 		inline fun String.gen(): Any? = this
 		inline fun Number.gen(): Any? = this
-		inline fun <reified T> Iterable<T>.gen(): List<Any?> = this.map { it.gen() }
-		inline fun <reified K, reified V> Map<K, V>.gen(): Map<Any?, Any?> = this.map { it.key.gen() to it.value.gen() }.toMap()
+		inline fun <reified T : Any> Iterable<T>.gen(): List<Any?> = this.map { it.gen() }
+		inline fun <reified K : Any, reified V : Any> Map<K, V>.gen(): Map<Any?, Any?> = this.map { it.key.gen() to it.value.gen() }.toMap()
 	}
 
 	private val typeCtx = TypeContext(this)
 	private val untypeCtx = UntypeContext(this)
 
-	fun <T> registerType(clazz: KClass<T>, generate: TypeContext.(Any?) -> T) = this.apply {
+	fun <T : Any> registerType(clazz: KClass<T>, generate: TypeContext.(Any?) -> T) = this.apply {
 		_typers[clazz] = generate
 	}
 
-	fun <T> toTyped(obj: Any?, clazz: KClass<T>): T {
+	fun <T : Any> toTyped(obj: Any?, clazz: KClass<T>): T {
 		val generator = _typers[clazz] ?: invalidArg("Unregistered $clazz")
 		return generator(typeCtx, obj) as T
 	}
@@ -74,15 +73,15 @@ class ObjectMapper {
 		registerType(String::class) { it?.toString() ?: "null" }
 	}
 
-	inline fun <reified T> toUntyped(obj: T): Any? = toUntyped(classOf<T>(), obj)
+	inline fun <reified T : Any> toUntyped(obj: T): Any? = toUntyped(T::class, obj)
 
-	fun toUntyped(clazz: KClass<Any?>, obj: Any?): Any? = when (obj) {
+	fun <T : Any> toUntyped(clazz: KClass<T>, obj: T?): Any? = when (obj) {
 		null -> obj
 		is Boolean -> obj
 		is Number -> obj
 		is String -> obj
-		is Iterable<*> -> ArrayList(obj.map { toUntyped(it) })
-		is Map<*, *> -> obj.map { toUntyped(it.key) to toUntyped(it.value) }.toLinkedMap()
+		is Iterable<*> -> ArrayList(obj.map { toUntyped(it!!) })
+		is Map<*, *> -> obj.map { toUntyped(it.key!!) to toUntyped(it.value!!) }.toLinkedMap()
 		else -> {
 			val unt = _untypers[clazz]
 			if ((unt == null) && (fallbackUntyper != null)) {
@@ -102,20 +101,20 @@ class ObjectMapper {
 
 	fun <T : Enum<T>> registerEnum(clazz: KClass<T>, values: Array<T>) {
 		val nameToString = values.map { it.name to it }.toMap()
-		registerType(clazz) { nameToString[it.toString()] }
+		registerType(clazz) { nameToString[it.toString()]!! }
 	}
 
-	inline fun <reified T> registerType(noinline generate: TypeContext.(Any?) -> T) = registerType(classOf<T>(), generate)
-	inline fun <reified T : Enum<T>> registerEnum(values: Array<T>) = registerEnum(classOf<T>(), values)
+	inline fun <reified T : Any> registerType(noinline generate: TypeContext.(Any?) -> T) = registerType(T::class, generate)
+	inline fun <reified T : Enum<T>> registerEnum(values: Array<T>) = registerEnum(T::class, values)
 
-	fun <T> registerUntype(clazz: KClass<T>, untyper: UntypeContext.(T) -> Any?) {
+	fun <T : Any> registerUntype(clazz: KClass<T>, untyper: UntypeContext.(T) -> Any?) {
 		_untypers[clazz] = untyper as UntypeContext.(Any?) -> Any?
 	}
 
-	inline fun <reified T> registerUntype(noinline untyper: UntypeContext.(T) -> Any?) = registerUntype(classOf<T>(), untyper)
+	inline fun <reified T : Any> registerUntype(noinline untyper: UntypeContext.(T) -> Any?) = registerUntype(T::class, untyper)
 
 	inline fun <reified T : Enum<T>> registerUntypeEnum() = registerUntype<T> { it.name }
-	//inline fun <reified T> registerUntypeObj(vararg props: KPro<T>) = registerUntype(classOf<T>(), untyper)
+	//inline fun <reified T> registerUntypeObj(vararg props: KPro<T>) = registerUntype(T::class, untyper)
 
 	inline fun <T> scoped(callback: () -> T): T {
 		val oldTypers = _typers.toMap()

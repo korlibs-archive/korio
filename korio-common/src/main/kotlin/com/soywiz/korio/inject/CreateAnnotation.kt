@@ -1,7 +1,7 @@
 package com.soywiz.korio.inject
 
-import com.soywiz.korio.lang.KClass
+import kotlin.reflect.KClass
 
 expect object CreateAnnotation {
-	fun <T> createAnnotation(clazz: KClass<T>, map: Map<String, Any?>): T
+	fun <T : Any> createAnnotation(clazz: KClass<T>, map: Map<String, Any?>): T
 }

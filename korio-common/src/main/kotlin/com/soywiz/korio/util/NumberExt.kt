@@ -126,3 +126,18 @@ fun Long.toString(radix: Int): String {
 		return out.reversed()
 	}
 }
+
+fun Int.toString(radix: Int): String {
+	var temp = this
+	if (temp == 0) {
+		return "0"
+	} else {
+		var out = ""
+		while (temp != 0) {
+			val digit = temp % radix
+			temp /= radix
+			out += Hex.DIGITS_UPPER[digit.toInt()]
+		}
+		return out.reversed()
+	}
+}

@@ -9,7 +9,7 @@ import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.error.unsupported
 import com.soywiz.korio.lang.Closeable
-import com.soywiz.korio.lang.KClass
+import kotlin.reflect.KClass
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.use
 import kotlin.math.min
@@ -39,7 +39,7 @@ abstract class Vfs {
 
 	fun createNonExistsStat(path: String, extraInfo: Any? = null) = VfsStat(file(path), exists = false, isDirectory = false, size = 0L, device = -1L, inode = -1L, mode = 511, owner = "nobody", group = "nobody", createTime = 0L, modifiedTime = 0L, lastAccessTime = 0L, extraInfo = extraInfo)
 
-	suspend open fun <T> readSpecial(path: String, clazz: KClass<T>): T {
+	suspend open fun <T : Any> readSpecial(path: String, clazz: KClass<T>): T {
 		return (vfsSpecialReadersMap[clazz]?.readSpecial(this, path) as T) ?: invalidOp("Don't know how to readSpecial $clazz")
 	}
 
@@ -138,7 +138,7 @@ abstract class Vfs {
 
 		suspend override fun readRange(path: String, range: LongRange): ByteArray = initOnce().access(path).readRangeBytes(range)
 
-		suspend override fun <T> readSpecial(path: String, clazz: KClass<T>): T = initOnce().access(path).readSpecial(clazz)
+		suspend override fun <T : Any> readSpecial(path: String, clazz: KClass<T>): T = initOnce().access(path).readSpecial(clazz)
 
 		suspend override fun put(path: String, content: AsyncInputStream, attributes: List<Attribute>) = initOnce().access(path).put(content, *attributes.toTypedArray())
 		suspend override fun setSize(path: String, size: Long): Unit = initOnce().access(path).setSize(size)
