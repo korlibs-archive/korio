@@ -136,9 +136,10 @@ interface InjectedHandler {
 	suspend fun injectedInto(instance: Any): Unit
 }
 
+annotation class AsyncFactoryClass(val clazz: KClass<out AsyncFactory<*>>)
 //annotation class AsyncFactoryClass(val clazz: KClass<out AsyncFactory<*>>)
-//annotation class AsyncFactoryClass<T>(val clazz: KClass<AsyncFactory<T>>)
-annotation class AsyncFactoryClass<T>(val clazz: kotlin.reflect.KClass<out AsyncFactory<*>>)
+//annotation class AsyncFactoryClass<T : Any>(val clazz: KClass<AsyncFactory<T>>)
+//annotation class AsyncFactoryClass<T>(val clazz: kotlin.reflect.KClass<out AsyncFactory<*>>)
 
 interface AsyncDependency {
 	suspend fun init(): Unit

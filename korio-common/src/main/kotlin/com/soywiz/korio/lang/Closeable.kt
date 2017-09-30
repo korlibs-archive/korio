@@ -11,3 +11,11 @@ fun Closeable(callback: () -> Unit) = object : Closeable {
 fun Iterable<Closeable>.closeable(): Closeable = Closeable {
 	for (closeable in this@closeable) closeable.close()
 }
+
+fun <TCloseable : Closeable, T : Any> TCloseable.use(callback: (TCloseable) -> T): T {
+	try {
+		return callback(this)
+	} finally {
+		this.close()
+	}
+}

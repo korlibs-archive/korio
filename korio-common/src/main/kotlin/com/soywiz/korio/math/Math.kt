@@ -3,6 +3,7 @@ package com.soywiz.korio.math
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round
+import kotlin.math.sign
 
 fun Float.reinterpretAsInt() = this.toBits()
 fun Int.reinterpretAsFloat() = Float.fromBits(this)
@@ -43,3 +44,7 @@ fun rint(v: Double): Double {
 		return round(v)
 	}
 }
+
+fun toRadians(v: Double): Double = v / 180.0 * 3.141592653589793
+fun toDegrees(v: Double): Double = v * 180.0 / 3.141592653589793
+fun signum(v: Double): Double = sign(v)

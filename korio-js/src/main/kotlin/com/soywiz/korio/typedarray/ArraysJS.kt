@@ -1,6 +1,14 @@
 package com.soywiz.korio.typedarray
 
 actual object Arrays {
+	actual fun <T> copyRangeTo(src: Array<T>, srcPos: Int, dst: Array<T>, dstPos: Int, count: Int) {
+		for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
+	}
+
+	actual fun copyRangeTo(src: BooleanArray, srcPos: Int, dst: BooleanArray, dstPos: Int, count: Int) {
+		for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
+	}
+
 	actual fun copyRangeTo(src: ByteArray, srcPos: Int, dst: ByteArray, dstPos: Int, count: Int) {
 		for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
 	}
@@ -23,6 +31,10 @@ actual object Arrays {
 
 	actual fun copyRangeTo(src: DoubleArray, srcPos: Int, dst: DoubleArray, dstPos: Int, count: Int) {
 		for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
+	}
+
+	actual fun <T> fill(src: Array<T>, value: T, from: Int, to: Int) {
+		for (n in from until to) src[n] = value
 	}
 
 	actual fun fill(src: BooleanArray, value: Boolean, from: Int, to: Int) {
