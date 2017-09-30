@@ -24,4 +24,8 @@ expect class FastMemory {
 	fun setAlignedArrayInt16(index: Int, data: ShortArray, offset: Int, len: Int)
 	fun setAlignedArrayInt32(index: Int, data: IntArray, offset: Int, len: Int)
 	fun setAlignedArrayFloat32(index: Int, data: FloatArray, offset: Int, len: Int)
+
+	fun getInt16(index: Int): Short
+	fun getInt32(index: Int): Int
+	fun getFloat32(index: Int): Float
 }

@@ -9,7 +9,7 @@ actual class FastMemory(val buffer: ByteBuffer, actual val size: Int) {
 
 	companion actual object {
 		actual fun alloc(size: Int): FastMemory {
-			return FastMemory(ByteBuffer.allocate(size), size)
+			return FastMemory(ByteBuffer.allocate((size + 0xF) and 0xF.inv()), size)
 		}
 		actual fun copy(src: FastMemory, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit {
 			//dst.buffer.slice()
@@ -45,4 +45,8 @@ actual class FastMemory(val buffer: ByteBuffer, actual val size: Int) {
 	actual fun setAlignedArrayFloat32(index: Int, data: FloatArray, offset: Int, len: Int) {
 		for (n in 0 until len) setAlignedFloat32(index + n, data[offset + n])
 	}
+
+	actual fun getInt16(index: Int): Short = buffer.getShort(index)
+	actual fun getInt32(index: Int): Int = buffer.getInt(index)
+	actual fun getFloat32(index: Int): Float = buffer.getFloat(index)
 }

@@ -3,13 +3,14 @@ package com.soywiz.korio.mem
 import org.khronos.webgl.*
 
 actual class FastMemory(val buffer: Uint8Array, actual val size: Int) {
+	val data = DataView(buffer.buffer)
 	val i16 = Int16Array(buffer.buffer)
 	val i32 = Int32Array(buffer.buffer)
 	val f32 = Float32Array(buffer.buffer)
 
 	companion actual object {
 		actual fun alloc(size: Int): FastMemory {
-			return FastMemory(Uint8Array(size), size)
+			return FastMemory(Uint8Array((size + 0xF) and 0xF.inv()), size)
 		}
 
 		actual fun copy(src: FastMemory, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit {
@@ -48,4 +49,8 @@ actual class FastMemory(val buffer: Uint8Array, actual val size: Int) {
 	actual fun setAlignedArrayFloat32(index: Int, data: FloatArray, offset: Int, len: Int) {
 		for (n in 0 until len) setAlignedFloat32(index + n, data[offset + n])
 	}
+
+	actual fun getInt16(index: Int): Short = data.getInt16(index)
+	actual fun getInt32(index: Int): Int = data.getInt32(index)
+	actual fun getFloat32(index: Int): Float = data.getFloat32(index)
 }
