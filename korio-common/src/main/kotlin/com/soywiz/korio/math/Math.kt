@@ -1,5 +1,9 @@
 package com.soywiz.korio.math
 
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.math.round
+
 fun Float.reinterpretAsInt() = this.toBits()
 fun Int.reinterpretAsFloat() = Float.fromBits(this)
 
@@ -30,4 +34,12 @@ fun Long.reverseBytes(): Long {
 	val v0 = (this ushr 0).toInt().reverseBytes().toLong() and 0xFFFFFFFFL
 	val v1 = (this ushr 32).toInt().reverseBytes().toLong() and 0xFFFFFFFFL
 	return (v0 shl 32) or (v1 shl 0)
+}
+
+fun rint(v: Double): Double {
+	if (v >= floor(v) + 0.5) { // @TODO: This is right?
+		return ceil(v)
+	} else {
+		return round(v)
+	}
 }

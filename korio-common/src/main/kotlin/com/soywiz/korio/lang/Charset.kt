@@ -13,7 +13,7 @@ abstract class Charset(val name: String) {
 	}
 }
 
-object UTF8Charset : Charset("UTF-8") {
+abstract class UTC8CharsetBase(name: String) : Charset(name) {
 	private fun createByte(codePoint: Int, shift: Int): Int = codePoint shr shift and 0x3F or 0x80
 
 	override fun encode(out: ByteArrayBuilder, src: CharSequence, start: Int, end: Int) {
@@ -60,8 +60,12 @@ object UTF8Charset : Charset("UTF-8") {
 	}
 }
 
+object UTF8Charset : UTC8CharsetBase("UTF-8")
+object ISO_8859_1Charset : UTC8CharsetBase("ISO-8859-1")
+
 object Charsets {
 	val UTF_8 = UTF8Charset
+	val ISO_8859_1 = ISO_8859_1Charset
 }
 
 fun String.toByteArray(charset: Charset = Charsets.UTF_8): ByteArray {

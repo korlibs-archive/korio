@@ -5,6 +5,26 @@ actual object Arrays {
 		System.arraycopy(src, srcPos, dst, dstPos, count)
 	}
 
+	actual fun copyRangeTo(src: ShortArray, srcPos: Int, dst: ShortArray, dstPos: Int, count: Int) {
+		System.arraycopy(src, srcPos, dst, dstPos, count)
+	}
+
+	actual fun copyRangeTo(src: IntArray, srcPos: Int, dst: IntArray, dstPos: Int, count: Int) {
+		System.arraycopy(src, srcPos, dst, dstPos, count)
+	}
+
+	actual fun copyRangeTo(src: LongArray, srcPos: Int, dst: LongArray, dstPos: Int, count: Int) {
+		System.arraycopy(src, srcPos, dst, dstPos, count)
+	}
+
+	actual fun copyRangeTo(src: FloatArray, srcPos: Int, dst: FloatArray, dstPos: Int, count: Int) {
+		System.arraycopy(src, srcPos, dst, dstPos, count)
+	}
+
+	actual fun copyRangeTo(src: DoubleArray, srcPos: Int, dst: DoubleArray, dstPos: Int, count: Int) {
+		System.arraycopy(src, srcPos, dst, dstPos, count)
+	}
+
 	actual fun fill(src: ByteArray, value: Byte, from: Int, to: Int) {
 		java.util.Arrays.fill(src, from, to, value)
 	}
