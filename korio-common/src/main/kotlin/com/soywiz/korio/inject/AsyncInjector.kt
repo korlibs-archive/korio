@@ -15,6 +15,7 @@ annotation class Singleton
 //@Target(AnnotationTarget.PROPERTY_SETTER, AnnotationTarget.FIELD)
 @Target(AnnotationTarget.PROPERTY_SETTER, AnnotationTarget.FIELD)
 //@Target(AnnotationTarget.)
+@Deprecated("Do not use Inject but injector.get() with a lateinit")
 annotation class Inject
 
 @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.FIELD)
