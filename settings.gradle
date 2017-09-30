@@ -8,6 +8,7 @@ include(
 
 		'korio-common',
 		'korio',
+		'korio-android',
 		'korio-js',
 
 		'korio-ext-amazon-common',

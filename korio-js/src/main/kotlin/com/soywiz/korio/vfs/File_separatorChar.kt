@@ -1,3 +1,3 @@
 package com.soywiz.korio.vfs
 
-impl val File_separatorChar: Char = '/'
+actual val File_separatorChar: Char = '/'

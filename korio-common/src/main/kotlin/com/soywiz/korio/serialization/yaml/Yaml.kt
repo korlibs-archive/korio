@@ -11,9 +11,8 @@ import com.soywiz.korio.util.StrReader
 import com.soywiz.korio.util.readStringLit
 import com.soywiz.korio.util.unquote
 import kotlin.collections.ArrayList
-import kotlin.collections.HashMap
-import kotlin.collections.LinkedHashMap
 import kotlin.collections.List
+import kotlin.collections.MutableMap
 import kotlin.collections.arrayListOf
 import kotlin.collections.isNotEmpty
 import kotlin.collections.last

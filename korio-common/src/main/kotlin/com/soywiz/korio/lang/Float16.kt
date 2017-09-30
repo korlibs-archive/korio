@@ -1,7 +1,7 @@
 package com.soywiz.korio.lang
 
-import com.soywiz.korio.math.Math
-import com.soywiz.korio.math.MathEx
+import com.soywiz.korio.math.reinterpretAsInt
+import kotlin.math.pow
 
 class Float16(val bits: Int) {
 	constructor(value: Double) : this(doubleToIntBits(value))
@@ -20,7 +20,7 @@ class Float16(val bits: Int) {
 					return 0.0
 				} else {
 					// subnormal number
-					return sign * Math.pow(2.0, (1 - FLOAT16_EXPONENT_BASE).toDouble()) * (significand / 1024)
+					return sign * 2.0.pow((1 - FLOAT16_EXPONENT_BASE).toDouble()) * (significand / 1024)
 				}
 			}
 			if (exponent == 31) {
@@ -31,11 +31,11 @@ class Float16(val bits: Int) {
 				}
 			}
 			// normal number
-			return sign * Math.pow(2.0, (exponent - FLOAT16_EXPONENT_BASE).toDouble()) * (1 + significand / 1024)
+			return sign * 2.0.pow((exponent - FLOAT16_EXPONENT_BASE).toDouble()) * (1 + significand / 1024)
 		}
 
 		fun doubleToIntBits(value: Double): Int {
-			val dword = MathEx.floatToIntBits(value.toFloat())
+			val dword = value.toFloat().reinterpretAsInt()
 
 			return if ((dword and 0x7FFFFFFF) == 0) {
 				dword ushr 16

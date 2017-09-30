@@ -241,7 +241,7 @@ interface HttpFactory {
 	fun createServer(): HttpServer
 }
 
-header object DefaultHttpFactoryFactory {
+expect object DefaultHttpFactoryFactory {
 	fun createFactory(): HttpFactory
 }
 

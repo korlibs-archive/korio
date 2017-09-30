@@ -1,8 +1,9 @@
 buildscript {
-	ext.kotlinVersion = '1.1.50'
+	ext.kotlinVersion = '1.2.0-beta-31'
 	ext.compilerVersion = ext.kotlinVersion
 	ext.librariesVersion = ext.kotlinVersion
-	ext.eapChannel = 'https://dl.bintray.com/kotlin/kotlin-eap-1.1'
+	//ext.eapChannel = 'https://dl.bintray.com/kotlin/kotlin-eap-1.1'
+	ext.eapChannel = 'http://dl.bintray.com/kotlin/kotlin-eap-1.2'
 	ext.serializationRepo = 'https://kotlin.bintray.com/kotlinx'
 	ext.serializationPluginVersion = '0.1'
 
@@ -16,6 +17,7 @@ buildscript {
 	dependencies {
 		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$compilerVersion"
 	}
+
 	ext {
 		libraries = [
 				kotlin_stdlib_common: "org.jetbrains.kotlin:kotlin-stdlib-common:$librariesVersion",
@@ -29,7 +31,6 @@ buildscript {
 				kotlin_reflect      : "org.jetbrains.kotlin:kotlin-reflect:$librariesVersion",
 		]
 	}
-
 }
 
 def file = new File(".").absolutePath
@@ -49,6 +50,7 @@ allprojects {
 
 	switch (project.name) {
 		case "korio":
+		case "korio-android": // Android is JVM too
 		case "kotlinx.arraybuffers":
 		case "korio-ext-web":
 			// Should be a platform-common library in the future!

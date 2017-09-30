@@ -8,10 +8,10 @@ import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.lang.IOException
-import com.soywiz.korio.math.Math
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.time.UTCDate
 import com.soywiz.korio.util.*
+import kotlin.math.max
 
 suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 	//val s = zipFile.open(VfsOpenMode.READ)
@@ -21,8 +21,8 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 	var pk_endIndex = -1
 
 	for (chunkSize in listOf(0x16, 0x100, 0x1000, 0x10000)) {
-		s.setPosition(Math.max(0L, s.getLength() - chunkSize))
-		endBytes = s.readBytesExact(Math.max(chunkSize, s.getAvailable().toIntClamp()))
+		s.setPosition(max(0L, s.getLength() - chunkSize))
+		endBytes = s.readBytesExact(max(chunkSize, s.getAvailable().toIntClamp()))
 		pk_endIndex = endBytes.indexOf(PK_END)
 		if (pk_endIndex >= 0) break
 	}

@@ -3,10 +3,10 @@ package com.soywiz.korio.stream
 import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.lang.tl.threadLocal
-import com.soywiz.korio.math.Math
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.typedarray.fill
 import com.soywiz.korio.util.*
+import kotlin.math.min
 
 interface SyncInputStream {
 	fun read(buffer: ByteArray, offset: Int, len: Int): Int
@@ -113,7 +113,7 @@ class SliceSyncStreamBase(internal val base: SyncStreamBase, internal val baseSt
 
 class FillSyncStreamBase(val fill: Byte, override var length: Long) : SyncStreamBase() {
 	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
-		val end = Math.min(length, position + len)
+		val end = min(length, position + len)
 		val actualLen = (end - position).toIntSafe()
 		buffer.fill(fill, offset, offset + actualLen)
 		return actualLen
@@ -164,7 +164,7 @@ class MemorySyncStreamBase(var data: ByteArrayBuffer) : SyncStreamBase() {
 		set(value) = run { data.size = value.toInt() }
 
 	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
-		val end = Math.min(this.length, position + len)
+		val end = min(this.length, position + len)
 		val actualLen = (end - position).toInt()
 		this.data.data.copyRangeTo(position.toInt(), buffer, offset, actualLen)
 		return actualLen

@@ -1,5 +1,5 @@
 package com.soywiz.korio.async
 
-impl suspend fun <T> executeInWorker(callback: suspend () -> T): T {
+actual suspend fun <T> executeInWorker(callback: suspend () -> T): T {
 	return callback()
 }

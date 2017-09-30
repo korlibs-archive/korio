@@ -5,8 +5,8 @@ package com.soywiz.korio.util
 import com.soywiz.korio.lang.Charset
 import com.soywiz.korio.lang.Charsets
 import com.soywiz.korio.lang.toString
-import com.soywiz.korio.math.Math
-import com.soywiz.korio.math.MathEx
+import com.soywiz.korio.math.reinterpretAsDouble
+import com.soywiz.korio.math.reinterpretAsFloat
 
 private inline fun ByteArray._read8(o: Int): Int = this[o].toInt()
 
@@ -43,16 +43,16 @@ fun ByteArray.readS16_le(o: Int): Int = _read16_le(o).signExtend(16)
 fun ByteArray.readS24_le(o: Int): Int = _read24_le(o).signExtend(24)
 fun ByteArray.readS32_le(o: Int): Int = _read32_le(o)
 fun ByteArray.readS64_le(o: Int): Long = _read64_le(o)
-fun ByteArray.readF32_le(o: Int): Float = MathEx.intBitsToFloat(_read32_le(o))
-fun ByteArray.readF64_le(o: Int): Double = MathEx.longBitsToDouble(_read64_le(o))
+fun ByteArray.readF32_le(o: Int): Float = _read32_le(o).reinterpretAsFloat()
+fun ByteArray.readF64_le(o: Int): Double = _read64_le(o).reinterpretAsDouble()
 // BE
 fun ByteArray.readS16_be(o: Int): Int = _read16_be(o).signExtend(16)
 
 fun ByteArray.readS24_be(o: Int): Int = _read24_be(o).signExtend(24)
 fun ByteArray.readS32_be(o: Int): Int = _read32_be(o)
 fun ByteArray.readS64_be(o: Int): Long = _read64_be(o)
-fun ByteArray.readF32_be(o: Int): Float = MathEx.intBitsToFloat(_read32_be(o))
-fun ByteArray.readF64_be(o: Int): Double = MathEx.longBitsToDouble(_read64_be(o))
+fun ByteArray.readF32_be(o: Int): Float = _read32_be(o).reinterpretAsFloat()
+fun ByteArray.readF64_be(o: Int): Double = _read64_be(o).reinterpretAsDouble()
 
 fun ByteArray.readS16_LEBE(o: Int, little: Boolean): Int = if (little) readS16_le(o) else readS16_be(o)
 fun ByteArray.readS32_LEBE(o: Int, little: Boolean): Int = if (little) readS32_le(o) else readS32_be(o)
@@ -88,7 +88,7 @@ fun ByteArray.readDoubleArray_be(o: Int, count: Int): DoubleArray = this.readTyp
 
 fun ByteArray.readStringz(o: Int, size: Int, charset: Charset = Charsets.UTF_8): String {
 	var idx = o
-	val stop = Math.min(this.size, o + size)
+	val stop = kotlin.math.min(this.size, o + size)
 	while (idx < stop) {
 		if (this[idx] == 0.toByte()) break
 		idx++

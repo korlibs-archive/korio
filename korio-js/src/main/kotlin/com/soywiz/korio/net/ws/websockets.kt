@@ -5,7 +5,7 @@ import org.khronos.webgl.Int8Array
 import org.khronos.webgl.set
 import org.w3c.dom.*
 
-impl val websockets: WebSocketClientFactory by lazy { JsWebSocketClientFactory() }
+actual val websockets: WebSocketClientFactory by lazy { JsWebSocketClientFactory() }
 
 class JsWebSocketClientFactory : WebSocketClientFactory() {
 	override suspend fun create(url: String, protocols: List<String>?, origin: String?, wskey: String?, debug: Boolean): WebSocketClient = JsWebSocketClient(url, protocols, DEBUG = debug).apply { init() }

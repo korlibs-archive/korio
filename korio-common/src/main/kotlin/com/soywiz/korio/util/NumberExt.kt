@@ -3,7 +3,9 @@
 package com.soywiz.korio.util
 
 import com.soywiz.korio.crypto.Hex
-import com.soywiz.korio.math.Math
+import kotlin.math.ceil
+import kotlin.math.floor
+import kotlin.math.round
 
 inline fun Int.mask(): Int = (1 shl this) - 1
 inline fun Long.mask(): Long = (1L shl this.toInt()) - 1L
@@ -103,9 +105,9 @@ fun Long.convertRange(srcMin: Long, srcMax: Long, dstMin: Long, dstMax: Long): L
 	return (dstMin + (dstMax - dstMin) * ratio).toLong()
 }
 
-fun Double.toIntCeil() = Math.ceil(this).toInt()
-fun Double.toIntFloor() = Math.floor(this).toInt()
-fun Double.toIntRound() = Math.round(this).toInt()
+fun Double.toIntCeil() = ceil(this).toInt()
+fun Double.toIntFloor() = floor(this).toInt()
+fun Double.toIntRound() = round(this).toLong().toInt()
 
 val Int.isOdd get() = (this % 2) == 1
 val Int.isEven get() = (this % 2) == 0

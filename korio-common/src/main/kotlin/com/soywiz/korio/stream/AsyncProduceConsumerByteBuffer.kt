@@ -3,9 +3,9 @@ package com.soywiz.korio.stream
 import com.soywiz.korio.async.AsyncSemaphore
 import com.soywiz.korio.ds.ByteArrayBuilder
 import com.soywiz.korio.ds.LinkedList
-import com.soywiz.korio.math.Math
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.util.indexOf
+import kotlin.math.min
 
 class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 	companion object {
@@ -44,7 +44,7 @@ class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 		var outputPos = offset
 		while (remaining > 0) {
 			ensureCurrentBuffer()
-			val readInCurrent = Math.min(availableInCurrent, len)
+			val readInCurrent = min(availableInCurrent, len)
 			if (readInCurrent <= 0) break
 			current.copyRangeTo(currentPos, data, outputPos, readInCurrent)
 			currentPos += readInCurrent

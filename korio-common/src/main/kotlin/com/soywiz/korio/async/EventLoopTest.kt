@@ -67,7 +67,7 @@ class EventLoopTest : EventLoop() {
 	}
 
 	override fun setImmediateInternal(handler: () -> Unit) {
-		synchronized(lock) { tasks += handler }
+		synchronized(lock) { tasks.add(handler) }
 		executeTasks()
 	}
 

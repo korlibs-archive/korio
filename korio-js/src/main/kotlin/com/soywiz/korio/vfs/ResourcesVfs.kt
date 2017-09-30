@@ -4,7 +4,7 @@ import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.util.OS
 
-impl val ResourcesVfs: VfsFile get() = UrlVfs(".")
+actual val ResourcesVfs: VfsFile get() = UrlVfs(".")
 
 /*
 class ResourcesVfsProviderJs : ResourcesVfsProvider() {

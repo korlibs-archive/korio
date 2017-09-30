@@ -1,6 +1,6 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.math.Math
+import kotlin.math.max
 
 class ByteArrayBuffer(var data: ByteArray, size: Int = data.size) {
 	constructor(initialCapacity: Int = 4096) : this(ByteArray(initialCapacity), 0)
@@ -15,9 +15,9 @@ class ByteArrayBuffer(var data: ByteArray, size: Int = data.size) {
 
 	fun ensure(expected: Int) {
 		if (data.size < expected) {
-			data = data.copyOf(Math.max(expected, (data.size + 7) * 5))
+			data = data.copyOf(max(expected, (data.size + 7) * 5))
 		}
-		_size = Math.max(size, expected)
+		_size = max(size, expected)
 	}
 
 	fun toByteArraySlice(position: Long = 0) = ByteArraySlice(data, position.toInt(), size)

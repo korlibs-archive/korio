@@ -1,6 +1,6 @@
 package com.soywiz.korio.util
 
-header object SOS {
+expect object SOS {
 	val name: String
 }
 

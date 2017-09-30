@@ -1,3 +1,3 @@
 package com.soywiz.korio.vfs
 
-impl val tmpdir: String = "/tmp"
+actual val tmpdir: String = "/tmp"

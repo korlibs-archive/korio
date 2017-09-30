@@ -1,7 +1,7 @@
 package com.soywiz.korio.util
 
 import com.soywiz.korio.lang.format
-import com.soywiz.korio.math.MathEx
+import com.soywiz.korio.math.reverseBytes
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -24,10 +24,10 @@ class BitsTest {
 		assertEquals("01", "%02X".format(a.readS8(0)))
 
 		val data = (0 until 128).map { ((it + 35363) * 104723).toByte() }.toByteArray()
-		assertEquals(data.readS64_be(0), MathEx.reverseBytes(data.readS64_le(0)))
-		assertEquals(data.readS32_be(0), MathEx.reverseBytes(data.readS32_le(0)))
-		assertEquals(data.readU32_be(0).toInt(), MathEx.reverseBytes(data.readU32_le(0).toInt()))
-		assertEquals(data.readS16_be(0).toShort(), MathEx.reverseBytes(data.readS16_le(0).toShort()))
-		assertEquals(data.readU16_be(0).toShort(), MathEx.reverseBytes(data.readU16_le(0).toShort()))
+		assertEquals(data.readS64_be(0), data.readS64_le(0).reverseBytes())
+		assertEquals(data.readS32_be(0), data.readS32_le(0).reverseBytes())
+		assertEquals(data.readU32_be(0).toInt(), data.readU32_le(0).toInt().reverseBytes())
+		assertEquals(data.readS16_be(0).toShort(), data.readS16_le(0).toShort().reverseBytes())
+		assertEquals(data.readU16_be(0).toShort(), data.readU16_le(0).toShort().reverseBytes())
 	}
 }

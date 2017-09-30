@@ -1,6 +1,6 @@
 package com.soywiz.korio.compression
 
-header object Compression {
+expect object Compression {
 	suspend fun uncompressGzip(data: ByteArray): ByteArray
 	suspend fun uncompressZlib(data: ByteArray): ByteArray
 	suspend fun compressGzip(data: ByteArray, level: Int): ByteArray

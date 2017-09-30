@@ -1,8 +1,8 @@
 package com.soywiz.korio.compression
 
-impl object Compression {
-	suspend impl fun uncompressGzip(data: ByteArray): ByteArray = TODO()
-	suspend impl fun uncompressZlib(data: ByteArray): ByteArray = TODO()
-	suspend impl fun compressGzip(data: ByteArray, level: Int): ByteArray = TODO()
-	suspend impl fun compressZlib(data: ByteArray, level: Int): ByteArray = TODO()
+actual object Compression {
+	suspend actual fun uncompressGzip(data: ByteArray): ByteArray = TODO()
+	suspend actual fun uncompressZlib(data: ByteArray): ByteArray = TODO()
+	suspend actual fun compressGzip(data: ByteArray, level: Int): ByteArray = TODO()
+	suspend actual fun compressZlib(data: ByteArray, level: Int): ByteArray = TODO()
 }

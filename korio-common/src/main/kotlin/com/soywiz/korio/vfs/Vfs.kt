@@ -10,9 +10,9 @@ import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.error.unsupported
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.lang.KClass
-import com.soywiz.korio.math.Math
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.use
+import kotlin.math.min
 
 abstract class Vfs {
 	open protected val absolutePath: String = ""
@@ -66,8 +66,7 @@ abstract class Vfs {
 		val s = open(path, VfsOpenMode.READ)
 		try {
 			s.position = range.start
-			val readCount = Math.min(
-				Int.MAX_VALUE.toLong() - 1,
+			val readCount = min(Int.MAX_VALUE.toLong() - 1,
 				(range.endInclusive - range.start)
 			).toInt() + 1
 

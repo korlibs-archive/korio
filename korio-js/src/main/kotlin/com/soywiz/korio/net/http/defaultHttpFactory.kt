@@ -15,8 +15,8 @@ import org.w3c.xhr.ARRAYBUFFER
 import org.w3c.xhr.XMLHttpRequest
 import org.w3c.xhr.XMLHttpRequestResponseType
 
-impl object DefaultHttpFactoryFactory {
-	impl fun createFactory(): HttpFactory = object : HttpFactory {
+actual object DefaultHttpFactoryFactory {
+	actual fun createFactory(): HttpFactory = object : HttpFactory {
 		override fun createClient(): HttpClient {
 			return if (OS.isNodejs) HttpClientNodeJs() else HttpClientBrowserJs()
 		}

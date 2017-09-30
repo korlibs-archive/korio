@@ -1,6 +1,7 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.math.MathEx
+import com.soywiz.korio.math.reinterpretAsInt
+import com.soywiz.korio.math.reinterpretAsLong
 import com.soywiz.korio.typedarray.copyRangeTo
 
 fun ByteArray.write8(o: Int, v: Int) = run { this[o] = v }
@@ -19,8 +20,8 @@ fun ByteArray.write32_le(o: Int, v: Int) = run { this[o + 0] = v.extract8(0); th
 fun ByteArray.write32_le(o: Int, v: Long) = write32_le(o, v.toInt())
 fun ByteArray.write64_le(o: Int, v: Long) = run { write32_le(o + 0, (v ushr 0).toInt()); write32_le(o + 4, (v ushr 32).toInt()) }
 
-fun ByteArray.writeF32_le(o: Int, v: Float) = run { write32_le(o + 0, MathEx.floatToIntBits(v)) }
-fun ByteArray.writeF64_le(o: Int, v: Double) = run { write64_le(o + 0, MathEx.doubleToLongBits(v)) }
+fun ByteArray.writeF32_le(o: Int, v: Float) = run { write32_le(o + 0, v.reinterpretAsInt()) }
+fun ByteArray.writeF64_le(o: Int, v: Double) = run { write64_le(o + 0, v.reinterpretAsLong()) }
 
 fun ByteArray.write16_be(o: Int, v: Int) = run { this[o + 1] = v.extract8(0); this[o + 0] = v.extract8(8) }
 fun ByteArray.write24_be(o: Int, v: Int) = run { this[o + 2] = v.extract8(0); this[o + 1] = v.extract8(8); this[o + 0] = v.extract8(16) }
@@ -28,8 +29,8 @@ fun ByteArray.write32_be(o: Int, v: Int) = run { this[o + 3] = v.extract8(0); th
 fun ByteArray.write32_be(o: Int, v: Long) = write32_be(o, v.toInt())
 fun ByteArray.write64_be(o: Int, v: Long) = run { write32_le(o + 0, (v ushr 32).toInt()); write32_le(o + 4, (v ushr 0).toInt()) }
 
-fun ByteArray.writeF32_be(o: Int, v: Float) = run { write32_be(o + 0, MathEx.floatToIntBits(v)) }
-fun ByteArray.writeF64_be(o: Int, v: Double) = run { write64_be(o + 0, MathEx.doubleToLongBits(v)) }
+fun ByteArray.writeF32_be(o: Int, v: Float) = run { write32_be(o + 0, v.reinterpretAsInt()) }
+fun ByteArray.writeF64_be(o: Int, v: Double) = run { write64_be(o + 0, v.reinterpretAsLong()) }
 
 fun ByteArray.writeBytes(o: Int, bytes: ByteArray) = bytes.copyRangeTo(0, this, o, bytes.size)
 fun ByteArray.writeBytes(o: Int, bytes: UByteArray) = bytes.data.copyRangeTo(0, this, o, bytes.size)

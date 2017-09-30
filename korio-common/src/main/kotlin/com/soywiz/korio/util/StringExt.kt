@@ -33,7 +33,7 @@ fun String.splitInChunks(size: Int): List<String> {
 	val out = arrayListOf<String>()
 	var pos = 0
 	while (pos < this.length) {
-		out += this.substring(pos, com.soywiz.korio.math.Math.min(this.length, pos + size))
+		out += this.substring(pos, kotlin.math.min(this.length, pos + size))
 		pos += size
 	}
 	return out

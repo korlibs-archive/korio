@@ -6,7 +6,7 @@ import com.soywiz.korio.coroutine.*
 import com.soywiz.korio.lang.printStackTrace
 import com.soywiz.korio.util.OS
 
-header suspend fun <T> executeInWorker(callback: suspend () -> T): T
+expect suspend fun <T> executeInWorker(callback: suspend () -> T): T
 
 inline suspend fun <T> suspendCoroutineEL(crossinline block: (Continuation<T>) -> Unit): T = _korioSuspendCoroutine { c ->
 	block(c.toEventLoop())
@@ -158,4 +158,4 @@ fun <T> sync(block: suspend () -> T): T {
 	return result as T
 }
 
-header fun Thread_sleep(time: Long): Unit
+expect fun Thread_sleep(time: Long): Unit

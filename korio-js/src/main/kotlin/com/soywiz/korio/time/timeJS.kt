@@ -4,25 +4,25 @@ import org.w3c.dom.get
 import kotlin.browser.window
 import kotlin.js.Date
 
-impl object STimeProvider {
-	impl fun currentTimeMillis() = Date().getTime().toLong()
+actual object STimeProvider {
+	actual fun currentTimeMillis() = Date().getTime().toLong()
 }
 
-impl class UTCDate impl constructor(time: Long) {
+actual class UTCDate actual constructor(time: Long) {
 	val date = Date().asDynamic()
 
-	companion impl object {
-		impl operator fun invoke(fullYear: Int, month0: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate {
+	companion actual object {
+		actual operator fun invoke(fullYear: Int, month0: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate {
 			return UTCDate(window["Date"].asDynamic().UTC(fullYear, month0, day, hours, minutes, seconds))
 		}
 	}
 
-	impl val time: Long get() = (date.getTime() as Double).toLong()
-	impl val fullYear: Int get() = date.getUTCFullYear()
-	impl val dayOfMonth: Int get() = date.getUTCDate()
-	impl val dayOfWeek: Int get() = date.getUTCDay()
-	impl val month0: Int get() = date.getUTCMonth()
-	impl val hours: Int get() = date.getUTCHours()
-	impl val minutes: Int get() = date.getUTCMinutes()
-	impl val seconds: Int get() = date.getUTCSeconds()
+	actual val time: Long get() = (date.getTime() as Double).toLong()
+	actual val fullYear: Int get() = date.getUTCFullYear()
+	actual val dayOfMonth: Int get() = date.getUTCDate()
+	actual val dayOfWeek: Int get() = date.getUTCDay()
+	actual val month0: Int get() = date.getUTCMonth()
+	actual val hours: Int get() = date.getUTCHours()
+	actual val minutes: Int get() = date.getUTCMinutes()
+	actual val seconds: Int get() = date.getUTCSeconds()
 }

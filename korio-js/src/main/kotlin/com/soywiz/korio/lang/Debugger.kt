@@ -1,7 +1,7 @@
 package com.soywiz.korio.lang
 
-impl object Debugger {
-	impl fun enterDebugger() {
+actual object Debugger {
+	actual fun enterDebugger() {
 		js("debugger;")
 	}
 }

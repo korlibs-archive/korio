@@ -2,8 +2,9 @@ package com.soywiz.korio.util
 
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.math.Math
 import com.soywiz.korio.serialization.json.Json
+import kotlin.math.max
+import kotlin.math.min
 
 class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 	companion object {
@@ -61,7 +62,7 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 	fun expect(expected: Char) = readExpect("$expected")
 	fun skip(count: Int = 1) = this.apply { this.pos += count; }
 	private fun substr(pos: Int, length: Int): String {
-		return this.str.substring(Math.min(pos, this.length), Math.min(pos + length, this.length))
+		return this.str.substring(min(pos, this.length), min(pos + length, this.length))
 	}
 
 	fun matchLit(lit: String): String? {
@@ -155,7 +156,7 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 	class TRange(val min: Int, val max: Int, val reader: StrReader) {
 		companion object {
 			fun combine(a: TRange, b: TRange): TRange {
-				return TRange(Math.min(a.min, b.min), Math.max(a.max, b.max), a.reader)
+				return TRange(min(a.min, b.min), max(a.max, b.max), a.reader)
 			}
 
 			fun combineList(list: List<TRange>): TRange? {
@@ -164,8 +165,8 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 				var min = first.min
 				var max = first.max
 				for (i in list) {
-					min = Math.min(min, i.min)
-					max = Math.max(max, i.max)
+					min = min(min, i.min)
+					max = max(max, i.max)
 				}
 				return TRange(min, max, first.reader)
 			}

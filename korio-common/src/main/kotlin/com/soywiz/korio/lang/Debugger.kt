@@ -1,5 +1,5 @@
 package com.soywiz.korio.lang
 
-header object Debugger {
+expect object Debugger {
 	fun enterDebugger()
 }

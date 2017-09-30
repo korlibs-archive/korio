@@ -1,0 +1,7 @@
+dependencies {
+	compile project(":kotlinx.arraybuffers")
+	//compile project(":korio")
+	implement project(":korio-common")
+	testImplementation project(":korio-common")
+	compile "com.google.android:android:4.1.1.4"
+}

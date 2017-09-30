@@ -1,11 +1,11 @@
 package com.soywiz.korio.crypto
 
-header class SimplerMessageDigest(name: String) {
+expect class SimplerMessageDigest(name: String) {
 	suspend fun update(data: ByteArray, offset: Int, size: Int): Unit
 	suspend fun digest(): ByteArray
 }
 
-header class SimplerMac(name: String, key: ByteArray) {
+expect class SimplerMac(name: String, key: ByteArray) {
 	suspend fun update(data: ByteArray, offset: Int, size: Int)
 	suspend fun finalize(): ByteArray
 }

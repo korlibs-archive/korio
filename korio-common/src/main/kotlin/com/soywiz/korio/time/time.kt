@@ -1,6 +1,6 @@
 package com.soywiz.korio.time
 
-header object STimeProvider {
+expect object STimeProvider {
 	fun currentTimeMillis(): Long
 }
 
@@ -8,10 +8,11 @@ object TimeProvider {
 	fun now(): Long = STimeProvider.currentTimeMillis()
 }
 
-header class UTCDate(time: Long) {
+expect class UTCDate(time: Long) {
 	companion object {
 		operator fun invoke(fullYear: Int, month0: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate
 	}
+
 	val time: Long
 	val fullYear: Int
 	val dayOfMonth: Int
@@ -22,7 +23,7 @@ header class UTCDate(time: Long) {
 	val seconds: Int
 }
 
-//header fun UTCDate(time: Long): Date
+//expect fun UTCDate(time: Long): Date
 
 /*
 // @TODO: Does this cause a problem when compiling?

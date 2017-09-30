@@ -1,8 +1,8 @@
 package com.soywiz.korio.compression
 
-impl class Inflater impl constructor(val nowrap: Boolean) {
-	impl fun needsInput(): Boolean = TODO()
-	impl fun setInput(buffer: ByteArray): Unit = TODO()
-	impl fun inflate(buffer: ByteArray, offset: Int, len: Int): Int = TODO()
-	impl fun end(): Unit = TODO()
+actual class Inflater actual constructor(val nowrap: Boolean) {
+	actual fun needsInput(): Boolean = TODO()
+	actual fun setInput(buffer: ByteArray): Unit = TODO()
+	actual fun inflate(buffer: ByteArray, offset: Int, len: Int): Int = TODO()
+	actual fun end(): Unit = TODO()
 }

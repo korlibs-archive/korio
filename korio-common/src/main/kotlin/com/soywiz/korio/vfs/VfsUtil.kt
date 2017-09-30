@@ -41,6 +41,6 @@ object VfsUtil {
 	}
 }
 
-header val File_separatorChar: Char
+expect val File_separatorChar: Char
 
-//impl val File_separatorChar: Char = '/'
+//actual val File_separatorChar: Char = '/'

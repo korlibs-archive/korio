@@ -1,3 +1,3 @@
 package com.soywiz.korio.async
 
-impl fun Thread_sleep(time: Long) {}
+actual fun Thread_sleep(time: Long) {}

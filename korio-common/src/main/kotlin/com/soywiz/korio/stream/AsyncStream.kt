@@ -6,12 +6,12 @@ import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.lang.*
-import com.soywiz.korio.math.Math
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.typedarray.fill
 import com.soywiz.korio.util.*
 import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.VfsOpenMode
+import kotlin.math.min
 
 //interface SmallTemp {
 //	val smallTemp: ByteArray
@@ -214,7 +214,7 @@ class BufferedStreamBase(val base: AsyncStreamBase, val blockSize: Int = 2048) :
 	suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 		val entry = readSectorsCached(getSectorAtPosition(position), getSectorAtPosition(position + len) + 1)
 		val readOffset = entry.getPositionInData(position)
-		val readLen = Math.min(entry.getAvailableAtPosition(position), len)
+		val readLen = min(entry.getAvailableAtPosition(position), len)
 		entry.data.copyRangeTo(readOffset, buffer, offset, readLen)
 		return readLen
 	}
@@ -315,7 +315,7 @@ suspend fun AsyncInputStream.readBytes(len: Int): ByteArray = readBytesUpTo(len)
 suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {
 	if (len > BYTES_TEMP_SIZE) {
 		if (this is AsyncPositionLengthStream) {
-			val alen = Math.min(len, this.getAvailable().toIntClamp())
+			val alen = min(len, this.getAvailable().toIntClamp())
 			val ba = ByteArray(alen)
 			var available = alen
 			var pos = 0
@@ -333,7 +333,7 @@ suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {
 			val temp = BYTES_TEMP
 			val bout = OptByteBuffer()
 			while (pending > 0) {
-				val read = this.read(temp, 0, Math.min(temp.size, pending))
+				val read = this.read(temp, 0, min(temp.size, pending))
 				if (read <= 0) break
 				bout.append(temp, 0, read)
 				pending -= read
@@ -419,7 +419,7 @@ suspend fun AsyncInputStream.skip(count: Int) {
 		val temp = BYTES_TEMP
 		var remaining = count
 		while (remaining > 0) {
-			val toRead = Math.min(remaining, count)
+			val toRead = min(remaining, count)
 			readTempExact(toRead, temp)
 			remaining -= toRead
 		}

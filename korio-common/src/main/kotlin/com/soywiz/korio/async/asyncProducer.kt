@@ -6,11 +6,11 @@ import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.lang.CancellationException
 import com.soywiz.korio.lang.Closeable
-import com.soywiz.korio.math.Math
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.util.BYTES_EMPTY
+import kotlin.math.min
 
 typealias CancelHandler = Signal<Unit>
 
@@ -123,7 +123,7 @@ class AsyncConsumerStream(val consumer: Consumer<ByteArray>) : AsyncInputStream 
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		ensureNonEmptyBuffer()
 		if (eof) return -1
-		val actualRead = Math.min(len, available)
+		val actualRead = min(len, available)
 		current.copyRangeTo(currentPos, buffer, offset, actualRead)
 		currentPos += actualRead
 		return actualRead

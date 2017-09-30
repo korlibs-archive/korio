@@ -5,7 +5,7 @@ import com.soywiz.korio.global
 import com.soywiz.korio.lang.Closeable
 import kotlin.browser.window
 
-impl val eventLoopFactoryDefaultImpl: EventLoopFactory = EventLoopFactoryJs()
+actual val eventLoopFactoryDefaultImpl: EventLoopFactory = EventLoopFactoryJs()
 
 class EventLoopFactoryJs : EventLoopFactory() {
 	override fun createEventLoop(): EventLoop = EventLoopJs()

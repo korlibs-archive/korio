@@ -1,9 +1,9 @@
 package com.soywiz.korio.lang
 
-impl open class IOException impl constructor(msg: String) : Exception(msg)
-impl open class EOFException impl constructor(msg: String) : IOException(msg)
-impl open class FileNotFoundException impl constructor(msg: String) : IOException(msg)
+actual open class IOException actual constructor(msg: String) : Exception(msg)
+actual open class EOFException actual constructor(msg: String) : IOException(msg)
+actual open class FileNotFoundException actual constructor(msg: String) : IOException(msg)
 
-impl open class RuntimeException impl constructor(msg: String) : Exception(msg)
-impl open class IllegalStateException impl constructor(msg: String) : RuntimeException(msg)
-impl open class CancellationException impl constructor(msg: String) : IllegalStateException(msg)
+actual open class RuntimeException actual constructor(msg: String) : Exception(msg)
+actual open class IllegalStateException actual constructor(msg: String) : RuntimeException(msg)
+actual open class CancellationException actual constructor(msg: String) : IllegalStateException(msg)
