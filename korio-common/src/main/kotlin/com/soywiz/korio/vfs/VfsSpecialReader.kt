@@ -11,3 +11,5 @@ val vfsSpecialReadersMap = lmapOf<KClass<*>, VfsSpecialReader<*>>()
 fun registerVfsSpecialReader(sr: VfsSpecialReader<*>) {
 	vfsSpecialReadersMap[sr.clazz] = sr
 }
+
+fun VfsSpecialReader<*>.register() = registerVfsSpecialReader(this)

@@ -13,7 +13,7 @@ abstract class EventLoopFactory {
 	abstract fun createEventLoop(): EventLoop
 }
 
-header val eventLoopFactoryDefaultImpl: EventLoopFactory
+expect val eventLoopFactoryDefaultImpl: EventLoopFactory
 
 val tasksInProgress = AtomicInteger(0)
 
@@ -55,8 +55,8 @@ abstract class EventLoop : Closeable {
 		fun step() {
 			setTimeoutInternal(ms, {
 				if (!cancelled) {
-					step()
 					callback()
+					step()
 				}
 			})
 		}
@@ -101,9 +101,14 @@ abstract class EventLoop : Closeable {
 		var step: (() -> Unit)? = null
 		var cancelled = false
 		step = {
+			//println("animationFrameLoop:cancelled:$cancelled")
 			if (!cancelled) {
+				//println("--callback[")
 				callback()
+				//println("--callback]")
 				closeable = this.requestAnimationFrameInternal(step!!)
+			} else {
+				//println("--cancelled!")
 			}
 		}
 		step()
