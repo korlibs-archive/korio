@@ -1,7 +1,6 @@
 apply plugin: 'kotlin2js'
 
 buildscript {
-	ext.web_dir = 'web'
 	ext.webPath = 'web'
 }
 
