@@ -145,6 +145,29 @@ class KorRouterTest {
 	}
 
 	@Test
+	fun testPosts() = syncTest {
+		@Suppress("unused")
+		class DemoRoute {
+			@Route(Http.Methods.POST, "/test")
+			fun test(@Post("name") name: String): String {
+				return "hello $name"
+			}
+		}
+
+		router.registerRoutes<DemoRoute>()
+
+		assertEquals(
+			"200:OK:Headers((Content-Length, [18]), (Content-Type, [text/html])):hello namefrompost",
+			router.testRoute(
+				Http.Method.POST,
+				"/test?name=nope",
+				headers = Http.Headers("Content-Type" to "application/x-www-form-urlencoded"),
+				body = "test=10&name=namefrompost".toByteArray()
+			)
+		)
+	}
+
+	@Test
 	fun testCookies() = syncTest {
 		@Suppress("unused")
 		class DemoRoute {
