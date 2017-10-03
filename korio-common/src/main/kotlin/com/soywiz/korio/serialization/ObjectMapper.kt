@@ -73,7 +73,7 @@ class ObjectMapper {
 		registerType(String::class) { it?.toString() ?: "null" }
 	}
 
-	inline fun <reified T : Any> toUntyped(obj: T): Any? = toUntyped(T::class, obj)
+	inline fun <reified T : Any> toUntyped(obj: T?): Any? = toUntyped(T::class, obj)
 
 	fun <T : Any> toUntyped(clazz: KClass<T>, obj: T?): Any? = when (obj) {
 		null -> obj
@@ -81,7 +81,7 @@ class ObjectMapper {
 		is Number -> obj
 		is String -> obj
 		is Iterable<*> -> ArrayList(obj.map { toUntyped(it!!) })
-		is Map<*, *> -> obj.map { toUntyped(it.key!!) to toUntyped(it.value!!) }.toLinkedMap()
+		is Map<*, *> -> obj.map { toUntyped(it.key!!) to toUntyped(it.value) }.toLinkedMap()
 		else -> {
 			val unt = _untypers[clazz]
 			if ((unt == null) && (fallbackUntyper != null)) {
