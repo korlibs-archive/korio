@@ -1,5 +1,5 @@
 dependencies {
-	compile project(":kotlinx.arraybuffers")
+	//compile project(":kotlinx.arraybuffers")
 	//compile project(":korio")
 	implement project(":korio-common")
 	testImplementation project(":korio-common")
