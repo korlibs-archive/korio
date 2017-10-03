@@ -24,6 +24,7 @@ import com.soywiz.korio.vfs.VfsFile
 import java.io.FileNotFoundException
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
+import java.nio.charset.Charset
 import java.nio.file.InvalidPathException
 import kotlin.reflect.KClass
 
@@ -191,7 +192,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 			try {
 				if ("application/x-www-form-urlencoded" == contentType) {
 					if (!bodyOverflow) {
-						postParams = QueryString.decode(bodyContent.toString())
+						postParams = QueryString.decode(bodyContent.toByteArray().toString(Charset.defaultCharset()))
 					}
 				}
 			} finally {
