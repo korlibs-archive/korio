@@ -66,7 +66,7 @@ class JsonTest {
 	@Test
 	fun encode1() {
 		assertEquals("1", Json.encode(1, mapper))
-		assertEquals("null", Json.encode<Any?>(null, mapper))
+		assertEquals("null", Json.encode<Any>(null, mapper))
 		assertEquals("true", Json.encode(true, mapper))
 		assertEquals("false", Json.encode(false, mapper))
 		assertEquals("{}", Json.encode(mapOf<String, Any?>(), mapper))

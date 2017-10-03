@@ -15,10 +15,10 @@ import kotlin.reflect.KClass
 
 object Json {
 	inline fun <reified T : Any> encodePretty(obj: T, mapper: ObjectMapper = Mapper) = stringifyPretty<T>(obj, mapper)
-	inline fun <reified T : Any> encode(obj: T, mapper: ObjectMapper = Mapper, pretty: Boolean = false): String = stringify(obj, mapper, pretty)
+	inline fun <reified T : Any> encode(obj: T?, mapper: ObjectMapper = Mapper, pretty: Boolean = false): String = stringify(obj, mapper, pretty)
 
 	inline fun <reified T : Any> stringifyPretty(obj: T, mapper: ObjectMapper = Mapper) = stringify<T>(obj, mapper, pretty = true)
-	inline fun <reified T : Any> stringify(obj: T, mapper: ObjectMapper = Mapper, pretty: Boolean = false): String {
+	inline fun <reified T : Any> stringify(obj: T?, mapper: ObjectMapper = Mapper, pretty: Boolean = false): String {
 		return if (pretty) {
 			encodePrettyUntyped(mapper.toUntyped(T::class, obj))
 		} else {
