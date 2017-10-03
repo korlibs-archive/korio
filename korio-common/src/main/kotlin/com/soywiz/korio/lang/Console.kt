@@ -1,14 +1,21 @@
 package com.soywiz.korio.lang
 
+expect object NativeConsole {
+	fun log(msg: Any?): Unit
+	fun error(msg: Any?): Unit
+}
+
 object Console {
-	fun error(msg: String) {
+	fun error(msg: Any?) {
+		NativeConsole.error(msg)
 		// @TODO:
-		println("Error: $msg")
+		//println("Error: $msg")
 	}
 
-	fun log(msg: String) {
+	fun log(msg: Any?) {
 		// @TODO:
-		println(msg)
+		NativeConsole.log(msg)
+		//println(msg)
 	}
 
 	fun err_print(str: String) {

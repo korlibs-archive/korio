@@ -16,8 +16,13 @@ fun <T> Continuation<T>.toEventLoop(): Continuation<T> {
 	val parent = this
 	return object : Continuation<T> {
 		override val context: CoroutineContext = parent.context
-		override fun resume(value: T): Unit = run { context.eventLoop.queue { parent.resume(value) } }
-		override fun resumeWithException(exception: Throwable): Unit = run { context.eventLoop.queue { parent.resumeWithException(exception) } }
+		override fun resume(value: T): Unit = run {
+			context.eventLoop.queue { parent.resume(value) }
+		}
+		override fun resumeWithException(exception: Throwable): Unit = run {
+			val e = ExceptionHook.hook(exception)
+			context.eventLoop.queue { parent.resumeWithException(e) }
+		}
 	}
 }
 
@@ -87,7 +92,7 @@ fun <T> (suspend () -> T).execAndForget(context: CoroutineContext) = spawnAndFor
 
 class EmptyContinuation(override val context: CoroutineContext) : Continuation<Any> {
 	override fun resume(value: Any) = Unit
-	override fun resumeWithException(exception: Throwable) = exception.printStackTrace()
+	override fun resumeWithException(exception: Throwable) = ExceptionHook.hook(exception).printStackTrace()
 }
 
 
@@ -118,8 +123,9 @@ fun <TEventLoop : EventLoop> sync(el: TEventLoop, step: Int = 10, block: suspend
 		}
 
 		override fun resumeWithException(exception: Throwable) = run {
+			val e = ExceptionHook.hook(exception)
 			tasksInProgress.decrementAndGet()
-			result = exception
+			result = e
 		}
 	})
 
@@ -147,8 +153,9 @@ fun <T> sync(block: suspend () -> T): T {
 		}
 
 		override fun resumeWithException(exception: Throwable) = run {
+			val e = ExceptionHook.hook(exception)
 			tasksInProgress.decrementAndGet()
-			result = exception
+			result = e
 		}
 	})
 
