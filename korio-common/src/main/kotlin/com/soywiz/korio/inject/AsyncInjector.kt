@@ -30,10 +30,12 @@ interface AsyncObjectProvider<T> {
 
 class PrototypeAsyncObjectProvider<T>(val generator: suspend AsyncInjector.() -> T) : AsyncObjectProvider<T> {
 	override suspend fun get(injector: AsyncInjector): T = injector.created(generator(injector))
+	override fun toString(): String = "PrototypeAsyncObjectProvider()"
 }
 
 class FactoryAsyncObjectProvider<T>(val generator: suspend AsyncInjector.() -> AsyncFactory<T>) : AsyncObjectProvider<T> {
 	override suspend fun get(injector: AsyncInjector): T = injector.created(generator(injector).create())
+	override fun toString(): String = "FactoryAsyncObjectProvider()"
 }
 
 class SingletonAsyncObjectProvider<T>(val generator: suspend AsyncInjector.() -> T) : AsyncObjectProvider<T> {
@@ -42,10 +44,12 @@ class SingletonAsyncObjectProvider<T>(val generator: suspend AsyncInjector.() ->
 		if (value == null) value = injector.created(generator(injector))
 		return value!!
 	}
+	override fun toString(): String = "SingletonAsyncObjectProvider($value)"
 }
 
 class InstanceAsyncObjectProvider<T>(val instance: T) : AsyncObjectProvider<T> {
 	override suspend fun get(injector: AsyncInjector): T = instance
+	override fun toString(): String = "InstanceAsyncObjectProvider($instance)"
 }
 
 class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Extra by Extra.Mixin() {
@@ -63,6 +67,14 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Ext
 			c.mapInstance(i, i::class as KClass<Any>)
 		}
 		return c.get<T>()
+	}
+
+	fun dump() {
+		println("$this")
+		for ((k, v) in providersByClass) {
+			println("- $k: $v")
+		}
+		parent?.dump()
 	}
 
 	suspend inline fun <reified T : Any> get(): T = get<T>(T::class)
