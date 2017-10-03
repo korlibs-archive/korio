@@ -183,4 +183,17 @@ class KorRouterTest {
 			router.testRoute(Http.Method.GET, "/", Http.Headers("Cookie" to "hello=world"))
 		)
 	}
+
+	@Test
+	fun testRouteNotFoundWithoutFallback() = syncTest {
+		@Suppress("unused")
+		class DemoRoute
+
+		router.registerRoutes<DemoRoute>()
+
+		assertEquals(
+			"404:Not Found:Headers((Content-Length, [33]), (Content-Type, [text/html])):Route not found for /nope&lt;&gt;",
+			router.testRoute(Http.Method.GET, "/nope<>")
+		)
+	}
 }

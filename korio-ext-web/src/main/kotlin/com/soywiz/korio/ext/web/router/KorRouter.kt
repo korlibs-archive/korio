@@ -21,11 +21,11 @@ import com.soywiz.korio.stream.copyTo
 import com.soywiz.korio.text.AsyncTextWriterContainer
 import com.soywiz.korio.util.Dynamic
 import com.soywiz.korio.util.Extra
+import com.soywiz.korio.util.htmlspecialchars
 import com.soywiz.korio.vfs.VfsFile
 import java.io.FileNotFoundException
 import java.lang.reflect.InvocationTargetException
 import java.lang.reflect.Method
-import java.nio.charset.Charset
 import java.nio.file.InvalidPathException
 import kotlin.reflect.KClass
 
@@ -127,8 +127,9 @@ class KorRouter(val injector: AsyncInjector, val requestConfig: HttpServer.Reque
 				if (route != null) {
 					route.handle(req)
 				} else {
+					req.setStatus(404)
 					req.addHeader("Content-Type", "text/html")
-					req.end("Route not found for ${req.path}")
+					req.end("Route not found for ${req.path.htmlspecialchars()}")
 				}
 			}
 			is HttpServer.WsRequest -> {
