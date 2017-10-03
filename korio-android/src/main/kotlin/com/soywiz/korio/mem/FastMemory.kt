@@ -1,6 +1,7 @@
 package com.soywiz.korio.mem
 
 import java.nio.ByteBuffer
+import java.nio.ByteOrder
 
 actual class FastMemory(val buffer: ByteBuffer, actual val size: Int) {
 	val i16 = buffer.asShortBuffer()
@@ -9,7 +10,7 @@ actual class FastMemory(val buffer: ByteBuffer, actual val size: Int) {
 
 	companion actual object {
 		actual fun alloc(size: Int): FastMemory {
-			return FastMemory(ByteBuffer.allocate((size + 0xF) and 0xF.inv()), size)
+			return FastMemory(ByteBuffer.allocate((size + 0xF) and 0xF.inv()).order(ByteOrder.nativeOrder()), size)
 		}
 		actual fun copy(src: FastMemory, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit {
 			//dst.buffer.slice()
