@@ -9,6 +9,7 @@ import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.InvalidOperationException
 import com.soywiz.korio.ext.web.sstatic.serveStatic
 import com.soywiz.korio.inject.AsyncInjector
+import com.soywiz.korio.lang.Charsets
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.http.httpError
@@ -192,7 +193,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 			try {
 				if ("application/x-www-form-urlencoded" == contentType) {
 					if (!bodyOverflow) {
-						postParams = QueryString.decode(bodyContent.toByteArray().toString(Charset.defaultCharset()))
+						postParams = QueryString.decode(bodyContent.toString(Charsets.UTF_8))
 					}
 				}
 			} finally {

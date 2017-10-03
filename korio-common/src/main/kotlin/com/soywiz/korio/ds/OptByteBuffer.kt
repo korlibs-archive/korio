@@ -1,5 +1,7 @@
 package com.soywiz.korio.ds
 
+import com.soywiz.korio.lang.Charset
+import com.soywiz.korio.lang.toString
 import com.soywiz.korio.typedarray.copyRangeTo
 
 typealias OptByteBuffer = ByteArrayBuilder
@@ -50,4 +52,6 @@ class ByteArrayBuilder {
 		}
 		return out
 	}
+
+	fun toString(charset: Charset): String = toByteArray().toString(charset)
 }
