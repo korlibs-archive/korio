@@ -45,6 +45,7 @@ annotation class Param(val name: String, val limit: Int = -1)
 annotation class Get(val name: String, val limit: Int = -1)
 annotation class Post(val name: String, val limit: Int = -1)
 annotation class RawBody
+annotation class JsonContent
 annotation class Header(val name: String, val limit: Int = -1)
 
 val HttpServer.Request.extraParams by Extra.Property<MutableMap<String, String>> { lmapOf() }
@@ -177,6 +178,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 
 		val bodyHandler = com.soywiz.korio.async.Promise.Deferred<Unit>()
 
+		var jsonParam: Any? = null
 		var postParams = mapOf<String, List<String>>()
 		var totalRequestSize = 0L
 		var bodyOverflow = false
@@ -203,6 +205,11 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 							postParams = QueryString.decode(bodyContent.toString(bodyCharset))
 						}
 					}
+					"application/json" -> {
+						if (!bodyOverflow) {
+							jsonParam = Json.decode(bodyContent.toString(bodyCharset))
+						}
+					}
 				}
 			} finally {
 				bodyHandler.resolve(Unit)
@@ -227,6 +234,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 					val post = annotations.filterIsInstance<Post>().firstOrNull()
 					val header = annotations.filterIsInstance<Header>().firstOrNull()
 					val rawBody = annotations.filterIsInstance<RawBody>().firstOrNull()
+					val jsonContent = annotations.filterIsInstance<JsonContent>().firstOrNull()
 					when {
 						param != null -> {
 							args += Dynamic.dynamicCast(rreq.pathParam(param.name), paramType)
@@ -246,6 +254,9 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 								ByteArrayBuilder::class.java.isAssignableFrom(paramType) -> args += bodyContent
 								else -> invalidOp("Annoated with RawBody but argument is not a String a ByteArray or a ByteArrayBuilder")
 							}
+						}
+						jsonContent != null -> {
+							args += Dynamic.dynamicCast(jsonParam, paramType)
 						}
 						header != null -> {
 							args += Dynamic.dynamicCast(req.getHeader(header.name) ?: "", paramType)

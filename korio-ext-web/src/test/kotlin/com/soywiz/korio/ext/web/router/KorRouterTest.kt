@@ -219,4 +219,29 @@ class KorRouterTest {
 			)
 		)
 	}
+
+	@Test
+	fun testJsonContent() = syncTest {
+		data class User(val name: String, val age: Int)
+
+		@Suppress("unused")
+		class DemoRoute {
+			@Route(Http.Methods.POST, "/add")
+			fun test(@JsonContent user: User): String {
+				return "hello $user"
+			}
+		}
+
+		router.registerRoutes<DemoRoute>()
+
+		assertEquals(
+			"200:OK:Headers((Content-Length, [29]), (Content-Type, [text/html])):hello User(name=test, age=99)",
+			router.testRoute(
+				Http.Method.POST,
+				"/add",
+				headers = Http.Headers("Content-Type" to "application/json"),
+				body = """{"name" : "test", "age" : 99}""".toByteArray()
+			)
+		)
+	}
 }
