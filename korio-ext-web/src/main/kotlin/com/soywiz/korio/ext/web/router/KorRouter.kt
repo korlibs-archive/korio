@@ -4,9 +4,11 @@ import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.async
 import com.soywiz.korio.async.invokeSuspend
 import com.soywiz.korio.coroutine.Continuation
+import com.soywiz.korio.ds.ByteArrayBuilder
 import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.InvalidOperationException
+import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.ext.web.sstatic.serveStatic
 import com.soywiz.korio.inject.AsyncInjector
 import com.soywiz.korio.lang.Charsets
@@ -42,6 +44,7 @@ annotation class Route(val method: Http.Methods, val path: String, val priority:
 annotation class Param(val name: String, val limit: Int = -1)
 annotation class Get(val name: String, val limit: Int = -1)
 annotation class Post(val name: String, val limit: Int = -1)
+annotation class RawBody
 annotation class Header(val name: String, val limit: Int = -1)
 
 val HttpServer.Request.extraParams by Extra.Property<MutableMap<String, String>> { lmapOf() }
@@ -180,21 +183,25 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 		val bodyContent = OptByteBuffer()
 		val response = Http.Response()
 		val request = Http.Request(rreq.uri, req.headers)
+		val bodyCharset = Charsets.UTF_8 // @TODO: Find out
 
 		req.handler {
 			totalRequestSize += it.size
 			if (it.size + bodyContent.size < MAX_BODY_SIZE) {
 				bodyContent.append(it)
 			} else {
+				// Not adding more!
 				bodyOverflow = true
 			}
 		}
 
 		req.endHandler {
 			try {
-				if ("application/x-www-form-urlencoded" == contentType) {
-					if (!bodyOverflow) {
-						postParams = QueryString.decode(bodyContent.toString(Charsets.UTF_8))
+				when (contentType) {
+					"application/x-www-form-urlencoded" -> {
+						if (!bodyOverflow) {
+							postParams = QueryString.decode(bodyContent.toString(bodyCharset))
+						}
 					}
 				}
 			} finally {
@@ -219,6 +226,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 					val get = annotations.filterIsInstance<Get>().firstOrNull()
 					val post = annotations.filterIsInstance<Post>().firstOrNull()
 					val header = annotations.filterIsInstance<Header>().firstOrNull()
+					val rawBody = annotations.filterIsInstance<RawBody>().firstOrNull()
 					when {
 						param != null -> {
 							args += Dynamic.dynamicCast(rreq.pathParam(param.name), paramType)
@@ -230,6 +238,14 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 							val result = postParams[post.name]?.firstOrNull()
 							mapArgs[post.name] = result ?: ""
 							args += Dynamic.dynamicCast(result, paramType)
+						}
+						rawBody != null -> {
+							when {
+								String::class.java.isAssignableFrom(paramType) -> args += bodyContent.toString(bodyCharset)
+								ByteArray::class.java.isAssignableFrom(paramType) -> args += bodyContent.toByteArray()
+								ByteArrayBuilder::class.java.isAssignableFrom(paramType) -> args += bodyContent
+								else -> invalidOp("Annoated with RawBody but argument is not a String a ByteArray or a ByteArrayBuilder")
+							}
 						}
 						header != null -> {
 							args += Dynamic.dynamicCast(req.getHeader(header.name) ?: "", paramType)
