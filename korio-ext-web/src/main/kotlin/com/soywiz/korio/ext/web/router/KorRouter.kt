@@ -289,6 +289,12 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 						finalResult.write { buffer.append(it) }
 						res.end(buffer.toString())
 					}
+					is Http.HttpException -> {
+						// @TODO: add/replace headers
+						// @TODO: test this !
+						res.setStatus(finalResult.statusCode)
+						res.end(finalResult.statusText)
+					}
 					else -> {
 						res.replaceHeader("Content-Type", "application/json")
 						res.end(Json.encode(finalResult, mapper))
