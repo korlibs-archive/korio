@@ -27,6 +27,11 @@ class ByteArrayBuilder {
 		size += chunk.size
 	}
 
+	fun clear() {
+		chunks.clear()
+		size = 0
+	}
+
 	// @TODO: Optimize this. Maybe storing ranges instead of full arrays?
 	fun append(chunk: ByteArray, offset: Int, length: Int) {
 		val achunk = chunk.copyOfRange(offset, offset + length)
@@ -53,5 +58,6 @@ class ByteArrayBuilder {
 		return out
 	}
 
+	// @TODO: Optimize this!
 	fun toString(charset: Charset): String = toByteArray().toString(charset)
 }

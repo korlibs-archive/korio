@@ -178,8 +178,6 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 
 		val bodyHandler = com.soywiz.korio.async.Promise.Deferred<Unit>()
 
-		var jsonParam: Any? = null
-		var postParams = mapOf<String, List<String>>()
 		var totalRequestSize = 0L
 		var bodyOverflow = false
 		val bodyContent = OptByteBuffer()
@@ -187,33 +185,35 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 		val request = Http.Request(rreq.uri, req.headers)
 		val bodyCharset = Charsets.UTF_8 // @TODO: Find out
 
+		val jsonParam: Any? by lazy {
+			if (contentType == "application/json" && !bodyOverflow) {
+				Json.decode(bodyContent.toString(bodyCharset))
+			} else {
+				null
+			}
+		}
+
+		val postParams: Map<String, List<String>> by lazy {
+			if (contentType == "application/x-www-form-urlencoded" && !bodyOverflow) {
+				QueryString.decode(bodyContent.toString(bodyCharset))
+			} else {
+				mapOf()
+			}
+		}
+
 		req.handler {
 			totalRequestSize += it.size
 			if (it.size + bodyContent.size < MAX_BODY_SIZE) {
 				bodyContent.append(it)
 			} else {
-				// Not adding more!
+				// Not adding more and let's discard previous content!
 				bodyOverflow = true
+				bodyContent.clear()
 			}
 		}
 
 		req.endHandler {
-			try {
-				when (contentType) {
-					"application/x-www-form-urlencoded" -> {
-						if (!bodyOverflow) {
-							postParams = QueryString.decode(bodyContent.toString(bodyCharset))
-						}
-					}
-					"application/json" -> {
-						if (!bodyOverflow) {
-							jsonParam = Json.decode(bodyContent.toString(bodyCharset))
-						}
-					}
-				}
-			} finally {
-				bodyHandler.resolve(Unit)
-			}
+			bodyHandler.resolve(Unit)
 		}
 
 		async {
