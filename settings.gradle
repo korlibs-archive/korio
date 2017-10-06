@@ -11,14 +11,31 @@ include(
 		'korio-android',
 		'korio-js',
 
-		'korio-ext-amazon-common',
-		'korio-ext-amazon-dynamodb',
-		'korio-ext-amazon-s3',
-		'korio-ext-db-redis',
-		'korio-ext-db-cassandra',
-		'korio-ext-db-elasticsearch',
+		'korio-ext-amazon-base-common',
+		'korio-ext-amazon-base',
+		'korio-ext-amazon-base-js',
 
-		'korio-vertx',
+		'korio-ext-amazon-dynamodb-common',
+		'korio-ext-amazon-dynamodb',
+		'korio-ext-amazon-dynamodb-js',
+
+		'korio-ext-amazon-s3-common',
+		'korio-ext-amazon-s3',
+		'korio-ext-amazon-s3-js',
+
+		'korio-ext-db-redis-common',
+		'korio-ext-db-redis',
+		'korio-ext-db-redis-js',
+
+		'korio-ext-db-cassandra-common',
+		'korio-ext-db-cassandra',
+		'korio-ext-db-cassandra-js',
+
+		'korio-ext-db-elasticsearch-common',
+		'korio-ext-db-elasticsearch',
+		'korio-ext-db-elasticsearch-js',
+
+		'korio-ext-vertx',
 		'korio-ext-web',
 
 		'korio-example-common',

@@ -1,4 +1,14 @@
+apply plugin: 'kotlin-platform-js'
+
 dependencies {
 	//compile project(":kotlinx.arraybuffers-js")
 	implement project(":korio-common")
+	testImplementation project(":korio-common")
+
+	compile libraries.kotlin_stdlib_js
+	testCompile libraries.kotlin_test_js
+}
+
+kotlin {
+	experimental { coroutines 'enable' }
 }

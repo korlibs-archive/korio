@@ -1,0 +1,15 @@
+apply plugin: 'kotlin-platform-js'
+
+dependencies {
+	implement project(":korio-ext-db-cassandra-common")
+	testImplementation project(":korio-ext-db-cassandra-common")
+
+	compile project(":korio-js")
+
+	compile libraries.kotlin_stdlib_js
+	testCompile libraries.kotlin_test_js
+}
+
+kotlin {
+	experimental { coroutines 'enable' }
+}

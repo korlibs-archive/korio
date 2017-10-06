@@ -46,6 +46,7 @@ allprojects {
 	group 'com.soywiz'
 	version "$korVersion"
 
+	/*
 	def type
 
 	switch (project.name) {
@@ -102,13 +103,15 @@ allprojects {
 			}
 			break;
 	}
+	kotlin { experimental { coroutines 'enable' } }
 
+	*/
+
+	apply plugin: 'java'
 	apply plugin: 'maven'
 	apply plugin: 'signing'
 	apply plugin: 'maven-publish'
 	apply plugin: 'idea'
-
-	kotlin { experimental { coroutines 'enable' } }
 
 	task javadoc2(type: Javadoc) {
 		failOnError = false

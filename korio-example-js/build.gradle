@@ -1,12 +1,17 @@
-apply plugin: 'kotlin2js'
+apply plugin: 'kotlin-platform-js'
 
 buildscript {
 	ext.webPath = 'web'
 }
 
 dependencies {
-	compile project(":korio-js")
 	implement project(":korio-example-common")
+	testImplementation project(":korio-example-common")
+
+	compile project(":korio-js")
+
+	compile libraries.kotlin_stdlib_js
+	testCompile libraries.kotlin_test_js
 }
 
 compileKotlin2Js {
@@ -105,4 +110,8 @@ idea {
 		//	excludeDirs << file("$buildDir/$it")
 		//}
 	}
+}
+
+kotlin {
+	experimental { coroutines 'enable' }
 }

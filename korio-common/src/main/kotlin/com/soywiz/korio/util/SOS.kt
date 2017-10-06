@@ -5,14 +5,15 @@ expect object SOS {
 }
 
 object OS {
-	val name = SOS.name
+	val name by lazy { SOS.name }
+	val nameLC by lazy { name.toLowerCase() }
 
-	val isWindows by lazy { name.contains("win") }
+	val isWindows by lazy { nameLC.contains("win") }
 	val isUnix by lazy { !isWindows }
-	val isLinux by lazy { name.contains("nix") || name.contains("nux") || name.contains("aix") }
-	val isMac by lazy { name.contains("mac") }
+	val isLinux by lazy { nameLC.contains("nix") || nameLC.contains("nux") || nameLC.contains("aix") }
+	val isMac by lazy { nameLC.contains("mac") }
 
-	val isJs: Boolean by lazy { name.contains("js") }
-	val isNodejs: Boolean by lazy { (name.contains("node.js")) }
+	val isJs: Boolean by lazy { nameLC.contains("js") }
+	val isNodejs: Boolean by lazy { (nameLC.contains("node.js")) }
 	val isBrowserJs: Boolean get() = isJs && !isNodejs
 }

@@ -29,6 +29,7 @@ class LocalVfsProviderJvm : LocalVfsProvider() {
 
 		suspend override fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler): Int = executeInWorker {
 			val actualCmd = if (OS.isWindows) listOf("cmd", "/c") + cmdAndArgs else cmdAndArgs
+			//println("actualCmd: $actualCmd")
 			val pb = ProcessBuilder(actualCmd)
 			pb.environment().putAll(lmapOf())
 			pb.directory(resolveFile(path))
