@@ -1,6 +1,7 @@
 package com.soywiz.korio.lang
 
 import com.soywiz.korio.ds.Queue
+import com.soywiz.korio.util.substr
 import com.soywiz.korio.util.toString
 
 private val formatRegex = Regex("%([-]?\\d*)(\\w)")
@@ -47,4 +48,6 @@ fun String.splitKeep(regex: Regex): List<String> {
 	}
 	return out
 }
+
+fun String.toUcFirst(): String = this.substr(0, 1).toUpperCase() + this.substr(1)
 

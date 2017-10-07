@@ -19,4 +19,10 @@ class StringExtTest {
 		assertEquals("ff", "%02x".format(255))
 		assertEquals("FF", "%02X".format(255))
 	}
+
+	@Test
+	fun ucFirst() {
+		assertEquals("Hello", "hello".toUcFirst())
+		assertEquals("HellO", "hellO".toUcFirst())
+	}
 }
