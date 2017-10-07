@@ -5,11 +5,5 @@ dependencies {
 	compile "io.vertx:vertx-core:$vertxVersion"
 	compile "io.vertx:vertx-web:$vertxVersion"
 
-	compile libraries.kotlin_stdlib_jvm
-	testCompile libraries.kotlin_test_jvm
 	testCompile 'junit:junit:4.12'
-}
-
-kotlin {
-	experimental { coroutines 'enable' }
 }

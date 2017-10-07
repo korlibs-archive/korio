@@ -1,15 +1,8 @@
 apply plugin: 'kotlin-platform-jvm'
 
 dependencies {
-	//compile project(":kotlinx.arraybuffers")
 	implement project(":korio-common")
 	testImplementation project(":korio-common")
 
-	compile libraries.kotlin_stdlib_jvm
-	testCompile libraries.kotlin_test_jvm
 	testCompile 'junit:junit:4.12'
-}
-
-kotlin {
-	experimental { coroutines 'enable' }
 }

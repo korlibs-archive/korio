@@ -9,19 +9,7 @@ dependencies {
 	testImplementation project(":korio-example-common")
 
 	compile project(":korio-js")
-
-	compile libraries.kotlin_stdlib_js
-	testCompile libraries.kotlin_test_js
 }
-
-compileKotlin2Js {
-	kotlinOptions.outputFile = "${projectDir}/$webPath/output.js"
-	//kotlinOptions.moduleKind = "amd"
-	kotlinOptions.moduleKind = "umd"
-	//kotlinOptions.moduleKind = "commonjs"
-	kotlinOptions.sourceMap = true
-}
-
 
 clean {
 	delete new File("${projectDir}/$webPath")

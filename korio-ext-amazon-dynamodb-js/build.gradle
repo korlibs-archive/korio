@@ -6,11 +6,4 @@ dependencies {
 
 	compile project(":korio-ext-amazon-base-js")
 	compile project(":korio-js")
-
-	compile libraries.kotlin_stdlib_js
-	testCompile libraries.kotlin_test_js
-}
-
-kotlin {
-	experimental { coroutines 'enable' }
 }

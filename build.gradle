@@ -46,6 +46,45 @@ allprojects {
 	group 'com.soywiz'
 	version "$korVersion"
 
+	it.afterEvaluate {
+		if (it.plugins.hasPlugin("kotlin-platform-common")) {
+			dependencies {
+				compile libraries.kotlin_stdlib_common
+				testCompile libraries.kotlin_test_common
+			}
+
+			kotlin {
+				experimental { coroutines 'enable' }
+			}
+		}
+		if (it.plugins.hasPlugin("kotlin-platform-jvm") || it.plugins.hasPlugin("kotlin")) {
+			dependencies {
+				compile libraries.kotlin_stdlib_jvm
+				testCompile libraries.kotlin_test_jvm
+				testCompile "junit:junit:4.12"
+			}
+
+			kotlin {
+				experimental { coroutines 'enable' }
+			}
+		}
+		if (it.plugins.hasPlugin("kotlin-platform-js") || it.plugins.hasPlugin("kotlin2js")) {
+			dependencies {
+				compile libraries.kotlin_stdlib_js
+				testCompile libraries.kotlin_test_js
+			}
+
+			kotlin {
+				experimental { coroutines 'enable' }
+			}
+
+			compileKotlin2Js {
+				kotlinOptions.moduleKind = "umd"
+				kotlinOptions.sourceMap = true
+			}
+		}
+	}
+
 	/*
 	def type
 

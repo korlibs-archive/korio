@@ -3,11 +3,4 @@ apply plugin: 'kotlin-platform-common'
 dependencies {
 	compile project(":korio-ext-amazon-base-common")
 	compile project(":korio")
-
-	compile libraries.kotlin_stdlib_common
-	testCompile libraries.kotlin_test_common
-}
-
-kotlin {
-	experimental { coroutines 'enable' }
 }

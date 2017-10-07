@@ -5,11 +5,4 @@ dependencies {
 	testImplementation project(":korio-ext-db-redis-common")
 
 	compile project(":korio-js")
-
-	compile libraries.kotlin_stdlib_js
-	testCompile libraries.kotlin_test_js
-}
-
-kotlin {
-	experimental { coroutines 'enable' }
 }

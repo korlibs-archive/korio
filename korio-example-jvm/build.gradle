@@ -7,8 +7,6 @@ dependencies {
 	implement project(":korio-example-common")
 	compile project(":korio")
 
-	compile libraries.kotlin_stdlib_jvm
-	testCompile libraries.kotlin_test_jvm
 	testCompile 'junit:junit:4.12'
 }
 
