@@ -8,15 +8,22 @@ import kotlin.reflect.KClass
 import kotlin.reflect.KMutableProperty1
 import kotlin.reflect.KProperty1
 
+class AsyncFun<T : Any>(val name: String, val func: suspend T.(args: List<Any?>) -> Any?)
+class AsyncFunStatic<T : Any>(val name: String, val func: suspend (args: List<Any?>) -> Any?)
+
 data class ClassReflect<T : Any>(
 	val clazz: KClass<T>,
-	val props: List<KProperty1<T, *>>,
-	val types: List<KClass<*>>,
-	val create: ObjectMapper2.Args.() -> Any?
+	val props: List<KProperty1<T, *>> = listOf(),
+	val types: List<KClass<*>> = listOf(),
+	val smethods: List<AsyncFun<T>> = listOf(),
+	val smethodsStatic: List<AsyncFunStatic<T>> = listOf(),
+	val create: ObjectMapper2.Args.() -> Any? = { TODO() }
 ) {
 	val anyProps = props.map { it as KProperty1<Any?, Any?> }
 	val propNames = anyProps.map { it.name }
 	val propsByName = anyProps.map { it.name to it }.toMap()
+	val smethodsByName = smethods.map { it.name to it }.toMap()
+	val smethodsStaticByName = smethodsStatic.map { it.name to it }.toMap()
 	fun toMap(obj: T): Map<Any?, Any?> = anyProps.map { it.name to it.get(obj) }.toLinkedMap()
 }
 
@@ -32,6 +39,21 @@ class ObjectMapper2 {
 		reflectByClass[c.clazz] = c
 	}
 
+	fun hasProperty(obj: Any?, name: String): Boolean = when (obj) {
+		null -> false
+		is Map<*, *> -> name in obj
+		is List<*> -> name.toInt() in obj.indices
+		else -> reflectByClass[obj::class]?.propNames?.contains(name) ?: false
+	}
+
+	fun hasMethod(obj: Any?, name: String): Boolean = when (obj) {
+		null -> false
+		else -> {
+			val classReflect = reflectByClass[obj::class]
+			classReflect?.smethodsByName?.contains(name) ?: classReflect?.smethodsStaticByName?.contains(name) ?: false
+		}
+	}
+
 	fun getKeys(obj: Any?): List<Any?> = when (obj) {
 		null -> listOf()
 		is Map<*, *> -> obj.keys.toList()
@@ -42,7 +64,7 @@ class ObjectMapper2 {
 	fun getTypes(obj: Any?): List<KClass<*>> = when (obj) {
 		null -> listOf()
 		is Map<*, *> -> obj.keys.filterNotNull().map { it::class }
-		//is List<*> -> obj.indices.map { Int::class }
+	//is List<*> -> obj.indices.map { Int::class }
 		else -> getTypes(obj::class)
 	}
 
@@ -80,6 +102,17 @@ class ObjectMapper2 {
 
 	fun <T : Any> create(clazz: KClass<T>, args: List<Any?>): T {
 		return reflectByClass[clazz]?.create?.invoke(Args(this, args)) as T
+	}
+
+	suspend fun <T : Any> invokeAsync(clazz: KClass<T>, obj: T?, name: String, args: List<Any?>): Any? {
+		val classReflect = reflectByClass[clazz]
+		if (obj != null) {
+			val method = classReflect?.smethodsByName?.get(name) as? AsyncFun<Any>
+			return method?.func?.invoke(obj, args)
+		} else {
+			val method = classReflect?.smethodsStaticByName?.get(name) as? AsyncFunStatic<Any>
+			return method?.func?.invoke(args)
+		}
 	}
 }
 

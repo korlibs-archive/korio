@@ -1,5 +1,8 @@
 package com.soywiz.korio.reflect
 
+import com.soywiz.korio.async.executeInWorker
+import com.soywiz.korio.async.syncTest
+import com.soywiz.korio.inject.AsyncInjectorTest
 import org.junit.Test
 import kotlin.test.assertEquals
 
@@ -33,5 +36,19 @@ class ObjectMapper2Test {
 		assertEquals("Person(name=Carlos, surname=Ballesteros)", carlos.toString())
 		assertEquals("Person(name=Carlos, surname=Ballesteros)", carlos2.toString())
 		assertEquals(listOf(String::class, String::class), types2)
+	}
+
+	@Test
+	fun testAsync() = syncTest {
+		class Test {
+			suspend fun a(): Int {
+				val r = executeInWorker { 1 }
+				return r + 7
+			}
+		}
+
+		om.register(ClassReflect(Test::class, smethods = listOf(AsyncFun("a") { a() })))
+
+		assertEquals(8, om.invokeAsync(Test::class, Test(), "a", listOf()))
 	}
 }
