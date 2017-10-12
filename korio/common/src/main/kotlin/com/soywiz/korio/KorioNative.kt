@@ -151,3 +151,73 @@ expect object KorioNative {
 		val seconds: Int
 	}
 }
+
+object KorioNativeDefaults {
+	private inline fun overlaps(src: Any, srcPos: Int, dst: Any, dstPos: Int, count: Int): Boolean {
+		return (src === dst) && srcPos >= dstPos
+	}
+
+	fun <T> copyRangeTo(src: Array<T>, srcPos: Int, dst: Array<T>, dstPos: Int, count: Int) {
+		if (overlaps(src, srcPos, dst, dstPos, count)) {
+			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
+		} else {
+			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
+		}
+	}
+
+	fun copyRangeTo(src: BooleanArray, srcPos: Int, dst: BooleanArray, dstPos: Int, count: Int) {
+		if (overlaps(src, srcPos, dst, dstPos, count)) {
+			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
+		} else {
+			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
+		}
+	}
+
+	fun copyRangeTo(src: ByteArray, srcPos: Int, dst: ByteArray, dstPos: Int, count: Int) {
+		if (overlaps(src, srcPos, dst, dstPos, count)) {
+			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
+		} else {
+			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
+		}
+	}
+
+	fun copyRangeTo(src: ShortArray, srcPos: Int, dst: ShortArray, dstPos: Int, count: Int) {
+		if (overlaps(src, srcPos, dst, dstPos, count)) {
+			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
+		} else {
+			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
+		}
+	}
+
+	fun copyRangeTo(src: IntArray, srcPos: Int, dst: IntArray, dstPos: Int, count: Int) {
+		if (overlaps(src, srcPos, dst, dstPos, count)) {
+			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
+		} else {
+			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
+		}
+	}
+
+	fun copyRangeTo(src: LongArray, srcPos: Int, dst: LongArray, dstPos: Int, count: Int) {
+		if (overlaps(src, srcPos, dst, dstPos, count)) {
+			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
+		} else {
+			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
+		}
+	}
+
+	fun copyRangeTo(src: FloatArray, srcPos: Int, dst: FloatArray, dstPos: Int, count: Int) {
+		if (overlaps(src, srcPos, dst, dstPos, count)) {
+			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
+		} else {
+			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
+		}
+	}
+
+	fun copyRangeTo(src: DoubleArray, srcPos: Int, dst: DoubleArray, dstPos: Int, count: Int) {
+		if (overlaps(src, srcPos, dst, dstPos, count)) {
+			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
+		} else {
+			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
+		}
+	}
+}
