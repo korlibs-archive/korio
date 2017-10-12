@@ -1,12 +1,13 @@
 package com.soywiz.korio.util
 
+import com.soywiz.korio.KorioNative
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.async
 import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.inject.Prototype
+import com.soywiz.korio.time.TimeProvider
 import kotlin.reflect.KClass
-import com.soywiz.korio.time.STimeProvider
 
 @Prototype
 class AsyncInmemoryCache {
@@ -21,8 +22,8 @@ class AsyncInmemoryCache {
 	@Suppress("UNCHECKED_CAST")
 	suspend fun <T : Any?> get(key: String, ttlMs: Int, gen: suspend () -> T): T = withCoroutineContext {
 		val entry = cache[key]
-		if (entry == null || (STimeProvider.currentTimeMillis() - entry.timestamp) >= ttlMs) {
-			cache[key] = AsyncInmemoryCache.Entry(STimeProvider.currentTimeMillis(), async(this@withCoroutineContext, gen) as Promise<Any?>)
+		if (entry == null || (KorioNative.currentTimeMillis() - entry.timestamp) >= ttlMs) {
+			cache[key] = AsyncInmemoryCache.Entry(TimeProvider.now(), async(this@withCoroutineContext, gen) as Promise<Any?>)
 		}
 		return@withCoroutineContext (cache[key]!!.data as Promise<T>).await()
 	}

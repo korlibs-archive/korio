@@ -1,5 +1,6 @@
 package com.soywiz.korio.net.http
 
+import com.soywiz.korio.KorioNative
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.coroutine.withEventLoop
 import com.soywiz.korio.ds.lmapOf
@@ -241,9 +242,7 @@ interface HttpFactory {
 	fun createServer(): HttpServer
 }
 
-expect object DefaultHttpFactoryFactory {
-	fun createFactory(): HttpFactory
-}
+typealias DefaultHttpFactoryFactory = KorioNative.DefaultHttpFactoryFactory
 
 class ProxiedHttpFactory(var parent: HttpFactory) : HttpFactory by parent
 

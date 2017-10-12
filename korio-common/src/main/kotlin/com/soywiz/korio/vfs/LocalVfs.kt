@@ -1,13 +1,16 @@
 package com.soywiz.korio.vfs
 
+import com.soywiz.korio.KorioNative
+
 abstract class LocalVfs : Vfs() {
 	companion object {
 		operator fun get(base: String) = LocalVfs(base)
 	}
 }
 
-header val localVfsProvider: LocalVfsProvider
-header val tmpdir: String
+
+val localVfsProvider get() = KorioNative.localVfsProvider
+val tmpdir: String get() = KorioNative.tmpdir
 
 fun LocalVfs(base: String): VfsFile = VfsFile(localVfsProvider(), base)
 fun TempVfs() = LocalVfs(tmpdir)

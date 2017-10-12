@@ -2,7 +2,7 @@ package com.soywiz.korio.ext.s3
 
 import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.net.http.LogHttpClient
-import com.soywiz.korio.util.TimeProvider
+import com.soywiz.korio.time.TimeProvider
 import com.soywiz.korio.vfs.MimeType
 import com.soywiz.korio.vfs.VfsFile
 import org.junit.Test

@@ -1,5 +1,7 @@
 package com.soywiz.korio.vfs
 
+import com.soywiz.korio.KorioNative
+
 object VfsUtil {
 	fun parts(path: String): List<String> = path.split('/')
 
@@ -41,6 +43,6 @@ object VfsUtil {
 	}
 }
 
-expect val File_separatorChar: Char
+val File_separatorChar: Char get() = KorioNative.File_separatorChar
 
 //actual val File_separatorChar: Char = '/'

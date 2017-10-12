@@ -2,6 +2,7 @@
 
 package com.soywiz.korio.async
 
+import com.soywiz.korio.KorioNative
 import com.soywiz.korio.coroutine.*
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.AtomicInteger
@@ -13,7 +14,7 @@ abstract class EventLoopFactory {
 	abstract fun createEventLoop(): EventLoop
 }
 
-expect val eventLoopFactoryDefaultImpl: EventLoopFactory
+val eventLoopFactoryDefaultImpl: EventLoopFactory get() = KorioNative.eventLoopFactoryDefaultImpl
 
 val tasksInProgress = AtomicInteger(0)
 

@@ -1,5 +1,6 @@
 package com.soywiz.korio.net.ws
 
+import com.soywiz.korio.KorioNative
 import com.soywiz.korio.async.Signal
 import com.soywiz.korio.lang.IOException
 
@@ -19,7 +20,7 @@ abstract class WebSocketClient protected constructor(val url: String, val protoc
 
 suspend fun WebSocketClient(url: String, protocols: List<String>? = null, origin: String? = null, wskey: String? = "wskey", debug: Boolean = false) = websockets.create(url, protocols, origin = origin, wskey = wskey, debug = debug)
 
-header val websockets: WebSocketClientFactory
+val websockets: WebSocketClientFactory get() = KorioNative.websockets
 
 abstract class WebSocketClientFactory {
 	suspend abstract fun create(url: String, protocols: List<String>? = null, origin: String? = null, wskey: String? = null, debug: Boolean = false): WebSocketClient

@@ -2,7 +2,7 @@ package com.soywiz.korio.ext.s3
 
 import com.soywiz.korio.lang.Environment
 import com.soywiz.korio.net.http.HttpClient
-import com.soywiz.korio.util.TimeProvider
+import com.soywiz.korio.time.TimeProvider
 import com.soywiz.korio.vfs.VfsFile
 
 suspend fun S3Vfs(

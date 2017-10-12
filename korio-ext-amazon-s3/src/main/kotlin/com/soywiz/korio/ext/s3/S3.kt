@@ -9,7 +9,7 @@ import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.toAsyncStream
 import com.soywiz.korio.time.UTCDate
-import com.soywiz.korio.util.TimeProvider
+import com.soywiz.korio.time.TimeProvider
 import com.soywiz.korio.vfs.*
 
 // http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html#ConstructingTheAuthenticationHeader

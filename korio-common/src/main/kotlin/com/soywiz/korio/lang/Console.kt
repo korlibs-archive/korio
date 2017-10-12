@@ -1,20 +1,17 @@
 package com.soywiz.korio.lang
 
-expect object NativeConsole {
-	fun log(msg: Any?): Unit
-	fun error(msg: Any?): Unit
-}
+import com.soywiz.korio.KorioNative
 
 object Console {
 	fun error(msg: Any?) {
-		NativeConsole.error(msg)
+		KorioNative.error(msg)
 		// @TODO:
 		//println("Error: $msg")
 	}
 
 	fun log(msg: Any?) {
 		// @TODO:
-		NativeConsole.log(msg)
+		KorioNative.log(msg)
 		//println(msg)
 	}
 

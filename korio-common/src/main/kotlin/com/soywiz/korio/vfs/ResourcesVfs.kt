@@ -1,3 +1,5 @@
 package com.soywiz.korio.vfs
 
-header val ResourcesVfs: VfsFile
+import com.soywiz.korio.KorioNative
+
+val ResourcesVfs: VfsFile get() = KorioNative.ResourcesVfs

@@ -1,5 +1,7 @@
 package com.soywiz.korio.lang
 
-expect object Debugger {
-	fun enterDebugger()
+import com.soywiz.korio.KorioNative
+
+object Debugger {
+	fun enterDebugger() = KorioNative.enterDebugger()
 }

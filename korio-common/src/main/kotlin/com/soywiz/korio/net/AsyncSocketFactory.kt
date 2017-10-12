@@ -1,5 +1,6 @@
 package com.soywiz.korio.net
 
+import com.soywiz.korio.KorioNative
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.lang.AtomicLong
 import com.soywiz.korio.stream.AsyncInputStream
@@ -11,7 +12,7 @@ abstract class AsyncSocketFactory {
 	suspend abstract fun createServer(port: Int, host: String = "127.0.0.1", backlog: Int = 128): AsyncServer
 }
 
-header val asyncSocketFactory: AsyncSocketFactory
+val asyncSocketFactory: AsyncSocketFactory get() = KorioNative.asyncSocketFactory
 
 interface AsyncClient : AsyncInputStream, AsyncOutputStream, AsyncCloseable {
 	suspend fun connect(host: String, port: Int): Unit

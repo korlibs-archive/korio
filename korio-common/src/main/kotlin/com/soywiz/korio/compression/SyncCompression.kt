@@ -1,10 +1,8 @@
 package com.soywiz.korio.compression
 
-expect object SyncCompression {
-	fun inflate(data: ByteArray): ByteArray
-	fun inflateTo(data: ByteArray, out: ByteArray): ByteArray
-	fun deflate(data: ByteArray, level: Int): ByteArray
-}
+import com.soywiz.korio.KorioNative
+
+typealias SyncCompression = KorioNative.SyncCompression
 
 //fun SyncCompression.inflateTo(input: ByteArray, output: ByteArray): Int {
 //	val uncompressed = SyncCompression.inflate(input)

@@ -1,6 +1,6 @@
 package com.soywiz.korio.net.http
 
-import com.soywiz.korio.time.STimeProvider
+import com.soywiz.korio.KorioNative
 import com.soywiz.korio.time.SimplerDateFormat
 import com.soywiz.korio.time.UTCDate
 
@@ -12,7 +12,7 @@ object HttpDate {
 
 	fun format(date: Long): String = _format.format(date)
 	fun format(date: UTCDate): String = _format.format(date.time)
-	fun format(): String = format(STimeProvider.currentTimeMillis())
+	fun format(): String = format(KorioNative.currentTimeMillis())
 
 	fun parse(str: String): Long = _format.parse(str)
 	fun parseOrNull(str: String?): Long? = try {

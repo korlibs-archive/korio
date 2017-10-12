@@ -1,11 +1,10 @@
 package com.soywiz.korio.async
 
-import com.soywiz.korio.coroutine.Continuation
+import com.soywiz.korio.CancellationException
+import com.soywiz.korio.KorioNative
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.coroutine.korioStartCoroutine
-import com.soywiz.korio.lang.CancellationException
-import com.soywiz.korio.util.OS
 import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -121,7 +120,7 @@ suspend fun <T> executeInWorkerSafe(task: suspend () -> T): T {
 	return deferred.promise.await()
 }
 
-suspend fun <T> executeInWorker(task: suspend CheckRunning.() -> T): T = suspendCancellableCoroutine<T> { c ->
+suspend fun <T> executeInWorkerCancellable(task: suspend CheckRunning.() -> T): T = suspendCancellableCoroutine<T> { c ->
 	//println("executeInWorker")
 	tasksInProgress.incrementAndGet()
 	workerLazyPool.execute {
