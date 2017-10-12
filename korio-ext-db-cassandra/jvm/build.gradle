@@ -1,0 +1,9 @@
+apply plugin: 'kotlin-platform-jvm'
+
+dependencies {
+	implement project(":korio-ext-db-cassandra-common")
+	testImplementation project(":korio-ext-db-cassandra-common")
+
+	compile project(":korio-ext-db-base")
+	compile project(":korio")
+}

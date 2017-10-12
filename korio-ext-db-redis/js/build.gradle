@@ -1,0 +1,9 @@
+apply plugin: 'kotlin-platform-js'
+
+dependencies {
+	implement project(":korio-ext-db-redis-common")
+	testImplementation project(":korio-ext-db-redis-common")
+
+	compile project(":korio-ext-db-base-js")
+	compile project(":korio-js")
+}
