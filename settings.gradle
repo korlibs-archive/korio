@@ -1,5 +1,7 @@
 rootProject.name = 'korio-root'
 
+
+
 include(
 		'korio-common',
 		'korio',
@@ -20,3 +22,7 @@ include(
 		'korio-example-js',
 		'korio-example-jvm',
 )
+
+project(':korio-example-common').projectDir = file('korio-example/common')
+project(':korio-example-js').projectDir = file('korio-example/js')
+project(':korio-example-jvm').projectDir = file('korio-example/jvm')
