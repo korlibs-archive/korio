@@ -46,69 +46,59 @@ allprojects {
 	group 'com.soywiz'
 	version "$korVersion"
 
-	def type
-
-	switch (project.name) {
-		case "korio":
-		case "korio-android": // Android is JVM too
-		case "kotlinx.arraybuffers":
-		case "korio-ext-web":
-			// Should be a platform-common library in the future!
-		case "korio-ext-db-elasticsearch":
-		case "korio-ext-db-cassandra":
-		case "korio-ext-db-redis":
-		case "korio-ext-amazon-s3":
-		case "korio-ext-amazon-common":
-		case "korio-ext-amazon-dynamodb":
-		//
-		case "korio-example-jvm":
-			type = "jvm";
-			break;
-		default:
-			if (project.name.endsWith('-js')) {
-				type = "js";
-			} else {
-				type = "common";
-			}
-			break;
-	}
-
-	switch (type) {
-		case "js":
-			apply plugin: 'kotlin-platform-js'
-			dependencies {
-				compile libraries.kotlin_stdlib_js
-				testCompile libraries.kotlin_test_js
-			}
-			compileKotlin2Js {
-				kotlinOptions.moduleKind = "umd"
-				//kotlinOptions.sourceMap = true //
-				kotlinOptions.sourceMap = false // No sourcemaps!
-			}
-			break;
-		case "jvm":
-			apply plugin: 'kotlin-platform-jvm'
-			dependencies {
-				compile libraries.kotlin_stdlib_jvm
-				testCompile libraries.kotlin_test_jvm
-				testCompile 'junit:junit:4.12'
-			}
-			break;
-		default:
-			apply plugin: 'kotlin-platform-common'
-			dependencies {
-				compile libraries.kotlin_stdlib_common
-				testCompile libraries.kotlin_test_common
-			}
-			break;
-	}
-
+	apply plugin: 'java'
 	apply plugin: 'maven'
 	apply plugin: 'signing'
 	apply plugin: 'maven-publish'
 	apply plugin: 'idea'
 
-	kotlin { experimental { coroutines 'enable' } }
+
+	it.afterEvaluate {
+		if (it.plugins.hasPlugin("kotlin-platform-common")) {
+			dependencies {
+				compile libraries.kotlin_stdlib_common
+				testCompile libraries.kotlin_test_common
+			}
+
+			kotlin {
+				experimental { coroutines 'enable' }
+			}
+		}
+		if (it.plugins.hasPlugin("kotlin-platform-jvm") || it.plugins.hasPlugin("kotlin")) {
+			dependencies {
+				compile libraries.kotlin_stdlib_jvm
+				testCompile libraries.kotlin_test_jvm
+				testCompile "junit:junit:4.12"
+			}
+
+			kotlin {
+				experimental { coroutines 'enable' }
+			}
+
+			compileJava.options.encoding = 'UTF-8'
+			compileTestJava.options.encoding = 'UTF-8'
+
+			sourceCompatibility = 1.7
+			targetCompatibility = 1.7
+		}
+		if (it.plugins.hasPlugin("kotlin-platform-js") || it.plugins.hasPlugin("kotlin2js")) {
+			dependencies {
+				compile libraries.kotlin_stdlib_js
+				testCompile libraries.kotlin_test_js
+			}
+
+			kotlin {
+				experimental { coroutines 'enable' }
+			}
+
+			compileKotlin2Js {
+				kotlinOptions.moduleKind = "umd"
+				kotlinOptions.sourceMap = true
+			}
+		}
+	}
+
+	//kotlin { experimental { coroutines 'enable' } }
 
 	task javadoc2(type: Javadoc) {
 		failOnError = false

@@ -1,3 +1,5 @@
+apply plugin: 'kotlin-platform-jvm'
+
 dependencies {
 	compile project(":korio-ext-amazon-common")
 	compile project(":korio")

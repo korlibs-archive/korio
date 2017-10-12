@@ -1,4 +1,5 @@
+apply plugin: 'kotlin-platform-js'
+
 dependencies {
-	//compile project(":kotlinx.arraybuffers-js")
 	implement project(":korio-common")
 }
