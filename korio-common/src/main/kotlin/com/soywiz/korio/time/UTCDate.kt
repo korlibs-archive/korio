@@ -2,26 +2,8 @@ package com.soywiz.korio.time
 
 import com.soywiz.korio.KorioNative
 
-interface UTCDate {
-	companion object {
-		operator fun invoke(fullYear: Int, month0: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate {
-			return KorioNative.newUtcDate(fullYear, month0, day, hours, minutes, seconds)
-		}
+typealias UTCDate = KorioNative.UTCDate
 
-		operator fun invoke(time: Long): UTCDate {
-			return KorioNative.newUtcDate(time)
-		}
-	}
-
-	val time: Long
-	val fullYear: Int
-	val dayOfMonth: Int
-	val dayOfWeek: Int
-	val month0: Int
-	val hours: Int
-	val minutes: Int
-	val seconds: Int
-}
 
 //expect fun UTCDate(time: Long): Date
 

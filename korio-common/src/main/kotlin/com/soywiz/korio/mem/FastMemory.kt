@@ -1,3 +1,5 @@
 package com.soywiz.korio.mem
 
-typealias FastMemory = com.soywiz.korio.FastMemory
+import com.soywiz.korio.KorioNative
+
+typealias FastMemory = KorioNative.FastMemory

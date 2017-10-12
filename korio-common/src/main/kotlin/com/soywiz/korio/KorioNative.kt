@@ -4,7 +4,6 @@ import com.soywiz.korio.async.EventLoopFactory
 import com.soywiz.korio.net.AsyncSocketFactory
 import com.soywiz.korio.net.http.HttpFactory
 import com.soywiz.korio.net.ws.WebSocketClientFactory
-import com.soywiz.korio.time.UTCDate
 import com.soywiz.korio.vfs.LocalVfsProvider
 import com.soywiz.korio.vfs.VfsFile
 import kotlin.reflect.KClass
@@ -106,37 +105,49 @@ expect object KorioNative {
 		fun deflate(data: ByteArray, level: Int): ByteArray
 	}
 
-	fun newUtcDate(fullYear: Int, month0: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate
-	fun newUtcDate(time: Long): UTCDate
-}
+	class FastMemory {
+		companion object {
+			fun alloc(size: Int): FastMemory
+			fun copy(src: FastMemory, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit
+		}
 
-expect class FastMemory {
-	companion object {
-		fun alloc(size: Int): FastMemory
-		fun copy(src: FastMemory, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit
+		val size: Int
+
+		operator fun get(index: Int): Int
+		operator fun set(index: Int, value: Int): Unit
+
+		fun setAlignedInt16(index: Int, value: Short): Unit
+		fun getAlignedInt16(index: Int): Short
+
+		fun setAlignedInt32(index: Int, value: Int): Unit
+		fun getAlignedInt32(index: Int): Int
+
+		fun setAlignedFloat32(index: Int, value: Float): Unit
+		fun getAlignedFloat32(index: Int): Float
+
+		fun setAlignedArrayInt8(index: Int, data: ByteArray, offset: Int, len: Int)
+		fun setAlignedArrayInt16(index: Int, data: ShortArray, offset: Int, len: Int)
+		fun setAlignedArrayInt32(index: Int, data: IntArray, offset: Int, len: Int)
+		fun setAlignedArrayFloat32(index: Int, data: FloatArray, offset: Int, len: Int)
+
+		fun getInt16(index: Int): Short
+		fun getInt32(index: Int): Int
+		fun getFloat32(index: Int): Float
 	}
 
-	val size: Int
+	class UTCDate {
+		companion object {
+			operator fun invoke(fullYear: Int, month0: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate
+			operator fun invoke(time: Long): UTCDate
+		}
 
-	operator fun get(index: Int): Int
-	operator fun set(index: Int, value: Int): Unit
-
-	fun setAlignedInt16(index: Int, value: Short): Unit
-	fun getAlignedInt16(index: Int): Short
-
-	fun setAlignedInt32(index: Int, value: Int): Unit
-	fun getAlignedInt32(index: Int): Int
-
-	fun setAlignedFloat32(index: Int, value: Float): Unit
-	fun getAlignedFloat32(index: Int): Float
-
-	fun setAlignedArrayInt8(index: Int, data: ByteArray, offset: Int, len: Int)
-	fun setAlignedArrayInt16(index: Int, data: ShortArray, offset: Int, len: Int)
-	fun setAlignedArrayInt32(index: Int, data: IntArray, offset: Int, len: Int)
-	fun setAlignedArrayFloat32(index: Int, data: FloatArray, offset: Int, len: Int)
-
-	fun getInt16(index: Int): Short
-	fun getInt32(index: Int): Int
-	fun getFloat32(index: Int): Float
+		val time: Long
+		val fullYear: Int
+		val dayOfMonth: Int
+		val dayOfWeek: Int
+		val month0: Int
+		val hours: Int
+		val minutes: Int
+		val seconds: Int
+	}
 }
-
