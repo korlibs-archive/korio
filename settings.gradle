@@ -23,6 +23,11 @@ include(
 		'korio-example-jvm',
 )
 
+project(':korio-common').projectDir = file('korio/common')
+project(':korio').projectDir = file('korio/jvm')
+project(':korio-android').projectDir = file('korio/android')
+project(':korio-js').projectDir = file('korio/js')
+
 project(':korio-example-common').projectDir = file('korio-example/common')
 project(':korio-example-js').projectDir = file('korio-example/js')
 project(':korio-example-jvm').projectDir = file('korio-example/jvm')
