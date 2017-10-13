@@ -58,6 +58,12 @@ actual object KorioNative {
 		"unknown"
 	}
 
+	actual fun getLocalTimezoneOffset(time: Long): Int {
+		@Suppress("UNUSED_VARIABLE")
+		val rtime = time.toDouble()
+		return js("(new Date(rtime)).getTimezoneOffset()")
+	}
+
 	actual val tmpdir: String = "/tmp"
 
 	actual val localVfsProvider: LocalVfsProvider
@@ -241,27 +247,6 @@ actual object KorioNative {
 		actual fun getInt16(index: Int): Short = data.getInt16(index)
 		actual fun getInt32(index: Int): Int = data.getInt32(index)
 		actual fun getFloat32(index: Int): Float = data.getFloat32(index)
-	}
-
-	actual class UTCDate(private val date: dynamic) {
-		companion actual object {
-			actual operator fun invoke(fullYear: Int, month0: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate {
-				return UTCDate(window["Date"].asDynamic().UTC(fullYear, month0, day, hours, minutes, seconds))
-			}
-
-			actual operator fun invoke(time: Long): UTCDate {
-				return UTCDate(Date(time.toDouble()).asDynamic())
-			}
-		}
-
-		actual val time: Long get() = (date.getTime() as Double).toLong()
-		actual val fullYear: Int get() = date.getUTCFullYear()
-		actual val dayOfMonth: Int get() = date.getUTCDate()
-		actual val dayOfWeek: Int get() = date.getUTCDay()
-		actual val month0: Int get() = date.getUTCMonth()
-		actual val hours: Int get() = date.getUTCHours()
-		actual val minutes: Int get() = date.getUTCMinutes()
-		actual val seconds: Int get() = date.getUTCSeconds()
 	}
 }
 

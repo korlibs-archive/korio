@@ -10,7 +10,6 @@ import com.soywiz.korio.net.http.HttpClientJvm
 import com.soywiz.korio.net.http.HttpFactory
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.ws.WebSocketClientFactory
-import com.soywiz.korio.time.UTCDate
 import com.soywiz.korio.vfs.LocalVfsProvider
 import com.soywiz.korio.vfs.LocalVfsProviderJvm
 import com.soywiz.korio.vfs.ResourcesVfsProviderJvm
@@ -45,6 +44,9 @@ actual typealias CancellationException = java.util.concurrent.CancellationExcept
 
 actual object KorioNative {
 	actual fun currentTimeMillis() = System.currentTimeMillis()
+	actual fun getLocalTimezoneOffset(time: Long): Int {
+		return TimeZone.getDefault().getOffset(time)
+	}
 
 	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T {
 		return executeInWorkerSafer(callback)
@@ -324,38 +326,7 @@ actual object KorioNative {
 		actual fun getInt32(index: Int): Int = buffer.getInt(index)
 		actual fun getFloat32(index: Int): Float = buffer.getFloat(index)
 	}
-
-	@Suppress("DEPRECATION", "CanBeParameter")
-// @TODO: Kotlin BUG: Constructor parameter is never used as a property
-	actual class UTCDate(private val dummy: Boolean, actual val time: Long) {
-		companion actual object {
-			private val UTC = TimeZone.getTimeZone("UTC")
-
-			actual operator fun invoke(fullYear: Int, month0: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate {
-				return UTCDate(true, GregorianCalendar(fullYear, month0, day, hours, minutes, seconds).apply {
-					timeZone = UTC
-				}.timeInMillis)
-			}
-
-			actual operator fun invoke(time: Long): UTCDate {
-				return UTCDate(true, time)
-			}
-		}
-
-		val jdate = GregorianCalendar.getInstance(UTC).apply {
-			timeInMillis = this@UTCDate.time
-		}
-
-		actual val fullYear: Int get() = jdate.get(Calendar.YEAR)
-		actual val dayOfMonth: Int get() = jdate.get(Calendar.DAY_OF_MONTH)
-		actual val dayOfWeek: Int get() = jdate.get(Calendar.DAY_OF_WEEK) - 1
-		actual val month0: Int get() = jdate.get(Calendar.MONTH)
-		actual val hours: Int get() = jdate.get(Calendar.HOUR)
-		actual val minutes: Int get() = jdate.get(Calendar.MINUTE)
-		actual val seconds: Int get() = jdate.get(Calendar.SECOND)
-	}
 }
-
 
 
 /*

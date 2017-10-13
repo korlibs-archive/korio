@@ -9,7 +9,7 @@ import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.lang.IOException
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.time.UTCDate
+import com.soywiz.korio.time.DateTime
 import com.soywiz.korio.util.*
 import kotlin.math.max
 
@@ -196,8 +196,8 @@ private class DosFileDateTime(var dosTime: Int, var dosDate: Int) {
 		//println("DosFileDateTime: $fullYear-$month1-$day $hours-$minutes-$seconds")
 	}
 
-	val date: UTCDate by lazy {
-		UTCDate(fullYear, month1 - 1, day, hours, minutes, seconds)
+	val date: DateTime by lazy {
+		DateTime.createAdjusted(fullYear, month1, day, hours, minutes, seconds)
 	}
 	val utcTimestamp: Long by lazy { date.time }
 }

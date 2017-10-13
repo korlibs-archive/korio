@@ -8,7 +8,6 @@ import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.toAsyncStream
-import com.soywiz.korio.time.UTCDate
 import com.soywiz.korio.time.TimeProvider
 import com.soywiz.korio.vfs.*
 
@@ -80,7 +79,7 @@ class S3(val credentials: AmazonAuth.Credentials?, val endpoint: String, val htt
 		return httpClient.request(
 			method, npath.absolutePath,
 			headers = genHeaders(method, npath, headers.withReplaceHeaders(
-				"date" to AmazonAuth.V1.DATE_FORMAT.format(UTCDate(timeProvider.currentTimeMillis()))
+				"date" to AmazonAuth.V1.DATE_FORMAT.format(timeProvider.currentTimeMillis())
 			)),
 			content = content
 		)

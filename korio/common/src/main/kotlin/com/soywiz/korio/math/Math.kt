@@ -48,3 +48,7 @@ fun rint(v: Double): Double {
 fun toRadians(v: Double): Double = v / 180.0 * 3.141592653589793
 fun toDegrees(v: Double): Double = v * 180.0 / 3.141592653589793
 fun signum(v: Double): Double = sign(v)
+
+fun clamp(v: Int, min: Int, max: Int): Int = if (v < min) min else if (v > max) max else v
+fun clamp(v: Long, min: Long, max: Long): Long = if (v < min) min else if (v > max) max else v
+fun clamp(v: Double, min: Double, max: Double): Double = if (v < min) min else if (v > max) max else v

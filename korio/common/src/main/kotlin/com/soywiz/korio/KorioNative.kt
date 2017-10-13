@@ -30,6 +30,7 @@ expect object KorioNative {
 	val websockets: WebSocketClientFactory
 
 	fun currentTimeMillis(): Long
+	fun getLocalTimezoneOffset(time: Long): Int
 
 	val eventLoopFactoryDefaultImpl: EventLoopFactory
 
@@ -133,22 +134,6 @@ expect object KorioNative {
 		fun getInt16(index: Int): Short
 		fun getInt32(index: Int): Int
 		fun getFloat32(index: Int): Float
-	}
-
-	class UTCDate {
-		companion object {
-			operator fun invoke(fullYear: Int, month0: Int, day: Int, hours: Int, minutes: Int, seconds: Int): UTCDate
-			operator fun invoke(time: Long): UTCDate
-		}
-
-		val time: Long
-		val fullYear: Int
-		val dayOfMonth: Int
-		val dayOfWeek: Int
-		val month0: Int
-		val hours: Int
-		val minutes: Int
-		val seconds: Int
 	}
 }
 

@@ -6,7 +6,7 @@ import kotlin.test.assertEquals
 class HttpDateTest {
 	@Test
 	fun name() {
-		assertEquals("Mon, 18 Sep 2017 11:58:45 UTC", HttpDate.format(1505779125916L))
+		assertEquals("Mon, 18 Sep 2017 23:58:45 UTC", HttpDate.format(1505779125916L))
 	}
 
 	@Test

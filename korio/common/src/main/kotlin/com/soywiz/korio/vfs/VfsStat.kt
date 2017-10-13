@@ -1,6 +1,6 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.time.UTCDate
+import com.soywiz.korio.time.DateTime
 
 data class VfsStat(
 	val file: VfsFile,
@@ -24,6 +24,6 @@ data class VfsStat(
 
 //val INIT = Unit.apply { println("UTC_OFFSET: $UTC_OFFSET")  }
 
-val VfsStat.createDate: UTCDate get() = UTCDate(createTime)
-val VfsStat.modifiedDate: UTCDate get() = UTCDate(modifiedTime)
-val VfsStat.lastAccessDate: UTCDate get() = UTCDate(lastAccessTime)
+val VfsStat.createDate: DateTime get() = DateTime.fromUnix(createTime)
+val VfsStat.modifiedDate: DateTime get() = DateTime.fromUnix(modifiedTime)
+val VfsStat.lastAccessDate: DateTime get() = DateTime.fromUnix(lastAccessTime)
