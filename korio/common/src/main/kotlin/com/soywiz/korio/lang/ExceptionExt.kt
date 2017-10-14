@@ -1,6 +1,7 @@
 package com.soywiz.korio.lang
 
+import com.soywiz.korio.KorioNative
+
 fun Throwable.printStackTrace() {
-	// @TODO: Implement in each platform!
-	Console.error(this.message ?: "Error")
+	KorioNative.printStackTrace(this)
 }

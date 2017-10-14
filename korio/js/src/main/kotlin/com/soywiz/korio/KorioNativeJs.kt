@@ -1,9 +1,8 @@
 package com.soywiz.korio
 
-import com.soywiz.korio.async.EventLoop
-import com.soywiz.korio.async.EventLoopFactory
+import com.soywiz.korio.async.*
 import com.soywiz.korio.async.Promise
-import com.soywiz.korio.async.waitOne
+import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.Closeable
@@ -25,6 +24,9 @@ import org.w3c.xhr.ARRAYBUFFER
 import org.w3c.xhr.XMLHttpRequest
 import org.w3c.xhr.XMLHttpRequestResponseType
 import kotlin.browser.window
+import kotlin.coroutines.experimental.CoroutineContext
+import kotlin.coroutines.experimental.EmptyCoroutineContext
+import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.js.*
 import kotlin.reflect.KClass
 
@@ -46,7 +48,7 @@ val global = js("(typeof global !== 'undefined') ? global : window")
 
 actual object KorioNative {
 	actual val platformName: String by lazy {
-		if (jsTypeOf(window) === undefined) {
+		if (jsTypeOf(window) === "undefined") {
 			"node.js"
 		} else {
 			"js"
@@ -126,10 +128,7 @@ actual object KorioNative {
 
 	actual object DefaultHttpFactoryFactory {
 		actual fun createFactory(): HttpFactory = object : HttpFactory {
-			override fun createClient(): HttpClient {
-				return if (OS.isNodejs) HttpClientNodeJs() else HttpClientBrowserJs()
-			}
-
+			override fun createClient(): HttpClient = if (OS.isNodejs) HttpClientNodeJs() else HttpClientBrowserJs()
 			override fun createServer(): HttpServer = HttpSeverNodeJs()
 		}
 	}
@@ -138,6 +137,15 @@ actual object KorioNative {
 
 	actual fun enterDebugger() {
 		js("debugger;")
+	}
+
+	actual fun printStackTrace(e: Throwable) {
+		console.error(e.asDynamic())
+		console.error(e.asDynamic().stack)
+
+		// @TODO: Implement in each platform!
+
+		//e.printStackTrace()
 	}
 
 	actual fun log(msg: Any?): Unit {
@@ -159,33 +167,13 @@ actual object KorioNative {
 	actual fun copyRangeTo(src: FloatArray, srcPos: Int, dst: FloatArray, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
 	actual fun copyRangeTo(src: DoubleArray, srcPos: Int, dst: DoubleArray, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
 
-	actual fun <T> fill(src: Array<T>, value: T, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
-
-	actual fun fill(src: BooleanArray, value: Boolean, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
-
-	actual fun fill(src: ByteArray, value: Byte, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
-
-	actual fun fill(src: ShortArray, value: Short, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
-
-	actual fun fill(src: IntArray, value: Int, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
-
-	actual fun fill(src: FloatArray, value: Float, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
-
-	actual fun fill(src: DoubleArray, value: Double, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
+	actual fun <T> fill(src: Array<T>, value: T, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
+	actual fun fill(src: BooleanArray, value: Boolean, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
+	actual fun fill(src: ByteArray, value: Byte, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
+	actual fun fill(src: ShortArray, value: Short, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
+	actual fun fill(src: IntArray, value: Int, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
+	actual fun fill(src: FloatArray, value: Float, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
+	actual fun fill(src: DoubleArray, value: Double, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
 
 	suspend actual fun uncompressGzip(data: ByteArray): ByteArray = TODO()
 	suspend actual fun uncompressZlib(data: ByteArray): ByteArray = TODO()
@@ -298,23 +286,135 @@ private class EventLoopJs : EventLoop() {
 }
 
 class HttpSeverNodeJs : HttpServer() {
-	// @TODO: Implement in nodejs!
+	/*
+		const http = require('http');
+
+		const server = http.createServer((req, res) => {
+		res.end();
+		});
+		server.on('clientError', (err, socket) => {
+			socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
+		});
+		server.listen(8000);
+	 */
+
+	private var context: CoroutineContext = EmptyCoroutineContext
+	private var handler: suspend (req: dynamic, res: dynamic) -> Unit = { req, res -> }
+
+	val http = require("http")
+	val server = http.createServer { req, res ->
+		// req: https://nodejs.org/api/http.html#http_class_http_incomingmessage
+		// res: https://nodejs.org/api/http.html#http_class_http_serverresponse
+		spawnAndForget(context) {
+			handler(req, res)
+		}
+	}
+
+	suspend override fun websocketHandlerInternal(handler: suspend (WsRequest) -> Unit) {
+		super.websocketHandlerInternal(handler)
+	}
+
+	suspend override fun httpHandlerInternal(handler: suspend (Request) -> Unit) {
+		context = getCoroutineContext()
+		this.handler = { req, res ->
+			val method = Http.Method[req.method.unsafeCast<String>()]
+			val url = req.url.unsafeCast<String>()
+			val headers = Http.Headers(jsToArray(req.rawHeaders).map { "$it" }.zipWithNext())
+			handler(object : Request(method, url, headers, RequestConfig()) {
+				suspend override fun _handler(handler: (ByteArray) -> Unit) {
+					TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+				}
+
+				suspend override fun _endHandler(handler: () -> Unit) {
+					TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+				}
+
+				override fun _setStatus(code: Int, message: String) {
+					res.statusCode = code
+					res.statusMessage = message
+				}
+
+				override fun _sendHeaders(headers: Http.Headers) {
+					for (header in headers) {
+						res.setHeader(header.first, header.second)
+					}
+				}
+
+				override fun _write(data: ByteArray, offset: Int, size: Int) {
+					res.write(data.toNodeJsBuffer(offset, size))
+				}
+
+				override fun _end() {
+					res.end()
+				}
+			})
+		}
+	}
+
+	suspend override fun listenInternal(port: Int, host: String) = suspendCoroutine<Unit> {c ->
+		context = c.context
+		server.listen(port, host, 511) {
+			c.resume(Unit)
+		}
+	}
+
+	override val actualPort: Int get() {
+		//com.soywiz.korio.lang.Console.log(server)
+		return jsEnsureInt(server.address().port)
+	}
+
+	suspend override fun closeInternal() = suspendCoroutine<Unit> {c ->
+		context = c.context
+		server.close {
+			c.resume(Unit)
+		}
+	}
 }
 
-fun jsRequire(name: String) = global.require(name)
+//@JsName("require")
+external private fun require(name: String): dynamic
+
+
+fun ByteArray.toNodeJsBuffer(offset: Int, size: Int): dynamic {
+	return global.Buffer.from(this, offset, size)
+}
+
+fun jsNew(clazz: dynamic): dynamic = js("(new (clazz))()")
+fun jsNew(clazz: dynamic, a0: dynamic): dynamic = js("(new (clazz))(a0)")
+fun jsNew(clazz: dynamic, a0: dynamic, a1: dynamic): dynamic = js("(new (clazz))(a0, a1)")
+fun jsNew(clazz: dynamic, a0: dynamic, a1: dynamic, a2: dynamic): dynamic = js("(new (clazz))(a0, a1, a2)")
+fun jsEnsureNumber(v: dynamic): Number = js("+v")
+fun jsEnsureInt(v: dynamic): Int = js("v|0")
+fun jsEmptyObj(): dynamic = js("({})")
+fun jsEmptyArray(): dynamic = js("([])")
+fun jsObjectKeys(obj: dynamic): dynamic = js("Object.keys(obj)")
+fun jsToArray(obj: dynamic): Array<Any?> = Array<Any?>(obj.length) { obj[it] }
+
+fun jsToObjectMap(obj: dynamic): Map<String, Any?>? {
+	if (obj == null) return null
+	val out = lmapOf<String, Any?>()
+	val keys = jsObjectKeys(obj)
+	for (n in 0 until keys.length) {
+		val key = keys[n]
+		out["$key"] = obj[key]
+	}
+	return out
+}
 
 class HttpClientNodeJs : HttpClient() {
 	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = Promise.create { deferred ->
 		//println(url)
 
-		val http = jsRequire("http")
-		val jsurl = jsRequire("url")
-		val info = jsurl.call("parse", url)
-		val reqHeaders = js("{}")
+		val http = require("http")
+		val jsurl = require("url")
+		val info = jsurl.parse(url)
+		val reqHeaders = jsEmptyObj()
 
-		for (header in headers) reqHeaders[header.first] = header.second
+		for (header in headers) {
+			reqHeaders[header.first] = header.second
+		}
 
-		val req = js("{}")
+		val req = jsEmptyObj()
 		req.method = method.name
 		req.host = info["hostname"]
 		req.port = info["port"]
@@ -324,29 +424,31 @@ class HttpClientNodeJs : HttpClient() {
 		req.headers = reqHeaders
 
 		val r = http.request(req, { res ->
-			val statusCode = res.statusCode.toInt()
-			val statusMessage = res.statusMessage.toJavaStringOrNull() ?: ""
+			val statusCode: Int = res.statusCode
+			val statusMessage: String = res.statusMessage ?: ""
 			val jsHeadersObj = res.headers
-			val body = js("[]")
-			res.call("on", "data", { d -> body.call("push", d) })
-			res.call("on", "end", {
-				val r = global["Buffer"].call("concat", body)
-				val u8array = Int8Array(r as ArrayBuffer)
+			val body = jsEmptyArray()
+			res.on("data", { d -> body.push(d) })
+			res.on("end", {
+				val r = global.Buffer.concat(body)
+				val u8array = Int8Array(r.unsafeCast<ArrayBuffer>())
 				val out = ByteArray(u8array.length)
 				for (n in 0 until u8array.length) out[n] = u8array[n]
-
-				deferred.resolve(Response(
+				val response = Response(
 					status = statusCode,
 					statusText = statusMessage,
 					headers = Http.Headers(
-						lmapOf()
-						//(jsHeadersObj?.toObjectMap() ?: lmapOf()).mapValues { it.value.toJavaStringOrNull() ?: "" }
+						(jsToObjectMap(jsHeadersObj) ?: lmapOf()).mapValues { "${it.value}" }
 					),
 					content = out.openAsync()
-				))
+				)
+
+				//println(response.headers)
+
+				deferred.resolve(response)
 			})
 		}).on("error", { e ->
-			deferred.reject(kotlin.RuntimeException("Error: ${e.toJavaString()}"))
+			deferred.reject(kotlin.RuntimeException("Error: $e"))
 		})
 
 		deferred.onCancel {

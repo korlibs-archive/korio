@@ -1,6 +1,7 @@
 package com.soywiz.korio
 
 import com.soywiz.korio.async.EventLoopFactory
+import com.soywiz.korio.lang.Console
 import com.soywiz.korio.net.AsyncSocketFactory
 import com.soywiz.korio.net.http.HttpFactory
 import com.soywiz.korio.net.ws.WebSocketClientFactory
@@ -67,6 +68,7 @@ expect object KorioNative {
 	fun fill(src: FloatArray, value: Float, from: Int, to: Int)
 	fun fill(src: DoubleArray, value: Double, from: Int, to: Int)
 
+	fun printStackTrace(e: Throwable)
 	fun enterDebugger()
 	fun log(msg: Any?)
 	fun error(msg: Any?)
@@ -206,5 +208,38 @@ object KorioNativeDefaults {
 		} else {
 			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
 		}
+	}
+
+	fun <T> fill(src: Array<T>, value: T, from: Int, to: Int) {
+		for (n in from until to) src[n] = value
+	}
+
+	fun fill(src: BooleanArray, value: Boolean, from: Int, to: Int) {
+		for (n in from until to) src[n] = value
+	}
+
+	fun fill(src: ByteArray, value: Byte, from: Int, to: Int) {
+		for (n in from until to) src[n] = value
+	}
+
+	fun fill(src: ShortArray, value: Short, from: Int, to: Int) {
+		for (n in from until to) src[n] = value
+	}
+
+	fun fill(src: IntArray, value: Int, from: Int, to: Int) {
+		for (n in from until to) src[n] = value
+	}
+
+	fun fill(src: FloatArray, value: Float, from: Int, to: Int) {
+		for (n in from until to) src[n] = value
+	}
+
+	fun fill(src: DoubleArray, value: Double, from: Int, to: Int) {
+		for (n in from until to) src[n] = value
+	}
+
+	fun printStackTrace(e: Throwable) {
+		Console.error("KorioNativeDefaults.printStackTrace:")
+		Console.error(e.message ?: "Error")
 	}
 }

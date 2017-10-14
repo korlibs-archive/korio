@@ -234,6 +234,10 @@ actual object KorioNative {
 
 	actual fun enterDebugger() {}
 
+	actual fun printStackTrace(e: Throwable) {
+		e.printStackTrace()
+	}
+
 	actual fun log(msg: Any?): Unit {
 		java.lang.System.out.println(msg)
 	}
