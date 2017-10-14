@@ -199,7 +199,7 @@ private class DosFileDateTime(var dosTime: Int, var dosDate: Int) {
 	val date: DateTime by lazy {
 		DateTime.createAdjusted(fullYear, month1, day, hours, minutes, seconds)
 	}
-	val utcTimestamp: Long by lazy { date.time }
+	val utcTimestamp: Long by lazy { date.unix }
 }
 
 suspend fun VfsFile.openAsZip() = ZipVfs(this.open(VfsOpenMode.READ), this)

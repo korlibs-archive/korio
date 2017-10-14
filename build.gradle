@@ -95,6 +95,11 @@ allprojects {
 				kotlinOptions.moduleKind = "umd"
 				kotlinOptions.sourceMap = true
 			}
+
+			compileTestKotlin2Js {
+				kotlinOptions.moduleKind = "umd"
+				kotlinOptions.sourceMap = true
+			}
 		}
 	}
 

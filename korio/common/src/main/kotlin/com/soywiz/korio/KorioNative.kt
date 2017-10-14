@@ -30,6 +30,8 @@ expect object KorioNative {
 	val websockets: WebSocketClientFactory
 
 	fun currentTimeMillis(): Long
+
+	// In minutes to add
 	fun getLocalTimezoneOffset(time: Long): Int
 
 	val eventLoopFactoryDefaultImpl: EventLoopFactory

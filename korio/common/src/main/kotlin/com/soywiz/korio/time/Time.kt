@@ -6,6 +6,7 @@ import com.soywiz.korio.lang.format
 import com.soywiz.korio.lang.splitKeep
 import com.soywiz.korio.math.clamp
 import com.soywiz.korio.util.substr
+import kotlin.math.abs
 
 enum class DayOfWeek(val index: Int) {
 	Sunday(0), Monday(1), Tuesday(2), Wednesday(3), Thursday(4), Friday(5), Saturday(6);
@@ -16,27 +17,125 @@ enum class DayOfWeek(val index: Int) {
 	}
 }
 
-enum class Month(val index: Int) {
-	January(1), February(2), March(3), April(4), May(5), June(6), July(7), August(8), September(9), October(10), November(11), December(12);
+class Year(val year: Int) {
+	companion object {
+		fun check(year: Int) = run { if (year !in 1..9999) throw DateException("Year $year not in 1..9999") }
+
+		fun isLeap(year: Int): Boolean {
+			check(year)
+			return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
+		}
+	}
+}
+
+enum class Month(val index: Int, val daysBase: Int, val daysLeap: Int = daysBase) {
+	January(1, 31),
+	February(2, 28, 29),
+	March(3, 31),
+	April(4, 30),
+	May(5, 31),
+	June(6, 30),
+	July(7, 31),
+	August(8, 31),
+	September(9, 30),
+	October(10, 31),
+	November(11, 30),
+	December(12, 31);
 
 	val index0: Int get() = index - 1
+
+	fun days(isLeap: Boolean): Int = if (isLeap) daysLeap else daysBase
+	fun days(year: Int): Int = days(Year.isLeap(year))
+
+	fun daysToMonthStart(isLeap: Boolean): Int = if (isLeap) DAYS_TO_MONTH_366[index0] else DAYS_TO_MONTH_365[index0]
+	fun daysToMonthEnd(isLeap: Boolean): Int = daysToMonthStart(isLeap) + days(isLeap)
 
 	companion object {
 		val BY_INDEX0 = values()
 		operator fun get(index1: Int) = BY_INDEX0[index1 - 1]
+
+		fun check(month: Int) = run { if (month !in 1..12) throw DateException("Month $month not in 1..12") }
+
+		fun days(month: Int, isLeap: Boolean): Int {
+			Month.check(month)
+			val days = if (isLeap) DAYS_TO_MONTH_366 else DAYS_TO_MONTH_365
+			return days[month] - days[month - 1]
+		}
+		fun days(month: Int, year: Int): Int = days(month, Year.isLeap(year))
+
+		val DAYS_TO_MONTH_366 = intArrayOf(0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)
+		val DAYS_TO_MONTH_365 = intArrayOf(0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)
+
+		//val DAYS_TO_MONTH_366 = IntArray(13).apply {
+		//	var acc = 0
+		//	for (m in values()) {
+		//		acc += m.daysLeap
+		//		this[m.index] = acc
+		//	}
+		//}
+		//val DAYS_TO_MONTH_365 = IntArray(13).apply {
+		//	var acc = 0
+		//	for (m in values()) {
+		//		acc += m.daysBase
+		//		this[m.index] = acc
+		//	}
+		//}
 	}
 }
 
 class DateException(msg: String) : RuntimeException(msg)
 
-// From .NET DateTime
-class DateTime private constructor(private val internalMillis: Long, dummy: Boolean) {
+interface DateTime {
+	val fullYear: Int
+	val month: Int
+	val month0: Int
+	val month1: Int
+	val monthEnum: Month
+	val dayOfWeek: DayOfWeek
+	val dayOfMonth: Int
+	val dayOfYear: Int
+	val hours: Int
+	val minutes: Int
+	val seconds: Int
+	val milliseconds: Int
+	val timeZone: String
+	val unix: Long
+	val offset: Int
+	val utc: UtcDateTime
+	fun add(deltaMonths: Int, deltaMilliseconds: Long): DateTime
+
+	fun toUtc(): DateTime = utc
+	fun toLocal() = OffsetDateTime(this, KorioNative.getLocalTimezoneOffset(unix))
+	fun addOffset(offset: Int) = OffsetDateTime(this, this.offset + offset)
+	fun toOffset(offset: Int) = OffsetDateTime(this, offset)
+	fun addYears(delta: Int): DateTime = add(delta * 12, 0L)
+	fun addMonths(delta: Int): DateTime = add(delta, 0L)
+	fun addDays(delta: Double): DateTime = add(0, (delta * UtcDateTime.MILLIS_PER_DAY).toLong())
+	fun addHours(delta: Double): DateTime = add(0, (delta * UtcDateTime.MILLIS_PER_HOUR).toLong())
+	fun addMinutes(delta: Double): DateTime = add(0, (delta * UtcDateTime.MILLIS_PER_MINUTE).toLong())
+	fun addSeconds(delta: Double): DateTime = add(0, (delta * UtcDateTime.MILLIS_PER_SECOND).toLong())
+	fun addMilliseconds(delta: Double): DateTime = if (delta == 0.0) this else add(0, delta.toLong())
+	fun addMilliseconds(delta: Long): DateTime = if (delta == 0L) this else add(0, delta)
+
+	operator fun plus(delta: TimeDistance): DateTime = this.add(delta.years * 12 + delta.months, (delta.days * UtcDateTime.MILLIS_PER_DAY + delta.hours * UtcDateTime.MILLIS_PER_HOUR + delta.minutes * UtcDateTime.MILLIS_PER_MINUTE + delta.seconds * UtcDateTime.MILLIS_PER_SECOND + delta.milliseconds).toLong())
+	operator fun minus(delta: TimeDistance): DateTime = this + -delta
+
 	companion object {
+		val EPOCH by lazy { DateTime(1970, 1, 1, 0, 0, 0) as UtcDateTime }
+		internal val EPOCH_INTERNAL_MILLIS by lazy { EPOCH.internalMillis }
+
 		operator fun invoke(year: Int, month: Int, day: Int, hour: Int = 0, minute: Int = 0, second: Int = 0, milliseconds: Int = 0): DateTime {
-			return DateTime(dateToMillis(year, month, day) + timeToMillis(hour, minute, second) + milliseconds, true)
+			return UtcDateTime(UtcDateTime.dateToMillis(year, month, day) + UtcDateTime.timeToMillis(hour, minute, second) + milliseconds, true)
 		}
 
 		operator fun invoke(time: Long) = fromUnix(time)
+
+		fun fromUnix(time: Long): DateTime = UtcDateTime(EPOCH_INTERNAL_MILLIS + time, true)
+		fun fromUnixLocal(time: Long): DateTime = UtcDateTime(EPOCH_INTERNAL_MILLIS + time, true).toLocal()
+
+		fun nowUnix() = KorioNative.currentTimeMillis()
+		fun now() = fromUnix(nowUnix())
+		fun nowLocal() = fromUnix(nowUnix()).toLocal()
 
 		fun createAdjusted(year: Int, month: Int, day: Int, hour: Int = 0, minute: Int = 0, second: Int = 0, milliseconds: Int = 0): DateTime {
 			val dy = clamp(year, 1, 9999)
@@ -48,51 +147,74 @@ class DateTime private constructor(private val internalMillis: Long, dummy: Bool
 			return DateTime(dy, dm, dd, th, tm, ts, milliseconds)
 		}
 
-		fun fromUnix(time: Long): DateTime = DateTime(EPOCH_INTERNAL_MILLIS + time, true)
-
-		fun nowUnix() = KorioNative.currentTimeMillis()
-		fun now() = fromUnix(nowUnix())
-
-		val EPOCH by lazy { DateTime(1970, 1, 1, 0, 0, 0) }
-		private val EPOCH_INTERNAL_MILLIS by lazy { EPOCH.internalMillis }
-
-		private const val MILLIS_PER_SECOND = 1000
-		private const val MILLIS_PER_MINUTE = this.MILLIS_PER_SECOND * 60
-		private const val MILLIS_PER_HOUR = this.MILLIS_PER_MINUTE * 60
-		private const val MILLIS_PER_DAY = this.MILLIS_PER_HOUR * 24
-
-		private const val DAYS_PER_YEAR = 365
-		private const val DAYS_PER_4_YEARS = DAYS_PER_YEAR * 4 + 1
-		private const val DAYS_PER_100_YEARS = DAYS_PER_4_YEARS * 25 - 1
-		private const val DAYS_PER_400_YEARS = DAYS_PER_100_YEARS * 4 + 1
-
-		private const val DATE_PART_YEAR = 0
-		private const val DATE_PART_DAY_OF_YEAR = 1
-		private const val DATE_PART_MONTH = 2
-		private const val DATE_PART_DAY = 3
-
-		private val DAYS_TO_MONTH_366 = intArrayOf(0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)
-		private val DAYS_TO_MONTH_365 = intArrayOf(0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)
-
-		private fun checkYear(year: Int) = run { if (year !in 1..9999) throw DateException("Year $year not in 1..9999") }
-		private fun checkMonth(month: Int) = run { if (month !in 1..12) throw DateException("Month $month not in 1..12") }
-
 		fun isLeapYear(year: Int): Boolean {
-			checkYear(year)
+			Year.check(year)
 			return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
 		}
 
-		private fun dateToMillis(year: Int, month: Int, day: Int): Long {
-			checkYear(year)
-			checkMonth(month)
-			val days = if (isLeapYear(year)) DAYS_TO_MONTH_366 else DAYS_TO_MONTH_365
+		fun daysInMonth(month: Int, isLeap: Boolean): Int = Month.days(month, isLeap)
+		fun daysInMonth(month: Int, year: Int): Int = daysInMonth(month, isLeapYear(year))
+	}
+}
+
+class OffsetDateTime private constructor(
+	override val utc: UtcDateTime,
+	override val offset: Int,
+	val adjusted: DateTime = utc.addMinutes(offset.toDouble())
+) : DateTime by adjusted {
+	private val deltaTotalMinutesAbs: Int = abs(offset)
+	val positive: Boolean get() = offset >= 0
+	val deltaHoursAbs: Int get() = deltaTotalMinutesAbs / 60
+	val deltaMinutesAbs: Int get() = deltaTotalMinutesAbs % 60
+
+	companion object {
+		//operator fun invoke(utc: DateTime, offset: Int) = OffsetDateTime(utc.utc, utc.offsetTotalMinutes + offset)
+		operator fun invoke(utc: DateTime, offset: Int) = OffsetDateTime(utc.utc, offset)
+	}
+
+	override val timeZone: String = "GMT%s%02d%02d".format(
+		if (positive) "+" else "-",
+		deltaHoursAbs,
+		deltaMinutesAbs
+	)
+
+	override fun add(deltaMonths: Int, deltaMilliseconds: Long): DateTime {
+		return OffsetDateTime(utc.add(deltaMonths, deltaMilliseconds), offset)
+	}
+
+	override fun toString(): String = SimplerDateFormat.DEFAULT_FORMAT.format(this)
+	fun toString(format: String): String = SimplerDateFormat(format).format(this)
+}
+
+// From .NET DateTime
+class UtcDateTime internal constructor(internal val internalMillis: Long, dummy: Boolean) : DateTime {
+	companion object {
+		internal const val MILLIS_PER_SECOND = 1000
+		internal const val MILLIS_PER_MINUTE = this.MILLIS_PER_SECOND * 60
+		internal const val MILLIS_PER_HOUR = this.MILLIS_PER_MINUTE * 60
+		internal const val MILLIS_PER_DAY = this.MILLIS_PER_HOUR * 24
+
+		internal const val DAYS_PER_YEAR = 365
+		internal const val DAYS_PER_4_YEARS = DAYS_PER_YEAR * 4 + 1
+		internal const val DAYS_PER_100_YEARS = DAYS_PER_4_YEARS * 25 - 1
+		internal const val DAYS_PER_400_YEARS = DAYS_PER_100_YEARS * 4 + 1
+
+		internal const val DATE_PART_YEAR = 0
+		internal const val DATE_PART_DAY_OF_YEAR = 1
+		internal const val DATE_PART_MONTH = 2
+		internal const val DATE_PART_DAY = 3
+
+		internal fun dateToMillis(year: Int, month: Int, day: Int): Long {
+			Year.check(year)
+			Month.check(month)
+			val days = if (DateTime.isLeapYear(year)) Month.DAYS_TO_MONTH_366 else Month.DAYS_TO_MONTH_365
 			if (day !in 1..(days[month] - days[month - 1])) throw DateException("Day $day not valid for year=$year and month=$month")
 			val y = year - 1
 			val n = y * 365 + y / 4 - y / 100 + y / 400 + days[month - 1] + day - 1
 			return n.toLong() * this.MILLIS_PER_DAY.toLong()
 		}
 
-		private fun timeToMillis(hour: Int, minute: Int, second: Int): Long {
+		internal fun timeToMillis(hour: Int, minute: Int, second: Int): Long {
 			if (hour !in 0..23) throw DateException("Hour $hour not in 0..23")
 			if (minute !in 0..59) throw DateException("Minute $minute not in 0..59")
 			if (second !in 0..59) throw DateException("Second $second not in 0..59")
@@ -100,15 +222,7 @@ class DateTime private constructor(private val internalMillis: Long, dummy: Bool
 			return totalSeconds * this.MILLIS_PER_SECOND
 		}
 
-		fun daysInMonth(month: Int, isLeap: Boolean): Int {
-			checkMonth(month)
-			val days = if (isLeap) DAYS_TO_MONTH_366 else DAYS_TO_MONTH_365
-			return days[month] - days[month - 1]
-		}
-
-		fun daysInMonth(month: Int, year: Int): Int = daysInMonth(month, isLeapYear(year))
-
-		private fun getDatePart(millis: Long, part: Int): Int {
+		internal fun getDatePart(millis: Long, part: Int): Int {
 			var n = (millis / this.MILLIS_PER_DAY).toInt()
 			val y400 = n / DAYS_PER_400_YEARS
 			n -= y400 * DAYS_PER_400_YEARS
@@ -123,7 +237,7 @@ class DateTime private constructor(private val internalMillis: Long, dummy: Bool
 			n -= y1 * DAYS_PER_YEAR
 			if (part == DATE_PART_DAY_OF_YEAR) return n + 1
 			val leapYear = y1 == 3 && (y4 != 24 || y100 == 3)
-			val days = if (leapYear) DAYS_TO_MONTH_366 else DAYS_TO_MONTH_365
+			val days = if (leapYear) Month.DAYS_TO_MONTH_366 else Month.DAYS_TO_MONTH_365
 			var m = n shr 5 + 1
 			while (n >= days[m]) m++
 			return if (part == DATE_PART_MONTH) m else n - days[m - 1] + 1
@@ -131,64 +245,52 @@ class DateTime private constructor(private val internalMillis: Long, dummy: Bool
 	}
 
 	private fun getDatePart(part: Int): Int = Companion.getDatePart(internalMillis, part)
+	override val offset: Int = 0
 
-	val unix: Long get() = (internalMillis - EPOCH.internalMillis)
+	override val utc: UtcDateTime = this
+	override val unix: Long get() = (internalMillis - DateTime.EPOCH.internalMillis)
 	val time: Long get() = unix
-	val year: Int get() = fullYear
-	val fullYear: Int get() = getDatePart(DATE_PART_YEAR)
-	val month: Int get() = getDatePart(DATE_PART_MONTH)
-	val month0: Int get() = month - 1
-	val month1: Int get() = month
-	val monthEnum: Month get() = Month[month1]
-	val dayOfMonth: Int get() = getDatePart(DATE_PART_DAY)
-	val dayOfWeek: Int get() = ((internalMillis / MILLIS_PER_DAY + 1) % 7).toInt()
-	val dayOfWeekEnum: DayOfWeek get() = DayOfWeek[dayOfWeek]
-	val dayOfYear: Int get() = getDatePart(DATE_PART_DAY_OF_YEAR)
-	val hours: Int get() = (((internalMillis / MILLIS_PER_HOUR) % 24).toInt())
-	val minutes: Int get() = ((internalMillis / MILLIS_PER_MINUTE) % 60).toInt()
-	val seconds: Int get() = ((internalMillis / MILLIS_PER_SECOND) % 60).toInt()
-	val milliseconds: Int get() = ((internalMillis) % 1000).toInt()
+	override val fullYear: Int get() = getDatePart(DATE_PART_YEAR)
+	override val month: Int get() = getDatePart(DATE_PART_MONTH)
+	override val month0: Int get() = month - 1
+	override val month1: Int get() = month
+	override val monthEnum: Month get() = Month[month1]
+	override val dayOfMonth: Int get() = getDatePart(DATE_PART_DAY)
+	val dayOfWeekInt: Int get() = ((internalMillis / MILLIS_PER_DAY + 1) % 7).toInt()
+	override val dayOfWeek: DayOfWeek get() = DayOfWeek[dayOfWeekInt]
+	override val dayOfYear: Int get() = getDatePart(DATE_PART_DAY_OF_YEAR)
+	override val hours: Int get() = (((internalMillis / MILLIS_PER_HOUR) % 24).toInt())
+	override val minutes: Int get() = ((internalMillis / MILLIS_PER_MINUTE) % 60).toInt()
+	override val seconds: Int get() = ((internalMillis / MILLIS_PER_SECOND) % 60).toInt()
+	override val milliseconds: Int get() = ((internalMillis) % 1000).toInt()
+	override val timeZone: String get() = "UTC"
 
-	fun addYears(delta: Int): DateTime = addMixed(delta * 12, 0L)
-	fun addMonths(delta: Int): DateTime = addMixed(delta, 0L)
-	fun addDays(delta: Double): DateTime = addMilliseconds(delta * MILLIS_PER_DAY)
-	fun addHours(delta: Double): DateTime = addMilliseconds(delta * MILLIS_PER_HOUR)
-	fun addMinutes(delta: Double): DateTime = addMilliseconds(delta * MILLIS_PER_MINUTE)
-	fun addSeconds(delta: Double): DateTime = addMilliseconds(delta * MILLIS_PER_SECOND)
-	fun addMilliseconds(delta: Double): DateTime = if (delta == 0.0) this else addMilliseconds(delta.toLong())
-	fun addMilliseconds(delta: Long): DateTime = if (delta == 0L) this else DateTime(internalMillis + delta, true)
-
-	operator fun plus(delta: TimeDistance) = this.addMixed(delta.years * 12 + delta.months, (delta.days * MILLIS_PER_DAY + delta.hours * MILLIS_PER_HOUR + delta.minutes * MILLIS_PER_MINUTE + delta.seconds * MILLIS_PER_SECOND + delta.milliseconds).toLong())
-	operator fun minus(delta: TimeDistance) = this + -delta
-
-	private fun addMixed(deltaMonths: Int, deltaMilliseconds: Long): DateTime {
-		return when {
-			deltaMonths == 0 && deltaMilliseconds == 0L -> this
-			deltaMonths == 0 -> DateTime(this.internalMillis + deltaMilliseconds, true)
-			else -> {
-				var year = this.year
-				var month = this.month
-				var day = this.dayOfMonth
-				val i = month - 1 + deltaMonths
-				if (i >= 0) {
-					month = i % 12 + 1
-					year += i / 12
-				} else {
-					month = 12 + (i + 1) % 12
-					year += (i - 11) / 12
-				}
-				checkYear(year)
-				val days = daysInMonth(month, year)
-				if (day > days) day = days
-
-				DateTime(dateToMillis(year, month, day) + (internalMillis % MILLIS_PER_DAY) + deltaMilliseconds, true)
+	override fun add(deltaMonths: Int, deltaMilliseconds: Long): DateTime = when {
+		deltaMonths == 0 && deltaMilliseconds == 0L -> this
+		deltaMonths == 0 -> UtcDateTime(this.internalMillis + deltaMilliseconds, true)
+		else -> {
+			var year = this.fullYear
+			var month = this.month
+			var day = this.dayOfMonth
+			val i = month - 1 + deltaMonths
+			if (i >= 0) {
+				month = i % 12 + 1
+				year += i / 12
+			} else {
+				month = 12 + (i + 1) % 12
+				year += (i - 11) / 12
 			}
+			Year.check(year)
+			val days = DateTime.daysInMonth(month, year)
+			if (day > days) day = days
+
+			UtcDateTime(dateToMillis(year, month, day) + (internalMillis % MILLIS_PER_DAY) + deltaMilliseconds, true)
 		}
 	}
 
-	operator fun compareTo(other: DateTime): Int = this.internalMillis.compareTo(other.internalMillis)
+	operator fun compareTo(other: DateTime): Int = this.unix.compareTo(other.unix)
 	override fun hashCode(): Int = internalMillis.hashCode()
-	override fun equals(other: Any?): Boolean = this.internalMillis == (other as? DateTime?)?.internalMillis
+	override fun equals(other: Any?): Boolean = this.unix == (other as? DateTime?)?.unix
 	override fun toString(): String = SimplerDateFormat.DEFAULT_FORMAT.format(this)
 	fun toString(format: String): String = SimplerDateFormat(format).format(this)
 }
@@ -288,11 +390,11 @@ class SimplerDateFormat(val format: String) {
 		var out = ""
 		for (name in parts2) {
 			out += when (name) {
-				"EEE" -> englishDaysOfWeek[dd.dayOfWeek].substr(0, 3).capitalize()
-				"z", "zzz" -> "UTC"
+				"EEE" -> englishDaysOfWeek[dd.dayOfWeek.index].substr(0, 3).capitalize()
+				"z", "zzz" -> dd.timeZone
 				"d" -> "%d".format(dd.dayOfMonth)
 				"dd" -> "%02d".format(dd.dayOfMonth)
-				"MM" -> "%02d".format(dd.month0 + 1)
+				"MM" -> "%02d".format(dd.month1)
 				"MMM" -> englishMonths[dd.month0].substr(0, 3).capitalize()
 				"yyyy" -> "%04d".format(dd.fullYear)
 				"YYYY" -> "%04d".format(dd.fullYear)
@@ -305,12 +407,14 @@ class SimplerDateFormat(val format: String) {
 		return out
 	}
 
-	fun parse(str: String): Long {
+	fun parse(str: String): Long = parseDate(str).unix
+
+	fun parseDate(str: String): DateTime {
 		var second = 0
 		var minute = 0
 		var hour = 0
 		var day = 1
-		var month0 = 0
+		var month = 1
 		var fullYear = 1970
 		val result = rx2.find(str) ?: invalidOp("Not a valid format: '$str' for '$format'")
 		for ((name, value) in parts.zip(result.groupValues.drop(1))) {
@@ -318,8 +422,8 @@ class SimplerDateFormat(val format: String) {
 				"EEE" -> Unit // day of week (Sun)
 				"z", "zzz" -> Unit // timezone (GMT)
 				"d", "dd" -> day = value.toInt()
-				"MM" -> month0 = value.toInt() - 1
-				"MMM" -> month0 = englishMonths3.indexOf(value.toLowerCase())
+				"MM" -> month = value.toInt()
+				"MMM" -> month = englishMonths3.indexOf(value.toLowerCase()) + 1
 				"yyyy", "YYYY" -> fullYear = value.toInt()
 				"HH" -> hour = value.toInt()
 				"mm" -> minute = value.toInt()
@@ -329,7 +433,6 @@ class SimplerDateFormat(val format: String) {
 				}
 			}
 		}
-		//println("year=$year, month=$month, day=$day, hour=$hour, minute=$minute, second=$second")
-		return DateTime(fullYear, month0 + 1, day, hour, minute, second).time
+		return DateTime(fullYear, month, day, hour, minute, second)
 	}
 }

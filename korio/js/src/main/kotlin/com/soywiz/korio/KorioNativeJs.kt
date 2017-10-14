@@ -61,7 +61,7 @@ actual object KorioNative {
 	actual fun getLocalTimezoneOffset(time: Long): Int {
 		@Suppress("UNUSED_VARIABLE")
 		val rtime = time.toDouble()
-		return js("(new Date(rtime)).getTimezoneOffset()")
+		return js("-(new Date(rtime)).getTimezoneOffset()")
 	}
 
 	actual val tmpdir: String = "/tmp"

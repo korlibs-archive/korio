@@ -45,7 +45,7 @@ actual typealias CancellationException = java.util.concurrent.CancellationExcept
 actual object KorioNative {
 	actual fun currentTimeMillis() = System.currentTimeMillis()
 	actual fun getLocalTimezoneOffset(time: Long): Int {
-		return TimeZone.getDefault().getOffset(time)
+		return TimeZone.getDefault().getOffset(time) / 1000 / 60
 	}
 
 	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T {

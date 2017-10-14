@@ -12,4 +12,9 @@ class StringExtTest {
 		assertEquals(listOf("a", "90", "b", "3"), "a90b3".splitKeep(Regex("\\d+")))
 		assertEquals(listOf("a", "90", "b", "3", "cc"), "a90b3cc".splitKeep(Regex("\\d+")))
 	}
+
+	@Test
+	fun format() {
+		assertEquals("GMT+0200", "GMT%s%02d%02d".format("+", 2, 0))
+	}
 }

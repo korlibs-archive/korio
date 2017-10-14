@@ -11,7 +11,7 @@ object HttpDate {
 	val _format = SimplerDateFormat("EEE, dd MMM yyyy HH:mm:ss z")
 
 	fun format(date: Long): String = _format.format(date)
-	fun format(date: DateTime): String = _format.format(date.time)
+	fun format(date: DateTime): String = _format.format(date.unix)
 	fun format(): String = format(KorioNative.currentTimeMillis())
 
 	fun parse(str: String): Long = _format.parse(str)
