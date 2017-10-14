@@ -19,6 +19,7 @@ class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 	private val availableInCurrent: Int get() = current.size - currentPos
 
 	val available: Int get() = availableInCurrent + availableInBuffers
+	private val producedSemaphore = AsyncSemaphore()
 
 	fun produce(data: ByteArray) {
 		buffers += data
@@ -71,8 +72,6 @@ class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 		}
 		return out.toByteArray()
 	}
-
-	private val producedSemaphore = AsyncSemaphore()
 
 	override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
 		produce(buffer.copyOfRange(offset, offset + len))

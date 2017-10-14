@@ -30,6 +30,12 @@ expect open class RuntimeException(msg: String) : Exception(msg)
 expect open class IllegalStateException(msg: String) : RuntimeException(msg)
 expect open class CancellationException(msg: String) : IllegalStateException(msg)
 
+expect class Semaphore(initial: Int) {
+	//var initial: Int
+	fun acquire()
+	fun release()
+}
+
 expect object KorioNative {
 	abstract class NativeThreadLocal<T> {
 		abstract fun initialValue(): T

@@ -12,7 +12,9 @@ class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int =
 	private val queue = AsyncThread()
 
 	suspend fun require(len: Int = 1) = queue {
-		while (buf.available < len) buf.produce(base.readBytesUpTo(bufferSize))
+		while (buf.available < len) {
+			buf.produce(base.readBytesUpToFirst(bufferSize))
+		}
 	}
 
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
@@ -25,6 +27,7 @@ class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int =
 		while (true) {
 			require()
 			val chunk = buf.consumeUntil(end, including, limit = limit)
+			//println("chunk: $chunk, ${chunk.size}")
 			out.append(chunk)
 			if (chunk.isNotEmpty() && chunk.last() == end) break
 		}

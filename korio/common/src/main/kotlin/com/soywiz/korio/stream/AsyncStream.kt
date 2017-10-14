@@ -315,9 +315,15 @@ suspend fun AsyncInputStream.read(data: ByteArray): Int = read(data, 0, data.siz
 suspend fun AsyncInputStream.read(data: UByteArray): Int = read(data.data, 0, data.size)
 
 @Deprecated("Use readBytesUpTo instead", ReplaceWith("readBytesUpTo(len)"))
-suspend fun AsyncInputStream.readBytes(len: Int): ByteArray = readBytesUpTo(len)
+suspend fun AsyncInputStream.readBytes(len: Int): ByteArray = readBytesUpToFirst(len)
+
+suspend fun AsyncInputStream.readBytesUpToFirst(len: Int): ByteArray {
+	val out = ByteArray(len)
+	return out.copyOf(read(out, 0, len))
+}
 
 suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {
+	val BYTES_TEMP_SIZE = 0x1000
 	if (len > BYTES_TEMP_SIZE) {
 		if (this is AsyncPositionLengthStream) {
 			val alen = min(len, this.getAvailable().toIntClamp())
@@ -335,7 +341,7 @@ suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {
 			// @TODO: We can read chunks of data in preallocated byte arrays, then join them all.
 			// @TODO: That would prevent resizing issues with the trade-off of more allocations.
 			var pending = len
-			val temp = ByteArray(0x1000)
+			val temp = ByteArray(BYTES_TEMP_SIZE)
 			val bout = ByteArrayBuilder()
 			while (pending > 0) {
 				val read = this.read(temp, 0, min(temp.size, pending))

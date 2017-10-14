@@ -42,6 +42,13 @@ actual typealias RuntimeException = java.lang.RuntimeException
 actual typealias IllegalStateException = java.lang.IllegalStateException
 actual typealias CancellationException = java.util.concurrent.CancellationException
 
+actual class Semaphore actual constructor(initial: Int) {
+	val jsema = java.util.concurrent.Semaphore(initial)
+	//var initial: Int
+	actual fun acquire() = jsema.acquire()
+	actual fun release() = jsema.release()
+}
+
 actual object KorioNative {
 	open val currentThreadId: Long get() = Thread.currentThread().id
 

@@ -59,9 +59,7 @@ class AsyncThread {
 		return queue(func)
 	}
 
-	suspend fun <T> queue(func: suspend () -> T): T {
-		return invoke(func)
-	}
+	suspend fun <T> queue(func: suspend () -> T): T = invoke(func)
 
 	operator suspend fun <T> invoke(func: suspend () -> T): T {
 		val ctx = getCoroutineContext()

@@ -46,6 +46,12 @@ actual open class CancellationException actual constructor(msg: String) : Illega
 
 val global = js("(typeof global !== 'undefined') ? global : window")
 
+actual class Semaphore actual constructor(initial: Int) {
+	//var initial: Int
+	actual fun acquire() = Unit
+	actual fun release() = Unit
+}
+
 actual object KorioNative {
 	actual val currentThreadId: Long = 1L
 
