@@ -10,6 +10,7 @@ class TimeTest {
 		assertEquals("Fri, 13 Oct 2017 22:58:29 UTC", DateTime.fromUnix(1507935509943).toString())
 		assertEquals("Sat, 13 Oct 2018 22:58:29 UTC", (DateTime.fromUnix(1507935509943) + 1.years).toString())
 		assertEquals("Tue, 13 Nov 2018 22:58:29 UTC", (DateTime.fromUnix(1507935509943) + (1.years + 1.months)).toString())
+		assertEquals("Thu, 12 Oct 2017 22:58:29 UTC", (DateTime.fromUnix(1507935509943) - 1.days).toString())
 
 		//new Date(1507935509943)
 		//Sat Oct 14 2017 00:58:29 GMT+0200 (Romance Summer Time)

@@ -16,13 +16,24 @@ enum class DayOfWeek(val index: Int) {
 	}
 }
 
+enum class Month(val index: Int) {
+	January(1), February(2), March(3), April(4), May(5), June(6), July(7), August(8), September(9), October(10), November(11), December(12);
+
+	val index0: Int get() = index - 1
+
+	companion object {
+		val BY_INDEX0 = values()
+		operator fun get(index1: Int) = BY_INDEX0[index1 - 1]
+	}
+}
+
 class DateException(msg: String) : RuntimeException(msg)
 
 // From .NET DateTime
-class DateTime private constructor(dummy: Boolean, val internalTicks: Long) {
+class DateTime private constructor(private val internalMillis: Long, dummy: Boolean) {
 	companion object {
 		operator fun invoke(year: Int, month: Int, day: Int, hour: Int = 0, minute: Int = 0, second: Int = 0, milliseconds: Int = 0): DateTime {
-			return DateTime(true, dateToTicks(year, month, day) + timeToTicks(hour, minute, second) + milliseconds * TICKS_PER_MILLISECOND)
+			return DateTime(dateToMillis(year, month, day) + timeToMillis(hour, minute, second) + milliseconds, true)
 		}
 
 		operator fun invoke(time: Long) = fromUnix(time)
@@ -30,31 +41,25 @@ class DateTime private constructor(dummy: Boolean, val internalTicks: Long) {
 		fun createAdjusted(year: Int, month: Int, day: Int, hour: Int = 0, minute: Int = 0, second: Int = 0, milliseconds: Int = 0): DateTime {
 			val dy = clamp(year, 1, 9999)
 			val dm = clamp(month, 1, 12)
-			val dd = clamp(day, 1, daysInMonth(dy, dm))
+			val dd = clamp(day, 1, daysInMonth(dm, dy))
 			val th = clamp(hour, 0, 23)
 			val tm = clamp(minute, 0, 59)
 			val ts = clamp(second, 0, 59)
 			return DateTime(dy, dm, dd, th, tm, ts, milliseconds)
 		}
 
-		fun fromUnix(time: Long): DateTime = DateTime(true, EPOCH_TICKS + time * TICKS_PER_MILLISECOND)
+		fun fromUnix(time: Long): DateTime = DateTime(EPOCH_INTERNAL_MILLIS + time, true)
 
 		fun nowUnix() = KorioNative.currentTimeMillis()
 		fun now() = fromUnix(nowUnix())
 
 		val EPOCH by lazy { DateTime(1970, 1, 1, 0, 0, 0) }
-		val EPOCH_TICKS by lazy { EPOCH.internalTicks }
-
-		private const val TICKS_PER_MILLISECOND: Long = 1
-		private const val TICKS_PER_SECOND: Long = TICKS_PER_MILLISECOND * 1000
-		private const val TICKS_PER_MINUTE: Long = TICKS_PER_SECOND * 60
-		private const val TICKS_PER_HOUR: Long = TICKS_PER_MINUTE * 60
-		private const val TICKS_PER_DAY: Long = TICKS_PER_HOUR * 24
+		private val EPOCH_INTERNAL_MILLIS by lazy { EPOCH.internalMillis }
 
 		private const val MILLIS_PER_SECOND = 1000
-		private const val MILLIS_PER_MINUTE = MILLIS_PER_SECOND * 60
-		private const val MILLIS_PER_HOUR = MILLIS_PER_MINUTE * 60
-		private const val MILLIS_PER_DAY = MILLIS_PER_HOUR * 24
+		private const val MILLIS_PER_MINUTE = this.MILLIS_PER_SECOND * 60
+		private const val MILLIS_PER_HOUR = this.MILLIS_PER_MINUTE * 60
+		private const val MILLIS_PER_DAY = this.MILLIS_PER_HOUR * 24
 
 		private const val DAYS_PER_YEAR = 365
 		private const val DAYS_PER_4_YEARS = DAYS_PER_YEAR * 4 + 1
@@ -66,51 +71,45 @@ class DateTime private constructor(dummy: Boolean, val internalTicks: Long) {
 		private const val DATE_PART_MONTH = 2
 		private const val DATE_PART_DAY = 3
 
-		private val DaysToMonth366 = intArrayOf(0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)
-		private val DaysToMonth365 = intArrayOf(0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)
+		private val DAYS_TO_MONTH_366 = intArrayOf(0, 31, 60, 91, 121, 152, 182, 213, 244, 274, 305, 335, 366)
+		private val DAYS_TO_MONTH_365 = intArrayOf(0, 31, 59, 90, 120, 151, 181, 212, 243, 273, 304, 334, 365)
 
-		private fun checkYear(year: Int) {
-			if (year !in 1..9999) throw DateException("Year $year not in 1..9999")
-		}
-
-		private fun checkMonth(month: Int) {
-			if (month !in 1..12) throw DateException("Month $month not in 1..12")
-		}
+		private fun checkYear(year: Int) = run { if (year !in 1..9999) throw DateException("Year $year not in 1..9999") }
+		private fun checkMonth(month: Int) = run { if (month !in 1..12) throw DateException("Month $month not in 1..12") }
 
 		fun isLeapYear(year: Int): Boolean {
 			checkYear(year)
 			return year % 4 == 0 && (year % 100 != 0 || year % 400 == 0)
 		}
 
-		private fun dateToTicks(year: Int, month: Int, day: Int): Long {
+		private fun dateToMillis(year: Int, month: Int, day: Int): Long {
 			checkYear(year)
 			checkMonth(month)
-			val days = if (isLeapYear(year)) DaysToMonth366 else DaysToMonth365
+			val days = if (isLeapYear(year)) DAYS_TO_MONTH_366 else DAYS_TO_MONTH_365
 			if (day !in 1..(days[month] - days[month - 1])) throw DateException("Day $day not valid for year=$year and month=$month")
 			val y = year - 1
 			val n = y * 365 + y / 4 - y / 100 + y / 400 + days[month - 1] + day - 1
-			return n * TICKS_PER_DAY
+			return n.toLong() * this.MILLIS_PER_DAY.toLong()
 		}
 
-		private fun timeToTicks(hour: Int, minute: Int, second: Int): Long {
+		private fun timeToMillis(hour: Int, minute: Int, second: Int): Long {
 			if (hour !in 0..23) throw DateException("Hour $hour not in 0..23")
 			if (minute !in 0..59) throw DateException("Minute $minute not in 0..59")
 			if (second !in 0..59) throw DateException("Second $second not in 0..59")
 			val totalSeconds = hour.toLong() * 3600 + minute.toLong() * 60 + second.toLong()
-			return totalSeconds * TICKS_PER_SECOND
+			return totalSeconds * this.MILLIS_PER_SECOND
 		}
 
 		fun daysInMonth(month: Int, isLeap: Boolean): Int {
 			checkMonth(month)
-			val days = if (isLeap) DaysToMonth366 else DaysToMonth365
+			val days = if (isLeap) DAYS_TO_MONTH_366 else DAYS_TO_MONTH_365
 			return days[month] - days[month - 1]
 		}
 
-		fun daysInMonth(year: Int, month: Int): Int = daysInMonth(month, isLeapYear(year))
+		fun daysInMonth(month: Int, year: Int): Int = daysInMonth(month, isLeapYear(year))
 
-		private fun getDatePart(InternalTicks: Long, part: Int): Int {
-			val ticks = InternalTicks
-			var n = (ticks / TICKS_PER_DAY).toInt()
+		private fun getDatePart(millis: Long, part: Int): Int {
+			var n = (millis / this.MILLIS_PER_DAY).toInt()
 			val y400 = n / DAYS_PER_400_YEARS
 			n -= y400 * DAYS_PER_400_YEARS
 			var y100 = n / DAYS_PER_100_YEARS
@@ -124,80 +123,81 @@ class DateTime private constructor(dummy: Boolean, val internalTicks: Long) {
 			n -= y1 * DAYS_PER_YEAR
 			if (part == DATE_PART_DAY_OF_YEAR) return n + 1
 			val leapYear = y1 == 3 && (y4 != 24 || y100 == 3)
-			val days = if (leapYear) DaysToMonth366 else DaysToMonth365
+			val days = if (leapYear) DAYS_TO_MONTH_366 else DAYS_TO_MONTH_365
 			var m = n shr 5 + 1
 			while (n >= days[m]) m++
 			return if (part == DATE_PART_MONTH) m else n - days[m - 1] + 1
 		}
 	}
 
-	private fun getDatePart(part: Int): Int = Companion.getDatePart(internalTicks, part)
+	private fun getDatePart(part: Int): Int = Companion.getDatePart(internalMillis, part)
 
-	val unix: Long get() = (internalTicks - EPOCH.internalTicks) / TICKS_PER_MILLISECOND
+	val unix: Long get() = (internalMillis - EPOCH.internalMillis)
 	val time: Long get() = unix
 	val year: Int get() = fullYear
 	val fullYear: Int get() = getDatePart(DATE_PART_YEAR)
 	val month: Int get() = getDatePart(DATE_PART_MONTH)
 	val month0: Int get() = month - 1
 	val month1: Int get() = month
+	val monthEnum: Month get() = Month[month1]
 	val dayOfMonth: Int get() = getDatePart(DATE_PART_DAY)
-	val dayOfWeek: Int get() = ((internalTicks / TICKS_PER_DAY + 1) % 7).toInt()
+	val dayOfWeek: Int get() = ((internalMillis / MILLIS_PER_DAY + 1) % 7).toInt()
 	val dayOfWeekEnum: DayOfWeek get() = DayOfWeek[dayOfWeek]
 	val dayOfYear: Int get() = getDatePart(DATE_PART_DAY_OF_YEAR)
-	val hours: Int get() = (((internalTicks / TICKS_PER_HOUR) % 24).toInt())
-	val minutes: Int get() = ((internalTicks / TICKS_PER_MINUTE) % 60).toInt()
-	val seconds: Int get() = ((internalTicks / TICKS_PER_SECOND) % 60).toInt()
-	val milliseconds: Int get() = ((internalTicks / TICKS_PER_MILLISECOND) % 1000).toInt()
+	val hours: Int get() = (((internalMillis / MILLIS_PER_HOUR) % 24).toInt())
+	val minutes: Int get() = ((internalMillis / MILLIS_PER_MINUTE) % 60).toInt()
+	val seconds: Int get() = ((internalMillis / MILLIS_PER_SECOND) % 60).toInt()
+	val milliseconds: Int get() = ((internalMillis) % 1000).toInt()
 
-	fun addYears(value: Int): DateTime = addMonths(value * 12)
+	fun addYears(delta: Int): DateTime = addMixed(delta * 12, 0L)
+	fun addMonths(delta: Int): DateTime = addMixed(delta, 0L)
+	fun addDays(delta: Double): DateTime = addMilliseconds(delta * MILLIS_PER_DAY)
+	fun addHours(delta: Double): DateTime = addMilliseconds(delta * MILLIS_PER_HOUR)
+	fun addMinutes(delta: Double): DateTime = addMilliseconds(delta * MILLIS_PER_MINUTE)
+	fun addSeconds(delta: Double): DateTime = addMilliseconds(delta * MILLIS_PER_SECOND)
+	fun addMilliseconds(delta: Double): DateTime = if (delta == 0.0) this else addMilliseconds(delta.toLong())
+	fun addMilliseconds(delta: Long): DateTime = if (delta == 0L) this else DateTime(internalMillis + delta, true)
 
-	fun addMonths(months: Int): DateTime {
-		var y = getDatePart(DATE_PART_YEAR)
-		var m = getDatePart(DATE_PART_MONTH)
-		var d = getDatePart(DATE_PART_DAY)
-		val i = m - 1 + months
-		if (i >= 0) {
-			m = i % 12 + 1
-			y += i / 12
-		} else {
-			m = 12 + (i + 1) % 12
-			y += (i - 11) / 12
+	operator fun plus(delta: TimeDistance) = this.addMixed(delta.years * 12 + delta.months, (delta.days * MILLIS_PER_DAY + delta.hours * MILLIS_PER_HOUR + delta.minutes * MILLIS_PER_MINUTE + delta.seconds * MILLIS_PER_SECOND + delta.milliseconds).toLong())
+	operator fun minus(delta: TimeDistance) = this + -delta
+
+	private fun addMixed(deltaMonths: Int, deltaMilliseconds: Long): DateTime {
+		return when {
+			deltaMonths == 0 && deltaMilliseconds == 0L -> this
+			deltaMonths == 0 -> DateTime(this.internalMillis + deltaMilliseconds, true)
+			else -> {
+				var year = this.year
+				var month = this.month
+				var day = this.dayOfMonth
+				val i = month - 1 + deltaMonths
+				if (i >= 0) {
+					month = i % 12 + 1
+					year += i / 12
+				} else {
+					month = 12 + (i + 1) % 12
+					year += (i - 11) / 12
+				}
+				checkYear(year)
+				val days = daysInMonth(month, year)
+				if (day > days) day = days
+
+				DateTime(dateToMillis(year, month, day) + (internalMillis % MILLIS_PER_DAY) + deltaMilliseconds, true)
+			}
 		}
-		checkYear(y)
-		val days = daysInMonth(y, m)
-		if (d > days) d = days
-		return DateTime(true, (dateToTicks(y, m, d) + internalTicks % TICKS_PER_DAY))
 	}
 
-	fun addDays(value: Double): DateTime = add(value, MILLIS_PER_DAY)
-	fun addHours(value: Double): DateTime = add(value, MILLIS_PER_HOUR)
-	fun addMinutes(value: Double): DateTime = add(value, MILLIS_PER_MINUTE)
-	fun addSeconds(value: Double): DateTime = add(value, MILLIS_PER_SECOND)
-	fun addMilliseconds(value: Double): DateTime = add(value, 1)
-
-	fun addTicks(value: Long): DateTime {
-		val ticks = internalTicks
-		return DateTime(true, (ticks + value))
-	}
-
-	private fun add(value: Double, scale: Int): DateTime {
-		if (value == 0.0) return this
-		val millis = (value * scale + if (value >= 0) 0.5 else -0.5).toLong()
-		return addTicks(millis * TICKS_PER_MILLISECOND)
-	}
-
-	operator fun plus(add: TimeDistance) = this
-		.addMonths(add.years * 12 + add.months)
-		.addMilliseconds(add.days * MILLIS_PER_DAY + add.hours * MILLIS_PER_HOUR + add.minutes * MILLIS_PER_MINUTE + add.seconds * MILLIS_PER_SECOND + add.milliseconds)
-
-	operator fun compareTo(other: DateTime): Int = this.internalTicks.compareTo(other.internalTicks)
-	override fun hashCode(): Int = internalTicks.hashCode()
-	override fun equals(other: Any?): Boolean = this.internalTicks == (other as? DateTime?)?.internalTicks
+	operator fun compareTo(other: DateTime): Int = this.internalMillis.compareTo(other.internalMillis)
+	override fun hashCode(): Int = internalMillis.hashCode()
+	override fun equals(other: Any?): Boolean = this.internalMillis == (other as? DateTime?)?.internalMillis
 	override fun toString(): String = SimplerDateFormat.DEFAULT_FORMAT.format(this)
 	fun toString(format: String): String = SimplerDateFormat(format).format(this)
 }
 
 data class TimeDistance(val years: Int = 0, val months: Int = 0, val days: Double = 0.0, val hours: Double = 0.0, val minutes: Double = 0.0, val seconds: Double = 0.0, val milliseconds: Double = 0.0) {
+	operator fun unaryMinus() = TimeDistance(-years, -months, -days, -hours, -minutes, -seconds, -milliseconds)
+
+	operator fun minus(other: TimeDistance) = this + -other
+
 	operator fun plus(other: TimeDistance) = TimeDistance(
 		years + other.years,
 		months + other.months,
@@ -206,6 +206,16 @@ data class TimeDistance(val years: Int = 0, val months: Int = 0, val days: Doubl
 		minutes + other.minutes,
 		seconds + other.seconds,
 		milliseconds + other.milliseconds
+	)
+
+	operator fun times(times: Double) = TimeDistance(
+		(years * times).toInt(),
+		(months * times).toInt(),
+		days * times,
+		hours * times,
+		minutes * times,
+		seconds * times,
+		milliseconds * times
 	)
 }
 
