@@ -80,10 +80,21 @@ enum class Month(val index: Int) {
 
 class DateException(msg: String) : RuntimeException(msg)
 
+private const val MILLIS_PER_SECOND = 1000
+private const val MILLIS_PER_MINUTE = MILLIS_PER_SECOND * 60
+private const val MILLIS_PER_HOUR = MILLIS_PER_MINUTE * 60
+private const val MILLIS_PER_DAY = MILLIS_PER_HOUR * 24
+
+private const val DAYS_PER_YEAR = 365
+private const val DAYS_PER_4_YEARS = DAYS_PER_YEAR * 4 + 1
+private const val DAYS_PER_100_YEARS = DAYS_PER_4_YEARS * 25 - 1
+private const val DAYS_PER_400_YEARS = DAYS_PER_100_YEARS * 4 + 1
+
+
 interface DateTime {
 	val year: Int
 	val month: Int
-	val dayOfWeek: DayOfWeek
+	val dayOfWeekInt: Int
 	val dayOfMonth: Int
 	val dayOfYear: Int
 	val hours: Int
@@ -96,6 +107,7 @@ interface DateTime {
 	val utc: UtcDateTime
 	fun add(deltaMonths: Int, deltaMilliseconds: Long): DateTime
 
+	val dayOfWeek: DayOfWeek get() = DayOfWeek[dayOfWeekInt]
 	val month0: Int get() = month - 1
 	val month1: Int get() = month
 	val monthEnum: Month get() = Month[month1]
@@ -106,14 +118,14 @@ interface DateTime {
 	fun toOffset(offset: Int) = OffsetDateTime(this, offset)
 	fun addYears(delta: Int): DateTime = add(delta * 12, 0L)
 	fun addMonths(delta: Int): DateTime = add(delta, 0L)
-	fun addDays(delta: Double): DateTime = add(0, (delta * UtcDateTime.MILLIS_PER_DAY).toLong())
-	fun addHours(delta: Double): DateTime = add(0, (delta * UtcDateTime.MILLIS_PER_HOUR).toLong())
-	fun addMinutes(delta: Double): DateTime = add(0, (delta * UtcDateTime.MILLIS_PER_MINUTE).toLong())
-	fun addSeconds(delta: Double): DateTime = add(0, (delta * UtcDateTime.MILLIS_PER_SECOND).toLong())
+	fun addDays(delta: Double): DateTime = add(0, (delta * MILLIS_PER_DAY).toLong())
+	fun addHours(delta: Double): DateTime = add(0, (delta * MILLIS_PER_HOUR).toLong())
+	fun addMinutes(delta: Double): DateTime = add(0, (delta * MILLIS_PER_MINUTE).toLong())
+	fun addSeconds(delta: Double): DateTime = add(0, (delta * MILLIS_PER_SECOND).toLong())
 	fun addMilliseconds(delta: Double): DateTime = if (delta == 0.0) this else add(0, delta.toLong())
 	fun addMilliseconds(delta: Long): DateTime = if (delta == 0L) this else add(0, delta)
 
-	operator fun plus(delta: TimeDistance): DateTime = this.add(delta.years * 12 + delta.months, (delta.days * UtcDateTime.MILLIS_PER_DAY + delta.hours * UtcDateTime.MILLIS_PER_HOUR + delta.minutes * UtcDateTime.MILLIS_PER_MINUTE + delta.seconds * UtcDateTime.MILLIS_PER_SECOND + delta.milliseconds).toLong())
+	operator fun plus(delta: TimeDistance): DateTime = this.add(delta.years * 12 + delta.months, (delta.days * MILLIS_PER_DAY + delta.hours * MILLIS_PER_HOUR + delta.minutes * MILLIS_PER_MINUTE + delta.seconds * MILLIS_PER_SECOND + delta.milliseconds).toLong())
 	operator fun minus(delta: TimeDistance): DateTime = this + -delta
 
 	companion object {
@@ -184,20 +196,10 @@ class OffsetDateTime private constructor(
 // From .NET DateTime
 class UtcDateTime internal constructor(internal val internalMillis: Long, dummy: Boolean) : DateTime {
 	companion object {
-		internal const val MILLIS_PER_SECOND = 1000
-		internal const val MILLIS_PER_MINUTE = this.MILLIS_PER_SECOND * 60
-		internal const val MILLIS_PER_HOUR = this.MILLIS_PER_MINUTE * 60
-		internal const val MILLIS_PER_DAY = this.MILLIS_PER_HOUR * 24
-
-		internal const val DAYS_PER_YEAR = 365
-		internal const val DAYS_PER_4_YEARS = DAYS_PER_YEAR * 4 + 1
-		internal const val DAYS_PER_100_YEARS = DAYS_PER_4_YEARS * 25 - 1
-		internal const val DAYS_PER_400_YEARS = DAYS_PER_100_YEARS * 4 + 1
-
-		internal const val DATE_PART_YEAR = 0
-		internal const val DATE_PART_DAY_OF_YEAR = 1
-		internal const val DATE_PART_MONTH = 2
-		internal const val DATE_PART_DAY = 3
+		private const val DATE_PART_YEAR = 0
+		private const val DATE_PART_DAY_OF_YEAR = 1
+		private const val DATE_PART_MONTH = 2
+		private const val DATE_PART_DAY = 3
 
 		internal fun dateToMillis(year: Int, month: Int, day: Int): Long {
 			Year.check(year)
@@ -206,7 +208,7 @@ class UtcDateTime internal constructor(internal val internalMillis: Long, dummy:
 			val y = year - 1
 			Month.daysToStart(month, year)
 			val n = y * 365 + y / 4 - y / 100 + y / 400 + Month.daysToStart(month, year) + day - 1
-			return n.toLong() * this.MILLIS_PER_DAY.toLong()
+			return n.toLong() * MILLIS_PER_DAY.toLong()
 		}
 
 		internal fun timeToMillis(hour: Int, minute: Int, second: Int): Long {
@@ -214,11 +216,11 @@ class UtcDateTime internal constructor(internal val internalMillis: Long, dummy:
 			if (minute !in 0..59) throw DateException("Minute $minute not in 0..59")
 			if (second !in 0..59) throw DateException("Second $second not in 0..59")
 			val totalSeconds = hour.toLong() * 3600 + minute.toLong() * 60 + second.toLong()
-			return totalSeconds * this.MILLIS_PER_SECOND
+			return totalSeconds * MILLIS_PER_SECOND
 		}
 
 		internal fun getDatePart(millis: Long, part: Int): Int {
-			var n = (millis / this.MILLIS_PER_DAY).toInt()
+			var n = (millis / MILLIS_PER_DAY).toInt()
 			val y400 = n / DAYS_PER_400_YEARS
 			n -= y400 * DAYS_PER_400_YEARS
 			var y100 = n / DAYS_PER_100_YEARS
@@ -239,16 +241,14 @@ class UtcDateTime internal constructor(internal val internalMillis: Long, dummy:
 	}
 
 	private fun getDatePart(part: Int): Int = Companion.getDatePart(internalMillis, part)
-	override val offset: Int = 0
 
+	override val offset: Int = 0
 	override val utc: UtcDateTime = this
 	override val unix: Long get() = (internalMillis - DateTime.EPOCH.internalMillis)
-	val time: Long get() = unix
 	override val year: Int get() = getDatePart(DATE_PART_YEAR)
 	override val month: Int get() = getDatePart(DATE_PART_MONTH)
 	override val dayOfMonth: Int get() = getDatePart(DATE_PART_DAY)
-	val dayOfWeekInt: Int get() = ((internalMillis / MILLIS_PER_DAY + 1) % 7).toInt()
-	override val dayOfWeek: DayOfWeek get() = DayOfWeek[dayOfWeekInt]
+	override val dayOfWeekInt: Int get() = ((internalMillis / MILLIS_PER_DAY + 1) % 7).toInt()
 	override val dayOfYear: Int get() = getDatePart(DATE_PART_DAY_OF_YEAR)
 	override val hours: Int get() = (((internalMillis / MILLIS_PER_HOUR) % 24).toInt())
 	override val minutes: Int get() = ((internalMillis / MILLIS_PER_MINUTE) % 60).toInt()
