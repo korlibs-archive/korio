@@ -126,7 +126,7 @@ class FillSyncStreamBase(val fill: Byte, override var length: Long) : SyncStream
 
 fun FillSyncStream(fillByte: Int = 0, length: Long = Long.MAX_VALUE) = FillSyncStreamBase(fillByte.toByte(), length).toSyncStream()
 
-fun MemorySyncStream(data: ByteArray = ByteArray(0)) = MemorySyncStreamBase(ByteArrayBuffer(data)).toSyncStream()
+fun MemorySyncStream(data: ByteArray = EMPTY_BYTE_ARRAY) = MemorySyncStreamBase(ByteArrayBuffer(data)).toSyncStream()
 fun MemorySyncStream(data: ByteArrayBuffer) = MemorySyncStreamBase(data).toSyncStream()
 inline fun MemorySyncStreamToByteArray(initialCapacity: Int = 4096, callback: SyncStream.() -> Unit): ByteArray {
 	val buffer = ByteArrayBuffer(initialCapacity)

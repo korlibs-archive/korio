@@ -1,5 +1,5 @@
 package com.soywiz.korio.ext.web.html
 
-import org.intellij.lang.annotations.Language
+import com.soywiz.korio.Language
 
 fun html(@Language("HTML") msg: String) = msg

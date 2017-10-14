@@ -7,6 +7,8 @@ object Hex {
 	val DIGITS_UPPER = DIGITS.toUpperCase()
 	val DIGITS_LOWER = DIGITS.toLowerCase()
 
+	fun isHexDigit(c: Char) = c in '0'..'9' || c in 'a'..'f' || c in 'A'..'F'
+
 	fun decode(str: String): ByteArray {
 		val out = ByteArray(str.length / 2)
 		for (n in 0 until out.size) {

@@ -1,10 +1,9 @@
 package com.soywiz.korio.serialization.yaml
 
+import com.soywiz.korio.Language
 import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
-import kotlin.reflect.KClass
-import com.soywiz.korio.lang.Language
 import com.soywiz.korio.serialization.ObjectMapper
 import com.soywiz.korio.util.ListReader
 import com.soywiz.korio.util.StrReader
@@ -18,6 +17,7 @@ import kotlin.collections.isNotEmpty
 import kotlin.collections.last
 import kotlin.collections.plusAssign
 import kotlin.collections.set
+import kotlin.reflect.KClass
 
 object Yaml {
 	fun decode(@Language("yaml") str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)

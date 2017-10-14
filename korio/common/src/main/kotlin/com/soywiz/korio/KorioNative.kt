@@ -10,10 +10,11 @@ import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpFactory
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.ws.WebSocketClientFactory
-import com.soywiz.korio.stream.readUntil
+import com.soywiz.korio.stream.readBytesUpToFirst
 import com.soywiz.korio.stream.toBuffered
 import com.soywiz.korio.vfs.LocalVfsProvider
 import com.soywiz.korio.vfs.VfsFile
+import kotlin.math.min
 import kotlin.reflect.KClass
 
 expect annotation class Synchronized
@@ -21,6 +22,8 @@ expect annotation class JvmField
 expect annotation class JvmStatic
 expect annotation class JvmOverloads
 expect annotation class Transient
+
+expect annotation class Language(val value: String, val prefix: String = "", val suffix: String = "")
 
 expect open class IOException(msg: String) : Exception(msg)
 expect open class EOFException(msg: String) : IOException(msg)
@@ -56,6 +59,8 @@ expect object KorioNative {
 	fun getLocalTimezoneOffset(time: Long): Int
 
 	val eventLoopFactoryDefaultImpl: EventLoopFactory
+
+	fun getRandomValues(data: ByteArray): Unit
 
 	suspend fun <T> executeInWorker(callback: suspend () -> T): T
 
@@ -262,9 +267,13 @@ object KorioNativeDefaults {
 	}
 
 	fun createServer(): HttpServer {
-		val HeaderRegex = Regex("^(\\w+)\\s+(.*)\\s+HTTP/1.\\d$")
+		val HeaderRegex = Regex("^(\\w+)\\s+(.*)\\s+(HTTP/1.[01])$")
 
 		return object : HttpServer() {
+			val BodyChunkSize = 1024
+			val LimitRequestFieldSize = 8190
+			val LimitRequestFields = 100
+
 			var wshandler: suspend (WsRequest) -> Unit = {}
 			var handler: suspend (Request) -> Unit = {}
 			val onClose = Signal<Unit>()
@@ -290,38 +299,38 @@ object KorioNativeDefaults {
 
 						//val header = cb.readBufferedLine().trim()
 						//val fline = cb.readBufferedUntil('\n'.toByte()).toString(UTF8).trim()
-						val fline = cb.readUntil('\n'.toByte()).toString(UTF8).trim()
+						val fline = cb.readUntil('\n'.toByte(), limit = LimitRequestFieldSize).toString(UTF8).trim()
 						//println("fline: $fline")
 						val match = HeaderRegex.matchEntire(fline) ?: throw IllegalStateException("Not a valid request '$fline'")
 						val method = match.groupValues[1]
 						val url = match.groupValues[2]
+						val httpVersion = match.groupValues[3]
 						val headerList = arrayListOf<Pair<String, String>>()
-						for (n in 0 until 1024) { // up to 1024 headers
-							val line = cb.readUntil('\n'.toByte()).toString(UTF8).trim()
+						for (n in 0 until LimitRequestFields) { // up to 1024 headers
+							val line = cb.readUntil('\n'.toByte(), limit = LimitRequestFieldSize).toString(UTF8).trim()
 							if (line.isEmpty()) break
 							val parts = line.split(':', limit = 2)
-							headerList += parts[0] to parts.getOrElse(1) { "" }
+							headerList += parts.getOrElse(0) { "" }.trim() to parts.getOrElse(1) { "" }.trim()
 						}
 						val headers = Http.Headers(headerList)
 						val keepAlive = headers["connection"]?.toLowerCase() == "keep-alive"
+						val contentLength = headers["content-length"]?.toLongOrNull()
 
 						//println("REQ: $method, $url, $headerList")
 
 						val requestCompleted = Promise.Deferred<Unit>()
 
+						var bodyHandler: (ByteArray) -> Unit = {}
+						var endHandler: () -> Unit = {}
+
 						spawnAndForget {
 							handler(object : HttpServer.Request(Http.Method(method), url, headers) {
-								suspend override fun _handler(handler: (ByteArray) -> Unit) {
-									TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-								}
-
-								suspend override fun _endHandler(handler: () -> Unit) {
-									TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-								}
+								suspend override fun _handler(handler: (ByteArray) -> Unit) = run { bodyHandler = handler }
+								suspend override fun _endHandler(handler: () -> Unit) = run { endHandler = handler }
 
 								override suspend fun _sendHeader(code: Int, message: String, headers: Http.Headers) {
 									val sb = StringBuilder()
-									sb.append("HTTP/1.1 $code $message\r\n")
+									sb.append("$httpVersion $code $message\r\n")
 									for (header in headers) sb.append("${header.first}: ${header.second}\r\n")
 									sb.append("\r\n")
 									client.write(sb.toString().toByteArray(UTF8))
@@ -336,6 +345,19 @@ object KorioNativeDefaults {
 								}
 							})
 						}
+
+						//println("Content-Length: '${headers["content-length"]}'")
+						//println("Content-Length: $contentLength")
+						if (contentLength != null) {
+							var remaining = contentLength
+							while (remaining > 0) {
+								val toRead = min(BodyChunkSize.toLong(), remaining).toInt()
+								val read = cb.readBytesUpToFirst(toRead)
+								bodyHandler(read)
+								remaining -= read.size
+							}
+						}
+						endHandler()
 
 						requestCompleted.promise.await()
 

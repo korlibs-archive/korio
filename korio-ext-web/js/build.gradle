@@ -1,8 +1,8 @@
-apply plugin: 'kotlin-platform-jvm'
+apply plugin: 'kotlin-platform-js'
 
 dependencies {
 	implement project(":korio-ext-web-common")
 	testImplementation project(":korio-ext-web-common")
 
-	compile project(":korio")
+	compile project(":korio-js")
 }

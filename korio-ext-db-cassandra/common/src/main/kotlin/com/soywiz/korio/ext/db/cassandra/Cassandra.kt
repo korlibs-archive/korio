@@ -1,5 +1,6 @@
 package com.soywiz.korio.ext.db.cassandra
 
+import com.soywiz.korio.Language
 import com.soywiz.korio.async.AsyncQueue
 import com.soywiz.korio.async.ProduceConsumer
 import com.soywiz.korio.async.Promise

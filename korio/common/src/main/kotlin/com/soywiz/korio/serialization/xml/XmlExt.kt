@@ -1,6 +1,6 @@
 package com.soywiz.korio.serialization.xml
 
-import com.soywiz.korio.lang.Language
+import com.soywiz.korio.Language
 import com.soywiz.korio.vfs.VfsFile
 
 fun Iterable<Xml>.str(name: String, defaultValue: String = ""): String = this.first().attributes[name] ?: defaultValue

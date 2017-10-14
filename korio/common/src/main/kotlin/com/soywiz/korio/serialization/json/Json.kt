@@ -1,9 +1,9 @@
 package com.soywiz.korio.serialization.json
 
+import com.soywiz.korio.Language
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.IOException
-import com.soywiz.korio.lang.Language
 import com.soywiz.korio.serialization.Mapper
 import com.soywiz.korio.serialization.ObjectMapper
 import com.soywiz.korio.util.Indenter
@@ -33,7 +33,9 @@ object Json {
 
 	fun decode(@Language("json") s: String): Any? = StrReader(s).decode()
 
+
 	inline fun <reified T : Any> decodeToType(@Language("json") s: String, mapper: ObjectMapper = Mapper): T = decodeToType(s, T::class, mapper)
+
 	@Suppress("UNCHECKED_CAST")
 	fun <T : Any> decodeToType(@Language("json") s: String, clazz: KClass<T>, mapper: ObjectMapper = Mapper): T = mapper.toTyped(decode(s), clazz)
 

@@ -5,11 +5,11 @@ import com.soywiz.korio.ext.web.cookie.KorCookies
 import com.soywiz.korio.ext.web.cookie.cookies
 import com.soywiz.korio.ext.web.cookie.registerCookies
 import com.soywiz.korio.ext.web.router.KorRouter
+import com.soywiz.korio.lang.Dynamic
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.serialization.json.Json
-import com.soywiz.korio.util.Dynamic
 import com.soywiz.korio.util.Extra
-import java.util.*
+import com.soywiz.korio.util.UUID
 
 abstract class SessionProvider {
 	abstract suspend fun get(sessionId: String): String?
@@ -23,10 +23,7 @@ abstract class SessionProvider {
 class MemorySessionProvider : SessionProvider() {
 	val memory = lmapOf<String, String>()
 
-	suspend override fun get(sessionId: String): String? {
-		return memory[sessionId]
-	}
-
+	suspend override fun get(sessionId: String): String? = memory[sessionId]
 	suspend override fun set(sessionId: String, content: String) {
 		memory[sessionId] = content
 	}
@@ -36,7 +33,7 @@ class KorSession(
 	private val cookies: KorCookies,
 	private val sessionProvider: SessionProvider,
 	private val request: HttpServer.Request
-) : Dynamic.Context {
+) {
 	private val korSessionCookie = cookies.getCookieSure("korSessionId")
 	private val korSessionId = korSessionCookie.getOrSetValue { UUID.randomUUID().toString() }
 	private var prepared = false
@@ -71,26 +68,26 @@ class KorSession(
 
 	suspend fun get(key: String): Any? {
 		prepareOnce()
-		return obj.dynamicGet(key)
+		return Dynamic.get(obj, key)
 	}
 
 	suspend fun set(key: String, value: Any?) {
 		prepareOnce()
 		if (obj == null) obj = lmapOf<String, Any?>()
-		obj.dynamicSet(key, value)
+		Dynamic.set(obj, key, value)
 	}
 
-	suspend fun getInt(key: String): Int = get(key).toDynamicInt()
+	suspend fun getInt(key: String): Int = Dynamic.toInt(get(key))
 	suspend fun setInt(key: String, value: Int) = set(key, value)
 
-	suspend fun getLong(key: String): Long = get(key).toDynamicLong()
+	suspend fun getLong(key: String): Long = Dynamic.toLong(get(key))
 	suspend fun setLong(key: String, value: Long) = set(key, value)
 
-	suspend fun getStringOrNull(key: String): String? = get(key)?.toDynamicString()
-	suspend fun getString(key: String): String = get(key).toDynamicString()
+	suspend fun getStringOrNull(key: String): String? = Dynamic.toStringOrNull(get(key))
+	suspend fun getString(key: String): String = Dynamic.toString(get(key))
 	suspend fun setString(key: String, value: String) = set(key, value)
 
-	suspend fun getBool(key: String): Boolean = get(key).toDynamicBool()
+	suspend fun getBool(key: String): Boolean = Dynamic.toBool(get(key))
 	suspend fun setBool(key: String, value: Boolean) = set(key, value)
 }
 

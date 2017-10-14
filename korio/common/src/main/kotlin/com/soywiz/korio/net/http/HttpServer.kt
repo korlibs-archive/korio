@@ -9,6 +9,7 @@ import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.querystring.QueryString
 import com.soywiz.korio.stream.AsyncOutputStream
+import com.soywiz.korio.stream.EMPTY_BYTE_ARRAY
 import com.soywiz.korio.util.AsyncCloseable
 import com.soywiz.korio.util.Extra
 import kotlin.coroutines.experimental.suspendCoroutine
@@ -269,7 +270,7 @@ class FakeRequest(
 	method: Http.Method,
 	uri: String,
 	headers: Http.Headers = Http.Headers(),
-	val body: ByteArray = ByteArray(0),
+	val body: ByteArray = EMPTY_BYTE_ARRAY,
 	requestConfig: HttpServer.RequestConfig
 ) : HttpServer.Request(method, uri, headers, requestConfig) {
 	private val buf = ByteArrayBuilder()

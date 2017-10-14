@@ -8,17 +8,18 @@ import com.soywiz.korio.inject.jvmAutomapping
 import com.soywiz.korio.net.http.FakeRequest
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpServer
+import com.soywiz.korio.stream.EMPTY_BYTE_ARRAY
 import com.soywiz.korio.vfs.MemoryVfsMix
 import com.soywiz.korio.vfs.VfsFile
 import org.junit.Test
 import kotlin.test.assertEquals
 
-class KorRouterTest {
+class KorRouterJvmTest {
 	val injector = AsyncInjector().jvmAutomapping()
 	val requestConfig = HttpServer.RequestConfig()
 	val router = KorRouter(injector, requestConfig)
 
-	suspend private fun KorRouter.testRoute(method: Http.Method, uri: String, headers: Http.Headers = Http.Headers(), body: ByteArray = ByteArray(0)): String {
+	suspend private fun KorRouter.testRoute(method: Http.Method, uri: String, headers: Http.Headers = Http.Headers(), body: ByteArray = EMPTY_BYTE_ARRAY): String {
 		val request = FakeRequest(method, uri, headers, body, requestConfig)
 		//println("Accepting:")
 		router.accept(request)

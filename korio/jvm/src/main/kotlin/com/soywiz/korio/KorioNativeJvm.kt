@@ -22,6 +22,7 @@ import java.lang.reflect.Proxy
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest
+import java.security.SecureRandom
 import java.util.*
 import java.util.zip.*
 import javax.crypto.Mac
@@ -33,6 +34,8 @@ actual typealias JvmField = kotlin.jvm.JvmField
 actual typealias JvmStatic = kotlin.jvm.JvmStatic
 actual typealias JvmOverloads = kotlin.jvm.JvmOverloads
 actual typealias Transient = kotlin.jvm.Transient
+
+actual typealias Language = org.intellij.lang.annotations.Language
 
 actual typealias IOException = java.io.IOException
 actual typealias EOFException = java.io.EOFException
@@ -69,6 +72,12 @@ actual object KorioNative {
 
 	actual val platformName: String = "jvm"
 	actual val osName: String by lazy { System.getProperty("os.name") }
+
+	private val secureRandom: SecureRandom by lazy { SecureRandom.getInstanceStrong() }
+
+	actual fun getRandomValues(data: ByteArray): Unit {
+		secureRandom.nextBytes(data)
+	}
 
 	actual val httpFactory: HttpFactory by lazy {
 		object : HttpFactory {

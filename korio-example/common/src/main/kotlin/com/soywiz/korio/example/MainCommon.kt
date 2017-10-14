@@ -4,6 +4,8 @@ import com.soywiz.korio.Korio
 import com.soywiz.korio.ext.db.redis.Redis
 import com.soywiz.korio.ext.db.redis.get
 import com.soywiz.korio.ext.db.redis.set
+import com.soywiz.korio.lang.UTF8
+import com.soywiz.korio.lang.toString
 import com.soywiz.korio.net.http.createHttpServer
 import com.soywiz.korio.util.OS
 
@@ -30,9 +32,11 @@ object MainCommon {
 
 		val server = createHttpServer()
 			.httpHandler {
-				//val rawBody = it.readRawBody()
+				val rawBody = it.readRawBody()
 				//it.end("yay! : " + rawBody.toString(UTF8))
-				it.end("yay! : " + redis.get("hello"))
+				//it.end("yay! : " + redis.get("hello"))
+				it.addHeader("Content-Type", "text/html")
+				it.end("yay! : " + redis.get("hello") + "<form action='/' method='post'><input type='text' name='name' /><input type='submit' /></form> BODY: ${rawBody.toString(UTF8)}")
 				//it.end("yay!")
 			}
 			.listen(8080)

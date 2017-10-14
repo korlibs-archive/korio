@@ -15,7 +15,7 @@ import kotlin.math.max
 
 suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 	//val s = zipFile.open(VfsOpenMode.READ)
-	var endBytes = ByteArray(0)
+	var endBytes = EMPTY_BYTE_ARRAY
 
 	val PK_END = byteArrayOf(0x50, 0x4B, 0x05, 0x06)
 	var pk_endIndex = -1

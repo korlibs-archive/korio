@@ -37,7 +37,10 @@ include(
 		'korio-ext-db-elasticsearch-js',
 
 		'korio-ext-vertx',
+
+		'korio-ext-web-common',
 		'korio-ext-web',
+		'korio-ext-web-js',
 
 		'korio-example-common',
 		'korio-example-js',
@@ -81,5 +84,8 @@ project(':korio-example-common').projectDir = file('korio-example/common')
 project(':korio-example-js').projectDir = file('korio-example/js')
 project(':korio-example-jvm').projectDir = file('korio-example/jvm')
 
+project(':korio-ext-web-common').projectDir = file('korio-ext-web/common')
 project(':korio-ext-web').projectDir = file('korio-ext-web/jvm')
+project(':korio-ext-web-js').projectDir = file('korio-ext-web/js')
+
 project(':korio-ext-vertx').projectDir = file('korio-ext-vertx/jvm')

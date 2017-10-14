@@ -317,9 +317,13 @@ suspend fun AsyncInputStream.read(data: UByteArray): Int = read(data.data, 0, da
 @Deprecated("Use readBytesUpTo instead", ReplaceWith("readBytesUpTo(len)"))
 suspend fun AsyncInputStream.readBytes(len: Int): ByteArray = readBytesUpToFirst(len)
 
+val EMPTY_BYTE_ARRAY = ByteArray(0)
+
 suspend fun AsyncInputStream.readBytesUpToFirst(len: Int): ByteArray {
 	val out = ByteArray(len)
-	return out.copyOf(read(out, 0, len))
+	val read = read(out, 0, len)
+	if (read <= 0) return EMPTY_BYTE_ARRAY
+	return out.copyOf(read)
 }
 
 suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {

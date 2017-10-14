@@ -2,6 +2,7 @@ package com.soywiz.korio.ext.web.sstatic
 
 import com.soywiz.korio.crypto.AsyncHash
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpDate
 import com.soywiz.korio.net.http.HttpServer
@@ -11,7 +12,6 @@ import com.soywiz.korio.util.toHexStringLower
 import com.soywiz.korio.util.use
 import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.mimeType
-import java.io.FileNotFoundException
 
 object StaticServe {
 	// https://tools.ietf.org/html/rfc7233#section-3.1
@@ -48,7 +48,7 @@ object StaticServe {
 	suspend fun serveStatic(res: HttpServer.Request, file: VfsFile) {
 		//println("[a]")
 		val fileStat = file.stat()
-		if (!fileStat.exists) throw FileNotFoundException()
+		if (!fileStat.exists) throw FileNotFoundException("$file not found")
 		//println("[b]")
 
 		val fileSize = fileStat.size

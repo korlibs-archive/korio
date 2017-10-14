@@ -40,11 +40,9 @@ class AsyncClientServerTest {
 				} catch (e: Throwable) {
 					println("Client-$clientId failed")
 					e.printStackTrace()
-
 				}
 			}
 		}
-
 
 		for (client in server.listen().take(clientsCount)) {
 			val msg = client.readString(UUIDLength)

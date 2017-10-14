@@ -36,6 +36,8 @@ actual annotation class JvmStatic
 actual annotation class JvmOverloads
 actual annotation class Transient
 
+actual annotation class Language actual constructor(actual val value: String, actual val prefix: String = "", actual val suffix: String = "")
+
 actual open class IOException actual constructor(msg: String) : Exception(msg)
 actual open class EOFException actual constructor(msg: String) : IOException(msg)
 actual open class FileNotFoundException actual constructor(msg: String) : IOException(msg)
@@ -81,10 +83,24 @@ actual object KorioNative {
 		return js("-(new Date(rtime)).getTimezoneOffset()")
 	}
 
+	actual fun getRandomValues(data: ByteArray): Unit {
+		if (OS.isNodejs) {
+			global.crypto.randomFillSync(Uint8Array(data.unsafeCast<Array<Byte>>()))
+		} else {
+			global.crypto.getRandomValues(data)
+		}
+	}
+
 	actual val tmpdir: String = "/tmp"
 
-	actual val localVfsProvider: LocalVfsProvider
-		get() = TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+	actual val localVfsProvider: LocalVfsProvider by lazy {
+		object : LocalVfsProvider() {
+			//override fun invoke(): LocalVfs = UrlVfs(".").vfs
+			override fun invoke(): LocalVfs = TODO()
+			override fun getCacheFolder(): String = "cache"
+			override fun getExternalStorageFolder(): String = "."
+		}
+	}
 
 	actual val File_separatorChar: Char = '/'
 
