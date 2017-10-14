@@ -13,7 +13,6 @@ import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.mimeType
 import java.io.FileNotFoundException
 
-
 object StaticServe {
 	// https://tools.ietf.org/html/rfc7233#section-3.1
 	fun parseRange(str: String?, size: Long): Iterable<LongRange> {

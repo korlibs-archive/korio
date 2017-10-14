@@ -7,7 +7,7 @@ import kotlin.test.assertEquals
 class OptByteBufferTest {
 	@Test
 	fun name() {
-		val bb = OptByteBuffer()
+		val bb = ByteArrayBuilder()
 		bb.append(byteArrayOf(1))
 		bb.append(byteArrayOf(2, 3))
 		bb.append(byteArrayOf(4))

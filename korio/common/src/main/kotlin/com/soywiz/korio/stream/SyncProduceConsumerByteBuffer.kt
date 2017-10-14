@@ -1,7 +1,7 @@
 package com.soywiz.korio.stream
 
+import com.soywiz.korio.ds.ByteArrayBuilder
 import com.soywiz.korio.ds.LinkedList
-import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.lang.Semaphore
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.util.indexOf
@@ -59,8 +59,8 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 
 	fun consume(len: Int): ByteArray = ByteArray(len).run { this.copyOf(consume(this, 0, len)) }
 
-	fun consumeUntil(end: Byte, including: Boolean = true): ByteArray = synchronized(this) {
-		val out = OptByteBuffer()
+	fun consumeUntil(end: Byte, including: Boolean = true, limit: Int = Int.MAX_VALUE): ByteArray = synchronized(this) {
+		val out = ByteArrayBuilder()
 		while (true) {
 			ensureCurrentBuffer()
 			if (availableInCurrent <= 0) break // no more data!
@@ -68,6 +68,7 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 			val pp = if (p < 0) current.size else if (including) p + 1 else p
 			val len = pp - currentPos
 			if (len > 0) out.append(current, currentPos, len)
+			if (out.size >= limit) break
 			currentPos += len
 			if (p >= 0) break // found!
 		}

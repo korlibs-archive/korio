@@ -1,8 +1,12 @@
 package com.soywiz.korio.net
 
-import com.soywiz.korio.async.*
+import com.soywiz.korio.async.AsyncThread
+import com.soywiz.korio.async.EventLoopExecutorService
+import com.soywiz.korio.async.eventLoop
+import com.soywiz.korio.async.spawnAndForget
+import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
-import com.soywiz.korio.coroutine.withCoroutineContext
+import com.soywiz.korio.lang.Closeable
 import java.io.IOException
 import java.net.InetSocketAddress
 import java.nio.ByteBuffer
@@ -83,7 +87,7 @@ class JvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : AsyncC
 		})
 	}
 
-	suspend override fun close(): Unit {
+	suspend override fun close() {
 		sc?.close()
 		sc = null
 	}
@@ -91,37 +95,38 @@ class JvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : AsyncC
 
 class JvmAsyncServer(override val requestPort: Int, override val host: String, override val backlog: Int = -1) : AsyncServer {
 	val ssc = AsynchronousServerSocketChannel.open()
-	val pc = ProduceConsumer<JvmAsyncClient>()
 
-	suspend fun init(): Unit = withCoroutineContext {
+	suspend fun init(): Unit {
 		ssc.bind(InetSocketAddress(host, requestPort), backlog)
 		for (n in 0 until 100) {
 			if (ssc.isOpen) break
-			eventLoop.sleep(50)
+			getCoroutineContext().eventLoop.sleep(50)
 		}
-
-		acceptStep()
-	}
-
-	fun acceptStep() {
-		ssc.accept(kotlin.Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
-			override fun completed(result: AsynchronousSocketChannel, attachment: Unit) = run {
-				pc.produce(JvmAsyncClient(result))
-				acceptStep()
-			}
-
-			override fun failed(exc: Throwable, attachment: Unit) = kotlin.Unit.apply {
-				println(exc)
-				acceptStep()
-			}
-		})
 	}
 
 	override val port: Int get() = (ssc.localAddress as? InetSocketAddress)?.port ?: -1
 
-	suspend override fun listen(): AsyncSequence<AsyncClient> = withCoroutineContext {
-		asyncGenerate(this@withCoroutineContext) {
-			while (true) yield(pc.consume()!!)
+	suspend override fun listen(handler: suspend (AsyncClient) -> Unit): Closeable {
+		val ctx = getCoroutineContext()
+		var running = true
+		fun step() {
+			if (!running) return
+
+			ssc.accept(kotlin.Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
+				override fun completed(result: AsynchronousSocketChannel, attachment: Unit) {
+					spawnAndForget(ctx) {
+						handler(JvmAsyncClient(result))
+					}
+					step()
+				}
+
+				override fun failed(exc: Throwable, attachment: Unit) = run {
+					exc.printStackTrace()
+				}
+			})
 		}
+		step()
+
+		return Closeable { running = false }
 	}
 }

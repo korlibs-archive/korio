@@ -4,7 +4,7 @@ package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.executeInWorker
-import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.ds.ByteArrayBuilder
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.typedarray.fill
@@ -262,7 +262,7 @@ suspend fun AsyncStream.readStream(length: Int): AsyncStream = readSlice(length.
 suspend fun AsyncStream.readStream(length: Long): AsyncStream = readSlice(length)
 
 suspend fun AsyncInputStream.readStringz(charset: Charset = Charsets.UTF_8): String {
-	val buf = OptByteBuffer()
+	val buf = ByteArrayBuilder()
 	val temp = BYTES_TEMP
 	while (true) {
 		val read = read(temp, 0, 1)
@@ -331,7 +331,7 @@ suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {
 			// @TODO: That would prevent resizing issues with the trade-off of more allocations.
 			var pending = len
 			val temp = BYTES_TEMP
-			val bout = OptByteBuffer()
+			val bout = ByteArrayBuilder()
 			while (pending > 0) {
 				val read = this.read(temp, 0, min(temp.size, pending))
 				if (read <= 0) break
@@ -395,7 +395,7 @@ suspend fun AsyncInputStream.readAll(): ByteArray {
 			val available = this.getAvailable().toInt()
 			return this.readBytes(available)
 		} else {
-			val out = OptByteBuffer()
+			val out = ByteArrayBuilder()
 			val temp = BYTES_TEMP
 			while (true) {
 				val r = this.read(temp, 0, temp.size)
@@ -545,13 +545,14 @@ suspend fun AsyncOutputStream.writeLongArray_be(array: LongArray) = writeBytes(B
 suspend fun AsyncOutputStream.writeFloatArray_be(array: FloatArray) = writeBytes(ByteArray(array.size * 4).apply { writeArray_be(0, array) })
 suspend fun AsyncOutputStream.writeDoubleArray_be(array: DoubleArray) = writeBytes(ByteArray(array.size * 8).apply { writeArray_be(0, array) })
 
-suspend fun AsyncInputStream.readUntil(endByte: Byte): ByteArray {
-	val out = OptByteBuffer()
+suspend fun AsyncInputStream.readUntil(endByte: Byte, limit: Int = 0x1000): ByteArray {
+	val out = ByteArrayBuilder()
 	try {
 		while (true) {
 			val c = readU8()
 			if (c.toByte() == endByte) break
 			out.append(c.toByte())
+			if (out.size >= limit) break
 		}
 	} catch (e: EOFException) {
 	}
@@ -559,7 +560,7 @@ suspend fun AsyncInputStream.readUntil(endByte: Byte): ByteArray {
 }
 
 suspend fun AsyncInputStream.readLine(eol: Char = '\n', charset: Charset = Charsets.UTF_8): String {
-	val out = OptByteBuffer()
+	val out = ByteArrayBuilder()
 	try {
 		while (true) {
 			val c = readU8()

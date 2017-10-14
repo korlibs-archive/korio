@@ -68,6 +68,8 @@ object Charsets {
 	val ISO_8859_1 = ISO_8859_1Charset
 }
 
+val UTF8 = UTF8Charset
+
 fun String.toByteArray(charset: Charset = Charsets.UTF_8): ByteArray {
 	val out = ByteArrayBuilder()
 	charset.encode(out, this)

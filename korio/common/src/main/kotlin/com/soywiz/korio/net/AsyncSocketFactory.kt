@@ -1,15 +1,19 @@
 package com.soywiz.korio.net
 
 import com.soywiz.korio.KorioNative
-import com.soywiz.korio.async.AsyncSequence
+import com.soywiz.korio.async.SuspendingSequence
+import com.soywiz.korio.async.asyncGenerate3
+import com.soywiz.korio.async.spawnAndForget
+import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.lang.AtomicLong
+import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.util.AsyncCloseable
 
 abstract class AsyncSocketFactory {
 	suspend abstract fun createClient(): AsyncClient
-	suspend abstract fun createServer(port: Int, host: String = "127.0.0.1", backlog: Int = 128): AsyncServer
+	suspend abstract fun createServer(port: Int, host: String = "127.0.0.1", backlog: Int = 511): AsyncServer
 }
 
 val asyncSocketFactory: AsyncSocketFactory get() = KorioNative.asyncSocketFactory
@@ -56,5 +60,16 @@ interface AsyncServer {
 		operator suspend fun invoke(port: Int, host: String = "127.0.0.1", backlog: Int = -1) = asyncSocketFactory.createServer(port, host, backlog)
 	}
 
-	suspend fun listen(): AsyncSequence<AsyncClient>
+	suspend fun listen(handler: suspend (AsyncClient) -> Unit): Closeable
+
+	suspend fun listen(): SuspendingSequence<AsyncClient> {
+		val ctx = getCoroutineContext()
+		return asyncGenerate3<AsyncClient> {
+			spawnAndForget(ctx) {
+				listen {
+					yield(it)
+				}
+			}
+		}
+	}
 }

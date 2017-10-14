@@ -126,8 +126,8 @@ actual object KorioNative {
 		actual fun <T : Any> createAnnotation(clazz: KClass<T>, map: Map<String, Any?>): T = TODO()
 	}
 
-	actual object DefaultHttpFactoryFactory {
-		actual fun createFactory(): HttpFactory = object : HttpFactory {
+	actual val httpFactory: HttpFactory by lazy {
+		object : HttpFactory {
 			override fun createClient(): HttpClient = if (OS.isNodejs) HttpClientNodeJs() else HttpClientBrowserJs()
 			override fun createServer(): HttpServer = HttpSeverNodeJs()
 		}
@@ -286,25 +286,11 @@ private class EventLoopJs : EventLoop() {
 }
 
 class HttpSeverNodeJs : HttpServer() {
-	/*
-		const http = require('http');
-
-		const server = http.createServer((req, res) => {
-		res.end();
-		});
-		server.on('clientError', (err, socket) => {
-			socket.end('HTTP/1.1 400 Bad Request\r\n\r\n');
-		});
-		server.listen(8000);
-	 */
-
 	private var context: CoroutineContext = EmptyCoroutineContext
 	private var handler: suspend (req: dynamic, res: dynamic) -> Unit = { req, res -> }
 
 	val http = require("http")
 	val server = http.createServer { req, res ->
-		// req: https://nodejs.org/api/http.html#http_class_http_incomingmessage
-		// res: https://nodejs.org/api/http.html#http_class_http_serverresponse
 		spawnAndForget(context) {
 			handler(req, res)
 		}
@@ -317,53 +303,67 @@ class HttpSeverNodeJs : HttpServer() {
 	suspend override fun httpHandlerInternal(handler: suspend (Request) -> Unit) {
 		context = getCoroutineContext()
 		this.handler = { req, res ->
+			// req: https://nodejs.org/api/http.html#http_class_http_incomingmessage
+			// res: https://nodejs.org/api/http.html#http_class_http_serverresponse
+
 			val method = Http.Method[req.method.unsafeCast<String>()]
 			val url = req.url.unsafeCast<String>()
 			val headers = Http.Headers(jsToArray(req.rawHeaders).map { "$it" }.zipWithNext())
 			handler(object : Request(method, url, headers, RequestConfig()) {
 				suspend override fun _handler(handler: (ByteArray) -> Unit) {
-					TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+					req.on("data") { chunk ->
+						handler(Int8Array(chunk.unsafeCast<Uint8Array>().buffer).unsafeCast<ByteArray>())
+					}
 				}
 
 				suspend override fun _endHandler(handler: () -> Unit) {
-					TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+					req.on("end") {
+						handler()
+					}
+					req.on("error") {
+						handler()
+					}
 				}
 
-				override fun _setStatus(code: Int, message: String) {
+				override suspend fun _sendHeader(code: Int, message: String, headers: Http.Headers) {
 					res.statusCode = code
 					res.statusMessage = message
-				}
-
-				override fun _sendHeaders(headers: Http.Headers) {
 					for (header in headers) {
 						res.setHeader(header.first, header.second)
 					}
 				}
 
-				override fun _write(data: ByteArray, offset: Int, size: Int) {
-					res.write(data.toNodeJsBuffer(offset, size))
+				override suspend fun _write(data: ByteArray, offset: Int, size: Int): Unit = suspendCoroutine { c ->
+					res.write(data.toNodeJsBuffer(offset, size)) {
+						c.resume(Unit)
+					}
+					Unit
 				}
 
-				override fun _end() {
-					res.end()
+				override suspend fun _end(): Unit = suspendCoroutine { c ->
+					res.end {
+						c.resume(Unit)
+					}
+					Unit
 				}
 			})
 		}
 	}
 
-	suspend override fun listenInternal(port: Int, host: String) = suspendCoroutine<Unit> {c ->
+	suspend override fun listenInternal(port: Int, host: String) = suspendCoroutine<Unit> { c ->
 		context = c.context
 		server.listen(port, host, 511) {
 			c.resume(Unit)
 		}
 	}
 
-	override val actualPort: Int get() {
-		//com.soywiz.korio.lang.Console.log(server)
-		return jsEnsureInt(server.address().port)
-	}
+	override val actualPort: Int
+		get() {
+			//com.soywiz.korio.lang.Console.log(server)
+			return jsEnsureInt(server.address().port)
+		}
 
-	suspend override fun closeInternal() = suspendCoroutine<Unit> {c ->
+	suspend override fun closeInternal() = suspendCoroutine<Unit> { c ->
 		context = c.context
 		server.close {
 			c.resume(Unit)

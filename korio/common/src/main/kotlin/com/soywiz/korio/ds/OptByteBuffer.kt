@@ -4,7 +4,8 @@ import com.soywiz.korio.lang.Charset
 import com.soywiz.korio.lang.toString
 import com.soywiz.korio.typedarray.copyRangeTo
 
-typealias OptByteBuffer = ByteArrayBuilder
+//@Deprecated("", replaceWith = ReplaceWith("ByteArrayBuilder"))
+//typealias OptByteBuffer = ByteArrayBuilder
 
 class ByteArrayBuilder {
 	private val chunks = arrayListOf<ByteArray>()

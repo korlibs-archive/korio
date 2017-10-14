@@ -242,11 +242,9 @@ interface HttpFactory {
 	fun createServer(): HttpServer
 }
 
-typealias DefaultHttpFactoryFactory = KorioNative.DefaultHttpFactoryFactory
-
 class ProxiedHttpFactory(var parent: HttpFactory) : HttpFactory by parent
 
-val _defaultHttpFactory: ProxiedHttpFactory by lazy { ProxiedHttpFactory(DefaultHttpFactoryFactory.createFactory()) }
+val _defaultHttpFactory: ProxiedHttpFactory by lazy { ProxiedHttpFactory(KorioNative.httpFactory) }
 val defaultHttpFactory: HttpFactory get() = _defaultHttpFactory
 
 fun setDefaultHttpFactory(factory: HttpFactory) {

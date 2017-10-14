@@ -6,9 +6,6 @@ import com.soywiz.korio.ext.web.router.KorRouter
 import com.soywiz.korio.net.http.HttpDate
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.util.Extra
-import java.util.*
-import kotlin.collections.HashMap
-import kotlin.collections.LinkedHashMap
 
 // http://www.faqs.org/rfcs/rfc2109.html
 data class KorCookie(

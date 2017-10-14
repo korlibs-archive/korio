@@ -1,9 +1,12 @@
 if (process.env.NODE_PATH == '.') {
+	//console.log(process.env);
 	let app = require('./output.js');
 	app.com.soywiz.korio.example.MainJs.main();
 } else {
 	const { spawn } = require('child_process');
-	const child = spawn('node', [__filename], { env: { 'NODE_PATH': '.' } });
+	const env2 = Object.create(process.env);
+	env2.NODE_PATH = '.';
+	const child = spawn(process.argv[0], [__filename], { "env": env2 });
 
 	child.stdin.pipe(process.stdin);
 	child.stdout.pipe(process.stdout);

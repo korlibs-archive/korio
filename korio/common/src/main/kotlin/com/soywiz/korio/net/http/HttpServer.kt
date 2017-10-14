@@ -2,7 +2,8 @@ package com.soywiz.korio.net.http
 
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.asyncGenerate3
-import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.async.spawnAndForget
+import com.soywiz.korio.ds.ByteArrayBuilder
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.*
@@ -10,6 +11,7 @@ import com.soywiz.korio.serialization.querystring.QueryString
 import com.soywiz.korio.stream.AsyncOutputStream
 import com.soywiz.korio.util.AsyncCloseable
 import com.soywiz.korio.util.Extra
+import kotlin.coroutines.experimental.suspendCoroutine
 
 
 open class HttpServer protected constructor() : AsyncCloseable {
@@ -105,6 +107,8 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		private var headersSent = false
 		private var finalizingHeaders = false
 		private val resHeaders = ArrayList<Pair<String, String>>()
+		private var code: Int = 200
+		private var message: String = "OK"
 
 		private fun ensureHeadersNotSent() {
 			if (headersSent) {
@@ -131,10 +135,9 @@ open class HttpServer protected constructor() : AsyncCloseable {
 
 		abstract suspend protected fun _handler(handler: (ByteArray) -> Unit)
 		abstract suspend protected fun _endHandler(handler: () -> Unit)
-		abstract protected fun _setStatus(code: Int, message: String)
-		abstract protected fun _sendHeaders(headers: Http.Headers)
-		abstract protected fun _write(data: ByteArray, offset: Int = 0, size: Int = data.size - offset)
-		abstract protected fun _end()
+		abstract suspend protected fun _sendHeader(code: Int, message: String, headers: Http.Headers)
+		abstract suspend protected fun _write(data: ByteArray, offset: Int = 0, size: Int = data.size - offset)
+		abstract suspend protected fun _end()
 
 		suspend fun handler(handler: (ByteArray) -> Unit) {
 			_handler(handler)
@@ -144,9 +147,26 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			_endHandler(handler)
 		}
 
+		suspend fun readRawBody(maxSize: Int = 0x1000): ByteArray = suspendCoroutine { c ->
+			val out = ByteArrayBuilder()
+			spawnAndForget(c.context) {
+				handler {
+					if (out.size + it.size > maxSize) {
+						out.clear()
+					} else {
+						out.append(it)
+					}
+				}
+				endHandler {
+					c.resume(out.toByteArray())
+				}
+			}
+		}
+
 		fun setStatus(code: Int, message: String = HttpStatusMessage(code)) {
 			ensureHeadersNotSent()
-			_setStatus(code, message)
+			this.code = code
+			this.message = message
 		}
 
 		private suspend fun flushHeaders() {
@@ -159,7 +179,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 			}
 			headersSent = true
 			//println("----HEADERS-----\n" + resHeaders.joinToString("\n"))
-			_sendHeaders(Http.Headers(resHeaders))
+			_sendHeader(this.code, this.message, Http.Headers(resHeaders))
 		}
 
 		override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
@@ -252,7 +272,7 @@ class FakeRequest(
 	val body: ByteArray = ByteArray(0),
 	requestConfig: HttpServer.RequestConfig
 ) : HttpServer.Request(method, uri, headers, requestConfig) {
-	private val buf = OptByteBuffer()
+	private val buf = ByteArrayBuilder()
 	var outputHeaders: Http.Headers = Http.Headers()
 	var outputStatusCode: Int = 0
 	var outputStatusMessage: String = ""
@@ -269,23 +289,20 @@ class FakeRequest(
 		handler()
 	}
 
-	override fun _setStatus(code: Int, message: String) {
+	override suspend fun _sendHeader(code: Int, message: String, headers: Http.Headers) {
 		log += "_setStatus($code, $message)"
 		outputStatusCode = code
 		outputStatusMessage = message
-	}
-
-	override fun _sendHeaders(headers: Http.Headers) {
 		log += "_sendHeaders($headers)"
 		outputHeaders = headers
 	}
 
-	override fun _write(data: ByteArray, offset: Int, size: Int) {
+	override suspend fun _write(data: ByteArray, offset: Int, size: Int) {
 		log += "_write(${data.copyOfRange(offset, offset + size).toString(Charsets.UTF_8)})"
 		buf.append(data, offset, size)
 	}
 
-	override fun _end() {
+	override suspend fun _end() {
 		log += "_end()"
 		output = buf.toByteArray().toString(Charsets.UTF_8)
 	}

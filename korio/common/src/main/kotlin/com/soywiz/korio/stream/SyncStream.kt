@@ -1,6 +1,6 @@
 package com.soywiz.korio.stream
 
-import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.ds.ByteArrayBuilder
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.lang.tl.threadLocal
 import com.soywiz.korio.typedarray.copyRangeTo
@@ -208,7 +208,7 @@ fun SyncStream.readStream(length: Int): SyncStream = readSlice(length.toLong())
 fun SyncStream.readStream(length: Long): SyncStream = readSlice(length)
 
 fun SyncInputStream.readStringz(charset: Charset = Charsets.UTF_8): String {
-	val buf = OptByteBuffer()
+	val buf = ByteArrayBuilder()
 	val temp = BYTES_TEMP
 	while (true) {
 		val read = read(temp, 0, 1)

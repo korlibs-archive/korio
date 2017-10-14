@@ -61,15 +61,14 @@ actual object KorioNative {
 		System.getProperty("os.name")
 	}
 
-	actual object DefaultHttpFactoryFactory {
-		actual fun createFactory(): HttpFactory = object : HttpFactory {
+	actual val httpFactory: HttpFactory by lazy {
+		object : HttpFactory {
 			init {
 				System.setProperty("http.keepAlive", "false")
 			}
 
 			override fun createClient(): HttpClient = HttpClientJvm()
-
-			override fun createServer(): HttpServer = TODO()
+			override fun createServer(): HttpServer = KorioNativeDefaults.createServer()
 		}
 	}
 

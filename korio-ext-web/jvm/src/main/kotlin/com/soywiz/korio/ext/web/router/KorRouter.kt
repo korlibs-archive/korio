@@ -5,7 +5,6 @@ import com.soywiz.korio.async.async
 import com.soywiz.korio.async.invokeSuspend
 import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.ds.ByteArrayBuilder
-import com.soywiz.korio.ds.OptByteBuffer
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.InvalidOperationException
 import com.soywiz.korio.error.invalidOp
@@ -180,7 +179,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 
 		var totalRequestSize = 0L
 		var bodyOverflow = false
-		val bodyContent = OptByteBuffer()
+		val bodyContent = ByteArrayBuilder()
 		val response = Http.Response()
 		val request = Http.Request(rreq.uri, req.headers)
 		val bodyCharset = Charsets.UTF_8 // @TODO: Find out

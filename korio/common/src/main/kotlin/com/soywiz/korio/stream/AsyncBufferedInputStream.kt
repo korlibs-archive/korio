@@ -1,7 +1,10 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.AsyncThread
-import com.soywiz.korio.ds.OptByteBuffer
+import com.soywiz.korio.ds.ByteArrayBuilder
+import com.soywiz.korio.lang.Charset
+import com.soywiz.korio.lang.UTF8
+import com.soywiz.korio.lang.toString
 
 class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int = 0x2000) : AsyncInputStream {
 	private val buf = SyncProduceConsumerByteBuffer()
@@ -17,11 +20,11 @@ class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int =
 		return buf.consume(buffer, offset, len)
 	}
 
-	suspend fun readBufferedUntil(end: Byte, including: Boolean = true): ByteArray {
-		val out = OptByteBuffer()
+	suspend fun readBufferedUntil(end: Byte, including: Boolean = true, limit: Int = 0x1000): ByteArray {
+		val out = ByteArrayBuilder()
 		while (true) {
 			require()
-			val chunk = buf.consumeUntil(end, including)
+			val chunk = buf.consumeUntil(end, including, limit = limit)
 			out.append(chunk)
 			if (chunk.isNotEmpty() && chunk.last() == end) break
 		}
@@ -32,5 +35,7 @@ class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int =
 		base.close()
 	}
 }
+
+suspend fun AsyncBufferedInputStream.readBufferedLine(limit: Int = 0x1000, charset: Charset = UTF8) = readBufferedUntil('\n'.toByte(), including = false, limit = limit).toString(charset)
 
 fun AsyncInputStream.toBuffered(bufferSize: Int = 0x2000): AsyncBufferedInputStream = AsyncBufferedInputStream(this, bufferSize)
