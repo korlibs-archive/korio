@@ -68,8 +68,7 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 		val bufferSize: Int = 0x1000,
 		val reconnect: suspend (Client) -> Unit = {}
 	) : RedisCommand {
-		//private val reader = reader.toBuffered(bufferSize = bufferSize)
-		private val reader = reader
+		private val reader = reader.toBuffered(bufferSize = bufferSize)
 
 		suspend fun close() = this.closeable.close()
 

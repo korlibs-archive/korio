@@ -32,7 +32,8 @@ object MainCommon {
 			.httpHandler {
 				//val rawBody = it.readRawBody()
 				//it.end("yay! : " + rawBody.toString(UTF8))
-				it.end("yay! : " + redis.get("world"))
+				it.end("yay! : " + redis.get("hello"))
+				//it.end("yay!")
 			}
 			.listen(8080)
 

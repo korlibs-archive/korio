@@ -284,14 +284,14 @@ object KorioNativeDefaults {
 				tasksInProgress.incrementAndGet()
 				val close = socket.listen { client ->
 					while (true) {
-						println("Connected! : $client : ${KorioNative.currentThreadId}")
+						//println("Connected! : $client : ${KorioNative.currentThreadId}")
 						val cb = client.toBuffered()
 						//val cb = client
 
 						//val header = cb.readBufferedLine().trim()
 						//val fline = cb.readBufferedUntil('\n'.toByte()).toString(UTF8).trim()
 						val fline = cb.readUntil('\n'.toByte()).toString(UTF8).trim()
-						println("fline: $fline")
+						//println("fline: $fline")
 						val match = HeaderRegex.matchEntire(fline) ?: throw IllegalStateException("Not a valid request '$fline'")
 						val method = match.groupValues[1]
 						val url = match.groupValues[2]
@@ -339,7 +339,7 @@ object KorioNativeDefaults {
 
 						requestCompleted.promise.await()
 
-						//if (keepAlive) continue
+						if (keepAlive) continue
 
 						client.close()
 						break
