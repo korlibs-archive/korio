@@ -11,6 +11,7 @@ import com.soywiz.korio.net.http.HttpFactory
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.ws.WebSocketClientFactory
 import com.soywiz.korio.stream.readUntil
+import com.soywiz.korio.stream.toBuffered
 import com.soywiz.korio.vfs.LocalVfsProvider
 import com.soywiz.korio.vfs.VfsFile
 import kotlin.reflect.KClass
@@ -278,8 +279,8 @@ object KorioNativeDefaults {
 				val close = socket.listen { client ->
 					while (true) {
 						println("Connected! : $client : ${KorioNative.currentThreadId}")
-						//val cb = client.toBuffered()
-						val cb = client
+						val cb = client.toBuffered()
+						//val cb = client
 
 						//val header = cb.readBufferedLine().trim()
 						//val fline = cb.readBufferedUntil('\n'.toByte()).toString(UTF8).trim()
