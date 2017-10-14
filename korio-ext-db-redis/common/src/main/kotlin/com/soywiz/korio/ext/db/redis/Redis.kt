@@ -22,6 +22,7 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 
 			return Redis(maxConnections, stats) {
 				val tcpClient = AsyncClient.create()
+				//Console.log("tcpClient: ${tcpClient::class}")
 				val client = Client(
 					reader = tcpClient,
 					reconnect = { client ->
@@ -36,6 +37,7 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 					stats = stats,
 					bufferSize = bufferSize
 				)
+				client.initOnce()
 				client
 			}
 		}
@@ -66,14 +68,15 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 		val bufferSize: Int = 0x1000,
 		val reconnect: suspend (Client) -> Unit = {}
 	) : RedisCommand {
-		private val reader = reader.toBuffered(bufferSize = bufferSize)
+		//private val reader = reader.toBuffered(bufferSize = bufferSize)
+		private val reader = reader
 
 		suspend fun close() = this.closeable.close()
 
 		private val once = Once()
 		private val commandQueue = AsyncThread()
 
-		suspend private fun initOnce() {
+		suspend internal fun initOnce() {
 			once {
 				commandQueue.sync {
 					try {
@@ -90,8 +93,8 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 		}
 
 		suspend private fun readValue(): Any? {
-			val line = reader.readBufferedUntil(LF).toString(charset).trim()
-			//val line = reader.readUntil(LF).toString(charset).trim()
+			//val line = reader.readBufferedUntil(LF).toString(charset).trim()
+			val line = reader.readUntil(LF).toString(charset).trim()
 			if (DEBUG) println("Redis[RECV]: $line")
 			//val line = reader.readLine(charset = charset).trim()
 			//println(line)
@@ -153,9 +156,16 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 					stats.commandsStarted.incrementAndGet()
 					try {
 						stats.commandsPreWritten.incrementAndGet()
+						//Console.log("writer: $writer")
+						//Console.log("writer: ${writer::class}")
+						//Console.log(writer)
+						//println("[a]")
 						writer.writeBytes(data)
+						//println("[b]")
 						stats.commandsWritten.incrementAndGet()
+						//println("[c]")
 						val res = readValue()
+						//println("[d]")
 						stats.commandsFinished.incrementAndGet()
 						return@commandQueue res
 					} catch (t: IOException) {

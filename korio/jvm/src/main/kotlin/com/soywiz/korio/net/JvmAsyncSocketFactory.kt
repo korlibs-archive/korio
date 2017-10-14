@@ -1,9 +1,6 @@
 package com.soywiz.korio.net
 
-import com.soywiz.korio.async.AsyncThread
-import com.soywiz.korio.async.EventLoopExecutorService
-import com.soywiz.korio.async.eventLoop
-import com.soywiz.korio.async.spawnAndForget
+import com.soywiz.korio.async.*
 import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import com.soywiz.korio.lang.Closeable
@@ -24,8 +21,6 @@ class JvmAsyncSocketFactory : AsyncSocketFactory() {
 //private val group by lazy { AsynchronousChannelGroup.withThreadPool(newPool) }
 
 class JvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : AsyncClient {
-	private var _connected = false
-
 	private val readQueue = AsyncThread()
 	private val writeQueue = AsyncThread()
 
@@ -34,22 +29,21 @@ class JvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : AsyncC
 		sc?.close()
 		sc = AsynchronousSocketChannel.open(AsynchronousChannelGroup.withThreadPool(EventLoopExecutorService(c.context.eventLoop)))
 		sc?.connect(InetSocketAddress(host, port), this, object : CompletionHandler<Void, AsyncClient> {
-			override fun completed(result: Void?, attachment: AsyncClient): Unit = run { _connected = true; c.resume(Unit) }
-			override fun failed(exc: Throwable, attachment: AsyncClient): Unit = run { _connected = false; c.resumeWithException(exc) }
+			override fun completed(result: Void?, attachment: AsyncClient): Unit = run { c.resume(Unit) }
+			override fun failed(exc: Throwable, attachment: AsyncClient): Unit = run { c.resumeWithException(exc) }
 		})
 	}
 
 	override val connected: Boolean get() = sc?.isOpen ?: false
 
-	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = readQueue {
-		_read(buffer, offset, len)
-	}
+	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = readQueue { _read(buffer, offset, len) }
+	//suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = _read(buffer, offset, len)
 
 	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = writeQueue {
 		_write(buffer, offset, len)
 	}
 
-	//suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = suspendCoroutineEL { c ->
+	//suspend private fun _read(buffer: ByteArray, offset: Int, len: Int): Int = suspendCoroutineEL { c ->
 	suspend private fun _read(buffer: ByteArray, offset: Int, len: Int): Int = korioSuspendCoroutine { c ->
 		if (sc == null) throw IOException("Not connected")
 		val bb = ByteBuffer.wrap(buffer, offset, len)
@@ -71,7 +65,9 @@ class JvmAsyncClient(private var sc: AsynchronousSocketChannel? = null) : AsyncC
 
 
 	suspend private fun _writeBufferPartial(bb: ByteBuffer): Int = korioSuspendCoroutine { c ->
-		if (sc == null) throw IOException("Not connected")
+		if (sc == null) {
+			throw IOException("Not connected")
+		}
 		AsyncClient.Stats.writeCountStart.incrementAndGet()
 		sc!!.write(bb, this, object : CompletionHandler<Int, AsyncClient> {
 			override fun completed(result: Int, attachment: AsyncClient) {
@@ -122,6 +118,7 @@ class JvmAsyncServer(override val requestPort: Int, override val host: String, o
 
 				override fun failed(exc: Throwable, attachment: Unit) = run {
 					exc.printStackTrace()
+					step()
 				}
 			})
 		}

@@ -307,7 +307,5 @@ class FakeRequest(
 		output = buf.toByteArray().toString(Charsets.UTF_8)
 	}
 
-	override fun toString(): String {
-		return "$outputStatusCode:$outputStatusMessage:$outputHeaders:$output"
-	}
+	override fun toString(): String = "$outputStatusCode:$outputStatusMessage:$outputHeaders:$output"
 }

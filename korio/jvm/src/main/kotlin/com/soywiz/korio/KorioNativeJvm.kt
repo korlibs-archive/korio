@@ -43,23 +43,25 @@ actual typealias IllegalStateException = java.lang.IllegalStateException
 actual typealias CancellationException = java.util.concurrent.CancellationException
 
 actual object KorioNative {
+	open val currentThreadId: Long get() = Thread.currentThread().id
+
+	actual abstract class NativeThreadLocal<T> {
+		actual abstract fun initialValue(): T
+
+		val jthreadLocal = object : ThreadLocal<T>() {
+			override fun initialValue(): T = this@NativeThreadLocal.initialValue()
+		}
+
+		actual fun get(): T = jthreadLocal.get()
+		actual fun set(value: T) = jthreadLocal.set(value)
+	}
+
 	actual fun currentTimeMillis() = System.currentTimeMillis()
-	actual fun getLocalTimezoneOffset(time: Long): Int {
-		return TimeZone.getDefault().getOffset(time) / 1000 / 60
-	}
+	actual fun getLocalTimezoneOffset(time: Long): Int = TimeZone.getDefault().getOffset(time) / 1000 / 60
+	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T = executeInWorkerSafer(callback)
 
-	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T {
-		return executeInWorkerSafer(callback)
-	}
-
-
-	actual val platformName: String by lazy {
-		"jvm"
-	}
-
-	actual val osName: String by lazy {
-		System.getProperty("os.name")
-	}
+	actual val platformName: String = "jvm"
+	actual val osName: String by lazy { System.getProperty("os.name") }
 
 	actual val httpFactory: HttpFactory by lazy {
 		object : HttpFactory {
@@ -87,36 +89,21 @@ actual object KorioNative {
 	actual object CreateAnnotation {
 		actual fun <T : Any> createAnnotation(clazz: KClass<T>, map: Map<String, Any?>): T {
 			val kclass = (clazz as kotlin.reflect.KClass<Any>)
-			return Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), arrayOf(kclass.java)) { proxy, method, args ->
-				map[method.name]
-			} as T
+			return Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), arrayOf(kclass.java)) { proxy, method, args -> map[method.name] } as T
 		}
 	}
 
 	actual class SimplerMessageDigest actual constructor(name: String) {
 		val md = MessageDigest.getInstance(name)
 
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int) = executeInWorkerSafer {
-			md.update(data, offset, size)
-		}
-
-		actual suspend fun digest(): ByteArray = executeInWorkerSafer {
-			md.digest()
-		}
+		actual suspend fun update(data: ByteArray, offset: Int, size: Int) = executeInWorkerSafer { md.update(data, offset, size) }
+		actual suspend fun digest(): ByteArray = executeInWorkerSafer { md.digest() }
 	}
 
 	actual class SimplerMac actual constructor(name: String, key: ByteArray) {
-		val mac = Mac.getInstance(name).apply {
-			init(SecretKeySpec(key, name))
-		}
-
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int) = executeInWorkerSafer {
-			mac.update(data, offset, size)
-		}
-
-		actual suspend fun finalize(): ByteArray = executeInWorkerSafer {
-			mac.doFinal()
-		}
+		val mac = Mac.getInstance(name).apply { init(SecretKeySpec(key, name)) }
+		actual suspend fun update(data: ByteArray, offset: Int, size: Int) = executeInWorkerSafer { mac.update(data, offset, size) }
+		actual suspend fun finalize(): ByteArray = executeInWorkerSafer { mac.doFinal() }
 	}
 
 	actual object SyncCompression {
@@ -171,79 +158,26 @@ actual object KorioNative {
 
 	actual val tmpdir: String get() = System.getProperty("java.io.tmpdir")
 
-	actual fun <T> copyRangeTo(src: Array<T>, srcPos: Int, dst: Array<T>, dstPos: Int, count: Int) {
-		System.arraycopy(src, srcPos, dst, dstPos, count)
-	}
+	actual fun <T> copyRangeTo(src: Array<T>, srcPos: Int, dst: Array<T>, dstPos: Int, count: Int) = System.arraycopy(src, srcPos, dst, dstPos, count)
+	actual fun copyRangeTo(src: BooleanArray, srcPos: Int, dst: BooleanArray, dstPos: Int, count: Int) = System.arraycopy(src, srcPos, dst, dstPos, count)
+	actual fun copyRangeTo(src: ByteArray, srcPos: Int, dst: ByteArray, dstPos: Int, count: Int) = System.arraycopy(src, srcPos, dst, dstPos, count)
+	actual fun copyRangeTo(src: ShortArray, srcPos: Int, dst: ShortArray, dstPos: Int, count: Int) = System.arraycopy(src, srcPos, dst, dstPos, count)
+	actual fun copyRangeTo(src: IntArray, srcPos: Int, dst: IntArray, dstPos: Int, count: Int) = System.arraycopy(src, srcPos, dst, dstPos, count)
+	actual fun copyRangeTo(src: LongArray, srcPos: Int, dst: LongArray, dstPos: Int, count: Int) = System.arraycopy(src, srcPos, dst, dstPos, count)
+	actual fun copyRangeTo(src: FloatArray, srcPos: Int, dst: FloatArray, dstPos: Int, count: Int) = System.arraycopy(src, srcPos, dst, dstPos, count)
+	actual fun copyRangeTo(src: DoubleArray, srcPos: Int, dst: DoubleArray, dstPos: Int, count: Int) = System.arraycopy(src, srcPos, dst, dstPos, count)
+	actual fun <T> fill(src: Array<T>, value: T, from: Int, to: Int) = java.util.Arrays.fill(src, from, to, value)
+	actual fun fill(src: BooleanArray, value: Boolean, from: Int, to: Int) = java.util.Arrays.fill(src, from, to, value)
+	actual fun fill(src: ByteArray, value: Byte, from: Int, to: Int) = java.util.Arrays.fill(src, from, to, value)
+	actual fun fill(src: ShortArray, value: Short, from: Int, to: Int) = java.util.Arrays.fill(src, from, to, value)
+	actual fun fill(src: IntArray, value: Int, from: Int, to: Int) = java.util.Arrays.fill(src, from, to, value)
+	actual fun fill(src: FloatArray, value: Float, from: Int, to: Int) = java.util.Arrays.fill(src, from, to, value)
+	actual fun fill(src: DoubleArray, value: Double, from: Int, to: Int) = java.util.Arrays.fill(src, from, to, value)
 
-	actual fun copyRangeTo(src: BooleanArray, srcPos: Int, dst: BooleanArray, dstPos: Int, count: Int) {
-		System.arraycopy(src, srcPos, dst, dstPos, count)
-	}
-
-	actual fun copyRangeTo(src: ByteArray, srcPos: Int, dst: ByteArray, dstPos: Int, count: Int) {
-		System.arraycopy(src, srcPos, dst, dstPos, count)
-	}
-
-	actual fun copyRangeTo(src: ShortArray, srcPos: Int, dst: ShortArray, dstPos: Int, count: Int) {
-		System.arraycopy(src, srcPos, dst, dstPos, count)
-	}
-
-	actual fun copyRangeTo(src: IntArray, srcPos: Int, dst: IntArray, dstPos: Int, count: Int) {
-		System.arraycopy(src, srcPos, dst, dstPos, count)
-	}
-
-	actual fun copyRangeTo(src: LongArray, srcPos: Int, dst: LongArray, dstPos: Int, count: Int) {
-		System.arraycopy(src, srcPos, dst, dstPos, count)
-	}
-
-	actual fun copyRangeTo(src: FloatArray, srcPos: Int, dst: FloatArray, dstPos: Int, count: Int) {
-		System.arraycopy(src, srcPos, dst, dstPos, count)
-	}
-
-	actual fun copyRangeTo(src: DoubleArray, srcPos: Int, dst: DoubleArray, dstPos: Int, count: Int) {
-		System.arraycopy(src, srcPos, dst, dstPos, count)
-	}
-
-	actual fun <T> fill(src: Array<T>, value: T, from: Int, to: Int) {
-		java.util.Arrays.fill(src, from, to, value)
-	}
-
-	actual fun fill(src: BooleanArray, value: Boolean, from: Int, to: Int) {
-		java.util.Arrays.fill(src, from, to, value)
-	}
-
-	actual fun fill(src: ByteArray, value: Byte, from: Int, to: Int) {
-		java.util.Arrays.fill(src, from, to, value)
-	}
-
-	actual fun fill(src: ShortArray, value: Short, from: Int, to: Int) {
-		java.util.Arrays.fill(src, from, to, value)
-	}
-
-	actual fun fill(src: IntArray, value: Int, from: Int, to: Int) {
-		java.util.Arrays.fill(src, from, to, value)
-	}
-
-	actual fun fill(src: FloatArray, value: Float, from: Int, to: Int) {
-		java.util.Arrays.fill(src, from, to, value)
-	}
-
-	actual fun fill(src: DoubleArray, value: Double, from: Int, to: Int) {
-		java.util.Arrays.fill(src, from, to, value)
-	}
-
-	actual fun enterDebugger() {}
-
-	actual fun printStackTrace(e: Throwable) {
-		e.printStackTrace()
-	}
-
-	actual fun log(msg: Any?): Unit {
-		java.lang.System.out.println(msg)
-	}
-
-	actual fun error(msg: Any?): Unit {
-		java.lang.System.err.println(msg)
-	}
+	actual fun enterDebugger() = Unit
+	actual fun printStackTrace(e: Throwable) = e.printStackTrace()
+	actual fun log(msg: Any?): Unit = java.lang.System.out.println(msg)
+	actual fun error(msg: Any?): Unit = java.lang.System.err.println(msg)
 
 	actual suspend fun uncompressGzip(data: ByteArray): ByteArray = executeInWorker {
 		val out = ByteArrayOutputStream()
@@ -280,9 +214,7 @@ actual object KorioNative {
 		val f32 = buffer.asFloatBuffer()
 
 		companion actual object {
-			actual fun alloc(size: Int): FastMemory {
-				return FastMemory(ByteBuffer.allocate((size + 0xF) and 0xF.inv()).order(ByteOrder.nativeOrder()), size)
-			}
+			actual fun alloc(size: Int): FastMemory = FastMemory(ByteBuffer.allocate((size + 0xF) and 0xF.inv()).order(ByteOrder.nativeOrder()), size)
 
 			actual fun copy(src: FastMemory, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit {
 				//dst.buffer.slice()
@@ -294,13 +226,8 @@ actual object KorioNative {
 			}
 		}
 
-		actual operator fun get(index: Int): Int {
-			return buffer.get(index).toInt() and 0xFF
-		}
-
-		actual operator fun set(index: Int, value: Int): Unit {
-			buffer.put(index, value.toByte())
-		}
+		actual operator fun get(index: Int): Int = buffer.get(index).toInt() and 0xFF
+		actual operator fun set(index: Int, value: Int): Unit = run { buffer.put(index, value.toByte()) }
 
 		actual fun setAlignedInt16(index: Int, value: Short): Unit = run { i16.put(index, value) }
 		actual fun getAlignedInt16(index: Int): Short = i16.get(index)
@@ -330,147 +257,3 @@ actual object KorioNative {
 		actual fun getFloat32(index: Int): Float = buffer.getFloat(index)
 	}
 }
-
-
-/*
-class LocalVfsProviderCSharp : LocalVfsProvider() {
-	override fun invoke(): LocalVfs = CSharpVisualVfs()
-}
-
-@JTranscAddMembers(target = "cs", value = """
-	System.IO.FileStream fs;
-""")
-class CSharpFileAsyncStream(val path: String, val mode: VfsOpenMode) : AsyncStreamBase() {
-	init {
-		_init(path)
-	}
-
-	private fun _init(path: String) = CSharp.v_raw("fs = System.IO.File.Open(N.istr(p0), System.IO.FileMode.Open, System.IO.FileAccess.Read, System.IO.FileShare.None);")
-
-	private fun _setLength(p0: Long) = CSharp.v_raw("fs.Length = p0")
-	private fun _getLength(): Long = CSharp.l_raw("fs.Length")
-	private fun _close() = CSharp.v_raw("fs.Close();")
-
-	private fun _read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
-		CSharp.v_raw("fs.Position = p0;")
-		return CSharp.i_raw("fs.Read(p1.u(), p2, p3);")
-	}
-
-	private fun _write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
-		CSharp.v_raw("fs.Position = p0;")
-		CSharp.v_raw("fs.Write(p1.u(), p2, p3);")
-	}
-
-	suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = CSharp.runTaskAsync { _read(position, buffer, offset, len) }
-	suspend override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) = CSharp.runTaskAsync { _write(position, buffer, offset, len) }
-	suspend override fun setLength(value: Long) = CSharp.runTaskAsync { _setLength(value) }
-	suspend override fun getLength(): Long = CSharp.runTaskAsync { _getLength() }
-	suspend override fun close() = CSharp.runTaskAsync { _close() }
-}
-
-class CSharpVisualVfs : LocalVfs() {
-	override fun getAbsolutePath(path: String): String = path
-
-	override val supportedAttributeTypes = listOf<Class<out Attribute>>()
-
-	suspend override fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler): Int {
-		TODO()
-	}
-
-	suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream = CSharpFileAsyncStream(path, mode).toAsyncStream()
-
-	suspend override fun setAttributes(path: String, attributes: List<Attribute>) {
-		TODO()
-	}
-
-	//private fun getFileInfo(path: String) = CSharp.raw<Any>("N.wrap(new System.IO.FileInfo(N.istr(p0)))")
-	//private fun fileInfoExists(data: Any) = CSharp.b_raw("((System.IO.FileInfo)N.unwrap(p0)).Exists")
-	//private fun fileInfoSize(data: Any) = CSharp.l_raw("((System.IO.FileInfo)N.unwrap(p0)).Length")
-	//private fun fileInfoIsDirectory(data: Any) = CSharp.b_raw("((System.IO.FileInfo)N.unwrap(p0)).Length")
-
-	private fun fileSize(path: String) = CSharp.l_raw("(new System.IO.FileInfo(N.istr(p0))).Length")
-	private fun fileExists(path: String) = CSharp.b_raw("System.IO.File.Exists(N.istr(p0))")
-	private fun directoryExists(path: String) = CSharp.b_raw("System.IO.Directory.Exists(N.istr(p0))")
-
-	suspend override fun stat(path: String): VfsStat {
-		return CSharp.runTaskAsync {
-			val fileExists = fileExists(path)
-			val directoryExists = directoryExists(path)
-			if (fileExists) {
-				createExistsStat(path, isDirectory = false, size = fileSize(path))
-			} else if (directoryExists) {
-				createExistsStat(path, isDirectory = true, size = 0L)
-			} else {
-				createNonExistsStat(path)
-			}
-		}
-	}
-
-	suspend override fun list(path: String): AsyncSequence<VfsFile> {
-		TODO()
-	}
-
-	@JTranscMethodBody(target = "cs", value = """
-		var path = N.istr(p0);
-		try {
-			var res = !System.IO.Directory.Exists(path);
-			System.IO.Directory.CreateDirectory(path);
-			return res;
-		} catch (Exception) {
-			return false;
-		}
-	""")
-	external private fun createDirectory(p0: String): Boolean
-
-	suspend override fun mkdir(path: String, attributes: List<Attribute>): Boolean {
-		return CSharp.runTaskAsync { createDirectory(path) }
-	}
-
-	suspend override fun delete(path: String): Boolean {
-		TODO()
-	}
-
-	suspend override fun rename(src: String, dst: String): Boolean {
-		TODO()
-	}
-
-	suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable {
-		TODO()
-	}
-}
-
-suspend fun <T> CSharp.runTaskAsync(task: () -> T): T {
-	val deferred = Promise.Deferred<T>()
-
-	CSharp.runTask {
-		deferred.resolve(task())
-	}
-
-	return deferred.promise.await()
-}
-
-class LocalVfsProviderHaxe : LocalVfsProvider() {
-	override val available: Boolean = JTranscSystem.isHaxe()
-
-	override fun invoke(): LocalVfs {
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-	}
-}
-
-class HttpFactoryCSharp : HttpFactory {
-	override fun createClient(): HttpClient = CSharpHttpClient()
-}
-
-class CSharpHttpClient : HttpClient() {
-	private val csClient = CSharp.raw<Any>("N.wrap(new System.Net.Http.HttpClient())")
-
-	private fun createCSharpHttpMethod(kind: String) = CSharp.raw<String>("N.str(new System.Net.Http.HttpMethod(N.istr(p0)))")
-
-	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
-		// System.Net.Http.HttpClient
-		// OpenReadAsync
-		// OpenWriteAsync
-		TODO()
-	}
-}
-*/

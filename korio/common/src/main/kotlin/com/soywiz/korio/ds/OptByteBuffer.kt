@@ -3,6 +3,7 @@ package com.soywiz.korio.ds
 import com.soywiz.korio.lang.Charset
 import com.soywiz.korio.lang.toString
 import com.soywiz.korio.typedarray.copyRangeTo
+import kotlin.math.max
 
 //@Deprecated("", replaceWith = ReplaceWith("ByteArrayBuilder"))
 //typealias OptByteBuffer = ByteArrayBuilder
@@ -58,6 +59,28 @@ class ByteArrayBuilder {
 		}
 		return out
 	}
+
+	// @TODO: Optimize this!
+	fun toString(charset: Charset): String = toByteArray().toString(charset)
+}
+
+class ByteArrayBuilderSmall(private var bytes: ByteArray, private var len: Int = 0) {
+	constructor(capacity: Int = 64) : this(ByteArray(capacity))
+
+	val size: Int get() = len
+
+	fun ensure(size: Int) {
+		if (len + size >= bytes.size) {
+			bytes = bytes.copyOf(max(bytes.size + size, bytes.size * 2))
+		}
+	}
+
+	fun append(v: Byte) {
+		ensure(1)
+		bytes[len++] = v
+	}
+
+	fun toByteArray() = bytes.copyOf(len)
 
 	// @TODO: Optimize this!
 	fun toString(charset: Charset): String = toByteArray().toString(charset)

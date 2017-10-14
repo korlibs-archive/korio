@@ -55,7 +55,7 @@ class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 		return totalRead
 	}
 
-	fun consume(len: Int): ByteArray = ByteArray(len).run { this.copyOf(consume(this, 0, len)) }
+	fun consumeUpTo(len: Int): ByteArray = ByteArray(len).run { this.copyOf(consume(this, 0, len)) }
 
 	fun consumeUntil(end: Byte, including: Boolean = true): ByteArray {
 		val out = ByteArrayBuilder()

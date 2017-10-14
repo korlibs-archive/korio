@@ -1,21 +1,23 @@
 package com.soywiz.korio.lang
 
-class AtomicLong(var value: Long = 0) {
-	fun get() = value
-	fun incrementAndGet() = ++value
-	fun decrementAndGet() = --value
-	fun addAndGet(i: Long): Long {
+// @TODO: Optimize without synchronized per platform!
+class AtomicLong(private var value: Long = 0) {
+	fun get() = synchronized(this) { value }
+	fun incrementAndGet() = synchronized(this) { ++value }
+	fun decrementAndGet() = synchronized(this) { --value }
+	fun addAndGet(i: Long): Long = synchronized(this) {
 		value += i
-		return value
+		value
 	}
 }
 
-class AtomicInteger(var value: Int = 0) {
-	fun get() = value
-	fun incrementAndGet() = ++value
-	fun decrementAndGet() = --value
-	fun addAndGet(i: Int): Int {
+// @TODO: Optimize without synchronized per platform!
+class AtomicInteger(private var value: Int = 0) {
+	fun get() = synchronized(this) { value }
+	fun incrementAndGet() = synchronized(this) { ++value }
+	fun decrementAndGet() = synchronized(this) { --value }
+	fun addAndGet(i: Int): Int = synchronized(this) {
 		value += i
-		return value
+		value
 	}
 }

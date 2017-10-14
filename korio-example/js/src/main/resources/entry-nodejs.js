@@ -14,5 +14,7 @@ if (process.env.NODE_PATH == '.') {
 
 	//child.stdout.on('data', (data) => { console.log(data);});
 	//child.stderr.on('data', (data) => { console.log(data); });
-	child.on('close', (code) => { console.log(`child process exited with code ${code}`); });
+	child.on('close', (code) => {
+		//console.log(`child process exited with code ${code}`);
+	});
 }

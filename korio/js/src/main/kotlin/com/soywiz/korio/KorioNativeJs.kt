@@ -6,6 +6,8 @@ import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.Closeable
+import com.soywiz.korio.net.AsyncClient
+import com.soywiz.korio.net.AsyncServer
 import com.soywiz.korio.net.AsyncSocketFactory
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
@@ -13,9 +15,7 @@ import com.soywiz.korio.net.http.HttpFactory
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.ws.WebSocketClient
 import com.soywiz.korio.net.ws.WebSocketClientFactory
-import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.openAsync
-import com.soywiz.korio.stream.readAll
+import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.OS
 import com.soywiz.korio.vfs.*
 import org.khronos.webgl.*
@@ -47,6 +47,15 @@ actual open class CancellationException actual constructor(msg: String) : Illega
 val global = js("(typeof global !== 'undefined') ? global : window")
 
 actual object KorioNative {
+	actual val currentThreadId: Long = 1L
+
+	actual abstract class NativeThreadLocal<T> {
+		actual abstract fun initialValue(): T
+		private var value = initialValue()
+		actual fun get(): T = value
+		actual fun set(value: T) = run { this.value = value }
+	}
+
 	actual val platformName: String by lazy {
 		if (jsTypeOf(window) === "undefined") {
 			"node.js"
@@ -73,8 +82,12 @@ actual object KorioNative {
 
 	actual val File_separatorChar: Char = '/'
 
-	actual val asyncSocketFactory: AsyncSocketFactory
-		get() = TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+	actual val asyncSocketFactory: AsyncSocketFactory by lazy {
+		object : AsyncSocketFactory() {
+			suspend override fun createClient(): AsyncClient = NodeJsAsyncClient()
+			suspend override fun createServer(port: Int, host: String, backlog: Int): AsyncServer = NodeJsAsyncServer().init(port, host, backlog)
+		}
+	}
 
 	actual val websockets: WebSocketClientFactory by lazy { JsWebSocketClientFactory() }
 
@@ -565,190 +578,64 @@ data class JsStat(val size: Double, var isDirectory: Boolean = false) {
 	fun toStat(path: String, vfs: Vfs): VfsStat = vfs.createExistsStat(path, isDirectory = isDirectory, size = size.toLong())
 }
 
+private class NodeJsAsyncClient : AsyncClient {
+	private val net = require("net")
+	private var connection: dynamic = null
+	private val input = AsyncProduceConsumerByteBuffer()
 
-/*
-class LocalVfsProviderJs : LocalVfsProvider() {
-	override fun invoke(): LocalVfs = object : LocalVfs() {
-		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
-			val stat = fstat(path)
-			val handle = open(path, "r")
+	override var connected: Boolean = false; private set
 
-			return object : AsyncStreamBase() {
-				suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
-					val data = read(handle, position.toDouble(), len.toDouble())
-					data.copyRangeTo(0, buffer, offset, data.size)
-					return data.size
-				}
-
-				suspend override fun getLength(): Long = stat.size.toLong()
-				suspend override fun close(): Unit = close(handle)
-			}.toAsyncStream()
-		}
-
-		suspend override fun stat(path: String): VfsStat = try {
-			val stat = fstat(path)
-			createExistsStat(path, isDirectory = stat.isDirectory, size = stat.size.toLong())
-		} catch (t: Throwable) {
-			createNonExistsStat(path)
-		}
-
-		suspend override fun list(path: String): AsyncSequence<VfsFile> {
-			val emitter = AsyncSequenceEmitter<VfsFile>()
-			val fs = jsRequire("fs")
-			//console.methods["log"](path)
-			fs.call("readdir", path, jsFunctionRaw2 { err, files ->
-				//console.methods["log"](err)
-				//console.methods["log"](files)
-				for (n in 0 until files["length"].toInt()) {
-					val file = files[n].toJavaString()
-					//println("::$file")
-					emitter(file("$path/$file"))
-				}
-				emitter.close()
-			})
-			return emitter.toSequence()
-		}
-
-		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = withCoroutineContext {
-			val fs = jsRequire("fs")
-			val watcher = fs.call("watch", path, jsObject("persistent" to true, "recursive" to true), jsFunctionRaw2 { eventType, filename ->
-				spawnAndForget(this@withCoroutineContext) {
-					val et = eventType.toJavaString()
-					val fn = filename.toJavaString()
-					val f = file("$path/$fn")
-					//println("$et, $fn")
-					when (et) {
-						"rename" -> {
-							val kind = if (f.exists()) VfsFileEvent.Kind.CREATED else VfsFileEvent.Kind.DELETED
-							handler(VfsFileEvent(kind, f))
-						}
-						"change" -> {
-							handler(VfsFileEvent(VfsFileEvent.Kind.MODIFIED, f))
-						}
-						else -> {
-							println("Unhandled event: $et")
-						}
-					}
-				}
-			})
-
-			return@withCoroutineContext Closeable { watcher.call("close") }
-		}
-
-		override fun toString(): String = "LocalVfs"
-	}
-
-
-	suspend fun open(path: String, mode: String): JsDynamic = korioSuspendCoroutine { c ->
-		val fs = jsRequire("fs")
-		fs.call("open", path, mode, jsFunctionRaw2 { err, fd ->
-			if (err != null) {
-				c.resumeWithException(RuntimeException("Error ${err.toJavaString()} opening $path"))
-			} else {
-				c.resume(fd!!)
+	suspend override fun connect(host: String, port: Int): Unit = suspendCoroutine { c ->
+		connection = net.createConnection(port, host) {
+			connected = true
+			connection?.pause()
+			connection?.on("data") { it ->
+				input.produce(it.unsafeCast<ByteArray>())
 			}
-		})
-	}
-
-	suspend fun read(fd: JsDynamic?, position: Double, len: Double): ByteArray = Promise.create { c ->
-		val fs = jsRequire("fs")
-		val buffer = jsNew("Buffer", len)
-		fs.call("read", fd, buffer, 0, len, position, jsFunctionRaw3 { err, bytesRead, buffer ->
-			if (err != null) {
-				c.reject(RuntimeException("Error ${err.toJavaString()} opening ${fd.toJavaString()}"))
-			} else {
-				val u8array = jsNew("Int8Array", buffer, 0, bytesRead)
-				val out = ByteArray(bytesRead.toInt())
-				out.asJsDynamic().call("setArraySlice", 0, u8array)
-				c.resolve(out)
-			}
-		})
-	}
-
-	suspend fun close(fd: Any): Unit = Promise.create { c ->
-		val fs = jsRequire("fs")
-		fs.call("close", fd, jsFunctionRaw2 { err, fd ->
-			if (err != null) {
-				c.reject(RuntimeException("Error ${err.toJavaString()} closing file"))
-			} else {
-				c.resolve(Unit)
-			}
-		})
-	}
-
-
-
-	suspend fun fstat(path: String): JsStat = Promise.create { c ->
-		// https://nodejs.org/api/fs.html#fs_class_fs_stats
-		val fs = jsRequire("fs")
-		//fs.methods["exists"](path, jsFunctionRaw1 { jsexists ->
-		//	val exists = jsexists.toBool()
-		//	if (exists) {
-		fs.call("stat", path, jsFunctionRaw2 { err, stat ->
-			//console.methods["log"](stat)
-			if (err != null) {
-				c.reject(RuntimeException("Error ${err.toJavaString()} opening $path"))
-			} else {
-				val out = JsStat(stat["size"].toDouble())
-				out.isDirectory = stat.call("isDirectory").toBool()
-				c.resolve(out)
-			}
-		})
-		//	} else {
-		//		c.resumeWithException(RuntimeException("File '$path' doesn't exists"))
-		//	}
-		//})
-	}
-}
-
-class ResourcesVfsProviderJs : ResourcesVfsProvider() {
-	override fun invoke(): Vfs {
-		return EmbededResourceListing(if (OS.isNodejs) {
-			LocalVfs(getCWD())
-		} else {
-			UrlVfs(getBaseUrl())
-		}.jail())
-	}
-
-	private fun getCWD(): String = global["process"].call("cwd").toJavaString()
-
-	private fun getBaseUrl(): String {
-		var baseHref = document["location"]["href"].call("replace", jsRegExp("/[^\\/]*$"), "")
-		val bases = document.call("getElementsByTagName", "base")
-		if (bases["length"].toInt() > 0) baseHref = bases[0]["href"]
-		return baseHref.toJavaString()
-	}
-}
-
-@Suppress("unused")
-private class EmbededResourceListing(parent: VfsFile) : Vfs.Decorator(parent) {
-	val nodeVfs = NodeVfs()
-
-	init {
-		for (asset in jsGetAssetStats()) {
-			val info = PathInfo(asset.path.trim('/'))
-			val folder = nodeVfs.rootNode.access(info.folder, createFolders = true)
-			folder.createChild(info.basename, isDirectory = false).data = asset.size
+			c.resume(Unit)
 		}
+		Unit
 	}
 
-	suspend override fun stat(path: String): VfsStat {
+	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+		connection?.resume()
 		try {
-			val n = nodeVfs.rootNode[path]
-			return createExistsStat(path, n.isDirectory, n.data as Long)
-		} catch (t: Throwable) {
-			return createNonExistsStat(path)
+			return input.read(buffer, offset, len)
+		} finally {
+			connection?.pause()
 		}
 	}
 
-	suspend override fun list(path: String): AsyncSequence<VfsFile> = withCoroutineContext {
-		asyncGenerate(this@withCoroutineContext) {
-			for (item in nodeVfs.rootNode[path]) {
-				yield(file("$path/${item.name}"))
-			}
+	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = suspendCoroutine { c ->
+		connection?.write(buffer.toNodeJsBuffer(offset, len)) {
+			c.resume(Unit)
 		}
+		Unit
 	}
 
-	override fun toString(): String = "ResourcesVfs[$parent]"
+	suspend override fun close() {
+		connection?.close()
+	}
 }
-*/
+
+class NodeJsAsyncServer : AsyncServer {
+	override val requestPort: Int
+		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+	override val host: String
+		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+	override val backlog: Int
+		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+	override val port: Int
+		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
+
+	suspend override fun listen(handler: suspend (AsyncClient) -> Unit): Closeable {
+		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+	}
+
+	suspend override fun listen(): SuspendingSequence<AsyncClient> {
+		return super.listen()
+	}
+
+	suspend fun init(port: Int, host: String, backlog: Int): AsyncServer = this.apply {
+	}
+}

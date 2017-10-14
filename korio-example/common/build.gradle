@@ -2,4 +2,5 @@ apply plugin: 'kotlin-platform-common'
 
 dependencies {
 	compile project(":korio-common")
+	compile project(":korio-ext-db-redis-common")
 }

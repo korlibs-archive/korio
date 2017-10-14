@@ -63,13 +63,14 @@ class AsyncThread {
 		return invoke(func)
 	}
 
-	operator suspend fun <T> invoke(func: suspend () -> T): T = withCoroutineContext {
+	operator suspend fun <T> invoke(func: suspend () -> T): T {
+		val ctx = getCoroutineContext()
 		val newDeferred = Promise.Deferred<T>()
 		lastPromise.always {
-			func.korioStartCoroutine(newDeferred.toContinuation(this@withCoroutineContext))
+			func.korioStartCoroutine(newDeferred.toContinuation(ctx))
 		}
 		lastPromise = newDeferred.promise
-		return@withCoroutineContext newDeferred.promise.await() as T
+		return newDeferred.promise.await() as T
 	}
 
 	suspend fun <T> sync(func: suspend () -> T): Promise<T> = withCoroutineContext { sync(this@withCoroutineContext, func) }
@@ -84,5 +85,5 @@ class AsyncThread {
 	}
 }
 
-@Deprecated("AsyncQueue", ReplaceWith("AsyncQueue"))
-typealias WorkQueue = AsyncQueue
+//@Deprecated("AsyncQueue", ReplaceWith("AsyncQueue"))
+//typealias WorkQueue = AsyncQueue

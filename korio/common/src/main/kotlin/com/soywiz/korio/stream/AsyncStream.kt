@@ -2,10 +2,13 @@
 
 package com.soywiz.korio.stream
 
+import com.soywiz.korio.KorioNative
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.ds.ByteArrayBuilder
+import com.soywiz.korio.ds.ByteArrayBuilderSmall
 import com.soywiz.korio.lang.*
+import com.soywiz.korio.lang.tl.threadLocal
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.typedarray.fill
 import com.soywiz.korio.util.*
@@ -298,13 +301,15 @@ suspend fun AsyncInputStream.readExact(buffer: ByteArray, offset: Int, len: Int)
 	}
 }
 
-suspend private fun AsyncInputStream.readSmallTempExact(len: Int): ByteArray {
-	val t = BYTES_TEMP
-	readExact(t, 0, len)
-	return t
-}
+//val READ_SMALL_TEMP by threadLocal { ByteArray(8) }
+//suspend private fun AsyncInputStream.readSmallTempExact(len: Int, temp: ByteArray): ByteArray = temp.apply { readExact(temp, 0, len) }
+//suspend private fun AsyncInputStream.readSmallTempExact(len: Int): ByteArray = readSmallTempExact(len, READ_SMALL_TEMP)
 
-suspend private fun AsyncInputStream.readTempExact(len: Int, temp: ByteArray = BYTES_TEMP): ByteArray = temp.apply { readExact(temp, 0, len) }
+suspend private fun AsyncInputStream.readSmallTempExact(len: Int): ByteArray = readBytesExact(len)
+
+
+suspend private fun AsyncInputStream.readTempExact(len: Int, temp: ByteArray): ByteArray = temp.apply { readExact(temp, 0, len) }
+suspend private fun AsyncInputStream.readTempExact(len: Int): ByteArray = readTempExact(len, BYTES_TEMP)
 
 suspend fun AsyncInputStream.read(data: ByteArray): Int = read(data, 0, data.size)
 suspend fun AsyncInputStream.read(data: UByteArray): Int = read(data.data, 0, data.size)
@@ -357,7 +362,9 @@ suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {
 
 suspend fun AsyncInputStream.readBytesExact(len: Int): ByteArray = ByteArray(len).apply { readExact(this, 0, len) }
 
+//suspend fun AsyncInputStream.readU8(): Int = readBytesExact(1).readU8(0)
 suspend fun AsyncInputStream.readU8(): Int = readSmallTempExact(1).readU8(0)
+
 suspend fun AsyncInputStream.readS8(): Int = readSmallTempExact(1).readS8(0)
 suspend fun AsyncInputStream.readU16_le(): Int = readSmallTempExact(2).readU16_le(0)
 suspend fun AsyncInputStream.readU24_le(): Int = readSmallTempExact(3).readU24_le(0)
@@ -393,7 +400,7 @@ suspend fun AsyncInputStream.readAll(): ByteArray {
 	return try {
 		if (this is AsyncStream && this.hasAvailable()) {
 			val available = this.getAvailable().toInt()
-			return this.readBytes(available)
+			return this.readBytesExact(available)
 		} else {
 			val out = ByteArrayBuilder()
 			val temp = BYTES_TEMP
@@ -546,24 +553,29 @@ suspend fun AsyncOutputStream.writeFloatArray_be(array: FloatArray) = writeBytes
 suspend fun AsyncOutputStream.writeDoubleArray_be(array: DoubleArray) = writeBytes(ByteArray(array.size * 8).apply { writeArray_be(0, array) })
 
 suspend fun AsyncInputStream.readUntil(endByte: Byte, limit: Int = 0x1000): ByteArray {
-	val out = ByteArrayBuilder()
+	val temp = ByteArray(1)
+	val out = ByteArrayBuilderSmall()
 	try {
 		while (true) {
-			val c = readU8()
-			if (c.toByte() == endByte) break
-			out.append(c.toByte())
+			val c = run { readExact(temp, 0, 1); temp[0] }
+			//val c = readS8().toByte()
+			if (c == endByte) break
+			out.append(c)
 			if (out.size >= limit) break
 		}
 	} catch (e: EOFException) {
 	}
+	//println("AsyncInputStream.readUntil: '${out.toString(UTF8).replace('\r', ';').replace('\n', '.')}'")
 	return out.toByteArray()
 }
 
 suspend fun AsyncInputStream.readLine(eol: Char = '\n', charset: Charset = Charsets.UTF_8): String {
-	val out = ByteArrayBuilder()
+	val temp = ByteArray(1)
+	val out = ByteArrayBuilderSmall()
 	try {
 		while (true) {
-			val c = readU8()
+			val c = run { readExact(temp, 0, 1); temp[0] }
+			//val c = readS8().toByte()
 			if (c.toChar() == eol) break
 			out.append(c.toByte())
 		}
@@ -574,9 +586,8 @@ suspend fun AsyncInputStream.readLine(eol: Char = '\n', charset: Charset = Chars
 
 
 fun SyncInputStream.toAsyncInputStream() = object : AsyncInputStream {
-	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-		return this@toAsyncInputStream.read(buffer, offset, len)
-	}
+	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int =
+		this@toAsyncInputStream.read(buffer, offset, len)
 
 	suspend override fun close() {
 		(this@toAsyncInputStream as? Closeable)?.close()

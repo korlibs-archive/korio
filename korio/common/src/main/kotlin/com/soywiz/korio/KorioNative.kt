@@ -30,6 +30,13 @@ expect open class IllegalStateException(msg: String) : RuntimeException(msg)
 expect open class CancellationException(msg: String) : IllegalStateException(msg)
 
 expect object KorioNative {
+	abstract class NativeThreadLocal<T> {
+		abstract fun initialValue(): T
+		fun get(): T
+		fun set(value: T): Unit
+	}
+
+	val currentThreadId: Long
 	val platformName: String
 	val osName: String
 	val ResourcesVfs: VfsFile
@@ -270,13 +277,14 @@ object KorioNativeDefaults {
 				tasksInProgress.incrementAndGet()
 				val close = socket.listen { client ->
 					while (true) {
-						println("Connected!")
+						println("Connected! : $client : ${KorioNative.currentThreadId}")
 						//val cb = client.toBuffered()
 						val cb = client
 
 						//val header = cb.readBufferedLine().trim()
 						//val fline = cb.readBufferedUntil('\n'.toByte()).toString(UTF8).trim()
 						val fline = cb.readUntil('\n'.toByte()).toString(UTF8).trim()
+						println("fline: $fline")
 						val match = HeaderRegex.matchEntire(fline) ?: throw IllegalStateException("Not a valid request '$fline'")
 						val method = match.groupValues[1]
 						val url = match.groupValues[2]

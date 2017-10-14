@@ -6,8 +6,10 @@ buildscript {
 }
 
 dependencies {
-	compile project(":korio-js")
 	implement project(":korio-example-common")
+
+	compile project(":korio-js")
+	compile project(":korio-ext-db-redis-js")
 }
 
 compileKotlin2Js {
