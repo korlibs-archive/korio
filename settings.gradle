@@ -44,48 +44,24 @@ include(
 
 		'korio-example-common',
 		'korio-example-js',
-		'korio-example-jvm',
+		'korio-example',
 )
 
-project(':korio-common').projectDir = file('korio/common')
-project(':korio').projectDir = file('korio/jvm')
-project(':korio-android').projectDir = file('korio/android')
-project(':korio-js').projectDir = file('korio/js')
+def register(String base) {
+	findProject(":$base-common")?.projectDir = file("$base/common")
+	findProject(":$base")?.projectDir = file("$base/jvm")
+	findProject(":$base-android")?.projectDir = file("$base/android")
+	findProject(":$base-js")?.projectDir = file("$base/js")
+}
 
-project(':korio-ext-amazon-base-common').projectDir = file('korio-ext-amazon-base/common')
-project(':korio-ext-amazon-base').projectDir = file('korio-ext-amazon-base/jvm')
-project(':korio-ext-amazon-base-js').projectDir = file('korio-ext-amazon-base/js')
-
-project(':korio-ext-amazon-dynamodb-common').projectDir = file('korio-ext-amazon-dynamodb/common')
-project(':korio-ext-amazon-dynamodb').projectDir = file('korio-ext-amazon-dynamodb/jvm')
-project(':korio-ext-amazon-dynamodb-js').projectDir = file('korio-ext-amazon-dynamodb/js')
-
-project(':korio-ext-amazon-s3-common').projectDir = file('korio-ext-amazon-s3/common')
-project(':korio-ext-amazon-s3').projectDir = file('korio-ext-amazon-s3/jvm')
-project(':korio-ext-amazon-s3-js').projectDir = file('korio-ext-amazon-s3/js')
-
-project(':korio-ext-db-base-common').projectDir = file('korio-ext-db-base/common')
-project(':korio-ext-db-base').projectDir = file('korio-ext-db-base/jvm')
-project(':korio-ext-db-base-js').projectDir = file('korio-ext-db-base/js')
-
-project(':korio-ext-db-cassandra-common').projectDir = file('korio-ext-db-cassandra/common')
-project(':korio-ext-db-cassandra').projectDir = file('korio-ext-db-cassandra/jvm')
-project(':korio-ext-db-cassandra-js').projectDir = file('korio-ext-db-cassandra/js')
-
-project(':korio-ext-db-elasticsearch-common').projectDir = file('korio-ext-db-elasticsearch/common')
-project(':korio-ext-db-elasticsearch').projectDir = file('korio-ext-db-elasticsearch/jvm')
-project(':korio-ext-db-elasticsearch-js').projectDir = file('korio-ext-db-elasticsearch/js')
-
-project(':korio-ext-db-redis-common').projectDir = file('korio-ext-db-redis/common')
-project(':korio-ext-db-redis').projectDir = file('korio-ext-db-redis/jvm')
-project(':korio-ext-db-redis-js').projectDir = file('korio-ext-db-redis/js')
-
-project(':korio-example-common').projectDir = file('korio-example/common')
-project(':korio-example-js').projectDir = file('korio-example/js')
-project(':korio-example-jvm').projectDir = file('korio-example/jvm')
-
-project(':korio-ext-web-common').projectDir = file('korio-ext-web/common')
-project(':korio-ext-web').projectDir = file('korio-ext-web/jvm')
-project(':korio-ext-web-js').projectDir = file('korio-ext-web/js')
-
-project(':korio-ext-vertx').projectDir = file('korio-ext-vertx/jvm')
+register('korio')
+register('korio-ext-amazon-base')
+register('korio-ext-amazon-dynamodb')
+register('korio-ext-amazon-s3')
+register('korio-ext-db-base')
+register('korio-ext-db-cassandra')
+register('korio-ext-db-elasticsearch')
+register('korio-ext-db-redis')
+register('korio-example')
+register('korio-ext-web')
+register('korio-ext-vertx')
