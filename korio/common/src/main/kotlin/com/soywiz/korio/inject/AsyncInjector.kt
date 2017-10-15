@@ -66,7 +66,7 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Ext
 	suspend fun <T : Any> getWith(clazz: KClass<T>, vararg instances: Any): T {
 		val c = child()
 		for (i in instances) {
-			c.mapInstance(i, clazz as KClass<Any>)
+			c.mapInstance(i, i::class as KClass<Any>)
 		}
 		return c.get(clazz)
 	}
