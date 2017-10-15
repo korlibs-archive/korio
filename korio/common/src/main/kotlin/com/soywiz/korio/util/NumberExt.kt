@@ -3,6 +3,7 @@
 package com.soywiz.korio.util
 
 import com.soywiz.korio.crypto.Hex
+import kotlin.math.abs
 import kotlin.math.ceil
 import kotlin.math.floor
 import kotlin.math.round
@@ -113,7 +114,8 @@ val Int.isOdd get() = (this % 2) == 1
 val Int.isEven get() = (this % 2) == 0
 
 fun Long.toString(radix: Int): String {
-	var temp = this
+	val isNegative = this < 0
+	var temp = abs(this)
 	if (temp == 0L) {
 		return "0"
 	} else {
@@ -123,12 +125,14 @@ fun Long.toString(radix: Int): String {
 			temp /= radix
 			out += Hex.DIGITS_UPPER[digit.toInt()]
 		}
-		return out.reversed()
+		val rout = out.reversed()
+		return if (isNegative) "-$rout" else rout
 	}
 }
 
 fun Int.toString(radix: Int): String {
-	var temp = this
+	val isNegative = this < 0
+	var temp = abs(this)
 	if (temp == 0) {
 		return "0"
 	} else {
@@ -138,6 +142,7 @@ fun Int.toString(radix: Int): String {
 			temp /= radix
 			out += Hex.DIGITS_UPPER[digit.toInt()]
 		}
-		return out.reversed()
+		val rout = out.reversed()
+		return if (isNegative) "-$rout" else rout
 	}
 }

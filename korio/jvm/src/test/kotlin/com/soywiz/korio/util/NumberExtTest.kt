@@ -20,4 +20,10 @@ class NumberExtTest {
 		assertEquals("1F345678", "%08X".format(v.insert(0xFF, 24, 4)))
 		assertEquals("12345FF8", "%08X".format(v.insert(0xFF, 4, 8)))
 	}
+
+	@Test
+	fun testToString() {
+		assertEquals("10", 0x10.toString(16))
+		assertEquals("-10", (-0x10).toString(16))
+	}
 }
