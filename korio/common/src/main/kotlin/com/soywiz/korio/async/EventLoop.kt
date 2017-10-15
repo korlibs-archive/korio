@@ -20,6 +20,8 @@ val tasksInProgress = AtomicInteger(0)
 
 // @TODO: Check CoroutineDispatcher
 abstract class EventLoop(val captureCloseables: Boolean) : Closeable {
+	constructor() : this(captureCloseables = true)
+
 	val coroutineContext = EventLoopCoroutineContext(this)
 
 	companion object {
