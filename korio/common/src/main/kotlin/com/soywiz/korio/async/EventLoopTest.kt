@@ -7,7 +7,7 @@ class EventLoopFactoryTest : EventLoopFactory() {
 	override fun createEventLoop(): EventLoop = EventLoopTest()
 }
 
-class EventLoopTest : EventLoop() {
+class EventLoopTest : EventLoop(captureCloseables = true) {
 	override var time: Long = 0L; private set
 
 	data class Entry(val el: EventLoopTest, val time: Long, val handler: () -> Unit) : Closeable {

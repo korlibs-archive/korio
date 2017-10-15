@@ -19,7 +19,7 @@ val eventLoopFactoryDefaultImpl: EventLoopFactory get() = KorioNative.eventLoopF
 val tasksInProgress = AtomicInteger(0)
 
 // @TODO: Check CoroutineDispatcher
-abstract class EventLoop : Closeable {
+abstract class EventLoop(val captureCloseables: Boolean) : Closeable {
 	val coroutineContext = EventLoopCoroutineContext(this)
 
 	companion object {
@@ -74,11 +74,15 @@ abstract class EventLoop : Closeable {
 	private val closeables = LinkedHashSet<Closeable>()
 
 	private fun Closeable.capture(): Closeable {
-		val closeable = this
-		closeables += closeable
-		return Closeable {
-			closeables -= closeable
-			closeable.close()
+		if (captureCloseables) {
+			val closeable = this
+			closeables += closeable
+			return Closeable {
+				closeables -= closeable
+				closeable.close()
+			}
+		} else {
+			return this
 		}
 	}
 

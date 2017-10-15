@@ -281,7 +281,7 @@ private class EventLoopFactoryJs : EventLoopFactory() {
 }
 
 @Suppress("unused")
-private class EventLoopJs : EventLoop() {
+private class EventLoopJs : EventLoop(captureCloseables = false) {
 	val immediateHandlers = LinkedList<() -> Unit>()
 	var insideImmediate = false
 
@@ -308,7 +308,7 @@ private class EventLoopJs : EventLoop() {
 	}
 
 	override fun requestAnimationFrameInternal(callback: () -> Unit): Closeable {
-		val id = global.requestAnimationFrame { callback() }
+		val id = global.requestAnimationFrame(callback)
 		//println("setTimeout($ms)")
 		return Closeable { global.cancelAnimationFrame(id) }
 	}

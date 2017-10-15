@@ -9,7 +9,7 @@ class EventLoopFactoryJvmAndCSharp : EventLoopFactory() {
 	override fun createEventLoop(): EventLoop = EventLoopJvmAndCSharp()
 }
 
-class EventLoopJvmAndCSharp : EventLoop() {
+class EventLoopJvmAndCSharp : EventLoop(captureCloseables = false) {
 	class Task(val time: Long, val callback: () -> Unit)
 
 	private val lock = Object()
