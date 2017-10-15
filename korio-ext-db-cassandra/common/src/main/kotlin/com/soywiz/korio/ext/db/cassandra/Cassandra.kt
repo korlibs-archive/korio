@@ -339,10 +339,8 @@ class Cassandra private constructor(
 		query("CREATE KEYSPACE$ifNotExistsStr $namespace WITH replication = {'class': 'NetworkTopologyStrategy', 'DC1' : $dc1, 'DC2' : $dc2} AND durable_writes = $durableWrites;")
 	}
 
-	suspend fun use(namespace: String): String {
-		// @TODO: Use parameters $namespace
-		return query("USE $namespace;")[0].getString(0)
-	}
+	// @TODO: Use parameters $namespace
+	suspend fun use(namespace: String): String = query("USE $namespace;")[0].getString(0)
 
 	suspend fun useOrCreate(namespace: String): String {
 		createKeyspace(namespace, ifNotExists = true)

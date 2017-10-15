@@ -61,12 +61,14 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Ext
 
 	fun child() = AsyncInjector(this, level + 1)
 
-	suspend inline fun <reified T : Any> getWith(vararg instances: Any): T {
+	suspend inline fun <reified T : Any> getWith(vararg instances: Any): T = getWith(T::class, *instances)
+
+	suspend fun <T : Any> getWith(clazz: KClass<T>, vararg instances: Any): T {
 		val c = child()
 		for (i in instances) {
-			c.mapInstance(i, i::class as KClass<Any>)
+			c.mapInstance(i, clazz as KClass<Any>)
 		}
-		return c.get<T>()
+		return c.get(clazz)
 	}
 
 	fun dump() {
