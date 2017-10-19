@@ -100,9 +100,18 @@ allprojects {
 			//	download = true
 			//}
 
-			task installMocha(type: NpmTask) {
-				workingDir = "${buildDir}"
-				args = ['install', 'mocha']
+			//task installMocha(type: NpmTask) {
+			//	workingDir = "${buildDir}"
+			//	args = ['install', 'mocha']
+			//}
+
+			task installMocha(type: Exec) {
+				workingDir "$buildDir"
+				if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+					commandLine 'cmd', '/c', 'npm.cmd', 'install', 'mocha'
+				} else {
+					commandLine 'npm', 'install', 'mocha'
+				}
 			}
 
 			//task fixJsForAsync(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules, installMocha]) {
