@@ -2,7 +2,6 @@ apply plugin: 'kotlin-platform-jvm'
 
 dependencies {
 	expectedBy project(":korio-ext-amazon-s3-common")
-	testImplementation project(":korio-ext-amazon-s3-common")
 
 	compile project(":korio-ext-amazon-base")
 	compile project(":korio")
