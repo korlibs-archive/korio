@@ -16,7 +16,6 @@ buildscript {
 
 	dependencies {
 		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$compilerVersion"
-		classpath 'com.moowork.gradle:gradle-node-plugin:1.2.0'
 	}
 }
 
@@ -36,7 +35,6 @@ allprojects {
 	apply plugin: 'signing'
 	apply plugin: 'maven-publish'
 	apply plugin: 'idea'
-	apply plugin: 'com.moowork.node'
 
 	it.afterEvaluate {
 		if (it.plugins.hasPlugin("kotlin-platform-common")) {
