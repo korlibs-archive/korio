@@ -21,18 +21,22 @@ class ObjectMapper {
 
 	@Suppress("NOTHING_TO_INLINE")
 	class TypeContext(val map: ObjectMapper) : DynamicContext {
-		inline fun <reified T : Any> Any?.gen(): T = map.toTyped(this, T::class)
-		inline fun <reified T : Any> Any?.genList(): ArrayList<T> {
-			return ArrayList(this.toDynamicList().map { it.gen<T>() }.toList())
-		}
+		fun <T : Any> Any?.gen(clazz: KClass<T>): T = map.toTyped(clazz, this)
+		fun <T : Any> Any?.genList(clazz: KClass<T>): ArrayList<T> = ArrayList(this.toDynamicList().map { it.gen(clazz) }.toList())
+		fun <T : Any> Any?.genSet(clazz: KClass<T>): HashSet<T> = HashSet(this.toDynamicList().map { it.gen(clazz) }.toSet())
+		fun <K : Any, V : Any> Any?.genMap(kclazz: KClass<K>, vclazz: KClass<V>): MutableMap<K, V> = this.toDynamicMap().map { it.key.gen(kclazz) to it.value.gen(vclazz) }.toLinkedMap()
 
-		inline fun <reified T : Any> Any?.genSet(): HashSet<T> {
-			return HashSet(this.toDynamicList().map { it.gen<T>() }.toSet())
-		}
+		@Deprecated("Not compatible with Kotlin.JS (for now)")
+		inline fun <reified T : Any> Any?.gen(): T = map.toTyped(T::class, this)
 
-		inline fun <reified K : Any, reified V : Any> Any?.genMap(): MutableMap<K, V> {
-			return this.toDynamicMap().map { it.key.gen<K>() to it.value.gen<V>() }.toLinkedMap()
-		}
+		@Deprecated("Not compatible with Kotlin.JS (for now)")
+		inline fun <reified T : Any> Any?.genList(): ArrayList<T> = ArrayList(this.toDynamicList().map { it.gen<T>() }.toList())
+
+		@Deprecated("Not compatible with Kotlin.JS (for now)")
+		inline fun <reified T : Any> Any?.genSet(): HashSet<T> = HashSet(this.toDynamicList().map { it.gen<T>() }.toSet())
+
+		@Deprecated("Not compatible with Kotlin.JS (for now)")
+		inline fun <reified K : Any, reified V : Any> Any?.genMap(): MutableMap<K, V> = this.toDynamicMap().map { it.key.gen<K>() to it.value.gen<V>() }.toLinkedMap()
 	}
 
 	@Suppress("NOTHING_TO_INLINE")
@@ -52,7 +56,7 @@ class ObjectMapper {
 		_typers[clazz] = generate
 	}
 
-	fun <T : Any> toTyped(obj: Any?, clazz: KClass<T>): T {
+	fun <T : Any> toTyped(clazz: KClass<T>, obj: Any?): T {
 		val generator = _typers[clazz] ?: invalidArg("Unregistered $clazz")
 		return generator(typeCtx, obj) as T
 	}
@@ -104,16 +108,24 @@ class ObjectMapper {
 		registerType(clazz) { nameToString[it.toString()]!! }
 	}
 
+	@Deprecated("Temporally incompatible with Kotlin.JS")
 	inline fun <reified T : Any> registerType(noinline generate: TypeContext.(Any?) -> T) = registerType(T::class, generate)
+
+	@Deprecated("Temporally incompatible with Kotlin.JS")
 	inline fun <reified T : Enum<T>> registerEnum(values: Array<T>) = registerEnum(T::class, values)
 
 	fun <T : Any> registerUntype(clazz: KClass<T>, untyper: UntypeContext.(T) -> Any?) {
 		_untypers[clazz] = untyper as UntypeContext.(Any?) -> Any?
 	}
 
+	fun <T : Enum<T>> registerUntypeEnum(clazz: KClass<T>) = registerUntype(clazz) { it.name }
+
+	@Deprecated("Temporally incompatible with Kotlin.JS")
 	inline fun <reified T : Any> registerUntype(noinline untyper: UntypeContext.(T) -> Any?) = registerUntype(T::class, untyper)
 
-	inline fun <reified T : Enum<T>> registerUntypeEnum() = registerUntype<T> { it.name }
+	@Deprecated("Temporally incompatible with Kotlin.JS")
+	inline fun <reified T : Enum<T>> registerUntypeEnum() = registerUntype(T::class) { it.name }
+
 	//inline fun <reified T> registerUntypeObj(vararg props: KPro<T>) = registerUntype(T::class, untyper)
 
 	inline fun <T> scoped(callback: () -> T): T {

@@ -31,7 +31,7 @@ class LocalVfsTest {
 	}
 
 	@Test
-	fun ensureParent(): Unit = syncTest {
+	fun ensureParent() = syncTest {
 		temp["korio.temp.folder/test.txt"].ensureParents().writeString("HELLO")
 		temp["korio.temp.folder/test.txt"].delete()
 		temp["korio.temp.folder"].delete()

@@ -26,17 +26,21 @@ object Json {
 	}
 
 	fun parse(@Language("json") s: String): Any? = StrReader(s).decode()
-	inline fun <reified T : Any> parseTyped(@Language("json") s: String, mapper: ObjectMapper = Mapper): T = decodeToType(s, T::class, mapper)
+	inline fun <reified T : Any> parseTyped(@Language("json") s: String, mapper: ObjectMapper = Mapper): T = decodeToType(T::class, s, mapper)
 
 	fun invalidJson(msg: String = "Invalid JSON"): Nothing = throw com.soywiz.korio.IOException(msg)
 
 	fun decode(@Language("json") s: String): Any? = StrReader(s).decode()
 
-
-	inline fun <reified T : Any> decodeToType(@Language("json") s: String, mapper: ObjectMapper = Mapper): T = decodeToType(s, T::class, mapper)
+	@Deprecated("Not compatible with Kotlin.JS (for now)")
+	inline fun <reified T : Any> decodeToType(@Language("json") s: String, mapper: ObjectMapper = Mapper): T = decodeToType(T::class, s, mapper)
 
 	@Suppress("UNCHECKED_CAST")
-	fun <T : Any> decodeToType(@Language("json") s: String, clazz: KClass<T>, mapper: ObjectMapper = Mapper): T = mapper.toTyped(decode(s), clazz)
+	@Deprecated("Put class first")
+	fun <T : Any> decodeToType(@Language("json") s: String, clazz: KClass<T>, mapper: ObjectMapper = Mapper): T = mapper.toTyped(clazz, decode(s))
+
+	@Suppress("UNCHECKED_CAST")
+	fun <T : Any> decodeToType(clazz: KClass<T>, @Language("json") s: String, mapper: ObjectMapper = Mapper): T = mapper.toTyped(clazz, decode(s))
 
 	fun StrReader.decode(): Any? {
 		val ic = skipSpaces().read()

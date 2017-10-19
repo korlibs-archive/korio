@@ -36,7 +36,7 @@ private suspend fun fallback(injector: AsyncInjector, kclazz: KClass<*>, ctx: As
 					for (annotation in annotations) {
 						when (annotation) {
 							is Optional -> isOptional = true
-							else -> i.mapInstance(annotation as Any, annotation.annotationClass as KClass<Any>)
+							else -> i.mapInstance(annotation.annotationClass as KClass<Any>, annotation as Any)
 						}
 					}
 					i
@@ -64,7 +64,7 @@ private suspend fun fallback(injector: AsyncInjector, kclazz: KClass<*>, ctx: As
 					for (annotation in field.annotations) {
 						when (annotation) {
 							is Optional -> isOptional = true
-							else -> i.mapInstance(annotation as Any, annotation.annotationClass as KClass<Any>)
+							else -> i.mapInstance(annotation.annotationClass as KClass<Any>, annotation as Any)
 						}
 					}
 					i

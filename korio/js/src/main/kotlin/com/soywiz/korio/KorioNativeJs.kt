@@ -85,7 +85,7 @@ actual object KorioNative {
 
 	actual fun getRandomValues(data: ByteArray): Unit {
 		if (OS.isNodejs) {
-			global.crypto.randomFillSync(Uint8Array(data.unsafeCast<Array<Byte>>()))
+			require("crypto").randomFillSync(Uint8Array(data.unsafeCast<Array<Byte>>()))
 		} else {
 			global.crypto.getRandomValues(data)
 		}
@@ -155,10 +155,6 @@ actual object KorioNative {
 	actual class NativeCRC32 {
 		actual fun update(data: ByteArray, offset: Int, size: Int): Unit = TODO()
 		actual fun digest(): Int = TODO()
-	}
-
-	actual object CreateAnnotation {
-		actual fun <T : Any> createAnnotation(clazz: KClass<T>, map: Map<String, Any?>): T = TODO()
 	}
 
 	actual val httpFactory: HttpFactory by lazy {
@@ -270,6 +266,30 @@ actual object KorioNative {
 		actual fun getInt16(index: Int): Short = data.getInt16(index)
 		actual fun getInt32(index: Int): Int = data.getInt32(index)
 		actual fun getFloat32(index: Int): Float = data.getFloat32(index)
+	}
+
+	actual fun syncTest(block: suspend EventLoopTest.() -> Unit): Unit {
+		global.testPromise = kotlin.js.Promise<Unit> { resolve, reject ->
+			val el = EventLoopTest()
+			var done = false
+			spawnAndForget(el.coroutineContext) {
+				try {
+					block(el)
+					resolve(Unit)
+				} catch (e: Throwable) {
+					reject(e)
+				} finally {
+					done = true
+				}
+			}
+			fun step() {
+				global.setTimeout({
+					el.step(10)
+					if (!done) step()
+				}, 0)
+			}
+			step()
+		}
 	}
 }
 

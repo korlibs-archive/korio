@@ -1,8 +1,6 @@
 package com.soywiz.korio
 
-import com.soywiz.korio.async.EventLoopFactory
-import com.soywiz.korio.async.EventLoopFactoryJvmAndCSharp
-import com.soywiz.korio.async.executeInWorkerSafer
+import com.soywiz.korio.async.*
 import com.soywiz.korio.net.AsyncSocketFactory
 import com.soywiz.korio.net.JvmAsyncSocketFactory
 import com.soywiz.korio.net.http.HttpClient
@@ -99,13 +97,6 @@ actual object KorioNative {
 
 		actual fun digest(): Int {
 			return crc32.value.toInt()
-		}
-	}
-
-	actual object CreateAnnotation {
-		actual fun <T : Any> createAnnotation(clazz: KClass<T>, map: Map<String, Any?>): T {
-			val kclass = (clazz as kotlin.reflect.KClass<Any>)
-			return Proxy.newProxyInstance(ClassLoader.getSystemClassLoader(), arrayOf(kclass.java)) { proxy, method, args -> map[method.name] } as T
 		}
 	}
 
@@ -271,5 +262,9 @@ actual object KorioNative {
 		actual fun getInt16(index: Int): Short = buffer.getShort(index)
 		actual fun getInt32(index: Int): Int = buffer.getInt(index)
 		actual fun getFloat32(index: Int): Float = buffer.getFloat(index)
+	}
+
+	actual fun syncTest(block: suspend EventLoopTest.() -> Unit): Unit {
+		sync(el = EventLoopTest(), step = 10, block = block)
 	}
 }

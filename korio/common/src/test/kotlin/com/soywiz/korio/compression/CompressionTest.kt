@@ -1,6 +1,7 @@
 package com.soywiz.korio.compression
 
 import com.soywiz.korio.async.syncTest
+import com.soywiz.korio.async.syncTestIgnoreJs
 import com.soywiz.korio.crypto.Base64
 import com.soywiz.korio.util.readIntArray_le
 import kotlin.test.Test
@@ -8,7 +9,7 @@ import kotlin.test.assertEquals
 
 class CompressionTest {
 	@Test
-	fun name() = syncTest {
+	fun name() = syncTestIgnoreJs {
 		val data = Base64.decode("H4sIAAAAAAAAA+3SsREAEBSD4WcFm2ACTID9dxGFxgDcub/4mjQpEmdmDuYPKwsSJT3qz1KkXu7fWZMu4/IGr78AAAAAAD+a6ywcnAAQAAA=")
 		val res = Compression.uncompressGzip(data)
 		val res2 = res.readIntArray_le(0, 4096 / 4)

@@ -21,9 +21,6 @@ annotation class Inject
 @Target(AnnotationTarget.VALUE_PARAMETER, AnnotationTarget.FIELD)
 annotation class Optional
 
-inline fun <reified T : Any> createAnnotation(map: Map<String, Any?>): T = CreateAnnotation.createAnnotation(T::class, map)
-inline fun <reified T : Any> createAnnotation(vararg map: Pair<String, Any?>): T = CreateAnnotation.createAnnotation(T::class, map.toMap())
-
 interface AsyncObjectProvider<T> {
 	suspend fun get(injector: AsyncInjector): T
 }
@@ -53,6 +50,27 @@ class InstanceAsyncObjectProvider<T>(val instance: T) : AsyncObjectProvider<T> {
 }
 
 class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Extra by Extra.Mixin() {
+	@Deprecated("Temporally incompatible with Kotlin.JS")
+	suspend inline fun <reified T : Any> getWith(vararg instances: Any): T = getWith(T::class, *instances)
+
+	@Deprecated("Temporally incompatible with Kotlin.JS")
+	suspend inline fun <reified T : Any> get(): T = get<T>(T::class)
+
+	@Deprecated("Temporally incompatible with Kotlin.JS")
+	suspend inline fun <reified T : Any> getOrNull(): T? = getOrNull<T>(T::class)
+
+	@Deprecated("Temporally incompatible with Kotlin.JS")
+	inline fun <reified T : Any> mapInstance(instance: T): AsyncInjector = mapInstance(T::class, instance)
+
+	@Deprecated("Temporally incompatible with Kotlin.JS")
+	inline fun <reified T : Any> mapFactory(noinline gen: suspend AsyncInjector.() -> AsyncFactory<T>) = mapFactory(T::class, gen)
+
+	@Deprecated("Temporally incompatible with Kotlin.JS")
+	inline fun <reified T : Any> mapSingleton(noinline gen: suspend AsyncInjector.() -> T) = mapSingleton(T::class, gen)
+
+	@Deprecated("Temporally incompatible with Kotlin.JS")
+	inline fun <reified T : Any> mapPrototype(noinline gen: suspend AsyncInjector.() -> T) = mapPrototype(T::class, gen)
+
 	var fallbackProvider: (suspend (clazz: kotlin.reflect.KClass<*>, ctx: RequestContext) -> AsyncObjectProvider<*>)? = null
 	val providersByClass = lmapOf<kotlin.reflect.KClass<*>, AsyncObjectProvider<*>>()
 
@@ -61,12 +79,10 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Ext
 
 	fun child() = AsyncInjector(this, level + 1)
 
-	suspend inline fun <reified T : Any> getWith(vararg instances: Any): T = getWith(T::class, *instances)
-
 	suspend fun <T : Any> getWith(clazz: KClass<T>, vararg instances: Any): T {
 		val c = child()
 		for (i in instances) {
-			c.mapInstance(i, i::class as KClass<Any>)
+			c.mapInstance(i::class as KClass<Any>, i)
 		}
 		return c.get(clazz)
 	}
@@ -79,17 +95,7 @@ class AsyncInjector(val parent: AsyncInjector? = null, val level: Int = 0) : Ext
 		parent?.dump()
 	}
 
-	suspend inline fun <reified T : Any> get(): T = get<T>(T::class)
-	suspend inline fun <reified T : Any> getOrNull(): T? = getOrNull<T>(T::class)
-
-	inline fun <reified T : Any> mapInstance(instance: T): AsyncInjector = mapInstance(instance, T::class)
-	inline fun <reified T : Any> mapFactory(noinline gen: suspend AsyncInjector.() -> AsyncFactory<T>) = mapFactory(T::class, gen)
-	inline fun <reified T : Any> mapSingleton(noinline gen: suspend AsyncInjector.() -> T) = mapSingleton(T::class, gen)
-	inline fun <reified T : Any> mapPrototype(noinline gen: suspend AsyncInjector.() -> T) = mapPrototype(T::class, gen)
-
-	inline fun <reified T : Any> mapAnnotation(vararg items: Pair<String, Any?>) = mapInstance<T>(createAnnotation<T>(*items))
-
-	fun <T : Any> mapInstance(instance: T, clazz: KClass<T>): AsyncInjector = this.apply {
+	fun <T : Any> mapInstance(clazz: KClass<T>, instance: T): AsyncInjector = this.apply {
 		providersByClass[clazz] = InstanceAsyncObjectProvider<T>(instance as T)
 	}
 
