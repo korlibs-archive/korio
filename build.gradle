@@ -151,7 +151,9 @@ allprojects {
 						pb.directory(new File("$buildDir/node_modules"))
 						def p = pb.start()
 						p.in.eachLine { println(it) }
-						p.waitFor()
+						if (p.waitFor() != 0) {
+							throw new GradleException('error occurred')
+						}
 					}
 				}
 			}
