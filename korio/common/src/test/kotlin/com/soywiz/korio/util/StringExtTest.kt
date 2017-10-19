@@ -1,10 +1,9 @@
 package com.soywiz.korio.util
 
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class StringExtTest {
-	@Test
+	@kotlin.test.Test
 	fun name() {
 		assertEquals(listOf<String>(), "".splitInChunks(3))
 		assertEquals(listOf("1"), "1".splitInChunks(3))

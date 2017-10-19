@@ -2,25 +2,24 @@ package com.soywiz.korio.serialization.yaml
 
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.serialization.ObjectMapper
-import org.junit.Test
 import kotlin.test.assertEquals
 
 // http://nodeca.github.io/js-yaml/
 class YamlTest {
 	val mapper = ObjectMapper()
 
-	@Test
+	@kotlin.test.Test
 	fun basic() {
 		assertEquals("str", Yaml.read("str"))
 		assertEquals(10, Yaml.read("10"))
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun array() {
 		assertEquals(listOf(1, 2, 3), Yaml.read("[1,2,3]"))
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun name() {
 		assertEquals(
 			listOf(1, 2, 3),
@@ -32,7 +31,7 @@ class YamlTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun name2() {
 		assertEquals(
 			lmapOf("hr" to 65, "avg" to 0.278, "rbi" to 147),
@@ -44,7 +43,7 @@ class YamlTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun name3() {
 		assertEquals(
 			listOf(listOf(listOf(1))),
@@ -52,7 +51,7 @@ class YamlTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun name4() {
 		assertEquals(
 			listOf(lmapOf("a" to 1), lmapOf("a" to 2)),
@@ -65,7 +64,7 @@ class YamlTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun name5() {
 		assertEquals(
 			listOf(
@@ -93,7 +92,7 @@ class YamlTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun name6() {
 		assertEquals(
 			lmapOf(
@@ -112,7 +111,7 @@ class YamlTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun name7() {
 		assertEquals(
 			lmapOf(
@@ -132,7 +131,7 @@ class YamlTest {
 	enum class MyEnum { DEMO, HELLO, WORLD }
 	data class ClassWithEnum(val size: Int = 70, val a: MyEnum = MyEnum.HELLO)
 
-	@Test
+	@kotlin.test.Test
 	fun decodeToType() {
 		mapper.registerEnum(MyEnum.values())
 		mapper.registerType { ClassWithEnum(it["size"]?.gen() ?: 70, it["a"]?.gen() ?: MyEnum.HELLO) }

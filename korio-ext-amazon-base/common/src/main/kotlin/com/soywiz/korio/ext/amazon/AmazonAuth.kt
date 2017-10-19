@@ -1,5 +1,6 @@
 package com.soywiz.korio.ext.amazon
 
+import com.soywiz.korio.IOException
 import com.soywiz.korio.crypto.AsyncHash
 import com.soywiz.korio.crypto.SimplerMac
 import com.soywiz.korio.crypto.finalize

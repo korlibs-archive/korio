@@ -2,7 +2,6 @@ package com.soywiz.korio.vfs
 
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.net.http.createHttpClient
@@ -32,7 +31,7 @@ class UrlVfs(val url: String, val dummy: Unit) : Vfs() {
 		val response = stat.extraInfo as? HttpClient.Response
 
 		if (!stat.exists) {
-			throw FileNotFoundException("Unexistant $fullUrl : $response")
+			throw com.soywiz.korio.FileNotFoundException("Unexistant $fullUrl : $response")
 		}
 
 		return object : AsyncStreamBase() {

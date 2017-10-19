@@ -4,7 +4,6 @@ import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import com.soywiz.korio.ds.LinkedList
-import com.soywiz.korio.lang.CancellationException
 import com.soywiz.korio.lang.Console
 import com.soywiz.korio.lang.printStackTrace
 import com.soywiz.korio.util.Cancellable
@@ -71,7 +70,7 @@ class Promise<T : Any?> : Cancellable {
 			this.error = error
 			this.done = true
 
-			if (error != null && synchronized(resolvedHandlers) { this.rejectedHandlers.isEmpty() } && error !is CancellationException) {
+			if (error != null && synchronized(resolvedHandlers) { this.rejectedHandlers.isEmpty() } && error !is com.soywiz.korio.CancellationException) {
 				Console.error("## Not handled Promise exception:")
 				error.printStackTrace()
 			}
@@ -110,7 +109,7 @@ class Promise<T : Any?> : Cancellable {
 
 	override fun cancel(e: Throwable) {
 		onCancel(e)
-		complete(null, CancellationException(""))
+		complete(null, com.soywiz.korio.CancellationException(""))
 	}
 
 	suspend fun await(): T = korioSuspendCoroutine(this::then)

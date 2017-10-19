@@ -6,7 +6,7 @@ buildscript {
 }
 
 dependencies {
-	implement project(":korio-example-common")
+	expectedBy project(":korio-example-common")
 
 	compile project(":korio-js")
 	compile project(":korio-ext-db-redis-js")

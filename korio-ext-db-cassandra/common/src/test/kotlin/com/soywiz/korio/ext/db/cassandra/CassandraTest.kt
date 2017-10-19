@@ -4,11 +4,10 @@ import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.stream.AsyncProduceConsumerByteBuffer
 import com.soywiz.korio.stream.writeBytes
 import com.soywiz.korio.util.AsyncCloseable
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class CassandraTest {
-	@Test
+	@kotlin.test.Test
 	fun name() = syncTest {
 		val serverToClient = AsyncProduceConsumerByteBuffer()
 		val clientToServer = AsyncProduceConsumerByteBuffer()

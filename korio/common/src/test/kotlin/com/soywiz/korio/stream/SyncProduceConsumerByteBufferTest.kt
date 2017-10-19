@@ -1,11 +1,10 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.util.toHexString
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class SyncProduceConsumerByteBufferTest {
-	@Test
+	@kotlin.test.Test
 	fun name() {
 		val buf = SyncProduceConsumerByteBuffer()
 		buf.produce(byteArrayOf(1))
@@ -15,7 +14,7 @@ class SyncProduceConsumerByteBufferTest {
 		assertEquals("0708", buf.consume(6).toHexString())
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun name2() {
 		val buf = SyncProduceConsumerByteBuffer()
 		for (n in 1..8) buf.produce(byteArrayOf(n.toByte()))
@@ -23,7 +22,7 @@ class SyncProduceConsumerByteBufferTest {
 		assertEquals("0708", buf.consume(6).toHexString())
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun name3() {
 		val buf = SyncProduceConsumerByteBuffer()
 		buf.produce((1..8).map(Int::toByte).toByteArray())
@@ -31,7 +30,7 @@ class SyncProduceConsumerByteBufferTest {
 		assertEquals("0708", buf.consume(6).toHexString())
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun name4() {
 		val buf = SyncProduceConsumerByteBuffer()
 		buf.produce((1..8).map(Int::toByte).toByteArray())

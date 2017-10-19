@@ -53,7 +53,7 @@ actual class Semaphore actual constructor(initial: Int) {
 }
 
 actual object KorioNative {
-	open val currentThreadId: Long get() = Thread.currentThread().id
+	actual val currentThreadId: Long get() = Thread.currentThread().id
 
 	actual abstract class NativeThreadLocal<T> {
 		actual abstract fun initialValue(): T

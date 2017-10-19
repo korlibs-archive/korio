@@ -5,7 +5,6 @@ import com.soywiz.korio.net.http.LogHttpClient
 import com.soywiz.korio.time.TimeProvider
 import com.soywiz.korio.vfs.MimeType
 import com.soywiz.korio.vfs.VfsFile
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class S3Test {
@@ -19,7 +18,7 @@ class S3Test {
 		}
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun checkGet() = syncTest {
 		httpClient.response = httpClient.response.withStringResponse("hello")
 
@@ -30,7 +29,7 @@ class S3Test {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun checkPut() = syncTest {
 		s3["test/hello.json"].writeString("hello")
 		assertEquals(
@@ -39,7 +38,7 @@ class S3Test {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun checkPut2() = syncTest {
 		s3["test/hello.txt"].writeString("hello", MimeType.IMAGE_JPEG, S3.ACL.PUBLIC_READ)
 		assertEquals(
@@ -48,7 +47,7 @@ class S3Test {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun checkAbsoluteUrl() = syncTest {
 		assertEquals("https://.s3.amazonaws.com/", s3.absolutePath)
 		assertEquals("https://test.s3.amazonaws.com/", s3["test"].absolutePath)

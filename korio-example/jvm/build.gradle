@@ -4,7 +4,7 @@ apply plugin: "application"
 mainClassName = "com.soywiz.korio.example.MainJVM"
 
 dependencies {
-	implement project(":korio-example-common")
+	expectedBy project(":korio-example-common")
 
 	compile project(":korio")
 	compile project(":korio-ext-db-redis")

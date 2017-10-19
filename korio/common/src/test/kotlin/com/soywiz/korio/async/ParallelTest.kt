@@ -1,17 +1,16 @@
 package com.soywiz.korio.async
 
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class ParallelTest {
-	@Test
+	@kotlin.test.Test
 	fun empty() = syncTest {
 		val out = ""
 		parallel()
 		assertEquals("", out)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun one() = syncTest {
 		var out = ""
 		parallel(
@@ -20,7 +19,7 @@ class ParallelTest {
 		assertEquals("a", out)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun couple() = syncTest {
 		var out = ""
 		parallel(

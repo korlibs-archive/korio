@@ -2,11 +2,10 @@ package com.soywiz.korio.util
 
 import com.soywiz.korio.lang.format
 import com.soywiz.korio.math.reverseBytes
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class BitsTest {
-	@Test
+	@kotlin.test.Test
 	fun name() {
 		val a = byteArrayOf(0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08)
 		assertEquals("0102030405060708", "%016X".format(a.readS64_be(0)))

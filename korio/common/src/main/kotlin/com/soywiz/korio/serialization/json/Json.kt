@@ -3,7 +3,6 @@ package com.soywiz.korio.serialization.json
 import com.soywiz.korio.Language
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.lang.IOException
 import com.soywiz.korio.serialization.Mapper
 import com.soywiz.korio.serialization.ObjectMapper
 import com.soywiz.korio.util.Indenter
@@ -29,7 +28,7 @@ object Json {
 	fun parse(@Language("json") s: String): Any? = StrReader(s).decode()
 	inline fun <reified T : Any> parseTyped(@Language("json") s: String, mapper: ObjectMapper = Mapper): T = decodeToType(s, T::class, mapper)
 
-	fun invalidJson(msg: String = "Invalid JSON"): Nothing = throw IOException(msg)
+	fun invalidJson(msg: String = "Invalid JSON"): Nothing = throw com.soywiz.korio.IOException(msg)
 
 	fun decode(@Language("json") s: String): Any? = StrReader(s).decode()
 

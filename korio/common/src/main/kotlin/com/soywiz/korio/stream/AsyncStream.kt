@@ -2,6 +2,7 @@
 
 package com.soywiz.korio.stream
 
+import com.soywiz.korio.EOFException
 import com.soywiz.korio.KorioNative
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.executeInWorker
@@ -295,7 +296,7 @@ suspend fun AsyncInputStream.readExact(buffer: ByteArray, offset: Int, len: Int)
 	while (remaining > 0) {
 		val read = read(buffer, coffset, remaining)
 		if (read < 0) break
-		if (read == 0) throw EOFException("Not enough data")
+		if (read == 0) throw com.soywiz.korio.EOFException("Not enough data")
 		coffset += read
 		remaining -= read
 	}

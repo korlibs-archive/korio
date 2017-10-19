@@ -1,7 +1,7 @@
 apply plugin: 'kotlin-platform-jvm'
 
 dependencies {
-	implement project(":korio-ext-db-elasticsearch-common")
+	expectedBy project(":korio-ext-db-elasticsearch-common")
 	testImplementation project(":korio-ext-db-elasticsearch-common")
 
 	compile project(":korio-ext-db-base")

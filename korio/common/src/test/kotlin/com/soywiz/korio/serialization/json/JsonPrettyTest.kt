@@ -2,7 +2,6 @@ package com.soywiz.korio.serialization.json
 
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.serialization.ObjectMapper
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class JsonPrettyTest {
@@ -20,7 +19,7 @@ class JsonPrettyTest {
 	}
 
 
-	@Test
+	@kotlin.test.Test
 	fun encode1() {
 		assertEquals("1", Json.encodePretty(1, mapper))
 		//assertEquals("null", Json.encodePretty(null, mapper))
@@ -31,7 +30,7 @@ class JsonPrettyTest {
 		assertEquals("\"a\"", Json.encodePretty("a", mapper))
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun encode2() {
 		assertEquals("""
 			|[
@@ -49,7 +48,7 @@ class JsonPrettyTest {
 		""".trimMargin(), Json.encodePretty(lmapOf("a" to 1, "b" to 2), mapper))
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun encodeTyped() {
 		assertEquals("""
 			|{
@@ -60,7 +59,7 @@ class JsonPrettyTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun encodeMix() {
 		assertEquals("""
 				|{

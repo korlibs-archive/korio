@@ -6,7 +6,6 @@ import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.korioStartCoroutine
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
-import com.soywiz.korio.lang.FileNotFoundException
 
 suspend fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile = korioSuspendCoroutine { c ->
 	val mount = object : Vfs.Proxy(), Mountable {
@@ -39,7 +38,7 @@ suspend fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile = kori
 					return file[rpath.substring(base.length)]
 				}
 			}
-			throw FileNotFoundException(path)
+			throw com.soywiz.korio.FileNotFoundException(path)
 		}
 	}
 	callback.korioStartCoroutine(mount, object : Continuation<Unit> {

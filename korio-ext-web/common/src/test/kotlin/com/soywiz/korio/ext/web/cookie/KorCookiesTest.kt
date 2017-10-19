@@ -1,10 +1,9 @@
 package com.soywiz.korio.ext.web.cookie
 
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class KorCookiesTest {
-	@Test
+	@kotlin.test.Test
 	fun name() {
 		val setCookie = "id=a3fWa; Expires=Wed, 21 Oct 2015 07:28:00 GMT; Secure; HttpOnly"
 

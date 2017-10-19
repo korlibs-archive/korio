@@ -8,7 +8,6 @@ import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.Closeable
-import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.MemorySyncStream
@@ -66,7 +65,7 @@ open class NodeVfs(val caseSensitive: Boolean = true) : Vfs() {
 			for (part in VfsUtil.parts(path)) {
 				var child = node.child(part)
 				if (child == null && createFolders) child = node.createChild(part, isDirectory = true)
-				node = child ?: throw FileNotFoundException("Can't find '$part' in $path")
+				node = child ?: throw com.soywiz.korio.FileNotFoundException("Can't find '$part' in $path")
 			}
 			return node
 		}
@@ -110,7 +109,7 @@ open class NodeVfs(val caseSensitive: Boolean = true) : Vfs() {
 				suspend override fun close() = s.close()
 			}.toAsyncStream()
 		}
-		return node?.stream?.clone() ?: throw FileNotFoundException(path)
+		return node?.stream?.clone() ?: throw com.soywiz.korio.FileNotFoundException(path)
 	}
 
 	suspend override fun stat(path: String): VfsStat {

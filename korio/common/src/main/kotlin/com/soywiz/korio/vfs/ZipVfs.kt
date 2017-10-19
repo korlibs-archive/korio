@@ -6,8 +6,6 @@ import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.compression.Inflater
 import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.ds.lmapOf
-import com.soywiz.korio.lang.FileNotFoundException
-import com.soywiz.korio.lang.IOException
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.time.DateTime
 import com.soywiz.korio.util.*
@@ -135,8 +133,8 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 		val vfs = this
 
 		suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
-			val entry = files[path.normalizeName()] ?: throw FileNotFoundException("Path: '$path'")
-			if (entry.isDirectory) throw IOException("Can't open a zip directory for $mode")
+			val entry = files[path.normalizeName()] ?: throw com.soywiz.korio.FileNotFoundException("Path: '$path'")
+			if (entry.isDirectory) throw com.soywiz.korio.IOException("Can't open a zip directory for $mode")
 			val base = entry.headerEntry.slice()
 			return base.run {
 				if (this.getAvailable() < 16) throw IllegalStateException("Chunk to small to be a ZIP chunk")

@@ -4,7 +4,6 @@ import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.korioStartCoroutine
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import com.soywiz.korio.ds.LinkedList
-import com.soywiz.korio.lang.CancellationException
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncOutputStream
@@ -70,7 +69,7 @@ open class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 				synchronized(this) {
 					consumers -= consumer
 				}
-				c.resumeWithException(CancellationException(""))
+				c.resumeWithException(com.soywiz.korio.CancellationException(""))
 			}
 		}
 		synchronized(this) {

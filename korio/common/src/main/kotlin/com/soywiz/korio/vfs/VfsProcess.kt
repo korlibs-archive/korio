@@ -1,7 +1,5 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.lang.IOException
-
 open class VfsProcessHandler {
 	suspend open fun onOut(data: ByteArray): Unit {
 	}
@@ -10,4 +8,4 @@ open class VfsProcessHandler {
 	}
 }
 
-class VfsProcessException(message: String) : IOException(message)
+class VfsProcessException(message: String) : com.soywiz.korio.IOException(message)

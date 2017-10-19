@@ -2,6 +2,6 @@ apply plugin: 'kotlin-platform-jvm'
 //apply plugin: 'kotlin'
 
 dependencies {
-	implement project(":korio-common")
+	expectedBy project(":korio-common")
 	testImplementation project(":korio-common")
 }

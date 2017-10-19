@@ -1,6 +1,5 @@
 package com.soywiz.korio.util
 
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class ExtraTest {
@@ -11,7 +10,7 @@ class ExtraTest {
 	var Demo.demo by Extra.Property { 0 }
 	var Demo.demo2 by Extra.PropertyThis<Demo, Int> { default }
 
-	@Test
+	@kotlin.test.Test
 	fun name() {
 		val demo = Demo()
 		assertEquals(0, demo.demo)
