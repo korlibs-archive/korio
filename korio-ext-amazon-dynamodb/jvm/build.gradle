@@ -1,7 +1,7 @@
 apply plugin: 'kotlin-platform-jvm'
 
 dependencies {
-	implement project(":korio-ext-amazon-dynamodb-common")
+	expectedBy project(":korio-ext-amazon-dynamodb-common")
 	testImplementation project(":korio-ext-amazon-dynamodb-common")
 
 	compile project(":korio-ext-amazon-base")

@@ -3,7 +3,6 @@ package com.soywiz.korio.inject
 import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.util.expectException
-import org.junit.Test
 import kotlin.test.assertEquals
 
 
@@ -13,14 +12,14 @@ class AsyncInjectorTest {
 		var log = ""
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testSimple() = syncTest {
 		val inject = AsyncInjector()
 		inject.mapInstance(10)
 		assertEquals(10, inject.get<Int>())
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testSingleton() = syncTest {
 		@Singleton
 		class A(val holder: Holder) {
@@ -56,7 +55,7 @@ class AsyncInjectorTest {
 		val id: Int = lastId++
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testPrototype() = syncTest {
 		lastId = 0
 		val inject = AsyncInjector()
@@ -67,7 +66,7 @@ class AsyncInjectorTest {
 		assertEquals(1, a1.id)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testPrototypeSingleton() = syncTest {
 		lastId = 0
 		val inject = AsyncInjector()
@@ -82,7 +81,7 @@ class AsyncInjectorTest {
 		assertEquals(2, a1?.id)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testAnnotation() = syncTest {
 		annotation class Path(val path: String)
 
@@ -128,7 +127,7 @@ class AsyncInjectorTest {
 		override suspend fun create() = BitmapFont(path.path)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testLoader() = syncTest {
 		@Singleton
 		class Demo(
@@ -161,7 +160,7 @@ class AsyncInjectorTest {
 		}
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testLoader2() = syncTest {
 		@Singleton
 		class Demo2(
@@ -186,7 +185,7 @@ class AsyncInjectorTest {
 
 	//@Inject lateinit var injector: AsyncInjector
 
-	@Test
+	@kotlin.test.Test
 	fun testInjectAnnotation() = syncTest {
 		val holder = Holder()
 
@@ -216,7 +215,7 @@ class AsyncInjectorTest {
 		assertEquals(10, demo.a)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testSingletonInChilds() = syncTest {
 		@Singleton
 		class MySingleton {
@@ -229,7 +228,7 @@ class AsyncInjectorTest {
 		assertEquals(20, injector.get<MySingleton>().a)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testNotMapped() = syncTest {
 		expectException<AsyncInjector.NotMappedException> {
 			data class Unmapped(val name: String)
@@ -242,7 +241,7 @@ class AsyncInjectorTest {
 		}
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testMap1() = syncTest {
 		data class Mapped(val name: String)
 		@Singleton

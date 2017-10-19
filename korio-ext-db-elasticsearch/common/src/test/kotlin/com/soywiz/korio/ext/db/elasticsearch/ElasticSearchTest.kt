@@ -7,7 +7,6 @@ import com.soywiz.korio.net.http.rest.rest
 import com.soywiz.korio.serialization.ObjectMapper
 import com.soywiz.korio.serialization.json.toJsonUntyped
 import com.soywiz.korio.time.seconds
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class ElasticSearchTest {
@@ -25,7 +24,7 @@ class ElasticSearchTest {
 		mapper.registerUntype<Doc> { lmapOf("title" to it.title, "body" to it.body) }
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testPut() = syncTest {
 		val myid = "myid"
 		val myversion = 7L
@@ -48,7 +47,7 @@ class ElasticSearchTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testSearch() = syncTest {
 		val res1 = lmapOf(
 			"took" to 77,
@@ -96,7 +95,7 @@ class ElasticSearchTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testDelete() = syncTest {
 		assertEquals(
 			listOf("""DELETE:index-es/posts/hello:null"""),
@@ -115,7 +114,7 @@ class ElasticSearchTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testGetOrNull() = syncTest {
 		assertEquals(
 			listOf("""GET:index-es/posts/hello:null"""),
@@ -138,7 +137,7 @@ class ElasticSearchTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testIndexExists() = syncTest {
 		assertEquals(
 			listOf("""HEAD:index-es:null"""),
@@ -156,7 +155,7 @@ class ElasticSearchTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testIndexCreate() = syncTest {
 		assertEquals(
 			listOf("""PUT:index-es:{"settings":{"index":{"number_of_shards":8,"number_of_replicas":0}}}"""),
@@ -167,7 +166,7 @@ class ElasticSearchTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun testIndexEnsure() = syncTest {
 		assertEquals(
 			listOf(

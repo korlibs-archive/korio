@@ -1,9 +1,7 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.lang.CancellationException
-
 interface Cancellable {
-	fun cancel(e: Throwable = CancellationException("")): Unit
+	fun cancel(e: Throwable = com.soywiz.korio.CancellationException("")): Unit
 
 	interface Listener {
 		fun onCancel(handler: (Throwable) -> Unit): Unit

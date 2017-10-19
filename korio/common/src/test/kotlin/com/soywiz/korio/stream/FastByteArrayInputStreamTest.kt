@@ -1,11 +1,10 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.lang.format
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class FastByteArrayInputStreamTest {
-	@Test
+	@kotlin.test.Test
 	fun name() {
 		val v = FastByteArrayInputStream(byteArrayOf(1, 2, 3, 4))
 		assertEquals(4, v.available)

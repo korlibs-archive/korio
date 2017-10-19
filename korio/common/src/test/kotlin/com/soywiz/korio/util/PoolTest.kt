@@ -1,6 +1,5 @@
 package com.soywiz.korio.util
 
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class PoolTest {
@@ -9,7 +8,7 @@ class PoolTest {
 		var y: Int = 0
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun name() {
 		val pool = Pool { Demo() }
 		val a = pool.alloc()

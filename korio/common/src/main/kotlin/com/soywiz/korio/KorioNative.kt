@@ -17,21 +17,21 @@ import com.soywiz.korio.vfs.VfsFile
 import kotlin.math.min
 import kotlin.reflect.KClass
 
-expect annotation class Synchronized
-expect annotation class JvmField
-expect annotation class JvmStatic
-expect annotation class JvmOverloads
-expect annotation class Transient
+expect annotation class Synchronized()
+expect annotation class JvmField()
+expect annotation class JvmStatic()
+expect annotation class JvmOverloads()
+expect annotation class Transient()
 
 expect annotation class Language(val value: String, val prefix: String = "", val suffix: String = "")
 
-expect open class IOException(msg: String) : Exception(msg)
-expect open class EOFException(msg: String) : IOException(msg)
-expect open class FileNotFoundException(msg: String) : IOException(msg)
+expect open class IOException(msg: String) : Exception
+expect open class EOFException(msg: String) : IOException
+expect open class FileNotFoundException(msg: String) : IOException
 
-expect open class RuntimeException(msg: String) : Exception(msg)
-expect open class IllegalStateException(msg: String) : RuntimeException(msg)
-expect open class CancellationException(msg: String) : IllegalStateException(msg)
+expect open class RuntimeException(msg: String) : Exception
+expect open class IllegalStateException(msg: String) : RuntimeException
+expect open class CancellationException(msg: String) : IllegalStateException
 
 expect class Semaphore(initial: Int) {
 	//var initial: Int
@@ -40,7 +40,7 @@ expect class Semaphore(initial: Int) {
 }
 
 expect object KorioNative {
-	abstract class NativeThreadLocal<T> {
+	abstract class NativeThreadLocal<T>() {
 		abstract fun initialValue(): T
 		fun get(): T
 		fun set(value: T): Unit
@@ -111,7 +111,7 @@ expect object KorioNative {
 		suspend fun finalize(): ByteArray
 	}
 
-	class NativeCRC32 {
+	class NativeCRC32() {
 		fun update(data: ByteArray, offset: Int, size: Int)
 		fun digest(): Int
 	}

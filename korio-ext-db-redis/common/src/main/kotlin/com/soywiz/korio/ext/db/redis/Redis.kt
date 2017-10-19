@@ -1,5 +1,7 @@
 package com.soywiz.korio.ext.db.redis
 
+import com.soywiz.korio.IOException
+import com.soywiz.korio.RuntimeException
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.sleep
 import com.soywiz.korio.coroutine.withCoroutineContext
@@ -80,7 +82,7 @@ class Redis(val maxConnections: Int = 50, val stats: Stats = Stats(), private va
 				commandQueue.sync {
 					try {
 						reconnect(this@Client)
-					} catch (e: IOException) {
+					} catch (e: com.soywiz.korio.IOException) {
 					}
 				}
 			}

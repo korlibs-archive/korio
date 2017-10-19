@@ -6,7 +6,6 @@ import com.soywiz.korio.lang.URL
 import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.util.toHexStringLower
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class AmazonAuthTest {
@@ -25,7 +24,7 @@ class AmazonAuthTest {
 
 	// http://docs.aws.amazon.com/general/latest/gr/sigv4-create-canonical-request.html
 	// Task 1: Create a Canonical Request for Signature Version 4
-	@Test
+	@kotlin.test.Test
 	fun task1Test() = syncTest {
 		val expected = listOf(
 			"GET",
@@ -50,7 +49,7 @@ class AmazonAuthTest {
 
 	// http://docs.aws.amazon.com/general/latest/gr/sigv4-create-string-to-sign.html
 	// Task 2: Create a String to Sign for Signature Version 4
-	@Test
+	@kotlin.test.Test
 	fun task2Test() = syncTest {
 		assertEquals(
 			listOf(
@@ -65,7 +64,7 @@ class AmazonAuthTest {
 
 	// http://docs.aws.amazon.com/general/latest/gr/sigv4-calculate-signature.html
 	// Task 3: Calculate the Signature for AWS Signature Version 4
-	@Test
+	@kotlin.test.Test
 	fun task3Test() = syncTest {
 		assertEquals(
 			"f4780e2d9f65fa895f9c67b32ce1baf0b0d8a43505a000a1a9e090d414db404d",
@@ -73,7 +72,7 @@ class AmazonAuthTest {
 		)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun task4Test() = syncTest {
 		assertEquals(
 			"AWS4-HMAC-SHA256 Credential=AKIDEXAMPLE/20150830/us-east-1/iam/aws4_request, SignedHeaders=content-type;host;x-amz-date, Signature=5d672d79c15b13162d9279b0855cfba6789a8edb4c82c400e06b5924a6f2b5d7",

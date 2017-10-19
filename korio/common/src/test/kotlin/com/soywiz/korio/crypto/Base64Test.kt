@@ -3,7 +3,7 @@ package com.soywiz.korio.crypto
 import com.soywiz.korio.lang.Charsets
 import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.lang.toString
-import org.junit.Test
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class Base64Test {

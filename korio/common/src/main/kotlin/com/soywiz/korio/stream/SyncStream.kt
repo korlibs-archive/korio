@@ -1,5 +1,6 @@
 package com.soywiz.korio.stream
 
+import com.soywiz.korio.RuntimeException
 import com.soywiz.korio.ds.ByteArrayBuilder
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.lang.tl.threadLocal

@@ -3,13 +3,12 @@ package com.soywiz.korio.async
 import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.korioStartCoroutine
-import com.soywiz.korio.lang.CancellationException
 
 suspend fun withTimeout(ms: Int, name: String = "timeout", callback: suspend () -> Unit) = suspendCancellableCoroutine<Unit> { c ->
 	var cancelled = false
 	val timer = c.eventLoop.setTimeout(ms) {
 		//c.cancel(TimeoutException())
-		c.cancel(CancellationException(""))
+		c.cancel(com.soywiz.korio.CancellationException(""))
 		//c.resumeWithException(TimeoutException(name))
 	}
 	c.onCancel {

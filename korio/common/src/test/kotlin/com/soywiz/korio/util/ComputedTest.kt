@@ -1,6 +1,5 @@
 package com.soywiz.korio.util
 
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class ComputedTest {
@@ -10,7 +9,7 @@ class ComputedTest {
 		val computedSize by Computed(Format::size) { 10 }
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun name() {
 		val f2 = Format()
 		val f1 = Format(f2)
@@ -21,7 +20,7 @@ class ComputedTest {
 		assertEquals(15, f1.computedSize)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun name2() {
 		val f3 = Format()
 		val f2 = Format(f3)

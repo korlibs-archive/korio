@@ -1,6 +1,5 @@
 package com.soywiz.korio.util
 
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class RedirectFieldTest {
@@ -13,7 +12,7 @@ class RedirectFieldTest {
 		val y: Int by redirectField(this::z)
 	}
 
-	@Test
+	@kotlin.test.Test
 	fun redirect() {
 		val b = B(A())
 		assertEquals(b.z, 10)

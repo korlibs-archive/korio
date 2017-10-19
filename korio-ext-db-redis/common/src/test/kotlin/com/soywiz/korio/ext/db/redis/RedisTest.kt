@@ -6,11 +6,10 @@ import com.soywiz.korio.stream.toAsyncInputStream
 import com.soywiz.korio.stream.toAsyncOutputStream
 import com.soywiz.korio.stream.writeString
 import com.soywiz.korio.util.AsyncCloseable
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class RedisTest {
-	@Test
+	@kotlin.test.Test
 	fun name() = syncTest {
 		val serverToClient = SyncProduceConsumerByteBuffer()
 		val clientToServer = SyncProduceConsumerByteBuffer()

@@ -2,7 +2,6 @@ package com.soywiz.korio.ext.web.sstatic
 
 import com.soywiz.korio.crypto.AsyncHash
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpDate
 import com.soywiz.korio.net.http.HttpServer
@@ -48,7 +47,7 @@ object StaticServe {
 	suspend fun serveStatic(res: HttpServer.Request, file: VfsFile) {
 		//println("[a]")
 		val fileStat = file.stat()
-		if (!fileStat.exists) throw FileNotFoundException("$file not found")
+		if (!fileStat.exists) throw com.soywiz.korio.FileNotFoundException("$file not found")
 		//println("[b]")
 
 		val fileSize = fileStat.size

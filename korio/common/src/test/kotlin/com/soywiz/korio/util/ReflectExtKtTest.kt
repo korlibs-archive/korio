@@ -1,9 +1,7 @@
 package com.soywiz.korio.util
 
-import org.junit.Test
-
 class ReflectExtKtTest {
-	@Test
+	@kotlin.test.Test
 	fun name() {
 		//open class A
 		//class B : A()

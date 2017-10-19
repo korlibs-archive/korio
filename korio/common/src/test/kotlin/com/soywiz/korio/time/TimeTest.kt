@@ -1,10 +1,9 @@
 package com.soywiz.korio.time
 
-import org.junit.Test
 import kotlin.test.assertEquals
 
 class TimeTest {
-	@Test
+	@kotlin.test.Test
 	fun name() {
 		assertEquals("Thu, 01 Jan 1970 00:00:00 UTC", DateTime.EPOCH.toString())
 		assertEquals("Fri, 13 Oct 2017 22:58:29 UTC", DateTime.fromUnix(1507935509943).toString())

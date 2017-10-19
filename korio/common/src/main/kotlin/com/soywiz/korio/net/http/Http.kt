@@ -3,7 +3,6 @@ package com.soywiz.korio.net.http
 import com.soywiz.korio.crypto.fromBase64
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.Charsets
-import com.soywiz.korio.lang.IOException
 import com.soywiz.korio.lang.toString
 import com.soywiz.korio.serialization.querystring.QueryString
 
@@ -55,7 +54,7 @@ interface Http {
 		val msg: String = "Error$statusCode",
 		val statusText: String = HttpStatusMessage.CODES[statusCode] ?: "Error$statusCode",
 		val headers: Http.Headers = Http.Headers()
-	) : IOException("$statusCode $statusText - $msg") {
+	) : com.soywiz.korio.IOException("$statusCode $statusText - $msg") {
 		companion object {
 			fun unauthorizedBasic(realm: String = "Realm", msg: String = "Unauthorized"): Nothing = throw Http.HttpException(401, msg = msg, headers = Http.Headers("WWW-Authenticate" to "Basic realm=\"$realm\""))
 			//fun unauthorizedDigest(realm: String = "My Domain", msg: String = "Unauthorized"): Nothing = throw Http.HttpException(401, msg = msg, headers = Http.Headers("WWW-Authenticate" to "Digest realm=\"$realm\""))

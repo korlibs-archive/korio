@@ -1,7 +1,7 @@
 package com.soywiz.korio.async
 
+import com.soywiz.korio.CancellationException
 import com.soywiz.korio.expectException
-import com.soywiz.korio.lang.CancellationException
 import org.junit.Ignore
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -26,7 +26,7 @@ class PromiseTest {
 			try {
 				sleep(100)
 				10
-			} catch (e: CancellationException) {
+			} catch (e: com.soywiz.korio.CancellationException) {
 				out += "|"
 				throw e
 			}
@@ -36,7 +36,7 @@ class PromiseTest {
 
 		try {
 			out += "" + p.await()
-		} catch (e: CancellationException) {
+		} catch (e: com.soywiz.korio.CancellationException) {
 			out += "CancellationException"
 		}
 

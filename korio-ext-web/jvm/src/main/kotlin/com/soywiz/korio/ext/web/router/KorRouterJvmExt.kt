@@ -1,5 +1,6 @@
 package com.soywiz.korio.ext.web.router
 
+import com.soywiz.korio.FileNotFoundException
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.async
 import com.soywiz.korio.async.invokeSuspend
@@ -10,7 +11,6 @@ import com.soywiz.korio.error.InvalidOperationException
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.ext.web.sstatic.serveStatic
 import com.soywiz.korio.lang.Charsets
-import com.soywiz.korio.lang.FileNotFoundException
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.http.httpError
@@ -208,7 +208,7 @@ suspend private fun registerHttpRoute(router: KorRouter, instance: Any, method: 
 						val ft = when (t) {
 							is java.nio.file.NoSuchFileException,
 							is InvalidPathException,
-							is FileNotFoundException,
+							is com.soywiz.korio.FileNotFoundException,
 							is NoSuchFileException,
 							is NoSuchElementException
 							->

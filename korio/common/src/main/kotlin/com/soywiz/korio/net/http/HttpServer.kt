@@ -1,5 +1,6 @@
 package com.soywiz.korio.net.http
 
+import com.soywiz.korio.IOException
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.asyncGenerate3
 import com.soywiz.korio.async.spawnAndForget
