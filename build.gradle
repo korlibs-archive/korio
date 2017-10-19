@@ -120,29 +120,39 @@ allprojects {
 			task fixJsForAsync(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules, installMocha]) {
 				doLast {
 					File file = new File(compileTestKotlin2Js.outputFile)
-					File fileOut = new File(compileTestKotlin2Js.outputFile + ".fix.js")
-					//file.text = 'function test2(name, v, func) { test(name, v, () => { var res = func(); return (res instanceof Promise) ? res : undefined; }); }; ' + file.text.replaceAll(/test\('(.*)',\s*false,\s*function\s*\(\)\s* \{/, 'test2("$1", false, function() { return')
+					if (file.exists()) {
+						File fileOut = new File(compileTestKotlin2Js.outputFile + ".fix.js")
+						//file.text = 'function test2(name, v, func) { test(name, v, () => { var res = func(); return (res instanceof Promise) ? res : undefined; }); }; ' + file.text.replaceAll(/test\('(.*)',\s*false,\s*function\s*\(\)\s* \{/, 'test2("$1", false, function() { return')
 
-					def timeout = 2000
-					//def timeout = 5000
+						def timeout = 2000
+						//def timeout = 5000
 
-					fileOut.text = file.text.replaceAll(
-							/(?m)(?s)test\('(.*?)', false, function \(\) \{\s*(.*?);\s*\}\);/,
-							'test("$1", false, function() { this.timeout(' + timeout + '); global.testPromise = null; var res = $2 || (global.testPromise); return (res instanceof Promise) ? res : undefined; });'
-					)
+						fileOut.text = file.text.replaceAll(
+								/(?m)(?s)test\('(.*?)', false, function \(\) \{\s*(.*?);\s*\}\);/,
+								'test("$1", false, function() { this.timeout(' + timeout + '); global.testPromise = null; var res = $2 || (global.testPromise); return (res instanceof Promise) ? res : undefined; });'
+						)
+					}
 				}
 			}
 
-			task runMocha(type: Exec, dependsOn: [compileTestKotlin2Js, populateNodeModules, installMocha, fixJsForAsync]) {
-				File fileOut = new File(compileTestKotlin2Js.outputFile + ".fix.js")
-				//File fileOut = new File(compileTestKotlin2Js.outputFile)
+			task runMocha(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules, installMocha, fixJsForAsync]) {
+				doLast {
+					File fileOut = new File(compileTestKotlin2Js.outputFile + ".fix.js")
 
-				workingDir "$buildDir/node_modules"
+					if (fileOut.exists()) {
+						String[] cmd
+						if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+							cmd = ["cmd", "/c", "$buildDir/node_modules/.bin/mocha.cmd" as String, fileOut]
+						} else {
+							cmd = ["$buildDir/node_modules/.bin/mocha" as String, fileOut]
+						}
 
-				if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-					commandLine "cmd", "/c", "$buildDir/node_modules/.bin/mocha.cmd", fileOut
-				} else {
-					commandLine "$buildDir/node_modules/.bin/mocha", fileOut
+						ProcessBuilder pb = new ProcessBuilder(cmd as String[])
+						pb.directory(new File("$buildDir/node_modules"))
+						def p = pb.start()
+						p.in.eachLine { println(it) }
+						p.waitFor()
+					}
 				}
 			}
 
