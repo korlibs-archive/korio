@@ -1,9 +1,10 @@
 package com.soywiz.korio.async
 
+import kotlin.test.Test
 import kotlin.test.assertEquals
 
 class AsyncQueueTest {
-	@kotlin.test.Test
+	@Test
 	fun sequence() = syncTest {
 		var out = ""
 		val queue = AsyncQueue()
@@ -17,7 +18,7 @@ class AsyncQueueTest {
 		assertEquals("ab", out)
 	}
 
-	@kotlin.test.Test
+	@Test
 	fun parallel() = syncTest {
 		var out = ""
 		val queue1 = AsyncQueue()
