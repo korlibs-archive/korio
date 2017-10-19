@@ -238,10 +238,29 @@ actual object KorioNative {
 	actual fun fill(src: FloatArray, value: Float, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
 	actual fun fill(src: DoubleArray, value: Double, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
 
-	suspend actual fun uncompressGzip(data: ByteArray): ByteArray = TODO()
-	suspend actual fun uncompressZlib(data: ByteArray): ByteArray = TODO()
-	suspend actual fun compressGzip(data: ByteArray, level: Int): ByteArray = TODO()
-	suspend actual fun compressZlib(data: ByteArray, level: Int): ByteArray = TODO()
+	val zlib by lazy { require("zlib") }
+
+	suspend actual fun uncompressGzip(data: ByteArray): ByteArray = suspendCoroutine { c ->
+		zlib.gunzip(data.toNodeJsBuffer()) { error, data ->
+			if (error != null) { c.resumeWithException(error) } else { c.resume(data.unsafeCast<NodeBuffer>().toByteArray()) }
+		}
+	}
+
+	suspend actual fun uncompressZlib(data: ByteArray): ByteArray = suspendCoroutine { c ->
+		zlib.inflate(data.toNodeJsBuffer()) { error, data ->
+			if (error != null) { c.resumeWithException(error) } else { c.resume(data.unsafeCast<NodeBuffer>().toByteArray()) }
+		}
+	}
+	suspend actual fun compressGzip(data: ByteArray, level: Int): ByteArray = suspendCoroutine { c ->
+		zlib.gzip(data.toNodeJsBuffer()) { error, data ->
+			if (error != null) { c.resumeWithException(error) } else { c.resume(data.unsafeCast<NodeBuffer>().toByteArray()) }
+		}
+	}
+	suspend actual fun compressZlib(data: ByteArray, level: Int): ByteArray = suspendCoroutine { c ->
+		zlib.deflate(data.toNodeJsBuffer()) { error, data ->
+			if (error != null) { c.resumeWithException(error) } else { c.resume(data.unsafeCast<NodeBuffer>().toByteArray()) }
+		}
+	}
 
 	actual class FastMemory(val buffer: Uint8Array, actual val size: Int) {
 		val data = DataView(buffer.buffer)
@@ -461,10 +480,11 @@ class HttpSeverNodeJs : HttpServer() {
 //@JsName("require")
 external private fun require(name: String): dynamic
 
+interface NodeBuffer
 
-fun ByteArray.toNodeJsBuffer(offset: Int, size: Int): dynamic {
-	return global.Buffer.from(this, offset, size)
-}
+fun NodeBuffer.toByteArray() = Int8Array(this.unsafeCast<Int8Array>()).unsafeCast<ByteArray>()
+fun ByteArray.toNodeJsBuffer(): NodeBuffer = this.asDynamic()
+fun ByteArray.toNodeJsBuffer(offset: Int, size: Int): NodeBuffer = global.Buffer.from(this, offset, size).unsafeCast<NodeBuffer>()
 
 fun jsNew(clazz: dynamic): dynamic = js("(new (clazz))()")
 fun jsNew(clazz: dynamic, a0: dynamic): dynamic = js("(new (clazz))(a0)")
