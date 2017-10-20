@@ -3,8 +3,10 @@ package com.soywiz.korio
 import com.soywiz.korio.async.*
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.coroutine.getCoroutineContext
+import com.soywiz.korio.crypto.Hex
 import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.ds.lmapOf
+import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.net.AsyncServer
@@ -15,7 +17,11 @@ import com.soywiz.korio.net.http.HttpFactory
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.ws.WebSocketClient
 import com.soywiz.korio.net.ws.WebSocketClientFactory
-import com.soywiz.korio.stream.*
+import com.soywiz.korio.stream.AsyncProduceConsumerByteBuffer
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.openAsync
+import com.soywiz.korio.stream.readAll
+import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.util.OS
 import com.soywiz.korio.vfs.*
 import org.khronos.webgl.*
@@ -28,7 +34,6 @@ import kotlin.coroutines.experimental.CoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.js.*
-import kotlin.reflect.KClass
 
 actual annotation class Synchronized
 actual annotation class JvmField
@@ -51,6 +56,7 @@ val global = js("(typeof global !== 'undefined') ? global : window")
 actual class Semaphore actual constructor(initial: Int) {
 	//var initial: Int
 	actual fun acquire() = Unit
+
 	actual fun release() = Unit
 }
 
@@ -85,7 +91,7 @@ actual object KorioNative {
 
 	actual fun getRandomValues(data: ByteArray): Unit {
 		if (OS.isNodejs) {
-			global.crypto.randomFillSync(Uint8Array(data.unsafeCast<Array<Byte>>()))
+			require("crypto").randomFillSync(Uint8Array(data.unsafeCast<Array<Byte>>()))
 		} else {
 			global.crypto.getRandomValues(data)
 		}
@@ -97,6 +103,7 @@ actual object KorioNative {
 		object : LocalVfsProvider() {
 			//override fun invoke(): LocalVfs = UrlVfs(".").vfs
 			override fun invoke(): LocalVfs = TODO()
+
 			override fun getCacheFolder(): String = "cache"
 			override fun getExternalStorageFolder(): String = "."
 		}
@@ -129,36 +136,57 @@ actual object KorioNative {
 	}
 
 	actual object SyncCompression {
+		val zlib = require("zlib")
+
 		actual fun inflate(data: ByteArray): ByteArray {
-			TODO()
+			return zlib.inflateSync(data)
 		}
 
 		actual fun inflateTo(data: ByteArray, out: ByteArray): ByteArray {
-			TODO()
+			inflate(data)
+			return out
 		}
 
 		actual fun deflate(data: ByteArray, level: Int): ByteArray {
-			TODO()
+			return zlib.deflateSync(data, jsObject(
+				"level" to level
+			))
 		}
 	}
 
 	actual class SimplerMessageDigest actual constructor(name: String) {
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int): Unit = TODO()
-		actual suspend fun digest(): ByteArray = TODO()
+		val nname = name.toLowerCase().replace("-", "")
+		val hname: String = when (nname) {
+			"hmacsha256", "sha256" -> "sha256"
+			else -> invalidOp("Unsupported message digest '$name'")
+		}
+
+		val hash = require("crypto").createHash(hname)
+
+		// @TODO: Optimize this!
+		actual suspend fun update(data: ByteArray, offset: Int, size: Int): Unit = update(data.copyOfRange(offset, offset + size))
+		suspend fun update(data: ByteArray): Unit = hash.update(data)
+		// @TODO: Optimize: Can return ByteArray directly?
+		actual suspend fun digest(): ByteArray = Hex.decode(hash.digest("hex"))
 	}
 
 	actual class SimplerMac actual constructor(name: String, key: ByteArray) {
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int): Unit = TODO()
-		actual suspend fun finalize(): ByteArray = TODO()
+		val nname = name.toLowerCase().replace("-", "")
+		val hname = when (nname) {
+			"hmacsha256", "sha256" -> "sha256"
+			"hmacsha1", "sha1" -> "sha1"
+			else -> invalidOp("Unsupported hmac '$name'")
+		}
+		val hmac = require("crypto").createHmac(hname, key)
+		actual suspend fun update(data: ByteArray, offset: Int, size: Int): Unit = update(data.copyOfRange(offset, offset + size))
+		suspend fun update(data: ByteArray): Unit = hmac.update(data)
+		actual suspend fun finalize(): ByteArray = Hex.decode(hmac.digest("hex"))
 	}
 
 	actual class NativeCRC32 {
-		actual fun update(data: ByteArray, offset: Int, size: Int): Unit = TODO()
-		actual fun digest(): Int = TODO()
-	}
-
-	actual object CreateAnnotation {
-		actual fun <T : Any> createAnnotation(clazz: KClass<T>, map: Map<String, Any?>): T = TODO()
+		val crc = CRC32()
+		actual fun update(data: ByteArray, offset: Int, size: Int): Unit = crc.update(data, offset, size)
+		actual fun digest(): Int = crc.value
 	}
 
 	actual val httpFactory: HttpFactory by lazy {
@@ -210,10 +238,29 @@ actual object KorioNative {
 	actual fun fill(src: FloatArray, value: Float, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
 	actual fun fill(src: DoubleArray, value: Double, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
 
-	suspend actual fun uncompressGzip(data: ByteArray): ByteArray = TODO()
-	suspend actual fun uncompressZlib(data: ByteArray): ByteArray = TODO()
-	suspend actual fun compressGzip(data: ByteArray, level: Int): ByteArray = TODO()
-	suspend actual fun compressZlib(data: ByteArray, level: Int): ByteArray = TODO()
+	val zlib by lazy { require("zlib") }
+
+	suspend actual fun uncompressGzip(data: ByteArray): ByteArray = suspendCoroutine { c ->
+		zlib.gunzip(data.toNodeJsBuffer()) { error, data ->
+			if (error != null) { c.resumeWithException(error) } else { c.resume(data.unsafeCast<NodeBuffer>().toByteArray()) }
+		}
+	}
+
+	suspend actual fun uncompressZlib(data: ByteArray): ByteArray = suspendCoroutine { c ->
+		zlib.inflate(data.toNodeJsBuffer()) { error, data ->
+			if (error != null) { c.resumeWithException(error) } else { c.resume(data.unsafeCast<NodeBuffer>().toByteArray()) }
+		}
+	}
+	suspend actual fun compressGzip(data: ByteArray, level: Int): ByteArray = suspendCoroutine { c ->
+		zlib.gzip(data.toNodeJsBuffer()) { error, data ->
+			if (error != null) { c.resumeWithException(error) } else { c.resume(data.unsafeCast<NodeBuffer>().toByteArray()) }
+		}
+	}
+	suspend actual fun compressZlib(data: ByteArray, level: Int): ByteArray = suspendCoroutine { c ->
+		zlib.deflate(data.toNodeJsBuffer()) { error, data ->
+			if (error != null) { c.resumeWithException(error) } else { c.resume(data.unsafeCast<NodeBuffer>().toByteArray()) }
+		}
+	}
 
 	actual class FastMemory(val buffer: Uint8Array, actual val size: Int) {
 		val data = DataView(buffer.buffer)
@@ -270,6 +317,30 @@ actual object KorioNative {
 		actual fun getInt16(index: Int): Short = data.getInt16(index)
 		actual fun getInt32(index: Int): Int = data.getInt32(index)
 		actual fun getFloat32(index: Int): Float = data.getFloat32(index)
+	}
+
+	actual fun syncTest(block: suspend EventLoopTest.() -> Unit): Unit {
+		global.testPromise = kotlin.js.Promise<Unit> { resolve, reject ->
+			val el = EventLoopTest()
+			var done = false
+			spawnAndForget(el.coroutineContext) {
+				try {
+					block(el)
+					resolve(Unit)
+				} catch (e: Throwable) {
+					reject(e)
+				} finally {
+					done = true
+				}
+			}
+			fun step() {
+				global.setTimeout({
+					el.step(10)
+					if (!done) step()
+				}, 0)
+			}
+			step()
+		}
 	}
 }
 
@@ -409,10 +480,11 @@ class HttpSeverNodeJs : HttpServer() {
 //@JsName("require")
 external private fun require(name: String): dynamic
 
+interface NodeBuffer
 
-fun ByteArray.toNodeJsBuffer(offset: Int, size: Int): dynamic {
-	return global.Buffer.from(this, offset, size)
-}
+fun NodeBuffer.toByteArray() = Int8Array(this.unsafeCast<Int8Array>()).unsafeCast<ByteArray>()
+fun ByteArray.toNodeJsBuffer(): NodeBuffer = this.asDynamic()
+fun ByteArray.toNodeJsBuffer(offset: Int, size: Int): NodeBuffer = global.Buffer.from(this, offset, size).unsafeCast<NodeBuffer>()
 
 fun jsNew(clazz: dynamic): dynamic = js("(new (clazz))()")
 fun jsNew(clazz: dynamic, a0: dynamic): dynamic = js("(new (clazz))(a0)")
@@ -424,6 +496,11 @@ fun jsEmptyObj(): dynamic = js("({})")
 fun jsEmptyArray(): dynamic = js("([])")
 fun jsObjectKeys(obj: dynamic): dynamic = js("Object.keys(obj)")
 fun jsToArray(obj: dynamic): Array<Any?> = Array<Any?>(obj.length) { obj[it] }
+fun jsObject(vararg pairs: Pair<String, Any?>): dynamic {
+	val out = jsEmptyObj()
+	for (pair in pairs) out[pair.first] = pair.second
+	return out
+}
 
 fun jsToObjectMap(obj: dynamic): Map<String, Any?>? {
 	if (obj == null) return null
@@ -659,5 +736,134 @@ class NodeJsAsyncServer : AsyncServer {
 	}
 
 	suspend fun init(port: Int, host: String, backlog: Int): AsyncServer = this.apply {
+	}
+}
+
+class CRC32 {
+	/*
+	 *  The following logic has come from RFC1952.
+     */
+	private var v = 0
+
+	val value: Int get() = v
+
+	fun update(buf: ByteArray, index: Int, len: Int) {
+		var index = index
+		var len = len
+		//int[] crc_table = CRC32.crc_table;
+		var c = v.inv()
+		while (--len >= 0) {
+			c = crc_table!![c xor buf[index++].toInt() and 0xff] xor c.ushr(8)
+		}
+		v = c.inv()
+	}
+
+	fun reset() {
+		v = 0
+	}
+
+	fun reset(vv: Int) {
+		v = vv
+	}
+
+	fun copy(): CRC32 {
+		val foo = CRC32()
+		foo.v = this.v
+		return foo
+	}
+
+	companion object {
+		private var crc_table: IntArray = IntArray(256)
+
+		init {
+			for (n in 0..255) {
+				var c = n
+				var k = 8
+				while (--k >= 0) {
+					if (c and 1 != 0) {
+						c = -0x12477ce0 xor c.ushr(1)
+					} else {
+						c = c.ushr(1)
+					}
+				}
+				crc_table[n] = c
+			}
+		}
+
+		// The following logic has come from zlib.1.2.
+		private val GF2_DIM = 32
+
+		internal fun combine(crc1: Long, crc2: Long, len2: Long): Long {
+			var crc1 = crc1
+			var len2 = len2
+			var row: Long
+			val even = LongArray(GF2_DIM)
+			val odd = LongArray(GF2_DIM)
+
+			// degenerate case (also disallow negative lengths)
+			if (len2 <= 0) return crc1
+
+			// put operator for one zero bit in odd
+			odd[0] = 0xedb88320L          // CRC-32 polynomial
+			row = 1
+			for (n in 1 until GF2_DIM) {
+				odd[n] = row
+				row = row shl 1
+			}
+
+			// put operator for two zero bits in even
+			gf2_matrix_square(even, odd)
+
+			// put operator for four zero bits in odd
+			gf2_matrix_square(odd, even)
+
+			// apply len2 zeros to crc1 (first square will put the operator for one
+			// zero byte, eight zero bits, in even)
+			do {
+				// apply zeros operator for this bit of len2
+				gf2_matrix_square(even, odd)
+				if (len2 and 1 != 0L) crc1 = gf2_matrix_times(even, crc1)
+				len2 = len2 shr 1
+
+				// if no more bits set, then done
+				if (len2 == 0L) break
+
+				// another iteration of the loop with odd and even swapped
+				gf2_matrix_square(odd, even)
+				if (len2 and 1 != 0L) crc1 = gf2_matrix_times(odd, crc1)
+				len2 = len2 shr 1
+
+				// if no more bits set, then done
+			} while (len2 != 0L)
+
+			/* return combined crc */
+			crc1 = crc1 xor crc2
+			return crc1
+		}
+
+		private fun gf2_matrix_times(mat: LongArray, vec: Long): Long {
+			var vec = vec
+			var sum: Long = 0
+			var index = 0
+			while (vec != 0L) {
+				if (vec and 1 != 0L)
+					sum = sum xor mat[index]
+				vec = vec shr 1
+				index++
+			}
+			return sum
+		}
+
+		internal fun gf2_matrix_square(square: LongArray, mat: LongArray) {
+			for (n in 0 until GF2_DIM)
+				square[n] = gf2_matrix_times(mat, mat[n])
+		}
+
+		val crC32Table: IntArray
+			get() {
+				val tmp = IntArray(crc_table.size)
+				crc_table.copyRangeTo(0, tmp, 0, tmp.size)
+				return tmp
+			}
 	}
 }

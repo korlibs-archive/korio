@@ -116,10 +116,6 @@ expect object KorioNative {
 		fun digest(): Int
 	}
 
-	object CreateAnnotation {
-		fun <T : Any> createAnnotation(clazz: KClass<T>, map: Map<String, Any?>): T
-	}
-
 	class Inflater(nowrap: Boolean) {
 		fun needsInput(): Boolean
 		fun setInput(buffer: ByteArray): Unit
@@ -162,6 +158,8 @@ expect object KorioNative {
 		fun getInt32(index: Int): Int
 		fun getFloat32(index: Int): Float
 	}
+
+	fun syncTest(block: suspend EventLoopTest.() -> Unit): Unit
 }
 
 object KorioNativeDefaults {

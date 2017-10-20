@@ -1,6 +1,7 @@
 package com.soywiz.korio.compression
 
 import com.soywiz.korio.async.syncTest
+import com.soywiz.korio.async.syncTestIgnoreJs
 import com.soywiz.korio.crypto.Base64
 import com.soywiz.korio.util.readIntArray_le
 import kotlin.test.Test

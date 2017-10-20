@@ -2,7 +2,6 @@ apply plugin: 'kotlin-platform-jvm'
 
 dependencies {
 	expectedBy project(":korio-ext-web-common")
-	testImplementation project(":korio-ext-web-common")
 
 	compile project(":korio")
 }

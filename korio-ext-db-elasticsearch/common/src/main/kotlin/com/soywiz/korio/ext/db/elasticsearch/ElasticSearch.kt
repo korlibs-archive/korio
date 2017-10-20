@@ -113,7 +113,7 @@ class ElasticSearch(
 		// operator
 		suspend fun get(id: String): T {
 			val result = type.get(id)
-			return mapper.toTyped<T>(Dynamic.get(result, "_source") ?: mapOf<String, Any>(), clazz)
+			return mapper.toTyped<T>(clazz, Dynamic.get(result, "_source") ?: mapOf<String, Any>())
 		}
 
 		suspend fun getOrNull(id: String): T? = try {
@@ -136,7 +136,7 @@ class ElasticSearch(
 		suspend fun search(query: ElasticSearch.QueryBuilder.() -> ElasticSearch.Query = { ElasticSearch.Query(ElasticSearch.QueryBuilder) }): SearchResult<T> {
 			val result = type.search(query)
 			return SearchResult(result.took, result.timedOut, result.results.map {
-				Result<T>(it.index, it.type, it.id, it.score, mapper.toTyped<T>(it.obj, clazz))
+				Result<T>(it.index, it.type, it.id, it.score, mapper.toTyped<T>(clazz, it.obj))
 			})
 		}
 

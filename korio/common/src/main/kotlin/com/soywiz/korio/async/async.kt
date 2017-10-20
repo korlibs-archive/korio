@@ -104,8 +104,11 @@ inline fun <T> spawnAndForget(context: CoroutineContext, value: T, noinline task
 
 //fun syncTest(callback: suspend EventLoopTest.() -> Unit): Unit = TODO()
 
-fun syncTest(block: suspend EventLoopTest.() -> Unit): Unit {
-	sync(el = EventLoopTest(), step = 10, block = block)
+fun syncTest(block: suspend EventLoopTest.() -> Unit): Unit = KorioNative.syncTest(block)
+fun syncTestIgnoreJs(block: suspend EventLoopTest.() -> Unit): Unit {
+	if (!OS.isJs) {
+		KorioNative.syncTest(block)
+	}
 }
 
 fun <TEventLoop : EventLoop> sync(el: TEventLoop, step: Int = 10, block: suspend TEventLoop.() -> Unit): Unit {

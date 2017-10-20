@@ -23,7 +23,7 @@ object Yaml {
 	fun decode(@Language("yaml") str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
 	inline fun <reified T : Any> decodeToType(@Language("yaml") s: String, mapper: ObjectMapper): T = decodeToType(s, T::class, mapper)
 	@Suppress("UNCHECKED_CAST")
-	fun <T : Any> decodeToType(@Language("yaml") s: String, clazz: KClass<T>, mapper: ObjectMapper): T = mapper.toTyped(decode(s), clazz)
+	fun <T : Any> decodeToType(@Language("yaml") s: String, clazz: KClass<T>, mapper: ObjectMapper): T = mapper.toTyped(clazz, decode(s))
 
 	fun read(str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
 
