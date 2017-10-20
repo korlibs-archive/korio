@@ -103,24 +103,24 @@ allprojects {
 			//	args = ['install', 'mocha']
 			//}
 
-			task installMocha(type: Task) {
-				def directory = new File("$buildDir/node_modules")
-				directory.mkdirs()
-				String[] cmd
-				if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-					cmd = ['cmd', '/c', 'npm.cmd', 'install', 'mocha']
-				} else {
-					//cmd = ['/bin/bash', '-c', 'npm install mocha']
-					cmd = ['npm', 'install', 'mocha']
-				}
-
-				ProcessBuilder pb = new ProcessBuilder(*(cmd as String[]))
-				pb.environment().putAll(System.getenv())
-				pb.directory(directory)
-				def p = pb.start()
-				p.in.eachLine { println(it) }
-				p.waitFor()
-			}
+			//task installMocha(type: Task) {
+			//	def directory = new File("$buildDir")
+			//	directory.mkdirs()
+			//	String[] cmd
+			//	if (Os.isFamily(Os.FAMILY_WINDOWS)) {
+			//		cmd = ['cmd', '/c', 'npm.cmd', 'install', 'mocha']
+			//	} else {
+			//		cmd = ['/bin/bash', '-c', 'npm install mocha']
+			//		//cmd = ['npm', 'install', 'mocha']
+			//	}
+//
+			//	ProcessBuilder pb = new ProcessBuilder(*(cmd as String[]))
+			//	pb.environment().putAll(System.getenv())
+			//	pb.directory(directory)
+			//	def p = pb.start()
+			//	p.in.eachLine { println(it) }
+			//	p.waitFor()
+			//}
 
 			//task fixJsForAsync(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules, installMocha]) {
 			//	doLast {
@@ -134,7 +134,8 @@ allprojects {
 			//	}
 			//}
 
-			task fixJsForAsync(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules, installMocha]) {
+			//task fixJsForAsync(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules, installMocha]) {
+			task fixJsForAsync(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules]) {
 				doLast {
 					File file = new File(compileTestKotlin2Js.outputFile)
 					if (file.exists()) {
@@ -152,16 +153,18 @@ allprojects {
 				}
 			}
 
-			task runMocha(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules, installMocha, fixJsForAsync]) {
+			task runMocha(type: Task, dependsOn: [fixJsForAsync]) {
 				doLast {
 					File fileOut = new File(compileTestKotlin2Js.outputFile + ".fix.js")
 
 					if (fileOut.exists()) {
 						String[] cmd
 						if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-							cmd = ["cmd", "/c", "$buildDir/node_modules/.bin/mocha.cmd" as String, fileOut]
+							//cmd = ["cmd", "/c", "$buildDir/node_modules/.bin/mocha.cmd" as String, fileOut]
+							cmd = ["cmd", "/c", "mocha.cmd" as String, fileOut]
 						} else {
-							cmd = ["$buildDir/node_modules/.bin/mocha" as String, fileOut]
+							//cmd = ["$buildDir/node_modules/.bin/mocha" as String, fileOut]
+							cmd = ["mocha" as String, fileOut]
 						}
 
 						ProcessBuilder pb = new ProcessBuilder(cmd as String[])
@@ -170,7 +173,7 @@ allprojects {
 						def p = pb.start()
 						p.in.eachLine { println(it) }
 						if (p.waitFor() != 0) {
-							throw new GradleException('error occurred')
+							throw new GradleException('error occurred running ' + cmd)
 						}
 					}
 				}

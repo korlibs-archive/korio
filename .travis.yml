@@ -3,6 +3,9 @@ language: java
 jdk:
   - oraclejdk8
 
+install:
+  - npm -g install mocha
+
 script:
   - jdk_switcher use oraclejdk8
   #- ./gradlew -s -i check install distJs
