@@ -5,7 +5,10 @@ jdk:
 
 install:
   - nvm use 8
+  - node --version
   - npm -g install mocha
+  - which node
+  - which mocha
 
 script:
   - jdk_switcher use oraclejdk8
