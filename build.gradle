@@ -103,13 +103,23 @@ allprojects {
 			//	args = ['install', 'mocha']
 			//}
 
-			task installMocha(type: Exec) {
-				workingDir "$buildDir"
+			task installMocha(type: Task) {
+				def directory = new File("$buildDir/node_modules")
+				directory.mkdirs()
+				String[] cmd
 				if (Os.isFamily(Os.FAMILY_WINDOWS)) {
-					commandLine 'cmd', '/c', 'npm.cmd', 'install', 'mocha'
+					cmd = ['cmd', '/c', 'npm.cmd', 'install', 'mocha']
 				} else {
-					commandLine 'npm', 'install', 'mocha'
+					//cmd = ['/bin/bash', '-c', 'npm install mocha']
+					cmd = ['npm', 'install', 'mocha']
 				}
+
+				ProcessBuilder pb = new ProcessBuilder(*(cmd as String[]))
+				pb.environment().putAll(System.getenv())
+				pb.directory(directory)
+				def p = pb.start()
+				p.in.eachLine { println(it) }
+				p.waitFor()
 			}
 
 			//task fixJsForAsync(type: Task, dependsOn: [compileTestKotlin2Js, populateNodeModules, installMocha]) {
@@ -155,6 +165,7 @@ allprojects {
 						}
 
 						ProcessBuilder pb = new ProcessBuilder(cmd as String[])
+						pb.environment().putAll(System.getenv())
 						pb.directory(new File("$buildDir/node_modules"))
 						def p = pb.start()
 						p.in.eachLine { println(it) }
