@@ -164,7 +164,7 @@ allprojects {
 							cmd = ["cmd", "/c", "mocha.cmd" as String, fileOut]
 						} else {
 							//cmd = ["$buildDir/node_modules/.bin/mocha" as String, fileOut]
-							cmd = ["mocha" as String, fileOut]
+							cmd = ["/bin/bash", '-c', "mocha '${fileOut}'"]
 						}
 
 						ProcessBuilder pb = new ProcessBuilder(cmd as String[])
