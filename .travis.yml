@@ -4,6 +4,7 @@ jdk:
   - oraclejdk8
 
 install:
+  - nvm use 8
   - npm -g install mocha
 
 script:
