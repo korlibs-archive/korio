@@ -108,6 +108,7 @@ abstract class Vfs {
 	suspend open fun stat(path: String): VfsStat = createNonExistsStat(path)
 	suspend open fun list(path: String): AsyncSequence<VfsFile> = withCoroutineContext { return@withCoroutineContext asyncGenerate<VfsFile>(this@withCoroutineContext) { } }
 	suspend open fun mkdir(path: String, attributes: List<Attribute>): Boolean = unsupported()
+	suspend open fun rmdir(path: String): Boolean = delete(path) // For compatibility
 	suspend open fun delete(path: String): Boolean = unsupported()
 	suspend open fun rename(src: String, dst: String): Boolean = unsupported()
 	suspend open fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = Closeable { }

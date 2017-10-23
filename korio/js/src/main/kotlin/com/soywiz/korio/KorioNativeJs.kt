@@ -17,10 +17,7 @@ import com.soywiz.korio.net.http.HttpFactory
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.ws.WebSocketClient
 import com.soywiz.korio.net.ws.WebSocketClientFactory
-import com.soywiz.korio.stream.AsyncProduceConsumerByteBuffer
-import com.soywiz.korio.stream.AsyncStream
-import com.soywiz.korio.stream.openAsync
-import com.soywiz.korio.stream.readAll
+import com.soywiz.korio.stream.*
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.util.OS
 import com.soywiz.korio.vfs.*
@@ -74,10 +71,11 @@ actual object KorioNative {
 		actual fun set(value: T) = run { this.value = value }
 	}
 
-	actual val platformName: String get() = when {
-		isNodeJs -> "node.js"
-		else -> "js"
-	}
+	actual val platformName: String
+		get() = when {
+			isNodeJs -> "node.js"
+			else -> "js"
+		}
 
 	actual val rawOsName: String = when {
 		isNodeJs -> process.platform
@@ -91,19 +89,26 @@ actual object KorioNative {
 	}
 
 	actual fun getRandomValues(data: ByteArray): Unit {
-		if (OS.isNodejs) {
+		if (isNodeJs) {
 			require("crypto").randomFillSync(Uint8Array(data.unsafeCast<Array<Byte>>()))
 		} else {
 			global.crypto.getRandomValues(data)
 		}
 	}
 
-	actual val tmpdir: String = "/tmp"
+	actual val tmpdir: String by lazy {
+		when {
+			isNodeJs -> require("os").tmpdir()
+			else -> "/tmp"
+		}
+
+	}
 
 	actual val localVfsProvider: LocalVfsProvider by lazy {
 		object : LocalVfsProvider() {
 			//override fun invoke(): LocalVfs = UrlVfs(".").vfs
-			override fun invoke(): LocalVfs = TODO()
+			override fun invoke(): LocalVfs = NodeJsLocalVfs(".")
+			override fun invoke(path: String): VfsFile = NodeJsLocalVfs(path).root
 
 			override fun getCacheFolder(): String = "cache"
 			override fun getExternalStorageFolder(): String = "."
@@ -166,6 +171,7 @@ actual object KorioNative {
 
 		// @TODO: Optimize this!
 		actual suspend fun update(data: ByteArray, offset: Int, size: Int): Unit = update(data.copyOfRange(offset, offset + size))
+
 		suspend fun update(data: ByteArray): Unit = hash.update(data)
 		// @TODO: Optimize: Can return ByteArray directly?
 		actual suspend fun digest(): ByteArray = Hex.decode(hash.digest("hex"))
@@ -197,7 +203,12 @@ actual object KorioNative {
 		}
 	}
 
-	actual val ResourcesVfs: VfsFile get() = UrlVfs(".")
+	actual val ResourcesVfs: VfsFile by lazy {
+		when {
+			isNodeJs -> localVfsProvider.invoke(".")
+			else -> UrlVfs(".")
+		}
+	}
 
 	actual fun enterDebugger() {
 		js("debugger;")
@@ -243,23 +254,41 @@ actual object KorioNative {
 
 	suspend actual fun uncompressGzip(data: ByteArray): ByteArray = suspendCoroutine { c ->
 		zlib.gunzip(data.toNodeJsBuffer()) { error, data ->
-			if (error != null) { c.resumeWithException(error) } else { c.resume(data.unsafeCast<NodeBuffer>().toByteArray()) }
+			if (error != null) {
+				c.resumeWithException(error)
+			} else {
+				c.resume(data.unsafeCast<NodeBuffer>().toByteArray())
+			}
 		}
 	}
 
 	suspend actual fun uncompressZlib(data: ByteArray): ByteArray = suspendCoroutine { c ->
 		zlib.inflate(data.toNodeJsBuffer()) { error, data ->
-			if (error != null) { c.resumeWithException(error) } else { c.resume(data.unsafeCast<NodeBuffer>().toByteArray()) }
+			if (error != null) {
+				c.resumeWithException(error)
+			} else {
+				c.resume(data.unsafeCast<NodeBuffer>().toByteArray())
+			}
 		}
 	}
+
 	suspend actual fun compressGzip(data: ByteArray, level: Int): ByteArray = suspendCoroutine { c ->
 		zlib.gzip(data.toNodeJsBuffer()) { error, data ->
-			if (error != null) { c.resumeWithException(error) } else { c.resume(data.unsafeCast<NodeBuffer>().toByteArray()) }
+			if (error != null) {
+				c.resumeWithException(error)
+			} else {
+				c.resume(data.unsafeCast<NodeBuffer>().toByteArray())
+			}
 		}
 	}
+
 	suspend actual fun compressZlib(data: ByteArray, level: Int): ByteArray = suspendCoroutine { c ->
 		zlib.deflate(data.toNodeJsBuffer()) { error, data ->
-			if (error != null) { c.resumeWithException(error) } else { c.resume(data.unsafeCast<NodeBuffer>().toByteArray()) }
+			if (error != null) {
+				c.resumeWithException(error)
+			} else {
+				c.resume(data.unsafeCast<NodeBuffer>().toByteArray())
+			}
 		}
 	}
 
@@ -392,100 +421,7 @@ private class EventLoopJs : EventLoop(captureCloseables = false) {
 	}
 }
 
-class HttpSeverNodeJs : HttpServer() {
-	private var context: CoroutineContext = EmptyCoroutineContext
-	private var handler: suspend (req: dynamic, res: dynamic) -> Unit = { req, res -> }
-
-	val http = require("http")
-	val server = http.createServer { req, res ->
-		spawnAndForget(context) {
-			handler(req, res)
-		}
-	}
-
-	suspend override fun websocketHandlerInternal(handler: suspend (WsRequest) -> Unit) {
-		super.websocketHandlerInternal(handler)
-	}
-
-	suspend override fun httpHandlerInternal(handler: suspend (Request) -> Unit) {
-		context = getCoroutineContext()
-		this.handler = { req, res ->
-			// req: https://nodejs.org/api/http.html#http_class_http_incomingmessage
-			// res: https://nodejs.org/api/http.html#http_class_http_serverresponse
-
-			val method = Http.Method[req.method.unsafeCast<String>()]
-			val url = req.url.unsafeCast<String>()
-			val headers = Http.Headers(jsToArray(req.rawHeaders).map { "$it" }.zipWithNext())
-			handler(object : Request(method, url, headers, RequestConfig()) {
-				suspend override fun _handler(handler: (ByteArray) -> Unit) {
-					req.on("data") { chunk ->
-						handler(Int8Array(chunk.unsafeCast<Uint8Array>().buffer).unsafeCast<ByteArray>())
-					}
-				}
-
-				suspend override fun _endHandler(handler: () -> Unit) {
-					req.on("end") {
-						handler()
-					}
-					req.on("error") {
-						handler()
-					}
-				}
-
-				override suspend fun _sendHeader(code: Int, message: String, headers: Http.Headers) {
-					res.statusCode = code
-					res.statusMessage = message
-					for (header in headers) {
-						res.setHeader(header.first, header.second)
-					}
-				}
-
-				override suspend fun _write(data: ByteArray, offset: Int, size: Int): Unit = suspendCoroutine { c ->
-					res.write(data.toNodeJsBuffer(offset, size)) {
-						c.resume(Unit)
-					}
-					Unit
-				}
-
-				override suspend fun _end(): Unit = suspendCoroutine { c ->
-					res.end {
-						c.resume(Unit)
-					}
-					Unit
-				}
-			})
-		}
-	}
-
-	suspend override fun listenInternal(port: Int, host: String) = suspendCoroutine<Unit> { c ->
-		context = c.context
-		server.listen(port, host, 511) {
-			c.resume(Unit)
-		}
-	}
-
-	override val actualPort: Int
-		get() {
-			//com.soywiz.korio.lang.Console.log(server)
-			return jsEnsureInt(server.address().port)
-		}
-
-	suspend override fun closeInternal() = suspendCoroutine<Unit> { c ->
-		context = c.context
-		server.close {
-			c.resume(Unit)
-		}
-	}
-}
-
 //@JsName("require")
-external private fun require(name: String): dynamic
-
-interface NodeBuffer
-
-fun NodeBuffer.toByteArray() = Int8Array(this.unsafeCast<Int8Array>()).unsafeCast<ByteArray>()
-fun ByteArray.toNodeJsBuffer(): NodeBuffer = this.asDynamic()
-fun ByteArray.toNodeJsBuffer(offset: Int, size: Int): NodeBuffer = global.Buffer.from(this, offset, size).unsafeCast<NodeBuffer>()
 
 fun jsNew(clazz: dynamic): dynamic = js("(new (clazz))()")
 fun jsNew(clazz: dynamic, a0: dynamic): dynamic = js("(new (clazz))(a0)")
@@ -514,68 +450,6 @@ fun jsToObjectMap(obj: dynamic): Map<String, Any?>? {
 	return out
 }
 
-class HttpClientNodeJs : HttpClient() {
-	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = Promise.create { deferred ->
-		//println(url)
-
-		val http = require("http")
-		val jsurl = require("url")
-		val info = jsurl.parse(url)
-		val reqHeaders = jsEmptyObj()
-
-		for (header in headers) {
-			reqHeaders[header.first] = header.second
-		}
-
-		val req = jsEmptyObj()
-		req.method = method.name
-		req.host = info["hostname"]
-		req.port = info["port"]
-		req.path = info["path"]
-		req.agent = false
-		req.encoding = null
-		req.headers = reqHeaders
-
-		val r = http.request(req, { res ->
-			val statusCode: Int = res.statusCode
-			val statusMessage: String = res.statusMessage ?: ""
-			val jsHeadersObj = res.headers
-			val body = jsEmptyArray()
-			res.on("data", { d -> body.push(d) })
-			res.on("end", {
-				val r = global.Buffer.concat(body)
-				val u8array = Int8Array(r.unsafeCast<ArrayBuffer>())
-				val out = ByteArray(u8array.length)
-				for (n in 0 until u8array.length) out[n] = u8array[n]
-				val response = Response(
-					status = statusCode,
-					statusText = statusMessage,
-					headers = Http.Headers(
-						(jsToObjectMap(jsHeadersObj) ?: lmapOf()).mapValues { "${it.value}" }
-					),
-					content = out.openAsync()
-				)
-
-				//println(response.headers)
-
-				deferred.resolve(response)
-			})
-		}).on("error", { e ->
-			deferred.reject(kotlin.RuntimeException("Error: $e"))
-		})
-
-		deferred.onCancel {
-			r.abort()
-		}
-
-		if (content != null) {
-			r.end(content.readAll().toTypedArray())
-		} else {
-			r.end()
-		}
-		Unit
-	}
-}
 
 class HttpClientBrowserJs : HttpClient() {
 	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = Promise.create { deferred ->
@@ -676,68 +550,6 @@ class JsWebSocketClient(url: String, protocols: List<String>?, val DEBUG: Boolea
 
 data class JsStat(val size: Double, var isDirectory: Boolean = false) {
 	fun toStat(path: String, vfs: Vfs): VfsStat = vfs.createExistsStat(path, isDirectory = isDirectory, size = size.toLong())
-}
-
-private class NodeJsAsyncClient : AsyncClient {
-	private val net = require("net")
-	private var connection: dynamic = null
-	private val input = AsyncProduceConsumerByteBuffer()
-
-	override var connected: Boolean = false; private set
-
-	suspend override fun connect(host: String, port: Int): Unit = suspendCoroutine { c ->
-		connection = net.createConnection(port, host) {
-			connected = true
-			connection?.pause()
-			connection?.on("data") { it ->
-				input.produce(it.unsafeCast<ByteArray>())
-			}
-			c.resume(Unit)
-		}
-		Unit
-	}
-
-	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-		connection?.resume()
-		try {
-			return input.read(buffer, offset, len)
-		} finally {
-			connection?.pause()
-		}
-	}
-
-	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = suspendCoroutine { c ->
-		connection?.write(buffer.toNodeJsBuffer(offset, len)) {
-			c.resume(Unit)
-		}
-		Unit
-	}
-
-	suspend override fun close() {
-		connection?.close()
-	}
-}
-
-class NodeJsAsyncServer : AsyncServer {
-	override val requestPort: Int
-		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-	override val host: String
-		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-	override val backlog: Int
-		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-	override val port: Int
-		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
-
-	suspend override fun listen(handler: suspend (AsyncClient) -> Unit): Closeable {
-		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-	}
-
-	suspend override fun listen(): SuspendingSequence<AsyncClient> {
-		return super.listen()
-	}
-
-	suspend fun init(port: Int, host: String, backlog: Int): AsyncServer = this.apply {
-	}
 }
 
 class CRC32 {
