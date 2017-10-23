@@ -69,7 +69,7 @@ actual object KorioNative {
 	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T = executeInWorkerSafer(callback)
 
 	actual val platformName: String = "jvm"
-	actual val osName: String by lazy { System.getProperty("os.name") }
+	actual val rawOsName: String by lazy { System.getProperty("os.name") }
 
 	private val secureRandom: SecureRandom by lazy { SecureRandom.getInstanceStrong() }
 

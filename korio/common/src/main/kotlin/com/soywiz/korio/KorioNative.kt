@@ -48,7 +48,7 @@ expect object KorioNative {
 
 	val currentThreadId: Long
 	val platformName: String
-	val osName: String
+	val rawOsName: String
 	val ResourcesVfs: VfsFile
 
 	val websockets: WebSocketClientFactory

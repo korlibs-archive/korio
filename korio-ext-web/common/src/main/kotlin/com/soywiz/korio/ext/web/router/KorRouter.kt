@@ -27,8 +27,8 @@ annotation class Header(val name: String, val limit: Int = -1)
 
 val HttpServer.Request.extraParams by Extra.Property<MutableMap<String, String>> { lmapOf() }
 
-fun HttpServer.Request.pathParam(name: String): String? = this.extraParams[name]
-fun HttpServer.Request.getParam(name: String): String? = this.getParams[name]?.first()
+suspend fun HttpServer.Request.pathParam(name: String): String? = this.extraParams[name]
+suspend fun HttpServer.Request.getParam(name: String): String? = this.getParams[name]?.first()
 
 open class KorBaseRoute(val bpath: String, val priority: Int) {
 	val matchNames = ArrayList<String>()
@@ -119,6 +119,10 @@ class KorRouter(val injector: AsyncInjector, val requestConfig: HttpServer.Reque
 		}
 	}
 }
+
+fun KorRouter.get(path: String, priority: Int = 0, handler: suspend (HttpServer.Request) -> Unit) = this.route(Http.Method.GET, path, priority, handler)
+fun KorRouter.post(path: String, priority: Int = 0, handler: suspend (HttpServer.Request) -> Unit) = this.route(Http.Method.POST, path, priority, handler)
+fun KorRouter.all(path: String, priority: Int = 0, handler: suspend (HttpServer.Request) -> Unit) = this.route(Http.Methods.ALL, path, priority, handler)
 
 //suspend fun HttpServer.router(router: KorRouter) = this.allHandler { router.accept(it) }
 

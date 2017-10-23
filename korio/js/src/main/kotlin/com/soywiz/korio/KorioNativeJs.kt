@@ -52,6 +52,8 @@ actual open class IllegalStateException actual constructor(msg: String) : Runtim
 actual open class CancellationException actual constructor(msg: String) : IllegalStateException(msg)
 
 val global = js("(typeof global !== 'undefined') ? global : window")
+external val process: dynamic // node.js
+external val navigator: dynamic // browser
 
 actual class Semaphore actual constructor(initial: Int) {
 	//var initial: Int
@@ -59,6 +61,8 @@ actual class Semaphore actual constructor(initial: Int) {
 
 	actual fun release() = Unit
 }
+
+val isNodeJs by lazy { jsTypeOf(window) === "undefined" }
 
 actual object KorioNative {
 	actual val currentThreadId: Long = 1L
@@ -70,17 +74,14 @@ actual object KorioNative {
 		actual fun set(value: T) = run { this.value = value }
 	}
 
-	actual val platformName: String by lazy {
-		if (jsTypeOf(window) === "undefined") {
-			"node.js"
-		} else {
-			"js"
-		}
+	actual val platformName: String get() = when {
+		isNodeJs -> "node.js"
+		else -> "js"
 	}
 
-	actual val osName: String by lazy {
-		// navigator.platform
-		"unknown"
+	actual val rawOsName: String = when {
+		isNodeJs -> process.platform
+		else -> navigator.platform
 	}
 
 	actual fun getLocalTimezoneOffset(time: Long): Int {

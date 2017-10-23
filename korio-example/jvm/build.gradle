@@ -8,4 +8,5 @@ dependencies {
 
 	compile project(":korio")
 	compile project(":korio-ext-db-redis")
+	compile project(":korio-ext-web")
 }
