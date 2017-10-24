@@ -25,9 +25,9 @@ import kotlin.coroutines.experimental.suspendCoroutine
 
 external internal fun require(name: String): dynamic
 
-typealias NodeBuffer = Uint8Array
+typealias NodeJsBuffer = Uint8Array
 
-fun NodeBuffer.toByteArray() = Int8Array(this.unsafeCast<Int8Array>()).unsafeCast<ByteArray>()
+fun NodeJsBuffer.toByteArray() = Int8Array(this.unsafeCast<Int8Array>()).unsafeCast<ByteArray>()
 //fun ByteArray.toNodeJsBufferU8(): NodeBuffer = Uint8Array(this.unsafeCast<ArrayBuffer>()).asDynamic()
 
 fun ByteArray.asInt8Array(): Int8Array = this.unsafeCast<Int8Array>()
@@ -35,8 +35,8 @@ fun ByteArray.asUint8Array(): Uint8Array {
 	val i = this.asInt8Array()
 	return Uint8Array(i.buffer, i.byteOffset, i.length)
 }
-fun ByteArray.toNodeJsBuffer(): NodeBuffer = this.asUint8Array().unsafeCast<NodeBuffer>()
-fun ByteArray.toNodeJsBuffer(offset: Int, size: Int): NodeBuffer = global.Buffer.from(this, offset, size).unsafeCast<NodeBuffer>()
+fun ByteArray.toNodeJsBuffer(): NodeJsBuffer = this.asUint8Array().unsafeCast<NodeJsBuffer>()
+fun ByteArray.toNodeJsBuffer(offset: Int, size: Int): NodeJsBuffer = global.Buffer.from(this, offset, size).unsafeCast<NodeJsBuffer>()
 
 class HttpClientNodeJs : HttpClient() {
 	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = Promise.create { deferred ->

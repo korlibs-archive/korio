@@ -2,7 +2,6 @@ package com.soywiz.korio
 
 import com.soywiz.korio.async.*
 import com.soywiz.korio.async.Promise
-import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.crypto.Hex
 import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.ds.lmapOf
@@ -27,10 +26,9 @@ import org.w3c.xhr.ARRAYBUFFER
 import org.w3c.xhr.XMLHttpRequest
 import org.w3c.xhr.XMLHttpRequestResponseType
 import kotlin.browser.window
-import kotlin.coroutines.experimental.CoroutineContext
-import kotlin.coroutines.experimental.EmptyCoroutineContext
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.js.*
+import kotlin.math.min
 
 actual annotation class Synchronized
 actual annotation class JvmField
@@ -145,18 +143,19 @@ actual object KorioNative {
 		val zlib = require("zlib")
 
 		actual fun inflate(data: ByteArray): ByteArray {
-			return zlib.inflateSync(data)
+			return zlib.inflateSync(data.toNodeJsBuffer()).unsafeCast<NodeJsBuffer>().toByteArray()
 		}
 
 		actual fun inflateTo(data: ByteArray, out: ByteArray): ByteArray {
-			inflate(data)
+			val res = inflate(data)
+			res.copyRangeTo(0, out, 0, min(res.size, out.size))
 			return out
 		}
 
 		actual fun deflate(data: ByteArray, level: Int): ByteArray {
-			return zlib.deflateSync(data, jsObject(
+			return zlib.deflateSync(data.toNodeJsBuffer(), jsObject(
 				"level" to level
-			))
+			)).unsafeCast<NodeJsBuffer>().toByteArray()
 		}
 	}
 
@@ -257,7 +256,7 @@ actual object KorioNative {
 			if (error != null) {
 				c.resumeWithException(error)
 			} else {
-				c.resume(data.unsafeCast<NodeBuffer>().toByteArray())
+				c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
 			}
 		}
 	}
@@ -267,7 +266,7 @@ actual object KorioNative {
 			if (error != null) {
 				c.resumeWithException(error)
 			} else {
-				c.resume(data.unsafeCast<NodeBuffer>().toByteArray())
+				c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
 			}
 		}
 	}
@@ -277,7 +276,7 @@ actual object KorioNative {
 			if (error != null) {
 				c.resumeWithException(error)
 			} else {
-				c.resume(data.unsafeCast<NodeBuffer>().toByteArray())
+				c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
 			}
 		}
 	}
@@ -287,7 +286,7 @@ actual object KorioNative {
 			if (error != null) {
 				c.resumeWithException(error)
 			} else {
-				c.resume(data.unsafeCast<NodeBuffer>().toByteArray())
+				c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
 			}
 		}
 	}
