@@ -1,7 +1,7 @@
 package com.soywiz.korio.lang
 
 import com.soywiz.korio.ds.Queue
-import com.soywiz.korio.util.toString
+import com.soywiz.korio.util.toStringUnsigned
 
 private val formatRegex = Regex("%([-]?\\d+)?(\\w)")
 
@@ -14,8 +14,13 @@ fun String.format(vararg params: Any): String {
 		val type = mr.groupValues[2]
 		val str = when (type) {
 			"d" -> (param as Number).toLong().toString()
-			"X" -> (param as Number).toLong().toString(16).toUpperCase()
-			"x" -> (param as Number).toLong().toString(16).toLowerCase()
+			"X", "x" -> {
+				val res = when (param) {
+					is Int -> param.toStringUnsigned(16)
+					else -> (param as Number).toLong().toStringUnsigned(16)
+				}
+				if (type == "X") res.toUpperCase() else res.toLowerCase()
+			}
 			else -> "$param"
 		}
 		val prefix = if (size.startsWith('0')) '0' else ' '

@@ -1,5 +1,6 @@
 package com.soywiz.korio.lang
 
+import org.junit.Test
 import kotlin.test.assertEquals
 
 class StringExtTest {
@@ -15,5 +16,11 @@ class StringExtTest {
 	@kotlin.test.Test
 	fun format() {
 		assertEquals("GMT+0200", "GMT%s%02d%02d".format("+", 2, 0))
+	}
+
+	//@kotlin.test.Test
+	@Test
+	fun formatHex() {
+		assertEquals("FFFFFFFF", "%08X".format(0xFFFFFFFF.toInt()))
 	}
 }

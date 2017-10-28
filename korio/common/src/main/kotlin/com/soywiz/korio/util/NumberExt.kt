@@ -146,3 +146,88 @@ fun Int.toString(radix: Int): String {
 		return if (isNegative) "-$rout" else rout
 	}
 }
+
+fun Int.toStringUnsigned(radix: Int): String {
+	var temp = this
+	if (temp == 0) {
+		return "0"
+	} else {
+		var out = ""
+		while (temp != 0) {
+			val digit = temp urem  radix
+			temp = temp udiv radix
+			out += Hex.DIGITS_UPPER[digit]
+		}
+		val rout = out.reversed()
+		return rout
+	}
+}
+
+fun Long.toStringUnsigned(radix: Int): String {
+	var temp = this
+	if (temp == 0L) {
+		return "0"
+	} else {
+		var out = ""
+		while (temp != 0L) {
+			val digit = temp urem radix.toLong()
+			temp = temp udiv radix.toLong()
+			out += Hex.DIGITS_UPPER[digit.toInt()]
+		}
+		val rout = out.reversed()
+		return rout
+	}
+}
+
+object LongEx {
+	val MIN_VALUE: Long = 0x7fffffffffffffffL.inv()
+	val MAX_VALUE: Long = 0x7fffffffffffffffL
+
+	fun compare(x: Long, y: Long): Int = if (x < y) -1 else if (x == y) 0 else 1
+	fun compareUnsigned(x: Long, y: Long): Int = compare(x xor MIN_VALUE, y xor MIN_VALUE)
+
+	fun divideUnsigned(dividend: Long, divisor: Long): Long {
+		if (divisor < 0) return (if (compareUnsigned(dividend, divisor) < 0) 0 else 1).toLong()
+		if (dividend >= 0) return dividend / divisor
+		val quotient = dividend.ushr(1) / divisor shl 1
+		val rem = dividend - quotient * divisor
+		return quotient + if (compareUnsigned(rem, divisor) >= 0) 1 else 0
+	}
+
+	fun remainderUnsigned(dividend: Long, divisor: Long): Long {
+		if (divisor < 0) return if (compareUnsigned(dividend, divisor) < 0) dividend else dividend - divisor
+		if (dividend >= 0) return dividend % divisor
+		val quotient = dividend.ushr(1) / divisor shl 1
+		val rem = dividend - quotient * divisor
+		return rem - if (compareUnsigned(rem, divisor) >= 0) divisor else 0
+	}
+}
+
+object IntEx {
+	private val MIN_VALUE = -0x80000000
+	private val MAX_VALUE = 0x7fffffff
+
+	fun compare(l: Int, r: Int): Int = if (l < r) -1 else if (l > r) 1 else 0
+	fun compareUnsigned(l: Int, r: Int): Int = compare(l xor MIN_VALUE, r xor MIN_VALUE)
+	fun divideUnsigned(dividend: Int, divisor: Int): Int {
+		if (divisor < 0) return if (compareUnsigned(dividend, divisor) < 0) 0 else 1
+		if (dividend >= 0) return dividend / divisor
+		val quotient = dividend.ushr(1) / divisor shl 1
+		val rem = dividend - quotient * divisor
+		return quotient + if (compareUnsigned(rem, divisor) >= 0) 1 else 0
+	}
+
+	fun remainderUnsigned(dividend: Int, divisor: Int): Int {
+		if (divisor < 0) return if (compareUnsigned(dividend, divisor) < 0) dividend else dividend - divisor
+		if (dividend >= 0) return dividend % divisor
+		val quotient = dividend.ushr(1) / divisor shl 1
+		val rem = dividend - quotient * divisor
+		return rem - if (compareUnsigned(rem, divisor) >= 0) divisor else 0
+	}
+}
+
+infix fun Int.udiv(that: Int) = IntEx.divideUnsigned(this, that)
+infix fun Int.urem(that: Int) = IntEx.remainderUnsigned(this, that)
+
+infix fun Long.udiv(that: Long) = LongEx.divideUnsigned(this, that)
+infix fun Long.urem(that: Long) = LongEx.remainderUnsigned(this, that)
