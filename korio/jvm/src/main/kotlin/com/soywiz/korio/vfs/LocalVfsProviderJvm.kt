@@ -17,10 +17,6 @@ import java.nio.channels.CompletionHandler
 import java.nio.file.*
 import java.util.concurrent.TimeUnit
 
-class LocalVfsProviderJvm : LocalVfsProvider() {
-	override fun invoke(): LocalVfs = LocalVfsJvm()
-}
-
 class LocalVfsJvm : LocalVfs() {
 	val that = this
 	override val absolutePath: String = ""

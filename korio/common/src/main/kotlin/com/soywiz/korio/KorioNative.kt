@@ -12,10 +12,8 @@ import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.ws.WebSocketClientFactory
 import com.soywiz.korio.stream.readBytesUpToFirst
 import com.soywiz.korio.stream.toBuffered
-import com.soywiz.korio.vfs.LocalVfsProvider
 import com.soywiz.korio.vfs.VfsFile
 import kotlin.math.min
-import kotlin.reflect.KClass
 
 expect annotation class Synchronized()
 expect annotation class JvmField()
@@ -36,6 +34,7 @@ expect open class CancellationException(msg: String) : IllegalStateException
 expect class Semaphore(initial: Int) {
 	//var initial: Int
 	fun acquire()
+
 	fun release()
 }
 
@@ -61,8 +60,13 @@ expect object KorioNative {
 
 	val File_separatorChar: Char
 
-	val localVfsProvider: LocalVfsProvider
-	val tmpdir: String
+	fun rootLocalVfs(): VfsFile
+	fun applicationVfs(): VfsFile
+	fun cacheVfs(): VfsFile
+	fun externalStorageVfs(): VfsFile
+	fun userHomeVfs(): VfsFile
+	fun localVfs(path: String): VfsFile
+	fun tempVfs(): VfsFile
 
 	fun Thread_sleep(time: Long): Unit
 

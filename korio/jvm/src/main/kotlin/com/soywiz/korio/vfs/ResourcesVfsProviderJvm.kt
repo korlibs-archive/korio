@@ -18,6 +18,7 @@ class ResourcesVfsProviderJvm {
 			suspend override fun init() {
 				if (classLoader is URLClassLoader) {
 					for (url in classLoader.urLs) {
+						//println("ResourcesVfsProviderJvm.url: $url")
 						val urlStr = url.toString()
 						val vfs = if (urlStr.startsWith("http")) {
 							UrlVfs(url)
@@ -34,6 +35,8 @@ class ResourcesVfsProviderJvm {
 						}
 					}
 					//println(merged.options)
+				} else {
+					//println("ResourcesVfsProviderJvm.classLoader: $classLoader")
 				}
 
 				//println("ResourcesVfsProviderJvm:classLoader:$classLoader")

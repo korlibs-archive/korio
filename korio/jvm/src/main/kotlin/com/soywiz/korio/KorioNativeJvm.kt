@@ -8,24 +8,21 @@ import com.soywiz.korio.net.http.HttpClientJvm
 import com.soywiz.korio.net.http.HttpFactory
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.ws.WebSocketClientFactory
-import com.soywiz.korio.vfs.LocalVfsProvider
-import com.soywiz.korio.vfs.LocalVfsProviderJvm
+import com.soywiz.korio.vfs.LocalVfsJvm
+import com.soywiz.korio.vfs.MemoryVfs
 import com.soywiz.korio.vfs.ResourcesVfsProviderJvm
 import com.soywiz.korio.vfs.VfsFile
 import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
-import java.lang.reflect.Proxy
 import java.nio.ByteBuffer
 import java.nio.ByteOrder
 import java.security.MessageDigest
 import java.security.SecureRandom
-import java.util.*
 import java.util.zip.*
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
-import kotlin.reflect.KClass
 
 actual typealias Synchronized = kotlin.jvm.Synchronized
 actual typealias JvmField = kotlin.jvm.JvmField
@@ -47,6 +44,7 @@ actual class Semaphore actual constructor(initial: Int) {
 	val jsema = java.util.concurrent.Semaphore(initial)
 	//var initial: Int
 	actual fun acquire() = jsema.acquire()
+
 	actual fun release() = jsema.release()
 }
 
@@ -158,10 +156,18 @@ actual object KorioNative {
 	actual val asyncSocketFactory: AsyncSocketFactory by lazy { JvmAsyncSocketFactory() }
 	actual val websockets: WebSocketClientFactory get() = TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
 	actual val File_separatorChar: Char by lazy { File.separatorChar }
-	actual val localVfsProvider: LocalVfsProvider by lazy { LocalVfsProviderJvm() }
+
+	actual fun rootLocalVfs(): VfsFile = localVfs(".")
+	actual fun applicationVfs(): VfsFile = localVfs(File(".").absolutePath)
+	actual fun cacheVfs(): VfsFile = MemoryVfs()
+	actual fun externalStorageVfs(): VfsFile = localVfs(".")
+	actual fun userHomeVfs(): VfsFile = localVfs(".")
+	actual fun tempVfs(): VfsFile = localVfs(tmpdir)
+	actual fun localVfs(path: String): VfsFile = LocalVfsJvm()[path]
+
 	actual val ResourcesVfs: VfsFile by lazy { ResourcesVfsProviderJvm()().root }
 
-	actual val tmpdir: String get() = System.getProperty("java.io.tmpdir")
+	val tmpdir: String get() = System.getProperty("java.io.tmpdir")
 
 	actual fun <T> copyRangeTo(src: Array<T>, srcPos: Int, dst: Array<T>, dstPos: Int, count: Int) = System.arraycopy(src, srcPos, dst, dstPos, count)
 	actual fun copyRangeTo(src: BooleanArray, srcPos: Int, dst: BooleanArray, dstPos: Int, count: Int) = System.arraycopy(src, srcPos, dst, dstPos, count)

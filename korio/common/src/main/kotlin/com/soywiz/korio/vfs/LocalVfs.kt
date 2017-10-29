@@ -8,22 +8,23 @@ abstract class LocalVfs : Vfs() {
 	}
 }
 
+val resourcesVfs: VfsFile by lazy { ResourcesVfs }
+val rootLocalVfs: VfsFile by lazy { KorioNative.rootLocalVfs() }
+val applicationVfs: VfsFile by lazy { KorioNative.applicationVfs() }
+val cacheVfs: VfsFile by lazy { KorioNative.cacheVfs() }
+val externalStorageVfs: VfsFile by lazy { KorioNative.externalStorageVfs() }
+val userHomeVfs: VfsFile by lazy { KorioNative.userHomeVfs() }
+val localCurrentDirVfs: VfsFile by lazy { ApplicationVfs() }
+val tempVfs: VfsFile by lazy { KorioNative.tempVfs() }
 
-val localVfsProvider get() = KorioNative.localVfsProvider
-val tmpdir: String get() = KorioNative.tmpdir
+// Deprecated
+fun RootLocalVfs(): VfsFile = rootLocalVfs
+fun ApplicationVfs(): VfsFile = applicationVfs
+fun CacheVfs(): VfsFile = cacheVfs
+fun ExternalStorageVfs(): VfsFile = externalStorageVfs
+fun UserHomeVfs(): VfsFile = userHomeVfs
+fun LocalCurrentDirVfs(): VfsFile = localCurrentDirVfs
+fun TempVfs(): VfsFile = tempVfs
 
-fun LocalVfs(base: String): VfsFile = localVfsProvider(base)
-fun TempVfs() = LocalVfs(tmpdir)
+fun LocalVfs(base: String): VfsFile = KorioNative.localVfs(base)
 fun JailedLocalVfs(base: String): VfsFile = LocalVfs(base).jail()
-
-fun CacheVfs() = LocalVfs(localVfsProvider.getCacheFolder()).jail()
-fun ExternalStorageVfs() = LocalVfs(localVfsProvider.getExternalStorageFolder()).jail()
-fun UserHomeVfs() = LocalVfs(localVfsProvider.getExternalStorageFolder()).jail()
-
-abstract class LocalVfsProvider {
-	abstract operator fun invoke(): LocalVfs
-	operator open fun invoke(path: String): VfsFile = VfsFile(this(), path)
-	open fun getCacheFolder(): String = tmpdir
-	open fun getExternalStorageFolder(): String = tmpdir
-}
-

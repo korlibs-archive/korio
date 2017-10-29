@@ -1,7 +1,6 @@
 package com.soywiz.korio
 
 import com.soywiz.korio.async.*
-import com.soywiz.korio.async.Promise
 import com.soywiz.korio.crypto.Hex
 import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.ds.lmapOf
@@ -16,7 +15,9 @@ import com.soywiz.korio.net.http.HttpFactory
 import com.soywiz.korio.net.http.HttpServer
 import com.soywiz.korio.net.ws.WebSocketClient
 import com.soywiz.korio.net.ws.WebSocketClientFactory
-import com.soywiz.korio.stream.*
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.openAsync
+import com.soywiz.korio.stream.readAll
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.util.OS
 import com.soywiz.korio.vfs.*
@@ -26,8 +27,15 @@ import org.w3c.xhr.ARRAYBUFFER
 import org.w3c.xhr.XMLHttpRequest
 import org.w3c.xhr.XMLHttpRequestResponseType
 import kotlin.browser.window
+import kotlin.collections.List
+import kotlin.collections.Map
+import kotlin.collections.copyOfRange
+import kotlin.collections.indices
+import kotlin.collections.plusAssign
+import kotlin.collections.set
+import kotlin.collections.toList
+import kotlin.collections.toTypedArray
 import kotlin.coroutines.experimental.suspendCoroutine
-import kotlin.js.*
 import kotlin.math.min
 
 actual annotation class Synchronized
@@ -88,24 +96,27 @@ actual object KorioNative {
 		}
 	}
 
-	actual val tmpdir: String by lazy {
+	actual fun rootLocalVfs(): VfsFile = localVfs(".")
+	actual fun applicationVfs(): VfsFile = localVfs(".")
+	actual fun cacheVfs(): VfsFile = MemoryVfs()
+	actual fun externalStorageVfs(): VfsFile = localVfs(".")
+	actual fun userHomeVfs(): VfsFile = localVfs(".")
+	actual fun tempVfs(): VfsFile = localVfs(tmpdir)
+
+	actual fun localVfs(path: String): VfsFile {
+		return when {
+			isNodeJs -> NodeJsLocalVfs(path).root
+			else -> UrlVfs(path)
+		}
+	}
+
+	val tmpdir: String by lazy {
 		when {
-			isNodeJs -> require("os").tmpdir()
+			isNodeJs -> require("os").tmpdir().unsafeCast<String>()
 			else -> "/tmp"
 		}
-
 	}
 
-	actual val localVfsProvider: LocalVfsProvider by lazy {
-		object : LocalVfsProvider() {
-			//override fun invoke(): LocalVfs = UrlVfs(".").vfs
-			override fun invoke(): LocalVfs = NodeJsLocalVfs(".")
-			override fun invoke(path: String): VfsFile = NodeJsLocalVfs(path).root
-
-			override fun getCacheFolder(): String = "cache"
-			override fun getExternalStorageFolder(): String = "."
-		}
-	}
 
 	actual val File_separatorChar: Char = '/'
 
@@ -196,12 +207,7 @@ actual object KorioNative {
 		}
 	}
 
-	actual val ResourcesVfs: VfsFile by lazy {
-		when {
-			isNodeJs -> localVfsProvider.invoke(".")
-			else -> UrlVfs(".")
-		}
-	}
+	actual val ResourcesVfs: VfsFile by lazy { applicationVfs() }
 
 	actual fun enterDebugger() {
 		js("debugger;")
