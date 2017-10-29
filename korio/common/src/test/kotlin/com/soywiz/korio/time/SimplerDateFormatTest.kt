@@ -1,5 +1,6 @@
 package com.soywiz.korio.time
 
+import com.soywiz.klock.SimplerDateFormat
 import kotlin.test.assertEquals
 
 class SimplerDateFormatTest {

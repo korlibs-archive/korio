@@ -1,5 +1,6 @@
 package com.soywiz.korio.vfs
 
+import com.soywiz.klock.DateTime
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
@@ -7,7 +8,6 @@ import com.soywiz.korio.compression.Inflater
 import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.time.DateTime
 import com.soywiz.korio.util.*
 import kotlin.math.max
 

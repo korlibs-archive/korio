@@ -1,5 +1,9 @@
 package com.soywiz.korio.time
 
+import com.soywiz.klock.DateTime
+import com.soywiz.klock.days
+import com.soywiz.klock.months
+import com.soywiz.klock.years
 import kotlin.test.assertEquals
 
 class TimeTest {

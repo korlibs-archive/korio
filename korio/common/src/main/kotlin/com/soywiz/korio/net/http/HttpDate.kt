@@ -1,8 +1,8 @@
 package com.soywiz.korio.net.http
 
-import com.soywiz.korio.KorioNative
-import com.soywiz.korio.time.DateTime
-import com.soywiz.korio.time.SimplerDateFormat
+import com.soywiz.klock.DateTime
+import com.soywiz.klock.Klock
+import com.soywiz.klock.SimplerDateFormat
 
 //Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
 //Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
@@ -12,7 +12,7 @@ object HttpDate {
 
 	fun format(date: Long): String = _format.format(date)
 	fun format(date: DateTime): String = _format.format(date.unix)
-	fun format(): String = format(KorioNative.currentTimeMillis())
+	fun format(): String = format(Klock.currentTimeMillis())
 
 	fun parse(str: String): Long = _format.parse(str)
 	fun parseOrNull(str: String?): Long? = try {

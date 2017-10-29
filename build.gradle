@@ -28,7 +28,7 @@ allprojects {
 	}
 
 	group 'com.soywiz'
-	version "$korVersion"
+	version "0.15.0"
 
 	apply plugin: 'java'
 	apply plugin: 'maven'
@@ -218,7 +218,4 @@ allprojects {
 
 	task deploy(dependsOn: ['install', 'uploadArchives']) {
 	}
-
-
 }
-

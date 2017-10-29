@@ -1,5 +1,6 @@
 package com.soywiz.korio.ext.db.elasticsearch
 
+import com.soywiz.klock.TimeSpan
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.lang.Dynamic
 import com.soywiz.korio.net.http.Http
@@ -10,7 +11,6 @@ import com.soywiz.korio.net.http.rest.HttpRestClient
 import com.soywiz.korio.net.http.rest.createRestClient
 import com.soywiz.korio.net.http.rest.rest
 import com.soywiz.korio.serialization.ObjectMapper
-import com.soywiz.korio.time.TimeSpan
 import kotlin.reflect.KClass
 
 class ElasticSearch(

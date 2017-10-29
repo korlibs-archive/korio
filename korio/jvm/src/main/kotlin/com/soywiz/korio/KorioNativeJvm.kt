@@ -64,8 +64,6 @@ actual object KorioNative {
 		actual fun set(value: T) = jthreadLocal.set(value)
 	}
 
-	actual fun currentTimeMillis() = System.currentTimeMillis()
-	actual fun getLocalTimezoneOffset(time: Long): Int = TimeZone.getDefault().getOffset(time) / 1000 / 60
 	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T = executeInWorkerSafer(callback)
 
 	actual val platformName: String = "jvm"

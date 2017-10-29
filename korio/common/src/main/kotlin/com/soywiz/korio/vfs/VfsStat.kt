@@ -1,6 +1,6 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.time.DateTime
+import com.soywiz.klock.DateTime
 
 data class VfsStat(
 	val file: VfsFile,

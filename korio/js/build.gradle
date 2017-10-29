@@ -2,4 +2,5 @@ apply plugin: 'kotlin-platform-js'
 
 dependencies {
 	expectedBy project(":korio-common")
+	compile "com.soywiz:klock-js:0.1.0"
 }

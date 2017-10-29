@@ -1,12 +1,12 @@
 package com.soywiz.korio.time
 
-import com.soywiz.korio.KorioNative
+import com.soywiz.klock.Klock
 
 open class TimeProvider {
-	open fun currentTimeMillis() = KorioNative.currentTimeMillis()
+	open fun currentTimeMillis() = Klock.currentTimeMillis()
 
 	companion object {
-		fun now() = KorioNative.currentTimeMillis()
+		fun now() = Klock.currentTimeMillis()
 
 		operator fun invoke(callback: () -> Long) = object : TimeProvider() {
 			override fun currentTimeMillis(): Long = callback()

@@ -80,12 +80,6 @@ actual object KorioNative {
 		else -> navigator.platform
 	}
 
-	actual fun getLocalTimezoneOffset(time: Long): Int {
-		@Suppress("UNUSED_VARIABLE")
-		val rtime = time.toDouble()
-		return js("-(new Date(rtime)).getTimezoneOffset()")
-	}
-
 	actual fun getRandomValues(data: ByteArray): Unit {
 		if (isNodeJs) {
 			require("crypto").randomFillSync(Uint8Array(data.unsafeCast<Array<Byte>>()))
@@ -229,8 +223,6 @@ actual object KorioNative {
 	actual fun error(msg: Any?): Unit {
 		console.error(msg)
 	}
-
-	actual fun currentTimeMillis() = Date().getTime().toLong()
 
 	actual fun <T> copyRangeTo(src: Array<T>, srcPos: Int, dst: Array<T>, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
 	actual fun copyRangeTo(src: BooleanArray, srcPos: Int, dst: BooleanArray, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
