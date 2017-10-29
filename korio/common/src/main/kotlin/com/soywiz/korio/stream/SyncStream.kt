@@ -200,6 +200,7 @@ fun SyncStream.sliceWithBounds(start: Long, end: Long): SyncStream {
 }
 
 fun SyncStream.sliceWithSize(position: Long, length: Long): SyncStream = sliceWithBounds(position, position + length)
+fun SyncStream.sliceWithSize(position: Int, length: Int): SyncStream = sliceWithBounds(position.toLong(), (position + length).toLong())
 
 fun SyncStream.readSlice(length: Long): SyncStream = sliceWithSize(position, length).apply {
 	this@readSlice.position += length

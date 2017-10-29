@@ -237,6 +237,7 @@ suspend fun AsyncStream.sliceWithStart(start: Long): AsyncStream {
 }
 
 suspend fun AsyncStream.sliceWithSize(start: Long, length: Long): AsyncStream = sliceWithBounds(start, start + length)
+suspend fun AsyncStream.sliceWithSize(start: Int, length: Int): AsyncStream = sliceWithBounds(start.toLong(), (start + length).toLong())
 
 suspend fun AsyncStream.slice(range: IntRange): AsyncStream = sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1))
 suspend fun AsyncStream.slice(range: LongRange): AsyncStream = sliceWithBounds(range.start, (range.endInclusive + 1))
