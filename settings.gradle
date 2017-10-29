@@ -1,50 +1,10 @@
 rootProject.name = 'korio-root'
 
-
-
 include(
 		'korio-common',
 		'korio',
 		'korio-android',
 		'korio-js',
-
-		//'korio-ext-amazon-base-common',
-		//'korio-ext-amazon-base',
-		//'korio-ext-amazon-base-js',
-//
-		//'korio-ext-amazon-dynamodb-common',
-		//'korio-ext-amazon-dynamodb',
-		//'korio-ext-amazon-dynamodb-js',
-//
-		//'korio-ext-amazon-s3-common',
-		//'korio-ext-amazon-s3',
-		//'korio-ext-amazon-s3-js',
-//
-		//'korio-ext-db-base-common',
-		//'korio-ext-db-base',
-		//'korio-ext-db-base-js',
-//
-		//'korio-ext-db-redis-common',
-		//'korio-ext-db-redis',
-		//'korio-ext-db-redis-js',
-//
-		//'korio-ext-db-cassandra-common',
-		//'korio-ext-db-cassandra',
-		//'korio-ext-db-cassandra-js',
-//
-		//'korio-ext-db-elasticsearch-common',
-		//'korio-ext-db-elasticsearch',
-		//'korio-ext-db-elasticsearch-js',
-//
-		//'korio-ext-vertx',
-//
-		//'korio-ext-web-common',
-		//'korio-ext-web',
-		//'korio-ext-web-js',
-//
-		//'korio-example-common',
-		//'korio-example-js',
-		//'korio-example',
 )
 
 def register(String base) {
@@ -55,15 +15,3 @@ def register(String base) {
 }
 
 register('korio')
-/*
-register('korio-ext-amazon-base')
-register('korio-ext-amazon-dynamodb')
-register('korio-ext-amazon-s3')
-register('korio-ext-db-base')
-register('korio-ext-db-cassandra')
-register('korio-ext-db-elasticsearch')
-register('korio-ext-db-redis')
-register('korio-example')
-register('korio-ext-web')
-register('korio-ext-vertx')
-*/
