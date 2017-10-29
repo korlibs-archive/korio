@@ -7,6 +7,12 @@
 
 [All KOR libraries](https://github.com/korlibs/korlibs)
 
+Sublibraries:
+
+* [KORIO-WEB](https://github.com/korlibs/korio-web)
+* [KORIO-AMAZON](https://github.com/korlibs/korio-amazon)
+* [KORIO-DB](https://github.com/korlibs/korio-db)
+
 Use with gradle (uploaded to maven central):
 
 ```
