@@ -1,8 +1,0 @@
-apply plugin: 'kotlin-platform-jvm'
-
-dependencies {
-	expectedBy project(":korio-ext-db-redis-common")
-
-	compile project(":korio-ext-db-base")
-	compile project(":korio")
-}

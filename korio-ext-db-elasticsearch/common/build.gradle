@@ -1,6 +1,0 @@
-apply plugin: 'kotlin-platform-common'
-
-dependencies {
-	compile project(":korio-ext-db-base-common")
-	compile project(":korio-common")
-}
