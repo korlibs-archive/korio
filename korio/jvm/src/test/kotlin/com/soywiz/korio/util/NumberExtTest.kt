@@ -11,6 +11,9 @@ class NumberExtTest {
 		assertEquals(15L, 14L.nextAlignedTo(15L))
 		assertEquals(15L, 15L.nextAlignedTo(15L))
 		assertEquals(30L, 16L.nextAlignedTo(15L))
+
+		assertEquals(3L, 3L.nextAlignedTo(0L))
+		assertEquals(3L, 3L.nextAlignedTo(1L))
 	}
 
 	@Test
