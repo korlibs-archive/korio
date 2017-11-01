@@ -3,13 +3,11 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.EOFException
-import com.soywiz.korio.KorioNative
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.ds.ByteArrayBuilder
 import com.soywiz.korio.ds.ByteArrayBuilderSmall
 import com.soywiz.korio.lang.*
-import com.soywiz.korio.lang.tl.threadLocal
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.typedarray.fill
 import com.soywiz.korio.util.*
@@ -137,17 +135,15 @@ class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : Extra by
 	suspend override fun getLength(): Long = base.getLength()
 	suspend fun size(): Long = base.getLength()
 
-	suspend fun getAvailable(): Long {
-		return getLength() - getPosition()
-	}
-
-	suspend fun eof(): Boolean {
-		return this.getAvailable() <= 0L
-	}
+	suspend fun getAvailable(): Long = getLength() - getPosition()
+	suspend fun eof(): Boolean = this.getAvailable() <= 0L
 
 	suspend override fun close(): Unit = base.close()
 
-	suspend fun clone(): AsyncStream = AsyncStream(base, position)
+	@Deprecated("Use synchronous duplicate instead", ReplaceWith("duplicate()"))
+	suspend fun clone(): AsyncStream = duplicate()
+
+	fun duplicate(): AsyncStream = AsyncStream(base, position)
 }
 
 suspend fun AsyncPositionLengthStream.getAvailable(): Long = getLength() - getPosition()
@@ -446,22 +442,16 @@ suspend fun AsyncInputStream.skip(count: Int) {
 }
 
 suspend fun AsyncInputStream.readUByteArray(count: Int): UByteArray = UByteArray(readBytesExact(count))
-
 suspend fun AsyncInputStream.readShortArray_le(count: Int): ShortArray = readBytesExact(count * 2).readShortArray_le(0, count)
 suspend fun AsyncInputStream.readShortArray_be(count: Int): ShortArray = readBytesExact(count * 2).readShortArray_be(0, count)
-
 suspend fun AsyncInputStream.readCharArray_le(count: Int): CharArray = readBytesExact(count * 2).readCharArray_le(0, count)
 suspend fun AsyncInputStream.readCharArray_be(count: Int): CharArray = readBytesExact(count * 2).readCharArray_be(0, count)
-
 suspend fun AsyncInputStream.readIntArray_le(count: Int): IntArray = readBytesExact(count * 4).readIntArray_le(0, count)
 suspend fun AsyncInputStream.readIntArray_be(count: Int): IntArray = readBytesExact(count * 4).readIntArray_be(0, count)
-
 suspend fun AsyncInputStream.readLongArray_le(count: Int): LongArray = readBytesExact(count * 8).readLongArray_le(0, count)
 suspend fun AsyncInputStream.readLongArray_be(count: Int): LongArray = readBytesExact(count * 8).readLongArray_le(0, count)
-
 suspend fun AsyncInputStream.readFloatArray_le(count: Int): FloatArray = readBytesExact(count * 4).readFloatArray_le(0, count)
 suspend fun AsyncInputStream.readFloatArray_be(count: Int): FloatArray = readBytesExact(count * 4).readFloatArray_be(0, count)
-
 suspend fun AsyncInputStream.readDoubleArray_le(count: Int): DoubleArray = readBytesExact(count * 8).readDoubleArray_le(0, count)
 suspend fun AsyncInputStream.readDoubleArray_be(count: Int): DoubleArray = readBytesExact(count * 8).readDoubleArray_be(0, count)
 
@@ -504,11 +494,7 @@ class SyncAsyncStreamBaseInWorker(val sync: SyncStreamBase) : AsyncStreamBase() 
 }
 
 suspend fun AsyncOutputStream.writeStream(source: AsyncInputStream): Long = source.copyTo(this)
-
-suspend fun AsyncOutputStream.writeFile(source: VfsFile): Long {
-	val out = this@writeFile
-	return source.openUse(VfsOpenMode.READ) { out.writeStream(this) }
-}
+suspend fun AsyncOutputStream.writeFile(source: VfsFile): Long = source.openUse(VfsOpenMode.READ) { this@writeFile.writeStream(this) }
 
 suspend fun AsyncInputStream.copyTo(target: AsyncOutputStream): Long {
 	val chunk = ByteArray(0x1000)
@@ -538,17 +524,9 @@ suspend fun AsyncStream.writeToAlign(alignment: Int, value: Int = 0) {
 	writeBytes(data)
 }
 
-suspend fun AsyncStream.skip(count: Int): AsyncStream {
-	position += count
-	return this
-}
-
-suspend fun AsyncStream.skipToAlign(alignment: Int) {
-	val nextPosition = getPosition().nextAlignedTo(alignment.toLong())
-	readBytes((nextPosition - getPosition()).toInt())
-}
-
-suspend fun AsyncStream.truncate() = setLength(getPosition())
+suspend fun AsyncStream.skip(count: Int): AsyncStream = this.apply { position += count }
+suspend fun AsyncStream.skipToAlign(alignment: Int) = run { position = position.nextAlignedTo(alignment.toLong()) }
+suspend fun AsyncStream.truncate() = setLength(position)
 
 suspend fun AsyncOutputStream.writeCharArray_le(array: CharArray) = writeBytes(ByteArray(array.size * 2).apply { writeArray_le(0, array) })
 suspend fun AsyncOutputStream.writeShortArray_le(array: ShortArray) = writeBytes(ByteArray(array.size * 2).apply { writeArray_le(0, array) })
@@ -598,20 +576,11 @@ suspend fun AsyncInputStream.readLine(eol: Char = '\n', charset: Charset = Chars
 
 
 fun SyncInputStream.toAsyncInputStream() = object : AsyncInputStream {
-	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int =
-		this@toAsyncInputStream.read(buffer, offset, len)
-
-	suspend override fun close() {
-		(this@toAsyncInputStream as? Closeable)?.close()
-	}
+	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = this@toAsyncInputStream.read(buffer, offset, len)
+	suspend override fun close(): Unit = run { (this@toAsyncInputStream as? Closeable)?.close() }
 }
 
 fun SyncOutputStream.toAsyncOutputStream() = object : AsyncOutputStream {
-	suspend override fun write(buffer: ByteArray, offset: Int, len: Int) {
-		this@toAsyncOutputStream.write(buffer, offset, len)
-	}
-
-	suspend override fun close() {
-		(this@toAsyncOutputStream as? Closeable)?.close()
-	}
+	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = this@toAsyncOutputStream.write(buffer, offset, len)
+	suspend override fun close(): Unit = run { (this@toAsyncOutputStream as? Closeable)?.close() }
 }
