@@ -11,7 +11,9 @@ import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import kotlin.math.max
 
-suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
+suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile = ZipVfs(s, zipFile, caseSensitive = true)
+
+suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Boolean = true): VfsFile {
 	//val s = zipFile.open(VfsOpenMode.READ)
 	var endBytes = EMPTY_BYTE_ARRAY
 
@@ -29,7 +31,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile {
 
 	val data = endBytes.copyOfRange(pk_endIndex, endBytes.size).openSync()
 
-	fun String.normalizeName() = this.trim('/')
+	fun String.normalizeName() = if (caseSensitive) this.trim('/') else this.trim('/').toLowerCase()
 
 	class ZipEntry(
 		val path: String,
@@ -201,7 +203,9 @@ private class DosFileDateTime(var dosTime: Int, var dosDate: Int) {
 }
 
 suspend fun VfsFile.openAsZip() = ZipVfs(this.open(VfsOpenMode.READ), this)
+suspend fun VfsFile.openAsZip(caseSensitive: Boolean) = ZipVfs(this.open(VfsOpenMode.READ), this, caseSensitive = caseSensitive)
 suspend fun AsyncStream.openAsZip() = ZipVfs(this)
+suspend fun AsyncStream.openAsZip(caseSensitive: Boolean) = ZipVfs(this, caseSensitive = caseSensitive)
 
 class InflateAsyncStream(val base: AsyncStream, val inflater: Inflater, val uncompressedSize: Long? = null) : AsyncInputStream, AsyncLengthStream, AsyncCloseable {
 	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
