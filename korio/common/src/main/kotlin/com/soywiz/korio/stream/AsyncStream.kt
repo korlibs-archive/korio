@@ -11,6 +11,7 @@ import com.soywiz.korio.lang.*
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.typedarray.fill
 import com.soywiz.korio.util.*
+import com.soywiz.korio.vfs.MemoryVfs
 import com.soywiz.korio.vfs.VfsFile
 import com.soywiz.korio.vfs.VfsOpenMode
 import kotlin.math.min
@@ -584,3 +585,5 @@ fun SyncOutputStream.toAsyncOutputStream() = object : AsyncOutputStream {
 	suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit = this@toAsyncOutputStream.write(buffer, offset, len)
 	suspend override fun close(): Unit = run { (this@toAsyncOutputStream as? Closeable)?.close() }
 }
+
+fun AsyncStream.asVfsFile(name: String = "unknown.bin"): VfsFile = MemoryVfs(mapOf(name to this))[name]
