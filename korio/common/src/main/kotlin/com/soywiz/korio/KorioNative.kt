@@ -132,6 +132,14 @@ expect object KorioNative {
 		companion object {
 			fun alloc(size: Int): FastMemory
 			fun copy(src: FastMemory, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit
+			fun copy(src: FastMemory, srcPos: Int, dst: ByteArray, dstPos: Int, length: Int): Unit
+			fun copy(src: ByteArray, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit
+			fun copyAligned(src: FastMemory, srcPosAligned: Int, dst: ShortArray, dstPosAligned: Int, length: Int): Unit
+			fun copyAligned(src: ShortArray, srcPosAligned: Int, dst: FastMemory, dstPosAligned: Int, length: Int): Unit
+			fun copyAligned(src: FastMemory, srcPosAligned: Int, dst: IntArray, dstPosAligned: Int, length: Int): Unit
+			fun copyAligned(src: IntArray, srcPosAligned: Int, dst: FastMemory, dstPosAligned: Int, length: Int): Unit
+			fun copyAligned(src: FastMemory, srcPosAligned: Int, dst: FloatArray, dstPosAligned: Int, length: Int): Unit
+			fun copyAligned(src: FloatArray, srcPosAligned: Int, dst: FastMemory, dstPosAligned: Int, length: Int): Unit
 		}
 
 		val size: Int
@@ -141,21 +149,30 @@ expect object KorioNative {
 
 		fun setAlignedInt16(index: Int, value: Short): Unit
 		fun getAlignedInt16(index: Int): Short
-
 		fun setAlignedInt32(index: Int, value: Int): Unit
 		fun getAlignedInt32(index: Int): Int
-
 		fun setAlignedFloat32(index: Int, value: Float): Unit
 		fun getAlignedFloat32(index: Int): Float
 
-		fun setAlignedArrayInt8(index: Int, data: ByteArray, offset: Int, len: Int)
-		fun setAlignedArrayInt16(index: Int, data: ShortArray, offset: Int, len: Int)
-		fun setAlignedArrayInt32(index: Int, data: IntArray, offset: Int, len: Int)
-		fun setAlignedArrayFloat32(index: Int, data: FloatArray, offset: Int, len: Int)
-
+		fun setInt16(index: Int, value: Short): Unit
 		fun getInt16(index: Int): Short
+		fun setInt32(index: Int, value: Int): Unit
 		fun getInt32(index: Int): Int
+		fun setFloat32(index: Int, value: Float): Unit
 		fun getFloat32(index: Int): Float
+
+		fun setArrayInt8(dstPos: Int, src: ByteArray, srcPos: Int, len: Int)
+		fun setAlignedArrayInt8(dstPos: Int, src: ByteArray, srcPos: Int, len: Int)
+		fun setAlignedArrayInt16(dstPos: Int, src: ShortArray, srcPos: Int, len: Int)
+		fun setAlignedArrayInt32(dstPos: Int, src: IntArray, srcPos: Int, len: Int)
+		fun setAlignedArrayFloat32(dstPos: Int, src: FloatArray, srcPos: Int, len: Int)
+
+		fun getArrayInt8(srcPos: Int, dst: ByteArray, dstPos: Int, len: Int)
+		fun getAlignedArrayInt8(srcPos: Int, dst: ByteArray, dstPos: Int, len: Int)
+		fun getAlignedArrayInt16(srcPos: Int, dst: ShortArray, dstPos: Int, len: Int)
+		fun getAlignedArrayInt32(srcPos: Int, dst: IntArray, dstPos: Int, len: Int)
+		fun getAlignedArrayFloat32(srcPos: Int, dst: FloatArray, dstPos: Int, len: Int)
+
 	}
 
 	fun syncTest(block: suspend EventLoopTest.() -> Unit): Unit

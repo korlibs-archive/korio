@@ -24,6 +24,7 @@ import java.util.zip.*
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
 
+
 actual typealias Synchronized = kotlin.jvm.Synchronized
 actual typealias JvmField = kotlin.jvm.JvmField
 actual typealias JvmStatic = kotlin.jvm.JvmStatic
@@ -219,53 +220,100 @@ actual object KorioNative {
 		return@executeInWorker out.toByteArray()
 	}
 
-	actual class FastMemory(val buffer: ByteBuffer, actual val size: Int) {
-		val i16 = buffer.asShortBuffer()
-		val i32 = buffer.asIntBuffer()
-		val f32 = buffer.asFloatBuffer()
+	@Suppress("unused")
+	actual class FastMemory(buffer: ByteBuffer, actual val size: Int) {
+		private val _buffer: ByteBuffer = buffer
+		private val _i16 = buffer.asShortBuffer()
+		private val _i32 = buffer.asIntBuffer()
+		private val _f32 = buffer.asFloatBuffer()
+
+		// Exposed to libraries
+		val buffer get() = _buffer
+		val i16 get() = _i16
+		val i32 get() = _i32
+		val f32 get() = _f32
 
 		companion actual object {
-			actual fun alloc(size: Int): FastMemory = FastMemory(ByteBuffer.allocate((size + 0xF) and 0xF.inv()).order(ByteOrder.nativeOrder()), size)
+			actual fun alloc(size: Int): FastMemory = FastMemory(ByteBuffer.allocateDirect((size + 0xF) and 0xF.inv()).order(ByteOrder.nativeOrder()), size)
 
 			actual fun copy(src: FastMemory, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit {
-				//dst.buffer.slice()
-				//dst.buffer.position(srcPos)
-				//dst.buffer.put(src.buffer, srcPos, length)
+				val srcBuffer = src.buffer.duplicate()
+				srcBuffer.position(srcPos)
+				srcBuffer.limit(srcPos + length)
+				dst.buffer.position(dstPos)
+				dst.buffer.put(srcBuffer)
+			}
 
-				// COPY
-				for (n in 0 until length) dst[dstPos + n] = src[srcPos + n]
+			actual fun copy(src: FastMemory, srcPos: Int, dst: ByteArray, dstPos: Int, length: Int): Unit {
+				src.buffer.position(srcPos)
+				src.buffer.get(dst, dstPos, length)
+			}
+
+			actual fun copy(src: ByteArray, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit {
+				dst.buffer.position(dstPos)
+				dst.buffer.put(src, srcPos, length)
+			}
+
+			actual fun copyAligned(src: FastMemory, srcPosAligned: Int, dst: ShortArray, dstPosAligned: Int, length: Int): Unit {
+				src._i16.position(srcPosAligned)
+				src._i16.get(dst, dstPosAligned, length)
+			}
+
+			actual fun copyAligned(src: ShortArray, srcPosAligned: Int, dst: FastMemory, dstPosAligned: Int, length: Int): Unit {
+				dst._i16.position(dstPosAligned)
+				dst._i16.put(src, srcPosAligned, length)
+			}
+
+			actual fun copyAligned(src: FastMemory, srcPosAligned: Int, dst: IntArray, dstPosAligned: Int, length: Int): Unit {
+				src._i32.position(srcPosAligned)
+				src._i32.get(dst, dstPosAligned, length)
+			}
+
+			actual fun copyAligned(src: IntArray, srcPosAligned: Int, dst: FastMemory, dstPosAligned: Int, length: Int): Unit {
+				dst._i32.position(dstPosAligned)
+				dst._i32.put(src, srcPosAligned, length)
+			}
+
+			actual fun copyAligned(src: FastMemory, srcPosAligned: Int, dst: FloatArray, dstPosAligned: Int, length: Int): Unit {
+				src._f32.position(srcPosAligned)
+				src._f32.get(dst, dstPosAligned, length)
+			}
+
+			actual fun copyAligned(src: FloatArray, srcPosAligned: Int, dst: FastMemory, dstPosAligned: Int, length: Int): Unit {
+				dst._f32.position(dstPosAligned)
+				dst._f32.put(src, srcPosAligned, length)
 			}
 		}
 
-		actual operator fun get(index: Int): Int = buffer.get(index).toInt() and 0xFF
-		actual operator fun set(index: Int, value: Int): Unit = run { buffer.put(index, value.toByte()) }
+		actual operator fun get(index: Int): Int = _buffer.get(index).toInt() and 0xFF
+		actual operator fun set(index: Int, value: Int): Unit = run { _buffer.put(index, value.toByte()) }
 
-		actual fun setAlignedInt16(index: Int, value: Short): Unit = run { i16.put(index, value) }
-		actual fun getAlignedInt16(index: Int): Short = i16.get(index)
-		actual fun setAlignedInt32(index: Int, value: Int): Unit = run { i32.put(index, value) }
-		actual fun getAlignedInt32(index: Int): Int = i32.get(index)
-		actual fun setAlignedFloat32(index: Int, value: Float): Unit = run { f32.put(index, value) }
-		actual fun getAlignedFloat32(index: Int): Float = f32.get(index)
+		actual fun setAlignedInt16(index: Int, value: Short): Unit = run { _i16.put(index, value) }
+		actual fun getAlignedInt16(index: Int): Short = _i16.get(index)
+		actual fun setAlignedInt32(index: Int, value: Int): Unit = run { _i32.put(index, value) }
+		actual fun getAlignedInt32(index: Int): Int = _i32.get(index)
+		actual fun setAlignedFloat32(index: Int, value: Float): Unit = run { _f32.put(index, value) }
+		actual fun getAlignedFloat32(index: Int): Float = _f32.get(index)
 
-		actual fun setAlignedArrayInt8(index: Int, data: ByteArray, offset: Int, len: Int) {
-			for (n in 0 until len) set(index + n, data[offset + n].toInt() and 0xFF)
-		}
+		actual fun getInt16(index: Int): Short = _buffer.getShort(index)
+		actual fun setInt16(index: Int, value: Short): Unit = run { _buffer.putShort(index, value) }
+		actual fun setInt32(index: Int, value: Int): Unit = run { _buffer.putInt(index, value) }
+		actual fun getInt32(index: Int): Int = _buffer.getInt(index)
+		actual fun setFloat32(index: Int, value: Float): Unit = run { _buffer.putFloat(index, value) }
+		actual fun getFloat32(index: Int): Float = _buffer.getFloat(index)
 
-		actual fun setAlignedArrayInt16(index: Int, data: ShortArray, offset: Int, len: Int) {
-			for (n in 0 until len) setAlignedInt16(index + n, data[offset + n])
-		}
 
-		actual fun setAlignedArrayInt32(index: Int, data: IntArray, offset: Int, len: Int) {
-			for (n in 0 until len) setAlignedInt32(index + n, data[offset + n])
-		}
+		actual fun setArrayInt8(dstPos: Int, src: ByteArray, srcPos: Int, len: Int) = copy(src, srcPos, this, dstPos, len)
+		actual fun setAlignedArrayInt8(dstPos: Int, src: ByteArray, srcPos: Int, len: Int) = copy(src, srcPos, this, dstPos, len)
+		actual fun setAlignedArrayInt16(dstPos: Int, src: ShortArray, srcPos: Int, len: Int) = copyAligned(src, srcPos, this, dstPos, len)
+		actual fun setAlignedArrayInt32(dstPos: Int, src: IntArray, srcPos: Int, len: Int) = copyAligned(src, srcPos, this, dstPos, len)
+		actual fun setAlignedArrayFloat32(dstPos: Int, src: FloatArray, srcPos: Int, len: Int) = copyAligned(src, srcPos, this, dstPos, len)
 
-		actual fun setAlignedArrayFloat32(index: Int, data: FloatArray, offset: Int, len: Int) {
-			for (n in 0 until len) setAlignedFloat32(index + n, data[offset + n])
-		}
-
-		actual fun getInt16(index: Int): Short = buffer.getShort(index)
-		actual fun getInt32(index: Int): Int = buffer.getInt(index)
-		actual fun getFloat32(index: Int): Float = buffer.getFloat(index)
+		actual fun getArrayInt8(srcPos: Int, dst: ByteArray, dstPos: Int, len: Int) = copy(this, srcPos, dst, dstPos, len)
+		actual fun getAlignedArrayInt8(srcPos: Int, dst: ByteArray, dstPos: Int, len: Int) = copy(this, srcPos, dst, dstPos, len)
+		actual fun getAlignedArrayInt16(srcPos: Int, dst: ShortArray, dstPos: Int, len: Int) = copyAligned(this, srcPos, dst, dstPos, len)
+		actual fun getAlignedArrayInt32(srcPos: Int, dst: IntArray, dstPos: Int, len: Int) = copyAligned(this, srcPos, dst, dstPos, len)
+		actual fun getAlignedArrayFloat32(srcPos: Int, dst: FloatArray, dstPos: Int, len: Int) = copyAligned(this, srcPos, dst, dstPos, len)
 	}
 
 	actual fun syncTest(block: suspend EventLoopTest.() -> Unit): Unit {
