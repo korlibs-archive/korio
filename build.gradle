@@ -30,6 +30,12 @@ allprojects {
 	group 'com.soywiz'
 	version "0.15.3-SNAPSHOT"
 
+	if (project == rootProject) {
+		new File(rootProject.rootDir, "korio/common/src/main/kotlin/com/soywiz/korio/KorioVersion.kt").write(
+				"package com.soywiz.korio\n\nval KORIO_VERSION = \"$version\""
+		)
+	}
+
 	apply plugin: 'java'
 	apply plugin: 'maven'
 	apply plugin: 'signing'

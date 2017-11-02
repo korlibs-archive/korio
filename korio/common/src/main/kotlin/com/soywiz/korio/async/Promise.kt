@@ -1,5 +1,6 @@
 package com.soywiz.korio.async
 
+import com.soywiz.korio.CancellationException
 import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
@@ -71,8 +72,10 @@ class Promise<T : Any?> : Cancellable {
 			this.done = true
 
 			if (error != null && synchronized(resolvedHandlers) { this.rejectedHandlers.isEmpty() } && error !is com.soywiz.korio.CancellationException) {
-				Console.error("## Not handled Promise exception:")
-				error.printStackTrace()
+				if (error !is CancellationException) {
+					Console.error("## Not handled Promise exception:")
+					error.printStackTrace()
+				}
 			}
 
 			flush()
