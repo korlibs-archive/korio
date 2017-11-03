@@ -1,5 +1,5 @@
 apply plugin: 'kotlin-platform-common'
 
 dependencies {
-	compile "com.soywiz:klock-common:0.1.0"
+	compile "com.soywiz:klock-common:$klockVersion"
 }
