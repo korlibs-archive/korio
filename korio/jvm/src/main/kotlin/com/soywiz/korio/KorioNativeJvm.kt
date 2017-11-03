@@ -12,7 +12,6 @@ import com.soywiz.korio.vfs.LocalVfsJvm
 import com.soywiz.korio.vfs.MemoryVfs
 import com.soywiz.korio.vfs.ResourcesVfsProviderJvm
 import com.soywiz.korio.vfs.VfsFile
-import com.sun.xml.internal.messaging.saaj.util.ByteOutputStream
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.io.File
@@ -112,7 +111,7 @@ actual object KorioNative {
 
 	actual object SyncCompression {
 		actual fun inflate(data: ByteArray): ByteArray {
-			val out = ByteOutputStream()
+			val out = ByteArrayOutputStream()
 			val s = InflaterInputStream(ByteArrayInputStream(data))
 			val temp = ByteArray(0x1000)
 			while (true) {
@@ -120,7 +119,7 @@ actual object KorioNative {
 				if (read <= 0) break
 				out.write(temp, 0, read)
 			}
-			return out.bytes.copyOf(out.count)
+			return out.toByteArray()
 		}
 
 		actual fun inflateTo(data: ByteArray, out: ByteArray): ByteArray {

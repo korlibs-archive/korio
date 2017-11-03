@@ -5,6 +5,7 @@ import com.soywiz.korio.crypto.Hex
 import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.jzlib.*
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.net.AsyncServer
@@ -145,22 +146,63 @@ actual object KorioNative {
 	}
 
 	actual object SyncCompression {
-		val zlib = require("zlib")
+		val zlib by lazy { require("zlib") }
 
 		actual fun inflate(data: ByteArray): ByteArray {
-			return zlib.inflateSync(data.toNodeJsBuffer()).unsafeCast<NodeJsBuffer>().toByteArray()
+			when {
+				OS.isNodejs -> {
+					return zlib.inflateSync(data.toNodeJsBuffer()).unsafeCast<NodeJsBuffer>().toByteArray()
+				}
+				else -> {
+					val out = ByteArrayOutputStream()
+					val s = InflaterInputStream(ByteArrayInputStream(data))
+					val temp = ByteArray(0x1000)
+					while (true) {
+						val read = s.read(temp, 0, temp.size)
+						if (read <= 0) break
+						out.write(temp, 0, read)
+					}
+					return out.toByteArray()
+				}
+			}
 		}
 
 		actual fun inflateTo(data: ByteArray, out: ByteArray): ByteArray {
-			val res = inflate(data)
-			res.copyRangeTo(0, out, 0, min(res.size, out.size))
-			return out
+			when {
+				OS.isNodejs -> {
+					val res = inflate(data)
+					res.copyRangeTo(0, out, 0, min(res.size, out.size))
+					return out
+				}
+				else -> {
+					val s = InflaterInputStream(ByteArrayInputStream(data))
+					var pos = 0
+					var remaining = out.size
+					while (true) {
+						val read = s.read(out, pos, remaining)
+						if (read <= 0) break
+						pos += read
+						remaining -= read
+					}
+					return out
+				}
+			}
 		}
 
 		actual fun deflate(data: ByteArray, level: Int): ByteArray {
-			return zlib.deflateSync(data.toNodeJsBuffer(), jsObject(
-				"level" to level
-			)).unsafeCast<NodeJsBuffer>().toByteArray()
+			when {
+				OS.isNodejs -> {
+					return zlib.deflateSync(data.toNodeJsBuffer(), jsObject(
+						"level" to level
+					)).unsafeCast<NodeJsBuffer>().toByteArray()
+				}
+				else -> {
+					val o = ByteArrayOutputStream()
+					val out = DeflaterOutputStream(o, Deflater(level))
+					out.write(data)
+					return o.toByteArray()
+				}
+			}
 		}
 	}
 
@@ -250,41 +292,83 @@ actual object KorioNative {
 	val zlib by lazy { require("zlib") }
 
 	suspend actual fun uncompressGzip(data: ByteArray): ByteArray = suspendCoroutine { c ->
-		zlib.gunzip(data.toNodeJsBuffer()) { error, data ->
-			if (error != null) {
-				c.resumeWithException(error)
-			} else {
-				c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
+		when {
+			OS.isNodejs -> {
+				zlib.gunzip(data.toNodeJsBuffer()) { error, data ->
+					if (error != null) {
+						c.resumeWithException(error)
+					} else {
+						c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
+					}
+				}
+			}
+			else -> {
+				// Browser
+				val out = ByteArrayOutputStream()
+				GZIPInputStream(ByteArrayInputStream(data)).copyTo(out)
+				c.resume(out.toByteArray())
 			}
 		}
 	}
 
 	suspend actual fun uncompressZlib(data: ByteArray): ByteArray = suspendCoroutine { c ->
-		zlib.inflate(data.toNodeJsBuffer()) { error, data ->
-			if (error != null) {
-				c.resumeWithException(error)
-			} else {
-				c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
+		when {
+			OS.isNodejs -> {
+				zlib.inflate(data.toNodeJsBuffer()) { error, data ->
+					if (error != null) {
+						c.resumeWithException(error)
+					} else {
+						c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
+					}
+				}
+			}
+			else -> {
+				val out = ByteArrayOutputStream()
+				InflaterInputStream(ByteArrayInputStream(data)).copyTo(out)
+				c.resume(out.toByteArray())
 			}
 		}
 	}
 
 	suspend actual fun compressGzip(data: ByteArray, level: Int): ByteArray = suspendCoroutine { c ->
-		zlib.gzip(data.toNodeJsBuffer()) { error, data ->
-			if (error != null) {
-				c.resumeWithException(error)
-			} else {
-				c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
+		when {
+			OS.isNodejs -> {
+				zlib.gzip(data.toNodeJsBuffer()) { error, data ->
+					if (error != null) {
+						c.resumeWithException(error)
+					} else {
+						c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
+					}
+				}
+			}
+			else -> {
+				val out = ByteArrayOutputStream()
+				val out2 = GZIPOutputStream(out)
+				ByteArrayInputStream(data).copyTo(out2)
+				out2.flush()
+				c.resume(out.toByteArray())
 			}
 		}
 	}
 
 	suspend actual fun compressZlib(data: ByteArray, level: Int): ByteArray = suspendCoroutine { c ->
-		zlib.deflate(data.toNodeJsBuffer()) { error, data ->
-			if (error != null) {
-				c.resumeWithException(error)
-			} else {
-				c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
+		when {
+			OS.isNodejs -> {
+				zlib.deflate(data.toNodeJsBuffer()) { error, data ->
+					if (error != null) {
+						c.resumeWithException(error)
+					} else {
+						c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
+					}
+				}
+			}
+			else -> {
+				val out = ByteArrayOutputStream()
+				val deflater = Deflater(level)
+				val out2 = DeflaterOutputStream(out, deflater)
+				ByteArrayInputStream(data).copyTo(out2)
+				out2.flush()
+				c.resume(out.toByteArray())
 			}
 		}
 	}
