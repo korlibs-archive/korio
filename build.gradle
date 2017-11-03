@@ -29,7 +29,7 @@ allprojects {
 	}
 
 	group 'com.soywiz'
-	version "0.16.0"
+	version "0.16.1-SNAPSHOT"
 
 	if (project == rootProject) {
 		new File(rootProject.rootDir, "korio/common/src/main/kotlin/com/soywiz/korio/KorioVersion.kt").write(
