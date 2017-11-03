@@ -29,49 +29,41 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.soywiz.korio.jzlib
 
-import com.jtransc.annotation.JTranscInvisible
+import com.soywiz.korio.IOException
 
-import java.io.IOException
-import java.io.InputStream
-
-@JTranscInvisible
-class GZIPInputStream @Throws(IOException::class)
+class GZIPInputStream
 constructor(`in`: InputStream,
 			inflater: Inflater,
 			size: Int,
 			close_in: Boolean) : InflaterInputStream(`in`, inflater, size, close_in) {
 
 	val modifiedtime: Long
-		get() = inflater!!.istate!!.getGZIPHeader().getModifiedTime()
+		get() = inflater!!.istate!!.gzipHeader!!.modifiedTime
 
 	val os: Int
-		get() = inflater!!.istate!!.getGZIPHeader().getOS()
+		get() = inflater!!.istate!!.gzipHeader!!.getOS()
 
 	val name: String
-		get() = inflater!!.istate!!.getGZIPHeader().getName()
+		get() = inflater!!.istate!!.gzipHeader!!.getName()
 
 	val comment: String
-		get() = inflater!!.istate!!.getGZIPHeader().getComment()
+		get() = inflater!!.istate!!.gzipHeader!!.getComment()
 
 	/*DONE*/ val crc: Long
-		@Throws(GZIPException::class)
 		get() {
 			if (inflater!!.istate!!.mode != 12)
 				throw GZIPException("checksum is not calculated yet.")
-			return inflater.istate!!.getGZIPHeader().getCRC()
+			return inflater.istate!!.gzipHeader!!.crc
 		}
 
-	@Throws(IOException::class)
-	@JvmOverloads constructor(`in`: InputStream,
-							  size: Int = InflaterInputStream.Companion.DEFAULT_BUFSIZE,
-							  close_in: Boolean = true) : this(`in`, Inflater(15 + 16), size, close_in) {
+	constructor(`in`: InputStream, size: Int = InflaterInputStream.Companion.DEFAULT_BUFSIZE, close_in: Boolean = true)
+		: this(`in`, Inflater(15 + 16), size, close_in) {
 		myinflater = true
 	}
 
-	@Throws(IOException::class)
 	override fun readHeader() {
 
-		val empty = "".toByteArray()
+		val empty = byteArrayOf()
 		inflater!!.setOutput(empty, 0, 0)
 		inflater.setInput(empty, 0, 0, false)
 
@@ -102,7 +94,7 @@ constructor(`in`: InputStream,
 			val err = inflater.inflate(JZlib.Z_NO_FLUSH)
 
 			if (err != 0/*Z_OK*/) {
-				val len = 2048 - inflater.next_in.length
+				val len = 2048 - inflater.next_in!!.size
 				if (len > 0) {
 					val tmp = ByteArray(len)
 					n = fill(tmp)
@@ -115,7 +107,7 @@ constructor(`in`: InputStream,
 				//inflater.next_in_index = inflater.next_in.length;
 				inflater.avail_in += inflater.next_in_index
 				inflater.next_in_index = 0
-				throw IOException(inflater!!.msg)
+				throw IOException(inflater!!.msg!!)
 			}
 		} while (inflater.istate!!.inParsingHeader())
 	}

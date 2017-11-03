@@ -29,142 +29,116 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.soywiz.korio.jzlib
 
-//import com.jtransc.annotation.JTranscInvisible
-//
-//import java.io.FilterOutputStream
-//import java.io.IOException
-//import java.io.OutputStream
-//
-//open class DeflaterOutputStream @Throws(IOException::class)
-//@JvmOverloads constructor(out: OutputStream?,
-//						  val deflater: Deflater?,
-//						  size: Int,
-//						  close_out: Boolean = true) : FilterOutputStream(out) {
-//
-//	protected var buffer: ByteArray
-//
-//	private var closed = false
-//
-//	var syncFlush = false
-//
-//	private val buf1 = ByteArray(1)
-//
-//	protected var mydeflater = false
-//
-//	private val close_out = true
-//
-//	val totalIn: Long
-//		get() = deflater.totalIn
-//
-//	val totalOut: Long
-//		get() = deflater.totalOut
-//
-//	@Throws(IOException::class)
-//	constructor(out: OutputStream) : this(out,
-//		Deflater(JZlib.Z_DEFAULT_COMPRESSION),
-//		DEFAULT_BUFSIZE, true) {
-//		mydeflater = true
-//	}
-//
-//	@Throws(IOException::class)
-//	constructor(out: OutputStream, def: Deflater) : this(out, def, DEFAULT_BUFSIZE, true) {
-//	}
-//
-//	init {
-//		if (out == null || deflater == null) {
-//			throw NullPointerException()
-//		} else if (size <= 0) {
-//			throw IllegalArgumentException("buffer size must be greater than 0")
-//		}
-//		buffer = ByteArray(size)
-//		this.close_out = close_out
-//	}
-//
-//	@Throws(IOException::class)
-//	override fun write(b: Int) {
-//		buf1[0] = (b and 0xff).toByte()
-//		write(buf1, 0, 1)
-//	}
-//
-//	@Throws(IOException::class)
-//	override fun write(b: ByteArray, off: Int, len: Int) {
-//		if (deflater.finished()) {
-//			throw IOException("finished")
-//		} else if ((off < 0) or (len < 0) or (off + len > b.size)) {
-//			throw IndexOutOfBoundsException()
-//		} else if (len == 0) {
-//			return
-//		} else {
-//			val flush = if (syncFlush) JZlib.Z_SYNC_FLUSH else JZlib.Z_NO_FLUSH
-//			deflater.setInput(b, off, len, true)
-//			while (deflater.avail_in > 0) {
-//				val err = deflate(flush)
-//				if (err == JZlib.Z_STREAM_END)
-//					break
-//			}
-//		}
-//	}
-//
-//	@Throws(IOException::class)
-//	fun finish() {
-//		while (!deflater.finished()) {
-//			deflate(JZlib.Z_FINISH)
-//		}
-//	}
-//
-//	@Throws(IOException::class)
-//	override fun close() {
-//		if (!closed) {
-//			finish()
-//			if (mydeflater) {
-//				deflater.end()
-//			}
-//			if (close_out)
-//				out.close()
-//			closed = true
-//		}
-//	}
-//
-//	@Throws(IOException::class)
-//	protected fun deflate(flush: Int): Int {
-//		deflater.setOutput(buffer, 0, buffer.size)
-//		val err = deflater.deflate(flush)
-//		when (err) {
-//			JZlib.Z_OK, JZlib.Z_STREAM_END -> {
-//			}
-//			JZlib.Z_BUF_ERROR -> {
-//				if (deflater.avail_in <= 0 && flush != JZlib.Z_FINISH) {
-//					// flush() without any data
-//					break
-//				}
-//				throw IOException("failed to deflate")
-//			}
-//			else -> throw IOException("failed to deflate")
-//		}
-//		val len = deflater.next_out_index
-//		if (len > 0) {
-//			out.write(buffer, 0, len)
-//		}
-//		return err
-//	}
-//
-//	@Throws(IOException::class)
-//	override fun flush() {
-//		if (syncFlush && !deflater.finished()) {
-//			while (true) {
-//				val err = deflate(JZlib.Z_SYNC_FLUSH)
-//				if (deflater.next_out_index < buffer.size)
-//					break
-//				if (err == JZlib.Z_STREAM_END)
-//					break
-//			}
-//		}
-//		out.flush()
-//	}
-//
-//	companion object {
-//
-//		protected val DEFAULT_BUFSIZE = 512
-//	}
-//}
-//
+import com.soywiz.korio.IOException
+
+open class DeflaterOutputStream(
+	out: OutputStream,
+	val deflater: Deflater,
+	size: Int,
+	private val close_out: Boolean = true
+) : FilterOutputStream(out) {
+
+	protected var buffer: ByteArray = ByteArray(size)
+
+	private var closed = false
+
+	var syncFlush = false
+
+	private val buf1 = ByteArray(1)
+
+	protected var mydeflater = false
+
+	val total_in: Long get() = deflater!!.total_in
+
+	val total_out: Long get() = deflater!!.total_out
+
+	constructor(out: OutputStream) : this(out,
+		Deflater(JZlib.Z_DEFAULT_COMPRESSION),
+		DEFAULT_BUFSIZE, true) {
+		mydeflater = true
+	}
+
+	constructor(out: OutputStream, def: Deflater) : this(out, def, DEFAULT_BUFSIZE, true) {
+	}
+
+	override fun write(b: Int) {
+		buf1[0] = (b and 0xff).toByte()
+		write(buf1, 0, 1)
+	}
+
+	override fun write(b: ByteArray, off: Int, len: Int) {
+		if (deflater.finished()) {
+			throw IOException("finished")
+		} else if ((off < 0) or (len < 0) or (off + len > b.size)) {
+			throw IndexOutOfBoundsException()
+		} else if (len == 0) {
+			return
+		} else {
+			val flush = if (syncFlush) JZlib.Z_SYNC_FLUSH else JZlib.Z_NO_FLUSH
+			deflater.setInput(b, off, len, true)
+			while (deflater.avail_in > 0) {
+				val err = deflate(flush)
+				if (err == JZlib.Z_STREAM_END)
+					break
+			}
+		}
+	}
+
+	fun finish() {
+		while (!deflater.finished()) {
+			deflate(JZlib.Z_FINISH)
+		}
+	}
+
+	override fun close() {
+		if (!closed) {
+			finish()
+			if (mydeflater) {
+				deflater.end()
+			}
+			if (close_out)
+				out.close()
+			closed = true
+		}
+	}
+
+	protected fun deflate(flush: Int): Int {
+		deflater.setOutput(buffer, 0, buffer.size)
+		val err = deflater.deflate(flush)
+		when (err) {
+			JZlib.Z_OK, JZlib.Z_STREAM_END -> {
+			}
+			JZlib.Z_BUF_ERROR -> {
+				if (deflater.avail_in <= 0 && flush != JZlib.Z_FINISH) {
+					// flush() without any data
+				} else {
+					throw IOException("failed to deflate")
+				}
+			}
+			else -> throw IOException("failed to deflate")
+		}
+		val len = deflater.next_out_index
+		if (len > 0) {
+			out.write(buffer, 0, len)
+		}
+		return err
+	}
+
+	override fun flush() {
+		if (syncFlush && !deflater.finished()) {
+			while (true) {
+				val err = deflate(JZlib.Z_SYNC_FLUSH)
+				if (deflater.next_out_index < buffer.size)
+					break
+				if (err == JZlib.Z_STREAM_END)
+					break
+			}
+		}
+		out.flush()
+	}
+
+	companion object {
+
+		protected val DEFAULT_BUFSIZE = 512
+	}
+}

@@ -29,63 +29,46 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.soywiz.korio.jzlib
 
-import com.jtransc.annotation.JTranscInvisible
-
-import java.io.IOException
-import java.io.OutputStream
-
-@JTranscInvisible
-class GZIPOutputStream @Throws(IOException::class)
-constructor(out: OutputStream,
-			deflater: Deflater,
-			size: Int,
-			close_out: Boolean) : DeflaterOutputStream(out, deflater, size, close_out) {
+class GZIPOutputStream constructor(
+	out: OutputStream,
+	deflater: Deflater,
+	size: Int,
+	close_out: Boolean
+) : DeflaterOutputStream(out, deflater, size, close_out) {
 
 	/*FINISH_STATE*/ val crc: Long
-		@Throws(GZIPException::class)
 		get() {
-			if (deflater.dstate!!.status !== 666)
-				throw GZIPException("checksum is not calculated yet.")
-			return deflater.dstate!!.getGZIPHeader().getCRC()
+			if (deflater.dstate!!.status != 666) throw GZIPException("checksum is not calculated yet.")
+			return deflater.dstate!!.gzipHeader.crc
 		}
 
-	@Throws(IOException::class)
-	@JvmOverloads constructor(out: OutputStream,
-							  size: Int = DeflaterOutputStream.DEFAULT_BUFSIZE,
-							  close_out: Boolean = true) : this(out,
-		Deflater(JZlib.Z_DEFAULT_COMPRESSION, 15 + 16),
-		size, close_out) {
+	constructor(out: OutputStream, size: Int = DeflaterOutputStream.DEFAULT_BUFSIZE, close_out: Boolean = true)
+		: this(out, Deflater(JZlib.Z_DEFAULT_COMPRESSION, 15 + 16), size, close_out) {
 		mydeflater = true
 	}
 
 
-	@Throws(GZIPException::class)
 	private fun check() {
-		if (deflater.dstate!!.status !== 42 /*INIT_STATUS*/)
-			throw GZIPException("header is already written.")
+		if (deflater.dstate!!.status != 42 /*INIT_STATUS*/) throw GZIPException("header is already written.")
 	}
 
-	@Throws(GZIPException::class)
 	fun setModifiedTime(mtime: Long) {
 		check()
-		deflater.dstate!!.getGZIPHeader().setModifiedTime(mtime)
+		deflater.dstate!!.gzipHeader.modifiedTime = mtime
 	}
 
-	@Throws(GZIPException::class)
 	fun setOS(os: Int) {
 		check()
-		deflater.dstate!!.getGZIPHeader().setOS(os)
+		deflater.dstate!!.gzipHeader.setOS(os)
 	}
 
-	@Throws(GZIPException::class)
 	fun setName(name: String) {
 		check()
-		deflater.dstate!!.getGZIPHeader().setName(name)
+		deflater.dstate!!.gzipHeader.setName(name)
 	}
 
-	@Throws(GZIPException::class)
 	fun setComment(comment: String) {
 		check()
-		deflater.dstate!!.getGZIPHeader().setComment(comment)
+		deflater.dstate!!.gzipHeader.setComment(comment)
 	}
 }

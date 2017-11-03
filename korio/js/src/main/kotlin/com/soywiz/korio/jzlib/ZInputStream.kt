@@ -29,12 +29,7 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.soywiz.korio.jzlib
 
-/*
-import com.jtransc.annotation.JTranscInvisible
-
-import java.io.FilterInputStream
-import java.io.IOException
-import java.io.InputStream
+import com.soywiz.korio.lang.and
 
 /**
  * ZInputStream
@@ -46,10 +41,9 @@ class ZInputStream : FilterInputStream {
 
 	var flushMode = JZlib.Z_NO_FLUSH
 	protected var compress: Boolean = false
-	protected var `in`: InputStream? = null
 
-	protected var deflater: Deflater
-	protected var iis: InflaterInputStream
+	protected var deflater: Deflater? = null
+	protected var iis: InflaterInputStream? = null
 
 	private val buf1 = ByteArray(1)
 
@@ -57,58 +51,53 @@ class ZInputStream : FilterInputStream {
 
 	val totalIn: Long
 		get() = if (compress)
-			deflater.total_in
+			deflater!!.total_in
 		else
-			iis.getTotalIn()
+			iis!!.total_in
 
 	val totalOut: Long
 		get() = if (compress)
-			deflater.total_out
+			deflater!!.total_out
 		else
-			iis.getTotalOut()
+			iis!!.total_out
 
-	@Throws(IOException::class)
-	@JvmOverloads constructor(`in`: InputStream, nowrap: Boolean = false) : super(`in`) {
+	constructor(`in`: InputStream, nowrap: Boolean = false) : super(`in`) {
 		iis = InflaterInputStream(`in`, nowrap)
 		compress = false
 	}
 
-	@Throws(IOException::class)
 	constructor(`in`: InputStream, level: Int) : super(`in`) {
 		this.`in` = `in`
 		deflater = Deflater()
-		deflater.init(level)
+		deflater!!.init(level)
 		compress = true
 	}
 
-	@Throws(IOException::class)
 	override fun read(): Int {
 		return if (read(buf1, 0, 1) == -1) -1 else buf1[0] and 0xFF
 	}
 
-	@Throws(IOException::class)
 	override fun read(b: ByteArray, off: Int, len: Int): Int {
 		if (compress) {
-			deflater.setOutput(b, off, len)
+			deflater!!.setOutput(b, off, len)
 			while (true) {
 				val datalen = `in`!!.read(buf, 0, buf.size)
 				if (datalen == -1) return -1
-				deflater.setInput(buf, 0, datalen, true)
-				val err = deflater.deflate(flushMode)
-				if (deflater.next_out_index > 0)
-					return deflater.next_out_index
+				deflater!!.setInput(buf, 0, datalen, true)
+				val err = deflater!!.deflate(flushMode)
+				if (deflater!!.next_out_index > 0)
+					return deflater!!.next_out_index
 				if (err == JZlib.Z_STREAM_END)
 					return 0
 				if (err == JZlib.Z_STREAM_ERROR || err == JZlib.Z_DATA_ERROR) {
-					throw ZStreamException("deflating: " + deflater.msg)
+					throw ZStreamException("deflating: " + deflater!!.msg)
 				}
 			}
 		} else {
-			return iis.read(b, off, len)
+			return iis!!.read(b, off, len)
 		}
 	}
 
-	@Throws(IOException::class)
 	override fun skip(n: Long): Long {
 		var len = 512
 		if (n < len)
@@ -117,12 +106,10 @@ class ZInputStream : FilterInputStream {
 		return read(tmp).toLong()
 	}
 
-	@Throws(IOException::class)
 	override fun close() {
 		if (compress)
-			deflater.end()
+			deflater!!.end()
 		else
-			iis.close()
+			iis!!.close()
 	}
 }
-*/

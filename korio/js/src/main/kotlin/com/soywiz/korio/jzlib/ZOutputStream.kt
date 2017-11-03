@@ -29,13 +29,14 @@ EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 package com.soywiz.korio.jzlib
 
+import com.soywiz.korio.IOException
+
 /**
  * ZOutputStream
  *
  * deprecated  use DeflaterOutputStream or InflaterInputStream
  */
 //@Deprecated
-/*
 class ZOutputStream : FilterOutputStream {
 
 	protected var bufsize = 512
@@ -43,30 +44,29 @@ class ZOutputStream : FilterOutputStream {
 	protected var buf = ByteArray(bufsize)
 	protected var compress: Boolean = false
 
-	protected var out: OutputStream? = null
 	private var end = false
 
-	private val dos: DeflaterOutputStream
-	private val inflater: Inflater
+	private var dos: DeflaterOutputStream? = null
+	private var inflater: Inflater? = null
 
 	private val buf1 = ByteArray(1)
 
 	val totalIn: Long
 		get() = if (compress)
-			dos.getTotalIn()
+			dos!!.total_in
 		else
-			inflater.total_in
+			inflater!!.total_in
 
 	val totalOut: Long
 		get() = if (compress)
-			dos.getTotalOut()
+			dos!!.total_out
 		else
-			inflater.total_out
+			inflater!!.total_out
 
 	constructor(out: OutputStream) : super(out) {
 		this.out = out
 		inflater = Inflater()
-		inflater.init()
+		inflater!!.init()
 		compress = false
 	}
 
@@ -85,20 +85,20 @@ class ZOutputStream : FilterOutputStream {
 	override fun write(b: ByteArray, off: Int, len: Int) {
 		if (len == 0) return
 		if (compress) {
-			dos.write(b, off, len)
+			dos!!.write(b, off, len)
 		} else {
-			inflater.setInput(b, off, len, true)
+			inflater!!.setInput(b, off, len, true)
 			var err = JZlib.Z_OK
-			while (inflater.avail_in > 0) {
-				inflater.setOutput(buf, 0, buf.size)
-				err = inflater.inflate(flushMode)
-				if (inflater.next_out_index > 0)
-					out!!.write(buf, 0, inflater.next_out_index)
+			while (inflater!!.avail_in > 0) {
+				inflater!!.setOutput(buf, 0, buf.size)
+				err = inflater!!.inflate(flushMode)
+				if (inflater!!.next_out_index > 0)
+					out!!.write(buf, 0, inflater!!.next_out_index)
 				if (err != JZlib.Z_OK)
 					break
 			}
 			if (err != JZlib.Z_OK)
-				throw ZStreamException("inflating: " + inflater.msg)
+				throw ZStreamException("inflating: " + inflater!!.msg)
 			return
 		}
 	}
@@ -109,12 +109,12 @@ class ZOutputStream : FilterOutputStream {
 			val tmp = flushMode
 			var flush = JZlib.Z_FINISH
 			try {
-				write("".toByteArray(), 0, 0)
+				write(byteArrayOf(), 0, 0)
 			} finally {
 				flush = tmp
 			}
 		} else {
-			dos.finish()
+			dos!!.finish()
 		}
 		flush()
 	}
@@ -123,17 +123,16 @@ class ZOutputStream : FilterOutputStream {
 		if (end) return
 		if (compress) {
 			try {
-				dos.finish()
+				dos!!.finish()
 			} catch (e: Exception) {
 			}
 
 		} else {
-			inflater.end()
+			inflater!!.end()
 		}
 		end = true
 	}
 
-	@Throws(IOException::class)
 	override fun close() {
 		try {
 			try {
@@ -144,14 +143,11 @@ class ZOutputStream : FilterOutputStream {
 		} finally {
 			end()
 			out!!.close()
-			out = null
 		}
 	}
 
-	@Throws(IOException::class)
 	override fun flush() {
 		out!!.flush()
 	}
 
 }
-*/
