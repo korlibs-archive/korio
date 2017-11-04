@@ -132,10 +132,12 @@ actual object KorioNative {
 	actual fun Thread_sleep(time: Long) {}
 
 	actual class Inflater actual constructor(val nowrap: Boolean) {
-		actual fun needsInput(): Boolean = TODO()
-		actual fun setInput(buffer: ByteArray): Unit = TODO()
-		actual fun inflate(buffer: ByteArray, offset: Int, len: Int): Int = TODO()
-		actual fun end(): Unit = TODO()
+		val ji = KZlibInflater(nowrap)
+
+		actual fun needsInput(): Boolean = ji.needsInput()
+		actual fun setInput(buffer: ByteArray) = ji.setInput(buffer)
+		actual fun inflate(buffer: ByteArray, offset: Int, len: Int): Int = ji.inflate(buffer, offset, len)
+		actual fun end() = ji.end()
 	}
 
 	actual object SyncCompression {
@@ -265,17 +267,23 @@ actual object KorioNative {
 		console.error(msg)
 	}
 
+	// Non-optimizable arrays
 	actual fun <T> copyRangeTo(src: Array<T>, srcPos: Int, dst: Array<T>, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
-	actual fun copyRangeTo(src: BooleanArray, srcPos: Int, dst: BooleanArray, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
-	actual fun copyRangeTo(src: ByteArray, srcPos: Int, dst: ByteArray, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
-	actual fun copyRangeTo(src: ShortArray, srcPos: Int, dst: ShortArray, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
-	actual fun copyRangeTo(src: IntArray, srcPos: Int, dst: IntArray, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
 	actual fun copyRangeTo(src: LongArray, srcPos: Int, dst: LongArray, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
-	actual fun copyRangeTo(src: FloatArray, srcPos: Int, dst: FloatArray, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
-	actual fun copyRangeTo(src: DoubleArray, srcPos: Int, dst: DoubleArray, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
+	actual fun copyRangeTo(src: BooleanArray, srcPos: Int, dst: BooleanArray, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
 
+	// Using: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/set
+	actual fun copyRangeTo(src: ByteArray, srcPos: Int, dst: ByteArray, dstPos: Int, count: Int) = dst.unsafeCast<Int8Array>().set(src.unsafeCast<Int8Array>().subarray(srcPos, srcPos + count), dstPos)
+	actual fun copyRangeTo(src: ShortArray, srcPos: Int, dst: ShortArray, dstPos: Int, count: Int) = dst.unsafeCast<Int16Array>().set(src.unsafeCast<Int16Array>().subarray(srcPos, srcPos + count), dstPos)
+	actual fun copyRangeTo(src: IntArray, srcPos: Int, dst: IntArray, dstPos: Int, count: Int) = dst.unsafeCast<Int32Array>().set(src.unsafeCast<Int32Array>().subarray(srcPos, srcPos + count), dstPos)
+	actual fun copyRangeTo(src: FloatArray, srcPos: Int, dst: FloatArray, dstPos: Int, count: Int) = dst.unsafeCast<Float32Array>().set(src.unsafeCast<Float32Array>().subarray(srcPos, srcPos + count), dstPos)
+	actual fun copyRangeTo(src: DoubleArray, srcPos: Int, dst: DoubleArray, dstPos: Int, count: Int) = dst.unsafeCast<Float64Array>().set(src.unsafeCast<Float64Array>().subarray(srcPos, srcPos + count), dstPos)
+
+	// Non-optimizable arrays
 	actual fun <T> fill(src: Array<T>, value: T, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
 	actual fun fill(src: BooleanArray, value: Boolean, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
+
+	// @TODO: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/fill
 	actual fun fill(src: ByteArray, value: Byte, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
 	actual fun fill(src: ShortArray, value: Short, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
 	actual fun fill(src: IntArray, value: Int, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
@@ -780,5 +788,57 @@ class CRC32 {
 				crc_table.copyRangeTo(0, tmp, 0, tmp.size)
 				return tmp
 			}
+	}
+}
+
+class KZlibInflater(private var nowrap: Boolean = false) {
+	private var inf: Inflater? = Inflater(nowrap)
+	private var needDict: Boolean = false
+	var bytesRead: Long = 0; private set
+	var bytesWritten: Long = 0; private set
+
+	//System.out.println("getRemaining()=" + inf.getAvailIn());
+	val remaining: Int get() = inf!!.avail_in
+	val adler: Int get() = inf!!.getAdler()
+	val totalIn: Int get() = bytesRead.toInt()
+	val totalOut: Int get() = bytesWritten.toInt()
+	fun setInput(b: ByteArray, off: Int = 0, len: Int = b.size) = run { inf!!.setInput(b, off, len, true) }
+	fun setDictionary(b: ByteArray, off: Int = 0, len: Int = b.size) = run { inf!!.setDictionary(b, off, len); needDict = false }
+	fun needsInput(): Boolean = remaining <= 0
+	fun needsDictionary(): Boolean = needDict
+	fun finished(): Boolean = inf!!.finished()
+
+	fun inflate(b: ByteArray, off: Int = 0, len: Int = b.size): Int {
+		val instart = inf!!.total_in
+		inf!!.setOutput(b, off, len)
+
+		val outstart = inf!!.total_out
+		//inf.inflate(len);
+		val err = inf!!.inflate(JZlib.Z_NO_FLUSH)
+		val outend = inf!!.total_out
+		val inend = inf!!.total_in
+
+		//System.out.println("inflate: " + instart + "/" + inend + " || " + outstart + "/" + outend);
+
+		val n = (outend - outstart).toInt()
+		bytesWritten += n.toLong()
+		bytesRead += (inend - instart).toInt().toLong()
+		return n
+	}
+
+	fun reset() {
+		inf!!.free()
+		inf!!.init(nowrap)
+		needDict = true
+		bytesRead = 0
+		bytesWritten = 0
+	}
+
+	fun end() {
+		//inf.inflateEnd()
+		inf!!.end()
+		needDict = true
+		bytesRead = 0
+		bytesWritten = 0
 	}
 }
