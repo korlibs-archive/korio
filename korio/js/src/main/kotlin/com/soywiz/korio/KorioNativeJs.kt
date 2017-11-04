@@ -5,7 +5,6 @@ import com.soywiz.korio.crypto.Hex
 import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.jzlib.*
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.net.AsyncServer
@@ -22,20 +21,14 @@ import com.soywiz.korio.stream.readAll
 import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.util.OS
 import com.soywiz.korio.vfs.*
+import com.soywiz.kzlib.*
 import org.khronos.webgl.*
 import org.w3c.dom.*
 import org.w3c.xhr.ARRAYBUFFER
 import org.w3c.xhr.XMLHttpRequest
 import org.w3c.xhr.XMLHttpRequestResponseType
 import kotlin.browser.window
-import kotlin.collections.List
-import kotlin.collections.Map
-import kotlin.collections.copyOfRange
-import kotlin.collections.indices
-import kotlin.collections.plusAssign
 import kotlin.collections.set
-import kotlin.collections.toList
-import kotlin.collections.toTypedArray
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.math.min
 
