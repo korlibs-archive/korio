@@ -202,6 +202,12 @@ actual object KorioNative {
 		return@executeInWorker out.toByteArray()
 	}
 
+	actual suspend fun uncompressZlibRaw(data: ByteArray): ByteArray = executeInWorker {
+		val out = ByteArrayOutputStream()
+		InflaterInputStream(ByteArrayInputStream(data), java.util.zip.Inflater(true)).copyTo(out)
+		return@executeInWorker out.toByteArray()
+	}
+
 	actual suspend fun compressGzip(data: ByteArray, level: Int): ByteArray = executeInWorker {
 		val out = ByteArrayOutputStream()
 		val out2 = GZIPOutputStream(out)
@@ -213,6 +219,15 @@ actual object KorioNative {
 	actual suspend fun compressZlib(data: ByteArray, level: Int): ByteArray = executeInWorker {
 		val out = ByteArrayOutputStream()
 		val deflater = Deflater(level)
+		val out2 = DeflaterOutputStream(out, deflater)
+		ByteArrayInputStream(data).copyTo(out2)
+		out2.flush()
+		return@executeInWorker out.toByteArray()
+	}
+
+	actual suspend fun compressZlibRaw(data: ByteArray, level: Int): ByteArray = executeInWorker {
+		val out = ByteArrayOutputStream()
+		val deflater = Deflater(level, true)
 		val out2 = DeflaterOutputStream(out, deflater)
 		ByteArrayInputStream(data).copyTo(out2)
 		out2.flush()

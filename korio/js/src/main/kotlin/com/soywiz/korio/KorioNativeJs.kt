@@ -331,6 +331,25 @@ actual object KorioNative {
 		}
 	}
 
+	suspend actual fun uncompressZlibRaw(data: ByteArray): ByteArray = suspendCoroutine { c ->
+		when {
+			OS.isNodejs -> {
+				zlib.inflateRaw(data.toNodeJsBuffer()) { error, data ->
+					if (error != null) {
+						c.resumeWithException(error)
+					} else {
+						c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
+					}
+				}
+			}
+			else -> {
+				val out = ByteArrayOutputStream()
+				InflaterInputStream(ByteArrayInputStream(data), nowrap = true).copyTo(out)
+				c.resume(out.toByteArray())
+			}
+		}
+	}
+
 	suspend actual fun compressGzip(data: ByteArray, level: Int): ByteArray = suspendCoroutine { c ->
 		when {
 			OS.isNodejs -> {
@@ -366,6 +385,28 @@ actual object KorioNative {
 			else -> {
 				val out = ByteArrayOutputStream()
 				val deflater = Deflater(level)
+				val out2 = DeflaterOutputStream(out, deflater)
+				ByteArrayInputStream(data).copyTo(out2)
+				out2.flush()
+				c.resume(out.toByteArray())
+			}
+		}
+	}
+
+	suspend actual fun compressZlibRaw(data: ByteArray, level: Int): ByteArray = suspendCoroutine { c ->
+		when {
+			OS.isNodejs -> {
+				zlib.deflateRaw(data.toNodeJsBuffer()) { error, data ->
+					if (error != null) {
+						c.resumeWithException(error)
+					} else {
+						c.resume(data.unsafeCast<NodeJsBuffer>().toByteArray())
+					}
+				}
+			}
+			else -> {
+				val out = ByteArrayOutputStream()
+				val deflater = Deflater(level, true)
 				val out2 = DeflaterOutputStream(out, deflater)
 				ByteArrayInputStream(data).copyTo(out2)
 				out2.flush()

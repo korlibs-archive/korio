@@ -97,8 +97,10 @@ expect object KorioNative {
 
 	suspend fun uncompressGzip(data: ByteArray): ByteArray
 	suspend fun uncompressZlib(data: ByteArray): ByteArray
+	suspend fun uncompressZlibRaw(data: ByteArray): ByteArray
 	suspend fun compressGzip(data: ByteArray, level: Int): ByteArray
 	suspend fun compressZlib(data: ByteArray, level: Int): ByteArray
+	suspend fun compressZlibRaw(data: ByteArray, level: Int): ByteArray
 
 	class SimplerMessageDigest(name: String) {
 		suspend fun update(data: ByteArray, offset: Int, size: Int): Unit
