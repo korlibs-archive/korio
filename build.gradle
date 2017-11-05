@@ -1,7 +1,7 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 
 buildscript {
-	ext.klockVersion = '0.2.0'
+	ext.klockVersion = '0.2.1'
 	ext.kzlibVersion = '0.0.1'
 	ext.kotlinVersion = '1.2.0-rc-39'
 	ext.compilerVersion = ext.kotlinVersion

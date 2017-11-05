@@ -2,6 +2,7 @@
 
 package com.soywiz.korio.async
 
+import com.soywiz.klock.Klock
 import com.soywiz.korio.KorioNative
 import com.soywiz.korio.coroutine.*
 import com.soywiz.korio.error.invalidOp
@@ -9,6 +10,7 @@ import com.soywiz.korio.lang.AtomicInteger
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.lang.printStackTrace
 import com.soywiz.korio.time.TimeProvider
+import com.soywiz.korio.util.clamp
 
 abstract class EventLoopFactory {
 	abstract fun createEventLoop(): EventLoop
@@ -69,7 +71,16 @@ abstract class EventLoop(val captureCloseables: Boolean) : Closeable {
 
 	open protected fun setImmediateInternal(handler: () -> Unit): Unit = run { setTimeoutInternal(0, handler) }
 
-	open protected fun requestAnimationFrameInternal(callback: () -> Unit): Closeable = setTimeoutInternal(1000 / 60, callback)
+	var fps: Double = 60.0
+
+	var lastRequest = 0.0
+	open protected fun requestAnimationFrameInternal(callback: () -> Unit): Closeable {
+		val step = 1000.0 / fps
+		val now = Klock.currentTimeMillisDouble()
+		if (lastRequest == 0.0) lastRequest = now
+		lastRequest = now
+		return setTimeoutInternal((step - (now - lastRequest)).clamp(0.0, step).toInt(), callback)
+	}
 
 	open fun loop(): Unit = Unit
 
