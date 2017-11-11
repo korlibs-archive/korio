@@ -1,8 +1,8 @@
 package com.soywiz.korio.util
 
+import com.soywiz.kmem.arraycopy
 import com.soywiz.korio.math.reinterpretAsInt
 import com.soywiz.korio.math.reinterpretAsLong
-import com.soywiz.korio.typedarray.copyRangeTo
 
 fun ByteArray.write8(o: Int, v: Int) = run { this[o] = v }
 fun ByteArray.write8(o: Int, v: Long) = run { this[o] = v }
@@ -32,8 +32,8 @@ fun ByteArray.write64_be(o: Int, v: Long) = run { write32_le(o + 0, (v ushr 32).
 fun ByteArray.writeF32_be(o: Int, v: Float) = run { write32_be(o + 0, v.reinterpretAsInt()) }
 fun ByteArray.writeF64_be(o: Int, v: Double) = run { write64_be(o + 0, v.reinterpretAsLong()) }
 
-fun ByteArray.writeBytes(o: Int, bytes: ByteArray) = bytes.copyRangeTo(0, this, o, bytes.size)
-fun ByteArray.writeBytes(o: Int, bytes: UByteArray) = bytes.data.copyRangeTo(0, this, o, bytes.size)
+fun ByteArray.writeBytes(o: Int, bytes: ByteArray) = arraycopy(bytes, 0, this, o, bytes.size)
+fun ByteArray.writeBytes(o: Int, bytes: UByteArray) = arraycopy(bytes.data, 0, this, o, bytes.size)
 
 private inline fun writeTypedArray(o: Int, elementSize: Int, indices: IntRange, write: (o: Int, n: Int) -> Unit) {
 	var p = o

@@ -1,6 +1,6 @@
 package com.soywiz.korio.ds
 
-import com.soywiz.korio.typedarray.fill
+import com.soywiz.kmem.fill
 
 class BitSet(val size: Int) {
 	val data = IntArray(((size + 0x1f) and 0x1f) / 0x20)

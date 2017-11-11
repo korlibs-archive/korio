@@ -3,4 +3,6 @@ apply plugin: 'kotlin-platform-jvm'
 dependencies {
 	expectedBy project(":korio-common")
 	compile "com.soywiz:klock:$klockVersion"
+	compile "com.soywiz:korinject:$korinjectVersion"
+	compile "com.soywiz:kmem:$kmemVersion"
 }

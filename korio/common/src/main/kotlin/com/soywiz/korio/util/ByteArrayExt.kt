@@ -1,9 +1,9 @@
 package com.soywiz.korio.util
 
+import com.soywiz.kmem.arraycopy
 import com.soywiz.korio.crypto.Hex
 import com.soywiz.korio.lang.Charsets
 import com.soywiz.korio.lang.toString
-import com.soywiz.korio.typedarray.copyRangeTo
 
 operator fun ByteArray.set(o: Int, v: Int) = run { this[o] = v.toByte() }
 operator fun ByteArray.set(o: Int, v: Long) = run { this[o] = v.toByte() }
@@ -14,7 +14,7 @@ fun List<ByteArray>.join(): ByteArray {
 	val out = ByteArray(this.sumBy { it.size })
 	var pos = 0
 	for (c in this) {
-		c.copyRangeTo(0, out, pos, c.size)
+		arraycopy(c, 0, out, pos, c.size)
 		pos += c.size
 	}
 	return out

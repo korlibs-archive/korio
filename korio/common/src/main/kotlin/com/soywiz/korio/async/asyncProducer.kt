@@ -1,5 +1,6 @@
 package com.soywiz.korio.async
 
+import com.soywiz.kmem.arraycopy
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.korioStartCoroutine
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
@@ -7,7 +8,6 @@ import com.soywiz.korio.ds.LinkedList
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncOutputStream
-import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.util.BYTES_EMPTY
 import kotlin.math.min
 
@@ -123,7 +123,7 @@ class AsyncConsumerStream(val consumer: Consumer<ByteArray>) : AsyncInputStream 
 		ensureNonEmptyBuffer()
 		if (eof) return -1
 		val actualRead = min(len, available)
-		current.copyRangeTo(currentPos, buffer, offset, actualRead)
+		arraycopy(current, currentPos, buffer, offset, actualRead)
 		currentPos += actualRead
 		return actualRead
 	}

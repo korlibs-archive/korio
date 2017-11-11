@@ -1,15 +1,14 @@
 package com.soywiz.korio.util
 
 import com.soywiz.klock.Klock
+import com.soywiz.korinject.Prototype
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.async
 import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.ds.lmapOf
-import com.soywiz.korio.inject.Prototype
 import com.soywiz.korio.time.TimeProvider
 import kotlin.reflect.KClass
 
-@Prototype
 class AsyncInmemoryCache {
 	data class Entry(val timestamp: Long, val data: Promise<Any?>)
 

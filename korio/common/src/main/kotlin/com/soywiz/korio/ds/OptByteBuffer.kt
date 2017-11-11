@@ -1,8 +1,8 @@
 package com.soywiz.korio.ds
 
+import com.soywiz.kmem.arraycopy
 import com.soywiz.korio.lang.Charset
 import com.soywiz.korio.lang.toString
-import com.soywiz.korio.typedarray.copyRangeTo
 import kotlin.math.max
 
 //@Deprecated("", replaceWith = ReplaceWith("ByteArrayBuilder"))
@@ -54,7 +54,7 @@ class ByteArrayBuilder {
 		val out = ByteArray(size)
 		var offset = 0
 		for (chunk in chunks) {
-			chunk.copyRangeTo(0, out, offset, chunk.size)
+			arraycopy(chunk, 0, out, offset, chunk.size)
 			offset += chunk.size
 		}
 		return out

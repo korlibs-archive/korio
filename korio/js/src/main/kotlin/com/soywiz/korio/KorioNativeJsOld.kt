@@ -11,7 +11,7 @@ class LocalVfsProviderJs : LocalVfsProvider() {
 			return object : AsyncStreamBase() {
 				suspend override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 					val data = read(handle, position.toDouble(), len.toDouble())
-					data.copyRangeTo(0, buffer, offset, data.size)
+					arraycopy(data, 0, buffer, offset, data.size)
 					return data.size
 				}
 

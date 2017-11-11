@@ -1,15 +1,5 @@
 package com.soywiz.korio.lang
 
-import com.soywiz.korio.typedarray.copyRangeTo
-
-object System {
-	fun arraycopy(src: ByteArray, srcPos: Int, dst: ByteArray, dstPos: Int, count: Int) = src.copyRangeTo(srcPos, dst, dstPos, count)
-	fun arraycopy(src: ShortArray, srcPos: Int, dst: ShortArray, dstPos: Int, count: Int) = src.copyRangeTo(srcPos, dst, dstPos, count)
-	//fun arraycopy(src: CharArray, srcPos: Int, dst: CharArray, dstPos: Int, count: Int) = src.copyRangeTo(srcPos, dst, dstPos, count)
-	fun arraycopy(src: IntArray, srcPos: Int, dst: IntArray, dstPos: Int, count: Int) = src.copyRangeTo(srcPos, dst, dstPos, count)
-	fun arraycopy(src: FloatArray, srcPos: Int, dst: FloatArray, dstPos: Int, count: Int) = src.copyRangeTo(srcPos, dst, dstPos, count)
-}
-
 infix fun Byte.and(mask: Long): Long = this.toLong() and mask
 
 infix fun Byte.and(mask: Int): Int = this.toInt() and mask

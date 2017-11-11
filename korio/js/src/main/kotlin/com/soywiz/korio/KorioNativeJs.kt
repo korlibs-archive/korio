@@ -1,5 +1,6 @@
 package com.soywiz.korio
 
+import com.soywiz.kmem.arraycopy
 import com.soywiz.korio.async.*
 import com.soywiz.korio.crypto.Hex
 import com.soywiz.korio.ds.LinkedList
@@ -18,7 +19,6 @@ import com.soywiz.korio.net.ws.WebSocketClientFactory
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.openAsync
 import com.soywiz.korio.stream.readAll
-import com.soywiz.korio.typedarray.copyRangeTo
 import com.soywiz.korio.util.OS
 import com.soywiz.korio.vfs.*
 import com.soywiz.kzlib.*
@@ -166,7 +166,7 @@ actual object KorioNative {
 			when {
 				OS.isNodejs -> {
 					val res = inflate(data)
-					res.copyRangeTo(0, out, 0, min(res.size, out.size))
+					arraycopy(res, 0, out, 0, min(res.size, out.size))
 					return out
 				}
 				else -> {
@@ -266,29 +266,6 @@ actual object KorioNative {
 	actual fun error(msg: Any?): Unit {
 		console.error(msg)
 	}
-
-	// Non-optimizable arrays
-	actual fun <T> copyRangeTo(src: Array<T>, srcPos: Int, dst: Array<T>, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
-	actual fun copyRangeTo(src: LongArray, srcPos: Int, dst: LongArray, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
-	actual fun copyRangeTo(src: BooleanArray, srcPos: Int, dst: BooleanArray, dstPos: Int, count: Int) = KorioNativeDefaults.copyRangeTo(src, srcPos, dst, dstPos, count)
-
-	// Using: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/set
-	actual fun copyRangeTo(src: ByteArray, srcPos: Int, dst: ByteArray, dstPos: Int, count: Int) = dst.unsafeCast<Int8Array>().set(src.unsafeCast<Int8Array>().subarray(srcPos, srcPos + count), dstPos)
-	actual fun copyRangeTo(src: ShortArray, srcPos: Int, dst: ShortArray, dstPos: Int, count: Int) = dst.unsafeCast<Int16Array>().set(src.unsafeCast<Int16Array>().subarray(srcPos, srcPos + count), dstPos)
-	actual fun copyRangeTo(src: IntArray, srcPos: Int, dst: IntArray, dstPos: Int, count: Int) = dst.unsafeCast<Int32Array>().set(src.unsafeCast<Int32Array>().subarray(srcPos, srcPos + count), dstPos)
-	actual fun copyRangeTo(src: FloatArray, srcPos: Int, dst: FloatArray, dstPos: Int, count: Int) = dst.unsafeCast<Float32Array>().set(src.unsafeCast<Float32Array>().subarray(srcPos, srcPos + count), dstPos)
-	actual fun copyRangeTo(src: DoubleArray, srcPos: Int, dst: DoubleArray, dstPos: Int, count: Int) = dst.unsafeCast<Float64Array>().set(src.unsafeCast<Float64Array>().subarray(srcPos, srcPos + count), dstPos)
-
-	// Non-optimizable arrays
-	actual fun <T> fill(src: Array<T>, value: T, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
-	actual fun fill(src: BooleanArray, value: Boolean, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
-
-	// @TODO: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/TypedArray/fill
-	actual fun fill(src: ByteArray, value: Byte, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
-	actual fun fill(src: ShortArray, value: Short, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
-	actual fun fill(src: IntArray, value: Int, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
-	actual fun fill(src: FloatArray, value: Float, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
-	actual fun fill(src: DoubleArray, value: Double, from: Int, to: Int) = KorioNativeDefaults.fill(src, value, from, to)
 
 	val zlib by lazy { require("zlib") }
 
@@ -413,91 +390,6 @@ actual object KorioNative {
 				c.resume(out.toByteArray())
 			}
 		}
-	}
-
-	actual class FastMemory(val buffer: Uint8Array, actual val size: Int) {
-		val data = DataView(buffer.buffer)
-		val i16 = Int16Array(buffer.buffer)
-		val i32 = Int32Array(buffer.buffer)
-		val f32 = Float32Array(buffer.buffer)
-
-		companion actual object {
-			actual fun alloc(size: Int): FastMemory = FastMemory(Uint8Array((size + 0xF) and 0xF.inv()), size)
-
-			actual fun copy(src: FastMemory, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit {
-				// @TODO: Optimize
-				for (n in 0 until length) dst[dstPos + n] = src[srcPos + n]
-			}
-
-			actual fun copy(src: FastMemory, srcPos: Int, dst: ByteArray, dstPos: Int, length: Int): Unit {
-				// @TODO: Optimize
-				for (n in 0 until length) dst[dstPos + n] = src[srcPos + n].toByte()
-			}
-
-			actual fun copy(src: ByteArray, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit {
-				// @TODO: Optimize
-				for (n in 0 until length) dst[dstPos + n] = src[srcPos + n].toInt()
-			}
-
-			actual fun copyAligned(src: FastMemory, srcPosAligned: Int, dst: ShortArray, dstPosAligned: Int, length: Int): Unit {
-				// @TODO: Optimize
-				for (n in 0 until length) dst[dstPosAligned + n] = src.getAlignedInt16(srcPosAligned + n)
-			}
-
-			actual fun copyAligned(src: ShortArray, srcPosAligned: Int, dst: FastMemory, dstPosAligned: Int, length: Int): Unit {
-				// @TODO: Optimize
-				for (n in 0 until length) dst.setAlignedInt16(dstPosAligned + n, src[srcPosAligned + n])
-			}
-
-			actual fun copyAligned(src: FastMemory, srcPosAligned: Int, dst: IntArray, dstPosAligned: Int, length: Int): Unit {
-				// @TODO: Optimize
-				for (n in 0 until length) dst[dstPosAligned + n] = src.getAlignedInt32(srcPosAligned + n)
-			}
-
-			actual fun copyAligned(src: IntArray, srcPosAligned: Int, dst: FastMemory, dstPosAligned: Int, length: Int): Unit {
-				// @TODO: Optimize
-				for (n in 0 until length) dst.setAlignedInt32(dstPosAligned + n, src[srcPosAligned + n])
-			}
-
-			actual fun copyAligned(src: FastMemory, srcPosAligned: Int, dst: FloatArray, dstPosAligned: Int, length: Int): Unit {
-				// @TODO: Optimize
-				for (n in 0 until length) dst[dstPosAligned + n] = src.getAlignedFloat32(srcPosAligned + n)
-			}
-
-			actual fun copyAligned(src: FloatArray, srcPosAligned: Int, dst: FastMemory, dstPosAligned: Int, length: Int): Unit {
-				// @TODO: Optimize
-				for (n in 0 until length) dst.setAlignedFloat32(dstPosAligned + n, src[srcPosAligned + n])
-			}
-		}
-
-		actual operator fun get(index: Int): Int = buffer[index].toInt() and 0xFF
-		actual operator fun set(index: Int, value: Int): Unit = run { buffer[index] = value.toByte() }
-
-		actual fun setAlignedInt16(index: Int, value: Short) = run { i16[index] = value }
-		actual fun getAlignedInt16(index: Int): Short = i16[index]
-		actual fun setAlignedInt32(index: Int, value: Int) = run { i32[index] = value }
-		actual fun getAlignedInt32(index: Int): Int = i32[index]
-		actual fun setAlignedFloat32(index: Int, value: Float): Unit = run { f32[index] = value }
-		actual fun getAlignedFloat32(index: Int): Float = f32[index]
-
-		actual fun setInt16(index: Int, value: Short): Unit = run { data.setInt16(index, value) }
-		actual fun getInt16(index: Int): Short = data.getInt16(index)
-		actual fun setInt32(index: Int, value: Int): Unit = run { data.setInt32(index, value) }
-		actual fun getInt32(index: Int): Int = data.getInt32(index)
-		actual fun setFloat32(index: Int, value: Float): Unit = run { data.setFloat32(index, value) }
-		actual fun getFloat32(index: Int): Float = data.getFloat32(index)
-
-		actual fun setArrayInt8(dstPos: Int, src: ByteArray, srcPos: Int, len: Int) = copy(src, srcPos, this, dstPos, len)
-		actual fun setAlignedArrayInt8(dstPos: Int, src: ByteArray, srcPos: Int, len: Int) = copy(src, srcPos, this, dstPos, len)
-		actual fun setAlignedArrayInt16(dstPos: Int, src: ShortArray, srcPos: Int, len: Int) = copyAligned(src, srcPos, this, dstPos, len)
-		actual fun setAlignedArrayInt32(dstPos: Int, src: IntArray, srcPos: Int, len: Int) = copyAligned(src, srcPos, this, dstPos, len)
-		actual fun setAlignedArrayFloat32(dstPos: Int, src: FloatArray, srcPos: Int, len: Int) = copyAligned(src, srcPos, this, dstPos, len)
-
-		actual fun getArrayInt8(srcPos: Int, dst: ByteArray, dstPos: Int, len: Int) = copy(this, srcPos, dst, dstPos, len)
-		actual fun getAlignedArrayInt8(srcPos: Int, dst: ByteArray, dstPos: Int, len: Int) = copy(this, srcPos, dst, dstPos, len)
-		actual fun getAlignedArrayInt16(srcPos: Int, dst: ShortArray, dstPos: Int, len: Int) = copyAligned(this, srcPos, dst, dstPos, len)
-		actual fun getAlignedArrayInt32(srcPos: Int, dst: IntArray, dstPos: Int, len: Int) = copyAligned(this, srcPos, dst, dstPos, len)
-		actual fun getAlignedArrayFloat32(srcPos: Int, dst: FloatArray, dstPos: Int, len: Int) = copyAligned(this, srcPos, dst, dstPos, len)
 	}
 
 	actual fun syncTest(block: suspend EventLoopTest.() -> Unit): Unit {
@@ -826,7 +718,7 @@ class CRC32 {
 		val crC32Table: IntArray
 			get() {
 				val tmp = IntArray(crc_table.size)
-				crc_table.copyRangeTo(0, tmp, 0, tmp.size)
+				arraycopy(crc_table, 0, tmp, 0, tmp.size)
 				return tmp
 			}
 	}

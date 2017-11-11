@@ -2,14 +2,14 @@
 
 package com.soywiz.korio.stream
 
+import com.soywiz.kmem.arraycopy
+import com.soywiz.kmem.fill
 import com.soywiz.korio.EOFException
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.ds.ByteArrayBuilder
 import com.soywiz.korio.ds.ByteArrayBuilderSmall
 import com.soywiz.korio.lang.*
-import com.soywiz.korio.typedarray.copyRangeTo
-import com.soywiz.korio.typedarray.fill
 import com.soywiz.korio.util.*
 import com.soywiz.korio.vfs.MemoryVfs
 import com.soywiz.korio.vfs.VfsFile
@@ -216,7 +216,7 @@ class BufferedStreamBase(val base: AsyncStreamBase, val blockSize: Int = 2048) :
 		val entry = readSectorsCached(getSectorAtPosition(position), getSectorAtPosition(position + len) + 1)
 		val readOffset = entry.getPositionInData(position)
 		val readLen = min(entry.getAvailableAtPosition(position), len)
-		entry.data.copyRangeTo(readOffset, buffer, offset, readLen)
+		arraycopy(entry.data, readOffset, buffer, offset, readLen)
 		return readLen
 	}
 

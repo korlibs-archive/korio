@@ -74,22 +74,6 @@ expect object KorioNative {
 
 	val httpFactory: HttpFactory
 
-	fun <T> copyRangeTo(src: Array<T>, srcPos: Int, dst: Array<T>, dstPos: Int, count: Int)
-	fun copyRangeTo(src: BooleanArray, srcPos: Int, dst: BooleanArray, dstPos: Int, count: Int)
-	fun copyRangeTo(src: ByteArray, srcPos: Int, dst: ByteArray, dstPos: Int, count: Int)
-	fun copyRangeTo(src: ShortArray, srcPos: Int, dst: ShortArray, dstPos: Int, count: Int)
-	fun copyRangeTo(src: IntArray, srcPos: Int, dst: IntArray, dstPos: Int, count: Int)
-	fun copyRangeTo(src: LongArray, srcPos: Int, dst: LongArray, dstPos: Int, count: Int)
-	fun copyRangeTo(src: FloatArray, srcPos: Int, dst: FloatArray, dstPos: Int, count: Int)
-	fun copyRangeTo(src: DoubleArray, srcPos: Int, dst: DoubleArray, dstPos: Int, count: Int)
-	fun <T> fill(src: Array<T>, value: T, from: Int, to: Int)
-	fun fill(src: BooleanArray, value: Boolean, from: Int, to: Int)
-	fun fill(src: ByteArray, value: Byte, from: Int, to: Int)
-	fun fill(src: ShortArray, value: Short, from: Int, to: Int)
-	fun fill(src: IntArray, value: Int, from: Int, to: Int)
-	fun fill(src: FloatArray, value: Float, from: Int, to: Int)
-	fun fill(src: DoubleArray, value: Double, from: Int, to: Int)
-
 	fun printStackTrace(e: Throwable)
 	fun enterDebugger()
 	fun log(msg: Any?)
@@ -130,153 +114,10 @@ expect object KorioNative {
 		fun deflate(data: ByteArray, level: Int): ByteArray
 	}
 
-	class FastMemory {
-		companion object {
-			fun alloc(size: Int): FastMemory
-			fun copy(src: FastMemory, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit
-			fun copy(src: FastMemory, srcPos: Int, dst: ByteArray, dstPos: Int, length: Int): Unit
-			fun copy(src: ByteArray, srcPos: Int, dst: FastMemory, dstPos: Int, length: Int): Unit
-			fun copyAligned(src: FastMemory, srcPosAligned: Int, dst: ShortArray, dstPosAligned: Int, length: Int): Unit
-			fun copyAligned(src: ShortArray, srcPosAligned: Int, dst: FastMemory, dstPosAligned: Int, length: Int): Unit
-			fun copyAligned(src: FastMemory, srcPosAligned: Int, dst: IntArray, dstPosAligned: Int, length: Int): Unit
-			fun copyAligned(src: IntArray, srcPosAligned: Int, dst: FastMemory, dstPosAligned: Int, length: Int): Unit
-			fun copyAligned(src: FastMemory, srcPosAligned: Int, dst: FloatArray, dstPosAligned: Int, length: Int): Unit
-			fun copyAligned(src: FloatArray, srcPosAligned: Int, dst: FastMemory, dstPosAligned: Int, length: Int): Unit
-		}
-
-		val size: Int
-
-		operator fun get(index: Int): Int
-		operator fun set(index: Int, value: Int): Unit
-
-		fun setAlignedInt16(index: Int, value: Short): Unit
-		fun getAlignedInt16(index: Int): Short
-		fun setAlignedInt32(index: Int, value: Int): Unit
-		fun getAlignedInt32(index: Int): Int
-		fun setAlignedFloat32(index: Int, value: Float): Unit
-		fun getAlignedFloat32(index: Int): Float
-
-		fun setInt16(index: Int, value: Short): Unit
-		fun getInt16(index: Int): Short
-		fun setInt32(index: Int, value: Int): Unit
-		fun getInt32(index: Int): Int
-		fun setFloat32(index: Int, value: Float): Unit
-		fun getFloat32(index: Int): Float
-
-		fun setArrayInt8(dstPos: Int, src: ByteArray, srcPos: Int, len: Int)
-		fun setAlignedArrayInt8(dstPos: Int, src: ByteArray, srcPos: Int, len: Int)
-		fun setAlignedArrayInt16(dstPos: Int, src: ShortArray, srcPos: Int, len: Int)
-		fun setAlignedArrayInt32(dstPos: Int, src: IntArray, srcPos: Int, len: Int)
-		fun setAlignedArrayFloat32(dstPos: Int, src: FloatArray, srcPos: Int, len: Int)
-
-		fun getArrayInt8(srcPos: Int, dst: ByteArray, dstPos: Int, len: Int)
-		fun getAlignedArrayInt8(srcPos: Int, dst: ByteArray, dstPos: Int, len: Int)
-		fun getAlignedArrayInt16(srcPos: Int, dst: ShortArray, dstPos: Int, len: Int)
-		fun getAlignedArrayInt32(srcPos: Int, dst: IntArray, dstPos: Int, len: Int)
-		fun getAlignedArrayFloat32(srcPos: Int, dst: FloatArray, dstPos: Int, len: Int)
-
-	}
-
 	fun syncTest(block: suspend EventLoopTest.() -> Unit): Unit
 }
 
 object KorioNativeDefaults {
-	private inline fun overlaps(src: Any, srcPos: Int, dst: Any, dstPos: Int, count: Int): Boolean {
-		return (src === dst) && srcPos >= dstPos
-	}
-
-	fun <T> copyRangeTo(src: Array<T>, srcPos: Int, dst: Array<T>, dstPos: Int, count: Int) {
-		if (overlaps(src, srcPos, dst, dstPos, count)) {
-			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
-		} else {
-			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
-		}
-	}
-
-	fun copyRangeTo(src: BooleanArray, srcPos: Int, dst: BooleanArray, dstPos: Int, count: Int) {
-		if (overlaps(src, srcPos, dst, dstPos, count)) {
-			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
-		} else {
-			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
-		}
-	}
-
-	fun copyRangeTo(src: ByteArray, srcPos: Int, dst: ByteArray, dstPos: Int, count: Int) {
-		if (overlaps(src, srcPos, dst, dstPos, count)) {
-			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
-		} else {
-			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
-		}
-	}
-
-	fun copyRangeTo(src: ShortArray, srcPos: Int, dst: ShortArray, dstPos: Int, count: Int) {
-		if (overlaps(src, srcPos, dst, dstPos, count)) {
-			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
-		} else {
-			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
-		}
-	}
-
-	fun copyRangeTo(src: IntArray, srcPos: Int, dst: IntArray, dstPos: Int, count: Int) {
-		if (overlaps(src, srcPos, dst, dstPos, count)) {
-			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
-		} else {
-			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
-		}
-	}
-
-	fun copyRangeTo(src: LongArray, srcPos: Int, dst: LongArray, dstPos: Int, count: Int) {
-		if (overlaps(src, srcPos, dst, dstPos, count)) {
-			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
-		} else {
-			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
-		}
-	}
-
-	fun copyRangeTo(src: FloatArray, srcPos: Int, dst: FloatArray, dstPos: Int, count: Int) {
-		if (overlaps(src, srcPos, dst, dstPos, count)) {
-			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
-		} else {
-			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
-		}
-	}
-
-	fun copyRangeTo(src: DoubleArray, srcPos: Int, dst: DoubleArray, dstPos: Int, count: Int) {
-		if (overlaps(src, srcPos, dst, dstPos, count)) {
-			for (n in 0 until count) dst[dstPos + n] = src[srcPos + n]
-		} else {
-			for (n in count - 1 downTo 0) dst[dstPos + n] = src[srcPos + n]
-		}
-	}
-
-	fun <T> fill(src: Array<T>, value: T, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
-
-	fun fill(src: BooleanArray, value: Boolean, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
-
-	fun fill(src: ByteArray, value: Byte, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
-
-	fun fill(src: ShortArray, value: Short, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
-
-	fun fill(src: IntArray, value: Int, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
-
-	fun fill(src: FloatArray, value: Float, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
-
-	fun fill(src: DoubleArray, value: Double, from: Int, to: Int) {
-		for (n in from until to) src[n] = value
-	}
-
 	fun printStackTrace(e: Throwable) {
 		Console.error("KorioNativeDefaults.printStackTrace:")
 		Console.error(e.message ?: "Error")

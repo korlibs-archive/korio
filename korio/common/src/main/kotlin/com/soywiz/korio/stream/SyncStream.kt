@@ -1,11 +1,11 @@
 package com.soywiz.korio.stream
 
+import com.soywiz.kmem.arraycopy
+import com.soywiz.kmem.fill
 import com.soywiz.korio.RuntimeException
 import com.soywiz.korio.ds.ByteArrayBuilder
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.lang.tl.threadLocal
-import com.soywiz.korio.typedarray.copyRangeTo
-import com.soywiz.korio.typedarray.fill
 import com.soywiz.korio.util.*
 import kotlin.math.min
 
@@ -167,13 +167,13 @@ class MemorySyncStreamBase(var data: ByteArrayBuffer) : SyncStreamBase() {
 	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 		val end = min(this.length, position + len)
 		val actualLen = (end - position).toInt()
-		this.data.data.copyRangeTo(position.toInt(), buffer, offset, actualLen)
+		arraycopy(this.data.data, position.toInt(), buffer, offset, actualLen)
 		return actualLen
 	}
 
 	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
 		data.ensure((position + len).toInt())
-		buffer.copyRangeTo(offset, this.data.data, position.toInt(), len)
+		arraycopy(buffer, offset, this.data.data, position.toInt(), len)
 	}
 
 	override fun close() = Unit

@@ -1,5 +1,0 @@
-{
-  "scripts": {
-	"start": "node entry-nodejs.js"
-  }
-}
