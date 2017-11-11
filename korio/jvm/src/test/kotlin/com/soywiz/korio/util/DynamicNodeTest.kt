@@ -1,6 +1,6 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import org.junit.Test
 import kotlin.test.assertEquals
 

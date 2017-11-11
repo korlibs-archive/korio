@@ -1,6 +1,6 @@
 package com.soywiz.korio.async
 
-import com.soywiz.korio.ds.LinkedList
+import com.soywiz.kds.LinkedList
 import com.soywiz.korio.lang.Closeable
 
 class EventLoopFactoryTest : EventLoopFactory() {

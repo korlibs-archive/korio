@@ -1,7 +1,6 @@
 package com.soywiz.korio.serialization.json
 
 import com.soywiz.korio.Language
-import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.serialization.Mapper
 import com.soywiz.korio.serialization.ObjectMapper
@@ -9,7 +8,6 @@ import com.soywiz.korio.util.Indenter
 import com.soywiz.korio.util.StrReader
 import com.soywiz.korio.util.readStringLit
 import com.soywiz.korio.util.toNumber
-import kotlin.collections.set
 import kotlin.reflect.KClass
 
 object Json {
@@ -46,7 +44,7 @@ object Json {
 		val ic = skipSpaces().read()
 		when (ic) {
 			'{' -> {
-				val out = lmapOf<String, Any?>()
+				val out = LinkedHashMap<String, Any?>()
 				obj@ while (true) {
 					when (skipSpaces().read()) {
 						'}' -> break@obj; ',' -> continue@obj; else -> unread()

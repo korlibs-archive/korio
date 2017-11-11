@@ -1,9 +1,9 @@
 package com.soywiz.korio.vfs
 
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.async.map
 import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.async.toList
-import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.stream.openAsync
 import org.junit.Test
 import kotlin.test.assertEquals

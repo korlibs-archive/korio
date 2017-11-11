@@ -1,11 +1,11 @@
 package com.soywiz.korio.serialization.yaml
 
+import com.soywiz.kds.LinkedList
+import com.soywiz.kds.ListReader
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.Language
-import com.soywiz.korio.ds.LinkedList
-import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.serialization.ObjectMapper
-import com.soywiz.korio.util.ListReader
 import com.soywiz.korio.util.StrReader
 import com.soywiz.korio.util.readStringLit
 import com.soywiz.korio.util.unquote

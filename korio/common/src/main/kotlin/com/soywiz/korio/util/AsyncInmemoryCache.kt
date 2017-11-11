@@ -1,18 +1,16 @@
 package com.soywiz.korio.util
 
 import com.soywiz.klock.Klock
-import com.soywiz.korinject.Prototype
 import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.async
 import com.soywiz.korio.coroutine.withCoroutineContext
-import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.time.TimeProvider
 import kotlin.reflect.KClass
 
 class AsyncInmemoryCache {
 	data class Entry(val timestamp: Long, val data: Promise<Any?>)
 
-	val cache = lmapOf<String, Entry?>()
+	val cache = LinkedHashMap<String, Entry?>()
 
 	fun <T : Any> get(clazz: KClass<T>, key: String, ttlMs: Int) = AsyncInmemoryEntry<T>(clazz, this, key, ttlMs)
 

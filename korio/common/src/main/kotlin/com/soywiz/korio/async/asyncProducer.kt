@@ -4,7 +4,7 @@ import com.soywiz.kmem.arraycopy
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.korioStartCoroutine
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
-import com.soywiz.korio.ds.LinkedList
+import com.soywiz.kds.LinkedList
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.stream.AsyncInputStream
 import com.soywiz.korio.stream.AsyncOutputStream

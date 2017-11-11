@@ -2,7 +2,7 @@
 
 package com.soywiz.korio.async
 
-import com.soywiz.korio.ds.LinkedList2
+import com.soywiz.kds.LinkedList2
 import com.soywiz.korio.lang.Closeable
 
 class Signal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
@@ -18,6 +18,8 @@ class Signal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
 
 	fun once(handler: (T) -> Unit): Closeable = _add(true, handler)
 	fun add(handler: (T) -> Unit): Closeable = _add(false, handler)
+
+	fun clear() = handlers.clear()
 
 	private fun _add(once: Boolean, handler: (T) -> Unit): Closeable {
 		onRegister()
@@ -72,4 +74,17 @@ suspend fun <T> Signal<T>.waitOne(): T = suspendCancellableCoroutine { c ->
 	c.onCancel {
 		close?.close()
 	}
+}
+
+fun <T> Signal<T>.waitOnePromise(): Promise<T> {
+	val deferred = Promise.Deferred<T>()
+	var close: Closeable? = null
+	close = once {
+		close?.close()
+		deferred.resolve(it)
+	}
+	deferred.onCancel {
+		close.close()
+	}
+	return deferred.promise
 }

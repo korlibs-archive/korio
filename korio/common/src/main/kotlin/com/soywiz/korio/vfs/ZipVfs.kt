@@ -1,14 +1,29 @@
 package com.soywiz.korio.vfs
 
+import com.soywiz.kds.lmapOf
 import com.soywiz.klock.DateTime
+import com.soywiz.kmem.indexOf
 import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.executeInWorker
 import com.soywiz.korio.compression.Inflater
 import com.soywiz.korio.coroutine.withCoroutineContext
-import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.*
+import com.soywiz.korio.util.AsyncCloseable
+import com.soywiz.korio.util.getBits
+import com.soywiz.korio.util.toIntClamp
+import com.soywiz.korio.util.toUInt
+import kotlin.collections.MutableMap
+import kotlin.collections.component1
+import kotlin.collections.component2
+import kotlin.collections.contains
+import kotlin.collections.copyOfRange
+import kotlin.collections.getOrPut
+import kotlin.collections.indexOf
+import kotlin.collections.iterator
+import kotlin.collections.listOf
+import kotlin.collections.plus
+import kotlin.collections.set
 import kotlin.math.max
 
 suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile = ZipVfs(s, zipFile, caseSensitive = true)

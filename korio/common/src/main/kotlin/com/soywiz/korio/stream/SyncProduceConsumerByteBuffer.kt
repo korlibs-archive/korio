@@ -1,8 +1,7 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.kmem.arraycopy
-import com.soywiz.korio.ds.ByteArrayBuilder
-import com.soywiz.korio.ds.LinkedList
+import com.soywiz.kds.LinkedList
 import com.soywiz.korio.lang.Semaphore
 import com.soywiz.korio.util.indexOf
 import kotlin.math.min

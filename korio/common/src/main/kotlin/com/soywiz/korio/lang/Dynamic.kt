@@ -1,6 +1,5 @@
 package com.soywiz.korio.lang
 
-import com.soywiz.korio.ds.lmapOf
 import com.soywiz.korio.serialization.Mapper
 
 object Dynamic {
@@ -42,9 +41,9 @@ object Dynamic {
 	}
 
 	fun toMap(obj: Any?): Map<Any?, Any?> = when (obj) {
-		null -> lmapOf()
+		null -> LinkedHashMap()
 		is Map<*, *> -> obj as Map<Any?, Any?>
-		else -> lmapOf()
+		else -> LinkedHashMap()
 	}
 
 	fun toNumber(obj: Any?): Number = when (obj) {

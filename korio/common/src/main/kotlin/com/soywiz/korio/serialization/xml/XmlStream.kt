@@ -1,8 +1,7 @@
 package com.soywiz.korio.serialization.xml
 
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.util.StrReader
-import com.soywiz.korio.util.substr
 
 object XmlStream {
 	fun parse(str: String): Iterable<Element> = parse(StrReader(str))
@@ -74,7 +73,7 @@ object XmlStream {
 									r.skipSpaces()
 									val argsQuote = r.matchSingleOrDoubleQuoteString()
 									attributes[key] = if (argsQuote != null) {
-										XmlEntities.decode(argsQuote.substr(1, -1))
+										XmlEntities.decode(argsQuote.substring(1, argsQuote.length - 1))
 									} else {
 										val argsNq = r.matchIdentifier()
 										XmlEntities.decode(argsNq!!)

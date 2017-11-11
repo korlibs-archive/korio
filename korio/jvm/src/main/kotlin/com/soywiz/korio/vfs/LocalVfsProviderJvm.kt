@@ -4,7 +4,7 @@ import com.soywiz.korio.async.*
 import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import com.soywiz.korio.coroutine.withCoroutineContext
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream

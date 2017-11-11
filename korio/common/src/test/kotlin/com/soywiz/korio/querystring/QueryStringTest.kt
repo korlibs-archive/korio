@@ -1,6 +1,6 @@
 package com.soywiz.korio.querystring
 
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.serialization.querystring.QueryString
 import kotlin.test.assertEquals
 

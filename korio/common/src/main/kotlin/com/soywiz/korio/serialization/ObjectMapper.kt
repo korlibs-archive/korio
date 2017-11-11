@@ -1,7 +1,7 @@
 package com.soywiz.korio.serialization
 
-import com.soywiz.korio.ds.lmapOf
-import com.soywiz.korio.ds.toLinkedMap
+import com.soywiz.kds.lmapOf
+import com.soywiz.kds.toLinkedMap
 import com.soywiz.korio.error.invalidArg
 import com.soywiz.korio.lang.DynamicContext
 import kotlin.reflect.KClass

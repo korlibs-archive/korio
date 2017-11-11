@@ -5,4 +5,5 @@ dependencies {
 	compile "com.soywiz:klock:$klockVersion"
 	compile "com.soywiz:korinject:$korinjectVersion"
 	compile "com.soywiz:kmem:$kmemVersion"
+	compile "com.soywiz:kds:$kdsVersion"
 }

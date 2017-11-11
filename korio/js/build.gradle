@@ -6,4 +6,5 @@ dependencies {
 	compile "com.soywiz:korinject-js:$korinjectVersion"
 	compile "com.soywiz:kmem-js:$kmemVersion"
 	compile "com.soywiz:kzlib-js:$kzlibVersion"
+	compile "com.soywiz:kds-js:$kdsVersion"
 }

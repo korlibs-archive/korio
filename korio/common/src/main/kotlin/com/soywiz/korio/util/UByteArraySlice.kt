@@ -1,5 +1,8 @@
 package com.soywiz.korio.util
 
+import com.soywiz.kmem.ByteArraySlice
+import com.soywiz.kmem.Pointer
+
 class UByteArraySlice(val data: ByteArray, val position: Int, val length: Int) {
 	fun getPointer(): Pointer = Pointer(data, position)
 	override fun toString() = "UByteArraySlice(data=$data, position=$position, length=$length)"

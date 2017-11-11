@@ -1,6 +1,6 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import kotlin.reflect.KClass
 
 abstract class VfsSpecialReader<T : Any>(val clazz: KClass<T>) {

@@ -1,7 +1,6 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.AsyncThread
-import com.soywiz.korio.ds.ByteArrayBuilder
 import com.soywiz.korio.lang.Charset
 import com.soywiz.korio.lang.UTF8
 import com.soywiz.korio.lang.toString

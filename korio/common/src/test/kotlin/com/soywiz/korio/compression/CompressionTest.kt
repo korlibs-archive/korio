@@ -1,9 +1,8 @@
 package com.soywiz.korio.compression
 
+import com.soywiz.kmem.readIntArray_le
 import com.soywiz.korio.async.syncTest
-import com.soywiz.korio.async.syncTestIgnoreJs
 import com.soywiz.korio.crypto.Base64
-import com.soywiz.korio.util.readIntArray_le
 import kotlin.test.Test
 import kotlin.test.assertEquals
 

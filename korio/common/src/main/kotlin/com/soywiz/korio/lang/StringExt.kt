@@ -1,14 +1,13 @@
 package com.soywiz.korio.lang
 
-import com.soywiz.korio.ds.Queue
 import com.soywiz.korio.util.toStringUnsigned
 
 private val formatRegex = Regex("%([-]?\\d+)?(\\w)")
 
 fun String.format(vararg params: Any): String {
-	val params = Queue(*params)
+	var paramIndex = 0
 	return formatRegex.replace(this) { mr ->
-		val param = params.dequeue()
+		val param = params[paramIndex++]
 		//println("param: $param")
 		val size = mr.groupValues[1]
 		val type = mr.groupValues[2]

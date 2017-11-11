@@ -6,7 +6,7 @@ import com.soywiz.korio.async.AsyncSequence
 import com.soywiz.korio.async.Signal
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.coroutine.withCoroutineContext
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase

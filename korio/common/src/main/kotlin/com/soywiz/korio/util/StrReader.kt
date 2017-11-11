@@ -1,6 +1,6 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.serialization.json.Json
 import kotlin.math.max

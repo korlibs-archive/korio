@@ -1,7 +1,7 @@
 package com.soywiz.korio.util
 
 import com.soywiz.korio.async.invokeSuspend
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.error.ignoreErrors
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.error.noImpl

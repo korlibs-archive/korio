@@ -1,4 +1,4 @@
-package com.soywiz.korio.ds
+package com.soywiz.korio.stream
 
 import com.soywiz.kmem.arraycopy
 import com.soywiz.korio.lang.Charset

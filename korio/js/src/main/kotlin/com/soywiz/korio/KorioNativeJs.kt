@@ -3,8 +3,8 @@ package com.soywiz.korio
 import com.soywiz.kmem.arraycopy
 import com.soywiz.korio.async.*
 import com.soywiz.korio.crypto.Hex
-import com.soywiz.korio.ds.LinkedList
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.LinkedList
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.net.AsyncClient
@@ -28,7 +28,6 @@ import org.w3c.xhr.ARRAYBUFFER
 import org.w3c.xhr.XMLHttpRequest
 import org.w3c.xhr.XMLHttpRequestResponseType
 import kotlin.browser.window
-import kotlin.collections.set
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.math.min
 

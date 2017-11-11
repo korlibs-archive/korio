@@ -1,6 +1,6 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient

@@ -2,8 +2,8 @@
 
 package com.soywiz.korio.async
 
+import com.soywiz.kds.Extra
 import com.soywiz.korio.coroutine.*
-import com.soywiz.korio.util.Extra
 
 interface SuspendingSequenceBuilder<in T> {
 	suspend fun yield(value: T)

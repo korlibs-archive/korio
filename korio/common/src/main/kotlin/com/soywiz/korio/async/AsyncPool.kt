@@ -1,6 +1,5 @@
-package com.soywiz.korio.ds
+package com.soywiz.korio.async
 
-import com.soywiz.korio.async.ProduceConsumer
 import com.soywiz.korio.lang.AtomicInteger
 
 class AsyncPool<T>(val maxItems: Int = Int.MAX_VALUE, val create: suspend () -> T) {

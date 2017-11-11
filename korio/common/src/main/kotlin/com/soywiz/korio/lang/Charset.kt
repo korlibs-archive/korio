@@ -1,6 +1,6 @@
 package com.soywiz.korio.lang
 
-import com.soywiz.korio.ds.ByteArrayBuilder
+import com.soywiz.korio.stream.ByteArrayBuilder
 
 abstract class Charset(val name: String) {
 	abstract fun encode(out: ByteArrayBuilder, src: CharSequence, start: Int = 0, end: Int = src.length)
@@ -87,9 +87,21 @@ object UTF8Charset : UTC8CharsetBase("UTF-8")
 object Charsets {
 	val UTF_8 = UTF8Charset
 	val ISO_8859_1 = ISO_8859_1Charset
+	val LATIN1 = ISO_8859_1Charset
 }
 
 val UTF8 = UTF8Charset
+val LATIN1 = ISO_8859_1Charset
+
+object ASCII : Charset("ASCII") {
+	override fun encode(out: ByteArrayBuilder, src: CharSequence, start: Int, end: Int) {
+		for (n in start until end) out.append(src[n].toByte())
+	}
+
+	override fun decode(out: StringBuilder, src: ByteArray, start: Int, end: Int) {
+		for (n in start until end) out.append(src[n].toChar())
+	}
+}
 
 fun String.toByteArray(charset: Charset = Charsets.UTF_8): ByteArray {
 	val out = ByteArrayBuilder()

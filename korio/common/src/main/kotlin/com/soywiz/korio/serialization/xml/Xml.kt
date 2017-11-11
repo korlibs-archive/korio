@@ -1,9 +1,9 @@
 package com.soywiz.korio.serialization.xml
 
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.ext.toCaseInsensitiveTreeMap
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.Language
 import com.soywiz.korio.util.Indenter
-import com.soywiz.korio.util.toCaseInsensitiveTreeMap
 
 data class Xml(val type: Type, val name: String, val attributes: Map<String, String>, val allChildren: List<Xml>, val content: String) {
 	val attributesLC = attributes.toCaseInsensitiveTreeMap()

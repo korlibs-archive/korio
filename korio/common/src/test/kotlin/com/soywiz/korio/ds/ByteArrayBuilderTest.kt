@@ -1,9 +1,10 @@
 package com.soywiz.korio.ds
 
+import com.soywiz.korio.stream.ByteArrayBuilder
 import com.soywiz.korio.util.toHexStringLower
 import kotlin.test.assertEquals
 
-class OptByteBufferTest {
+class ByteArrayBuilderTest {
 	@kotlin.test.Test
 	fun name() {
 		val bb = ByteArrayBuilder()

@@ -1,5 +1,6 @@
 package com.soywiz.korio.util
 
+import com.soywiz.kmem.UByteArray
 import com.soywiz.korio.KorioNative
 import com.soywiz.korio.crypto.Hex
 import com.soywiz.korio.error.invalidArg

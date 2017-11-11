@@ -1,8 +1,9 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.ds.ByteArrayBuilder
+import com.soywiz.korio.stream.ByteArrayBuilder
 import com.soywiz.korio.lang.Charset
 import com.soywiz.korio.lang.Charsets
+import com.soywiz.korio.lang.format
 import com.soywiz.korio.lang.toByteArray
 
 fun String.toBytez(len: Int, charset: Charset = Charsets.UTF_8): ByteArray {
@@ -66,3 +67,13 @@ fun Any?.toBetterString(): String {
 	*/
 	return "$this"
 }
+
+fun String.parseInt(): Int = when {
+	this.startsWith("0x", ignoreCase = true) -> this.substring(2).toLong(16).toInt()
+	else -> this.toInt()
+}
+
+val String.quoted: String get() = this.quote()
+
+val Int.hex: String get() = "0x%08X".format(this)
+val ByteArray.hex: String get() = this.hexString

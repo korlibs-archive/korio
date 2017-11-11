@@ -2,7 +2,7 @@
 
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.lang.Charset
 import com.soywiz.korio.lang.Charsets
 import com.soywiz.korio.lang.toByteArray

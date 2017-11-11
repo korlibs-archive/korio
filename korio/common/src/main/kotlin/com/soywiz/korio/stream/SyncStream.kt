@@ -1,9 +1,8 @@
 package com.soywiz.korio.stream
 
-import com.soywiz.kmem.arraycopy
-import com.soywiz.kmem.fill
+import com.soywiz.kds.Extra
+import com.soywiz.kmem.*
 import com.soywiz.korio.RuntimeException
-import com.soywiz.korio.ds.ByteArrayBuilder
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.lang.tl.threadLocal
 import com.soywiz.korio.util.*
@@ -44,7 +43,6 @@ open class SyncStreamBase : Closeable, SyncRAInputStream, SyncRAOutputStream, Sy
 
 	override fun close() = Unit
 }
-
 
 class SyncStream(val base: SyncStreamBase, var position: Long = 0L) : Extra by Extra.Mixin(), Closeable, SyncInputStream, SyncOutputStream, SyncLengthStream {
 	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {

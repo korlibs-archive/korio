@@ -3,7 +3,7 @@ package com.soywiz.korio.net.http
 import com.soywiz.korio.KorioNative
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.coroutine.withEventLoop
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.stream.*

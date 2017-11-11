@@ -1,7 +1,7 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.syncTest
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.util.expectException
 import kotlin.test.assertEquals
 

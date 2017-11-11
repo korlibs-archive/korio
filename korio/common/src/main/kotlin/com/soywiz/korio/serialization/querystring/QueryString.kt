@@ -1,10 +1,10 @@
 package com.soywiz.korio.serialization.querystring
 
-import com.soywiz.korio.ds.ByteArrayBuilder
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.lang.Charset
 import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.lang.toString
+import com.soywiz.korio.stream.ByteArrayBuilder
 import com.soywiz.korio.util.substr
 
 object QueryString {

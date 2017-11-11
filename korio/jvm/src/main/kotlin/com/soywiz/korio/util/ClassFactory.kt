@@ -1,7 +1,6 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.ds.lmapOf
-import com.soywiz.korio.ds.toLinkedMap
+import com.soywiz.kds.toLinkedMap
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.serialization.ObjectMapper
 import java.lang.reflect.Constructor
@@ -22,7 +21,7 @@ class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin
 	}
 
 	companion object {
-		val cache = lmapOf<Class<*>, ClassFactory<*>>()
+		val cache = LinkedHashMap<Class<*>, ClassFactory<*>>()
 		@Suppress("UNCHECKED_CAST")
 		operator fun <T> get(clazz: Class<out T>): ClassFactory<T> = cache.getOrPut(clazz) { ClassFactory(clazz, true) } as ClassFactory<T>
 
@@ -44,7 +43,7 @@ class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin
 			if (clazz.isArray) return java.lang.reflect.Array.newInstance(clazz.componentType, 0)
 			if (clazz.isAssignableFrom(Set::class.java)) return HashSet<Any>()
 			if (clazz.isAssignableFrom(List::class.java)) return ArrayList<Any>()
-			if (clazz.isAssignableFrom(Map::class.java)) return lmapOf<Any, Any>()
+			if (clazz.isAssignableFrom(Map::class.java)) return LinkedHashMap<Any, Any>()
 			if (clazz.isEnum) return clazz.enumConstants.first()
 			return ClassFactory[clazz].createDummy()
 		}
@@ -101,7 +100,7 @@ object JvmTyper {
 				val len = java.lang.reflect.Array.getLength(obj)
 				(0 until len).map { untype(java.lang.reflect.Array.get(obj, it)) }.toMutableList()
 			} else {
-				val out = hashMapOf<String, Any?>()
+				val out = LinkedHashMap<String, Any?>()
 				val cf = ClassFactory.getForInstance(obj)
 				for (field in cf.fields) out[field.name] = untype(field.get(obj))
 				out

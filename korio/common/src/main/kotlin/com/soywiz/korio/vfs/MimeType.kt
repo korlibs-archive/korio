@@ -1,6 +1,6 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 
 class MimeType(val mime: String, val exts: List<String>) : Vfs.Attribute {
 	companion object {

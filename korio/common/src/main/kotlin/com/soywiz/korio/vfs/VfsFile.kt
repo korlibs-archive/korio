@@ -7,8 +7,8 @@ import com.soywiz.korio.async.async
 import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.async.await
 import com.soywiz.korio.coroutine.withCoroutineContext
-import com.soywiz.korio.ds.ByteArrayBuilder
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.korio.stream.ByteArrayBuilder
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.LONG_ZERO_TO_MAX_RANGE

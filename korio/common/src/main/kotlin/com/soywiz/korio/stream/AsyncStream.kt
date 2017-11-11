@@ -2,13 +2,11 @@
 
 package com.soywiz.korio.stream
 
-import com.soywiz.kmem.arraycopy
-import com.soywiz.kmem.fill
+import com.soywiz.kds.Extra
+import com.soywiz.kmem.*
 import com.soywiz.korio.EOFException
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.async.executeInWorker
-import com.soywiz.korio.ds.ByteArrayBuilder
-import com.soywiz.korio.ds.ByteArrayBuilderSmall
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.util.*
 import com.soywiz.korio.vfs.MemoryVfs

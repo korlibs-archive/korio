@@ -1,6 +1,7 @@
 package com.soywiz.korio.serialization.binary
 
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
+import com.soywiz.kmem.*
 import com.soywiz.korio.lang.Charset
 import com.soywiz.korio.lang.toByteArray
 import com.soywiz.korio.lang.toString
@@ -8,7 +9,8 @@ import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.SyncStream
 import com.soywiz.korio.stream.readBytes
 import com.soywiz.korio.stream.writeBytes
-import com.soywiz.korio.util.*
+import com.soywiz.korio.util.ClassFactory
+import com.soywiz.korio.util.indexOfElse
 import java.lang.reflect.Field
 import java.nio.ByteOrder
 

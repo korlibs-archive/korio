@@ -1,6 +1,6 @@
 package com.soywiz.korio.serialization.yaml
 
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.serialization.ObjectMapper
 import kotlin.test.assertEquals
 

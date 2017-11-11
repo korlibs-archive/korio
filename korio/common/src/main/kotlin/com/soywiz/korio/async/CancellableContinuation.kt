@@ -4,7 +4,7 @@ import com.soywiz.korio.coroutine.AbstractCoroutineContextElement
 import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.CoroutineContextKey
-import com.soywiz.korio.ds.LinkedList
+import com.soywiz.kds.LinkedList
 import com.soywiz.korio.util.Cancellable
 
 //inline suspend fun <T> suspendCancellableCoroutine(crossinline block: (CancellableContinuation<T>) -> Unit): T = suspendCoroutineOrReturn { c ->

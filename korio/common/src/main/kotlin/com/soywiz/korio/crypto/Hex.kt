@@ -12,7 +12,8 @@ object Hex {
 	fun decode(str: String): ByteArray {
 		val out = ByteArray(str.length / 2)
 		for (n in 0 until out.size) {
-			out[n] = (str.substr(n * 2, 2).toIntOrNull(16) ?: 0).toByte()
+			val n2 = n * 2
+			out[n] = (str.substring(n2, n2 + 2).toIntOrNull(16) ?: 0).toByte()
 		}
 		return out
 	}

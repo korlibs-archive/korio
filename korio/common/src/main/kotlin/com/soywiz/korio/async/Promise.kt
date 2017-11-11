@@ -4,7 +4,7 @@ import com.soywiz.korio.CancellationException
 import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
-import com.soywiz.korio.ds.LinkedList
+import com.soywiz.kds.LinkedList
 import com.soywiz.korio.lang.Console
 import com.soywiz.korio.lang.printStackTrace
 import com.soywiz.korio.util.Cancellable

@@ -2,14 +2,14 @@ import org.apache.tools.ant.taskdefs.condition.Os
 
 buildscript {
 	ext.klockVersion = '0.2.2'
+	ext.kdsVersion = '0.1.0'
 	ext.korinjectVersion = '0.0.1'
-	ext.kmemVersion = '0.0.2'
-	ext.kzlibVersion = '0.0.1'
+	ext.kmemVersion = '0.1.0'
+	ext.kzlibVersion = '0.1.1'
 	ext.kotlinVersion = '1.2.0-rc-39'
 	ext.compilerVersion = ext.kotlinVersion
 	ext.librariesVersion = ext.kotlinVersion
 	ext.eapChannel = 'http://dl.bintray.com/kotlin/kotlin-eap-1.2'
-	ext.serializationPluginVersion = '0.1'
 
 	repositories {
 		jcenter()
@@ -32,7 +32,7 @@ allprojects {
 	}
 
 	group 'com.soywiz'
-	version "0.17.1-SNAPSHOT"
+	version "0.17.1"
 
 	if (project == rootProject) {
 		new File(rootProject.rootDir, "korio/common/src/main/kotlin/com/soywiz/korio/KorioVersion.kt").write(

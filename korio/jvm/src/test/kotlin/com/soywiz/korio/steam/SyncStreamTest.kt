@@ -1,8 +1,8 @@
 package com.soywiz.korio.steam
 
+import com.soywiz.kmem.ByteArrayBuffer
 import com.soywiz.korio.async.syncTest
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.ByteArrayBuffer
 import org.junit.Test
 import kotlin.test.assertEquals
 

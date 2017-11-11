@@ -4,7 +4,7 @@ import com.soywiz.korio.async.Promise
 import com.soywiz.korio.async.SuspendingSequence
 import com.soywiz.korio.async.spawnAndForget
 import com.soywiz.korio.coroutine.getCoroutineContext
-import com.soywiz.korio.ds.lmapOf
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.net.AsyncClient
 import com.soywiz.korio.net.AsyncServer
