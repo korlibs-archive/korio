@@ -216,3 +216,5 @@ fun StrReader.readStringLit(reportErrors: Boolean = true): String {
 	}
 	return out.toString()
 }
+
+fun String.reader(file: String = "file", pos: Int = 0): StrReader = StrReader(this, file, pos)
