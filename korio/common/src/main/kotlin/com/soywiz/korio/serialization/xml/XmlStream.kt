@@ -67,7 +67,7 @@ object XmlStream {
 							r.skipSpaces()
 							val attributes = lmapOf<String, String>()
 							while (r.peekChar() != '?' && r.peekChar() != '/' && r.peekChar() != '>') {
-								val key = r.matchIdentifier() ?: throw IllegalArgumentException("Malformed document or unsupported xml construct around ~${r.peek(10)}~")
+								val key = r.matchIdentifier() ?: throw IllegalArgumentException("Malformed document or unsupported xml construct around ~${r.peek(10)}~ for name '$name'")
 								r.skipSpaces()
 								if (r.matchLit("=") != null) {
 									r.skipSpaces()
