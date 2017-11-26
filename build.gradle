@@ -6,7 +6,7 @@ buildscript {
 	ext.korinjectVersion = '0.0.1'
 	ext.kmemVersion = '0.1.0'
 	ext.kzlibVersion = '0.1.1'
-	ext.kotlinVersion = '1.2.0-rc-39'
+	ext.kotlinVersion = '1.2.0-rc-84'
 	ext.compilerVersion = ext.kotlinVersion
 	ext.librariesVersion = ext.kotlinVersion
 	ext.eapChannel = 'http://dl.bintray.com/kotlin/kotlin-eap-1.2'

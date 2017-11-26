@@ -30,6 +30,7 @@ import org.w3c.xhr.XMLHttpRequestResponseType
 import kotlin.browser.window
 import kotlin.coroutines.experimental.suspendCoroutine
 import kotlin.math.min
+import kotlin.reflect.KClass
 
 actual annotation class Synchronized
 actual annotation class JvmField
@@ -62,6 +63,8 @@ val isNodeJs by lazy { jsTypeOf(window) === "undefined" }
 
 actual object KorioNative {
 	actual val currentThreadId: Long = 1L
+
+	actual fun getClassSimpleName(clazz: KClass<*>): String = clazz.simpleName ?: "unknown"
 
 	actual abstract class NativeThreadLocal<T> {
 		actual abstract fun initialValue(): T

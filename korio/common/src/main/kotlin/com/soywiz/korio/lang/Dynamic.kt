@@ -54,7 +54,16 @@ object Dynamic {
 		else -> 0
 	}
 
-	fun toBool(obj: Any?): Boolean = toInt(obj) != 0
+	fun toBool(obj: Any?): Boolean = when (obj) {
+		is Boolean -> obj
+		is String -> when (obj.toLowerCase()) {
+			//"1", "true", "ok", "yes" -> true
+			"", "0", "false", "ko", "no" -> false
+			//else -> false
+			else -> true
+		}
+		else -> toInt(obj) != 0
+	}
 	fun toByte(obj: Any?): Byte = toNumber(obj).toByte()
 	fun toChar(obj: Any?): Char = when {
 		(obj is String) && (obj.length == 1) -> obj.first()

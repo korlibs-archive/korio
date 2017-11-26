@@ -14,6 +14,7 @@ import com.soywiz.korio.stream.readBytesUpToFirst
 import com.soywiz.korio.stream.toBuffered
 import com.soywiz.korio.vfs.VfsFile
 import kotlin.math.min
+import kotlin.reflect.KClass
 
 expect annotation class Synchronized()
 expect annotation class JvmField()
@@ -44,6 +45,8 @@ expect object KorioNative {
 		fun get(): T
 		fun set(value: T): Unit
 	}
+
+	fun getClassSimpleName(clazz: KClass<*>): String
 
 	val currentThreadId: Long
 	val platformName: String

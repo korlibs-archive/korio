@@ -9,10 +9,10 @@ import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.error.unsupported
 import com.soywiz.korio.lang.Closeable
-import kotlin.reflect.KClass
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.use
 import kotlin.math.min
+import kotlin.reflect.KClass
 
 abstract class Vfs {
 	open protected val absolutePath: String = ""
@@ -29,19 +29,24 @@ abstract class Vfs {
 
 	fun createExistsStat(
 		path: String, isDirectory: Boolean, size: Long, device: Long = -1, inode: Long = -1, mode: Int = 511,
-		owner: String = "nobody", group: String = "nobody", createTime: Long = 0L, modifiedTime: Long = createTime, lastAccessTime: Long = modifiedTime,
-		extraInfo: Any? = null
+		owner: String = "nobody", group: String = "nobody", createTime: Long = 0L, modifiedTime: Long = createTime,
+		lastAccessTime: Long = modifiedTime, extraInfo: Any? = null
 	) = VfsStat(
-		file = file(path), exists = true, isDirectory = isDirectory, size = size, device = device, inode = inode, mode = mode,
-		owner = owner, group = group, createTime = createTime, modifiedTime = modifiedTime, lastAccessTime = lastAccessTime,
-		extraInfo = extraInfo
+		file = file(path), exists = true, isDirectory = isDirectory, size = size, device = device, inode = inode,
+		mode = mode, owner = owner, group = group, createTime = createTime, modifiedTime = modifiedTime,
+		lastAccessTime = lastAccessTime, extraInfo = extraInfo
 	)
 
-	fun createNonExistsStat(path: String, extraInfo: Any? = null) = VfsStat(file(path), exists = false, isDirectory = false, size = 0L, device = -1L, inode = -1L, mode = 511, owner = "nobody", group = "nobody", createTime = 0L, modifiedTime = 0L, lastAccessTime = 0L, extraInfo = extraInfo)
+	fun createNonExistsStat(path: String, extraInfo: Any? = null) = VfsStat(
+		file = file(path), exists = false, isDirectory = false, size = 0L,
+		device = -1L, inode = -1L, mode = 511, owner = "nobody", group = "nobody",
+		createTime = 0L, modifiedTime = 0L, lastAccessTime = 0L, extraInfo = extraInfo
+	)
 
-	suspend open fun <T : Any> readSpecial(path: String, clazz: KClass<T>): T {
-		return (vfsSpecialReadersMap[clazz]?.readSpecial(this, path) as T) ?: invalidOp("Don't know how to readSpecial $clazz")
-	}
+	@Suppress("UNCHECKED_CAST")
+	suspend open fun <T : Any> readSpecial(path: String, clazz: KClass<T>): T =
+		(vfsSpecialReadersMap[clazz]?.readSpecial(this, path) as? T?)
+			?: invalidOp("Don't know how to readSpecial $clazz")
 
 	suspend open fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler = VfsProcessHandler()): Int = throw UnsupportedOperationException()
 	suspend open fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler = VfsProcessHandler()): Int = throw UnsupportedOperationException()

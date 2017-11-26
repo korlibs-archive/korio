@@ -20,6 +20,7 @@ import java.security.SecureRandom
 import java.util.zip.*
 import javax.crypto.Mac
 import javax.crypto.spec.SecretKeySpec
+import kotlin.reflect.KClass
 
 
 actual typealias Synchronized = kotlin.jvm.Synchronized
@@ -48,6 +49,8 @@ actual class Semaphore actual constructor(initial: Int) {
 
 actual object KorioNative {
 	actual val currentThreadId: Long get() = Thread.currentThread().id
+
+	actual fun getClassSimpleName(clazz: KClass<*>): String = clazz.java.name
 
 	actual abstract class NativeThreadLocal<T> {
 		actual abstract fun initialValue(): T
