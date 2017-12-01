@@ -7,6 +7,7 @@ buildscript {
 	ext.kmemVersion = '0.3.0'
 	ext.kzlibVersion = '0.3.0'
 	ext.kotlinVersion = '1.2.0'
+	//ext.dokkaVersion = '0.9.15'
 
 	repositories {
 		jcenter()
@@ -16,6 +17,7 @@ buildscript {
 
 	dependencies {
 		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+		//classpath "org.jetbrains.dokka:dokka-gradle-plugin:${dokkaVersion}"
 	}
 }
 
@@ -31,7 +33,7 @@ allprojects {
 
 	if (project == rootProject) {
 		new File(rootProject.rootDir, "korio/common/src/main/kotlin/com/soywiz/korio/KorioVersion.kt").write(
-				"package com.soywiz.korio\n\nval KORIO_VERSION = \"$version\""
+				"package com.soywiz.korio\n\ninternal val KORIO_VERSION = \"$version\""
 		)
 	}
 
@@ -40,6 +42,7 @@ allprojects {
 	apply plugin: 'signing'
 	apply plugin: 'maven-publish'
 	apply plugin: 'idea'
+	//apply plugin: 'org.jetbrains.dokka'
 
 	it.afterEvaluate {
 		if (it.plugins.hasPlugin("kotlin-platform-common")) {
@@ -141,25 +144,42 @@ allprojects {
 		}
 	}
 
+	//def configureExtra(Project project) {
+	afterEvaluate {
+		project.configure(project) {
+			//dokka {
+			//	outputFormat = 'html'
+			//	outputDirectory = "$buildDir/docs/javadoc"
+			//}
 
-	task javadoc2(type: Javadoc) {
-		failOnError = false
-	}
+			//task javadocJar(type: Jar, dependsOn: dokka) {
+			task javadocJar(type: Jar) {
+				classifier = 'javadoc'
+				from 'build/docs/javadoc'
+			}
 
-	task javadocJar(type: Jar, dependsOn: javadoc2) {
-		classifier = 'javadoc'
-		from 'build/docs/javadoc'
-	}
+			task sourcesJar(type: Jar) {
+				classifier = 'sources'
+				from sourceSets.main.allSource
+				if (project != rootProject) {
+					if (!plugins.hasPlugin("kotlin-platform-common")) {
+						ProjectDependency pd = (ProjectDependency)(configurations
+								.findByName("expectedBy")?.dependencies
+								?.find { it instanceof ProjectDependency })
+						if (pd != null) {
+							from pd.dependencyProject.sourceSets.main.allSource
+							//println(pd.dependencyProject.sourceSets.main.allSource)
+						}
+					}
+				}
+			}
 
-	task sourcesJar(type: Jar) {
-		from sourceSets.main.allSource
-		classifier = 'sources'
-	}
-
-	artifacts {
-		//archives jar
-		archives javadocJar
-		archives sourcesJar
+			artifacts {
+				//archives jar
+				archives javadocJar
+				archives sourcesJar
+			}
+		}
 	}
 
 // gradle uploadArchives
