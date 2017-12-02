@@ -289,6 +289,7 @@ actual object KorioNative {
 				c.resume(out.toByteArray())
 			}
 		}
+		Unit
 	}
 
 	suspend actual fun uncompressZlib(data: ByteArray): ByteArray = suspendCoroutine { c ->
@@ -308,6 +309,7 @@ actual object KorioNative {
 				c.resume(out.toByteArray())
 			}
 		}
+		Unit
 	}
 
 	suspend actual fun uncompressZlibRaw(data: ByteArray): ByteArray = suspendCoroutine { c ->
@@ -327,6 +329,7 @@ actual object KorioNative {
 				c.resume(out.toByteArray())
 			}
 		}
+		Unit
 	}
 
 	suspend actual fun compressGzip(data: ByteArray, level: Int): ByteArray = suspendCoroutine { c ->
@@ -348,6 +351,7 @@ actual object KorioNative {
 				c.resume(out.toByteArray())
 			}
 		}
+		Unit
 	}
 
 	suspend actual fun compressZlib(data: ByteArray, level: Int): ByteArray = suspendCoroutine { c ->
@@ -370,6 +374,7 @@ actual object KorioNative {
 				c.resume(out.toByteArray())
 			}
 		}
+		Unit
 	}
 
 	suspend actual fun compressZlibRaw(data: ByteArray, level: Int): ByteArray = suspendCoroutine { c ->
@@ -392,6 +397,7 @@ actual object KorioNative {
 				c.resume(out.toByteArray())
 			}
 		}
+		Unit
 	}
 
 	actual fun syncTest(block: suspend EventLoopTest.() -> Unit): Unit {
