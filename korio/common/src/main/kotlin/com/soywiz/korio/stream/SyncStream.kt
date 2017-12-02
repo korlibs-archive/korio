@@ -3,9 +3,11 @@ package com.soywiz.korio.stream
 import com.soywiz.kds.Extra
 import com.soywiz.kmem.*
 import com.soywiz.korio.RuntimeException
+import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.lang.tl.threadLocal
 import com.soywiz.korio.util.*
+import kotlin.math.max
 import kotlin.math.min
 
 interface SyncInputStream {
@@ -162,14 +164,19 @@ class MemorySyncStreamBase(var data: ByteArrayBuffer) : SyncStreamBase() {
 		get() = data.size.toLong()
 		set(value) = run { data.size = value.toInt() }
 
+	fun checkPosition(position: Long) = run { if (position < 0) invalidOp("Invalid position $position") }
+
 	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
+		checkPosition(position)
+		if (position !in 0 until length) return 0
 		val end = min(this.length, position + len)
-		val actualLen = (end - position).toInt()
+		val actualLen = max((end - position).toInt(), 0)
 		arraycopy(this.data.data, position.toInt(), buffer, offset, actualLen)
 		return actualLen
 	}
 
 	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
+		checkPosition(position)
 		data.ensure((position + len).toInt())
 		arraycopy(buffer, offset, this.data.data, position.toInt(), len)
 	}

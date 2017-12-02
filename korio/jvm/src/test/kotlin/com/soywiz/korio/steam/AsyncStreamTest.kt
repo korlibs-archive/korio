@@ -17,4 +17,16 @@ class AsyncStreamTest {
 		val data = "HELLO WORLD\u0000TEST".toByteArray()
 		assertEquals("HELLO WORLD", data.openAsync().readStringz())
 	}
+
+	@Test
+	fun name3() = syncTest {
+		val bytes = "HELLO WORLD\u0000TEST".toByteArray()
+		val data = bytes.openAsync()
+		data.position = 1000
+		assertEquals(listOf(), data.readBytesUpTo(20).toList())
+		data.position = bytes.size.toLong()
+		assertEquals(listOf(), data.readBytesUpTo(20).toList())
+		data.position = bytes.size.toLong() - 1
+		assertEquals(listOf('T'.toByte()), data.readBytesUpTo(20).toList())
+	}
 }
