@@ -527,7 +527,14 @@ class HttpClientBrowserJs : HttpClient() {
 			deferred.reject(kotlin.RuntimeException("Error ${xhr.status} opening $url"))
 		}
 
-		for (header in headers) xhr.setRequestHeader(header.first, header.second)
+		for (header in headers) {
+			val hnname = header.first.toLowerCase().trim()
+			when (hnname) {
+				"connection", "content-length" -> Unit // Refused to set unsafe header
+				else -> xhr.setRequestHeader(header.first, header.second)
+			}
+
+		}
 
 		deferred.onCancel { xhr.abort() }
 
