@@ -174,7 +174,7 @@ class MapLikeStorageVfs(val storage: SimpleStorage) : Vfs() {
 		if (!files.hasEntryInfo(nparent)) mkdir(nparent, attributes) // Create Parents
 		val parent = ensureParentDirectory(nparent, npath)
 		val now = Klock.currentTimeMillis()
-		if (files.hasEntryInfo(npath)) throw IOException("Entry '$npath' already exists")
+		if (files.hasEntryInfo(npath)) return false
 		files.setEntryInfo(nparent, parent.copy(children = parent.children + npath))
 		files.setEntryInfo(npath, isFile = false, size = 0L, children = listOf(), createdTime = now, modifiedTime = now)
 		return true

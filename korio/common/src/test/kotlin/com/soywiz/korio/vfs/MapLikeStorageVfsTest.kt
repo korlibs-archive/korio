@@ -24,6 +24,7 @@ class MapLikeStorageVfsTest {
 		println(map)
 		assertEquals("hello", root["demo.txt"].readString())
 		root["demo"].mkdir()
+		root["demo"].mkdir()
 		assertEquals(listOf("/demo.txt", "/demo"), root.list().toList().map { it.fullname })
 		root["demo/hello/world/yay"].mkdir()
 		root["demo/hello/world/yay/file.txt"].writeString("DEMO")
