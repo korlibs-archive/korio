@@ -63,7 +63,7 @@ actual object KorioNative {
 		actual fun set(value: T) = jthreadLocal.set(value)
 	}
 
-	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T = executeInWorkerSafer(callback)
+	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T = executeInWorkerSafe { callback() }
 
 	actual val platformName: String = "jvm"
 	actual val rawOsName: String by lazy { System.getProperty("os.name") }
@@ -100,14 +100,14 @@ actual object KorioNative {
 	actual class SimplerMessageDigest actual constructor(name: String) {
 		val md = MessageDigest.getInstance(name)
 
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int) = executeInWorkerSafer { md.update(data, offset, size) }
-		actual suspend fun digest(): ByteArray = executeInWorkerSafer { md.digest() }
+		actual suspend fun update(data: ByteArray, offset: Int, size: Int) = executeInWorkerSafe { md.update(data, offset, size) }
+		actual suspend fun digest(): ByteArray = executeInWorkerSafe { md.digest() }
 	}
 
 	actual class SimplerMac actual constructor(name: String, key: ByteArray) {
 		val mac = Mac.getInstance(name).apply { init(SecretKeySpec(key, name)) }
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int) = executeInWorkerSafer { mac.update(data, offset, size) }
-		actual suspend fun finalize(): ByteArray = executeInWorkerSafer { mac.doFinal() }
+		actual suspend fun update(data: ByteArray, offset: Int, size: Int) = executeInWorkerSafe { mac.update(data, offset, size) }
+		actual suspend fun finalize(): ByteArray = executeInWorkerSafe { mac.doFinal() }
 	}
 
 	actual object SyncCompression {

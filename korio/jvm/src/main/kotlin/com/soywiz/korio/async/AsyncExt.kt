@@ -1,7 +1,6 @@
 package com.soywiz.korio.async
 
 import com.soywiz.korio.CancellationException
-import com.soywiz.korio.KorioNative
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.coroutine.korioStartCoroutine
@@ -75,7 +74,6 @@ operator fun ExecutorService.invoke(callback: () -> Unit) {
 	this.execute(callback)
 }
 
-
 suspend fun <T> executeInWorkerSync(task: CheckRunning.() -> T): T = suspendCancellableCoroutine<T> { c ->
 	//println("executeInWorker")
 	tasksInProgress.incrementAndGet()
@@ -108,12 +106,14 @@ suspend fun <T> executeInWorkerSync(task: CheckRunning.() -> T): T = suspendCanc
 suspend fun <T> executeInWorkerSafe(task: suspend () -> T): T {
 	val ctx = getCoroutineContext()
 	val deferred = Promise.Deferred<T>()
+	val eventLoop = ctx.eventLoop
 	workerLazyPool.executeUpdatingTasksInProgress {
-		go<Unit>(ctx) {
+		go(ctx) {
 			try {
-				deferred.resolve(task())
+				val result = task()
+				eventLoop.setImmediate { deferred.resolve(result) }
 			} catch (t: Throwable) {
-				deferred.reject(t)
+				eventLoop.setImmediate { deferred.reject(t) }
 			}
 		}
 	}
@@ -148,10 +148,4 @@ suspend fun <T> executeInWorkerCancellable(task: suspend CheckRunning.() -> T): 
 			tasksInProgress.decrementAndGet()
 		}
 	}
-}
-
-// @TODO: Using executeInWorker was breaking AsyncHash and tests for static routing
-suspend fun <T> executeInWorkerSafer(task: suspend () -> T): T {
-	// @TODO: Implement this
-	return task()
 }
