@@ -65,6 +65,7 @@ expect object KorioNative {
 
 	fun rootLocalVfs(): VfsFile
 	fun applicationVfs(): VfsFile
+	fun applicationDataVfs(): VfsFile
 	fun cacheVfs(): VfsFile
 	fun externalStorageVfs(): VfsFile
 	fun userHomeVfs(): VfsFile

@@ -94,6 +94,7 @@ actual object KorioNative {
 
 	actual fun rootLocalVfs(): VfsFile = localVfs(".")
 	actual fun applicationVfs(): VfsFile = localVfs(".")
+	actual fun applicationDataVfs(): VfsFile = jsLocalStorageVfs.root
 	actual fun cacheVfs(): VfsFile = MemoryVfs()
 	actual fun externalStorageVfs(): VfsFile = localVfs(".")
 	actual fun userHomeVfs(): VfsFile = localVfs(".")
@@ -484,6 +485,7 @@ fun jsEmptyObj(): dynamic = js("({})")
 fun jsEmptyArray(): dynamic = js("([])")
 fun jsObjectKeys(obj: dynamic): dynamic = js("Object.keys(obj)")
 fun jsToArray(obj: dynamic): Array<Any?> = Array<Any?>(obj.length) { obj[it] }
+inline fun <reified T> jsToArrayT(obj: dynamic): Array<T> = Array<T>(obj.length) { obj[it] }
 fun jsObject(vararg pairs: Pair<String, Any?>): dynamic {
 	val out = jsEmptyObj()
 	for (pair in pairs) out[pair.first] = pair.second

@@ -3,21 +3,22 @@ package com.soywiz.korio.vfs
 import com.soywiz.korio.async.syncTest
 import com.soywiz.kds.lmapOf
 import com.soywiz.korio.util.expectException
+import org.junit.Test
 import kotlin.test.assertEquals
 
-data class MySpecialClass(val vfs: Vfs, val path: String)
-data class MySpecialClass2(val vfs: Vfs, val path: String)
-
-class MySpecialClass_VfsSpecialReader : VfsSpecialReader<MySpecialClass>(MySpecialClass::class) {
-	override suspend fun readSpecial(vfs: Vfs, path: String): MySpecialClass = MySpecialClass(vfs, path)
-}
-
 class VfsReadSpecialTest {
+	data class MySpecialClass(val vfs: Vfs, val path: String)
+	data class MySpecialClass2(val vfs: Vfs, val path: String)
+
+	class MySpecialClass_VfsSpecialReader : VfsSpecialReader<MySpecialClass>(MySpecialClass::class) {
+		override suspend fun readSpecial(vfs: Vfs, path: String): MySpecialClass = MySpecialClass(vfs, path)
+	}
+
 	init {
 		registerVfsSpecialReader(MySpecialClass_VfsSpecialReader())
 	}
 
-	@kotlin.test.Test
+	@Test
 	fun testReadSpecial() = syncTest {
 		val mem = MemoryVfs(lmapOf())
 		assertEquals(

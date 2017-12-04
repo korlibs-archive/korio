@@ -118,6 +118,10 @@ typealias AsyncGenerator<T> = SuspendingSequenceBuilder<T>
 typealias AsyncSequence<T> = SuspendingSequence<T>
 typealias AsyncIterator<T> = SuspendingIterator<T>
 
+suspend fun <T> Iterable<T>.toAsync() = asyncGenerate {
+	for (it in this@toAsync) yield(it)
+}
+
 fun <T> asyncGenerate(
 	context: CoroutineContext,
 	block: suspend SuspendingSequenceBuilder<T>.() -> Unit

@@ -115,7 +115,12 @@ abstract class Vfs {
 	suspend open fun mkdir(path: String, attributes: List<Attribute>): Boolean = unsupported()
 	suspend open fun rmdir(path: String): Boolean = delete(path) // For compatibility
 	suspend open fun delete(path: String): Boolean = unsupported()
-	suspend open fun rename(src: String, dst: String): Boolean = unsupported()
+	suspend open fun rename(src: String, dst: String): Boolean {
+		file(src).copyTo(file(dst))
+		delete(src)
+		return true
+	}
+
 	suspend open fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = Closeable { }
 
 	suspend open fun touch(path: String, time: Long, atime: Long) {

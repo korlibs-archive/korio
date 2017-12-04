@@ -160,6 +160,7 @@ actual object KorioNative {
 
 	actual fun rootLocalVfs(): VfsFile = localVfs(".")
 	actual fun applicationVfs(): VfsFile = localVfs(File(".").absolutePath)
+	actual fun applicationDataVfs(): VfsFile = localVfs(File(".").absolutePath)
 	actual fun cacheVfs(): VfsFile = MemoryVfs()
 	actual fun externalStorageVfs(): VfsFile = localVfs(".")
 	actual fun userHomeVfs(): VfsFile = localVfs(".")
