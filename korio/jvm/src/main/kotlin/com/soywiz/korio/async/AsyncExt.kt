@@ -103,17 +103,16 @@ suspend fun <T> executeInWorkerSync(task: CheckRunning.() -> T): T = suspendCanc
 	}
 }
 
-suspend fun <T> executeInWorkerSafe(task: suspend () -> T): T {
-	val ctx = getCoroutineContext()
-	val deferred = Promise.Deferred<T>()
-	val eventLoop = ctx.eventLoop
+suspend fun <R> executeInWorkerJvm(task: suspend () -> R): R {
+	val deferred = Promise.Deferred<R>()
+	val parentEventLoop = getCoroutineContext().eventLoop
 	workerLazyPool.executeUpdatingTasksInProgress {
-		go(ctx) {
+		syncTest {
 			try {
-				val result = task()
-				eventLoop.setImmediate { deferred.resolve(result) }
-			} catch (t: Throwable) {
-				eventLoop.setImmediate { deferred.reject(t) }
+				val res = task()
+				parentEventLoop.setImmediate { deferred.resolve(res) }
+			} catch (e: Throwable) {
+				parentEventLoop.setImmediate { deferred.reject(e) }
 			}
 		}
 	}
