@@ -1,7 +1,7 @@
 import org.apache.tools.ant.taskdefs.condition.Os
 
 buildscript {
-	ext.projectVersion = '0.18.1'
+	ext.projectVersion = '0.18.2-SNAPSHOT'
 	ext.projectName = 'korio'
 	ext.projectGroup = 'com.soywiz'
 	ext.projectDesc = 'Korio: Kotlin cORoutines I/O : Streams + Async TCP Client/Server + Virtual File System for JVM, Node.JS and Browser'
