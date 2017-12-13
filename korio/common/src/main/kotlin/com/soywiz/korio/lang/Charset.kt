@@ -88,7 +88,7 @@ object UTF8Charset : UTC8CharsetBase("UTF-8")
 
 class UTF16Charset(val le: Boolean) : Charset("UTF-16-" + (if (le) "LE" else "BE")) {
 	override fun decode(out: StringBuilder, src: ByteArray, start: Int, end: Int) {
-		for (n in start until end step 2) out.append(src.readS16_LEBE(n, le))
+		for (n in start until end step 2) out.append(src.readS16_LEBE(n, le).toChar())
 	}
 
 	override fun encode(out: ByteArrayBuilder, src: CharSequence, start: Int, end: Int) {
