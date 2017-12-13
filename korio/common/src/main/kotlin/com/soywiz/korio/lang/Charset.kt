@@ -1,5 +1,7 @@
 package com.soywiz.korio.lang
 
+import com.soywiz.kmem.readS16_LEBE
+import com.soywiz.kmem.write16_LEBE
 import com.soywiz.korio.stream.ByteArrayBuilder
 
 abstract class Charset(val name: String) {
@@ -84,16 +86,21 @@ object ISO_8859_1Charset : SingleByteCharset(
 
 object UTF8Charset : UTC8CharsetBase("UTF-8")
 
-object Charsets {
-	val UTF_8 = UTF8Charset
-	val ISO_8859_1 = ISO_8859_1Charset
-	val LATIN1 = ISO_8859_1Charset
+class UTF16Charset(val le: Boolean) : Charset("UTF-16-" + (if (le) "LE" else "BE")) {
+	override fun decode(out: StringBuilder, src: ByteArray, start: Int, end: Int) {
+		for (n in start until end step 2) out.append(src.readS16_LEBE(n, le))
+	}
+
+	override fun encode(out: ByteArrayBuilder, src: CharSequence, start: Int, end: Int) {
+		val temp = ByteArray(2)
+		for (n in start until end) {
+			temp.write16_LEBE(0, src[n].toInt(), le)
+			out.append(temp)
+		}
+	}
 }
 
-val UTF8 = UTF8Charset
-val LATIN1 = ISO_8859_1Charset
-
-object ASCII : Charset("ASCII") {
+object ASCIICharset : Charset("ASCII") {
 	override fun encode(out: ByteArrayBuilder, src: CharSequence, start: Int, end: Int) {
 		for (n in start until end) out.append(src[n].toByte())
 	}
@@ -102,6 +109,21 @@ object ASCII : Charset("ASCII") {
 		for (n in start until end) out.append(src[n].toChar())
 	}
 }
+
+object Charsets {
+	val UTF_8 = UTF8Charset
+	val ASCII = ASCIICharset
+	val ISO_8859_1 = ISO_8859_1Charset
+	val LATIN1 = ISO_8859_1Charset
+	val UTF16_LE = UTF16Charset(le = true)
+	val UTF16_BE = UTF16Charset(le = false)
+}
+
+val UTF8 = Charsets.UTF_8
+val ASCII = Charsets.ASCII
+val LATIN1 = Charsets.ISO_8859_1
+val UTF16_LE = Charsets.UTF16_LE
+val UTF16_BE = Charsets.UTF16_BE
 
 fun String.toByteArray(charset: Charset = Charsets.UTF_8): ByteArray {
 	val out = ByteArrayBuilder()
