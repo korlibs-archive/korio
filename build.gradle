@@ -10,7 +10,7 @@ buildscript {
 	ext.projectDevelName = 'Carlos Ballesteros Velasco'
 	ext.projectInceptionYear = 2017
 
-	ext.klockVersion = '0.3.0'
+	ext.klockVersion = '0.4.2'
 	ext.kdsVersion = '0.3.0'
 	ext.korinjectVersion = '0.3.0'
 	ext.kmemVersion = '0.3.0'
