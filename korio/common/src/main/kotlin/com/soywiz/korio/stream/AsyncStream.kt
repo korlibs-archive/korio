@@ -585,3 +585,19 @@ fun SyncOutputStream.toAsyncOutputStream() = object : AsyncOutputStream {
 }
 
 fun AsyncStream.asVfsFile(name: String = "unknown.bin"): VfsFile = MemoryVfs(mapOf(name to this))[name]
+
+suspend fun AsyncStream.readAllAsFastStream(offset: Int = 0) = this.readAll().openFastStream()
+
+inline fun AsyncStream.getWrittenRange(callback: () -> Unit): LongRange {
+	val start = position
+	callback()
+	val end = position
+	return start until end
+}
+
+// Missing methods from Korio's AsyncStream
+suspend fun AsyncStream.writeU_VL(value: Int) =
+	this.apply { writeBytes(MemorySyncStreamToByteArray { writeU_VL(value) }) }
+
+suspend fun AsyncStream.writeStringVL(str: String, charset: Charset = UTF8) =
+	this.apply { writeBytes(MemorySyncStreamToByteArray { writeStringVL(str, charset) }) }

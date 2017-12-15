@@ -10,6 +10,8 @@ import com.soywiz.korio.util.nextAlignedTo
 class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 	val length: Int get() = ba.size
 	val available: Int get() = ba.size - offset
+	val hasMore: Boolean get() = available > 0
+	val eof: Boolean get() = !hasMore
 
 	// Skipping
 	fun skip(count: Int) = run { offset += count }
@@ -129,3 +131,5 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 		return out
 	}
 }
+
+fun ByteArray.openFastStream(offset: Int = 0) = FastByteArrayInputStream(this, offset)
