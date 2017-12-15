@@ -24,6 +24,8 @@ data class URL private constructor(
 		out.toString()
 	}
 
+	val fullUrl: String get() = str
+
 	override fun toString(): String = str
 
 	//fun withProtocol(protocol: String) = copy(protocol = protocol)
@@ -60,16 +62,19 @@ data class URL private constructor(
 				query = queryString
 			)
 		}
+
+		fun isAbsolute(base: String): Boolean = base.contains("://")
+
+		fun resolve(base: String, access: String): String = if (isAbsolute(access)) {
+			access
+		} else {
+			val url = URL(base + "/" + access)
+			url.copy(path = VfsUtil.normalize(url.path)).toString()
+		}
 	}
 }
 
 object URIUtils {
-	fun isAbsolute(base: String): Boolean = base.contains("://")
-
-	fun resolve(base: String, access: String): String = if (isAbsolute(access)) {
-		access
-	} else {
-		val url = URL(base + "/" + access)
-		url.copy(path = VfsUtil.normalize(url.path)).toString()
-	}
+	fun isAbsolute(base: String): Boolean = URL.isAbsolute(base)
+	fun resolve(base: String, access: String): String = URL.resolve(base, access)
 }
