@@ -23,4 +23,9 @@ class StringExtTest {
 	fun formatHex() {
 		assertEquals("FFFFFFFF", "%08X".format(0xFFFFFFFF.toInt()))
 	}
+
+	@Test
+	fun replaceNonPrintableCharacters() {
+		assertEquals("?hello??world", "\nhello\t\rworld".replaceNonPrintableCharacters(replacement = "?"))
+	}
 }

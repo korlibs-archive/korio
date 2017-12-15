@@ -52,3 +52,7 @@ fun String.splitKeep(regex: Regex): List<String> {
 	return out
 }
 
+private val replaceNonPrintableCharactersRegex by lazy { Regex("[^ -~]") }
+fun String.replaceNonPrintableCharacters(replacement: String = "?"): String {
+	return this.replace(replaceNonPrintableCharactersRegex, replacement)
+}
