@@ -147,11 +147,12 @@ class LocalVfsJvm : LocalVfs() {
 		return emitter.toSequence()
 		*/
 		return executeInWorker {
-			asyncGenerate(getCoroutineContext()) {
-				for (file in File(path).listFiles() ?: arrayOf()) {
-					yield(that.file("$path/${file.name}"))
-				}
-			}
+			File(path).listFiles().map { that.file("$path/${it.name}") }.toAsync()
+			//asyncGenerate(getCoroutineContext()) {
+			//	for (file in File(path).listFiles() ?: arrayOf()) {
+			//		yield(that.file("$path/${file.name}"))
+			//	}
+			//}
 		}
 	}
 

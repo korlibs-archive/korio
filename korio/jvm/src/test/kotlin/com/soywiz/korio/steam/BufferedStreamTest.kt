@@ -10,8 +10,8 @@ class BufferedStreamTest {
 	@Test
 	fun name() = syncTest {
 		val mem = MemorySyncStream().toAsync()
-		val write = mem.clone()
-		val read = mem.clone().buffered()
+		val write = mem.duplicate()
+		val read = mem.duplicate().buffered()
 		for (n in 0 until 0x10000) write.write8(n)
 		for (n in 0 until 0x10000) {
 			if (read.readU8() != (n and 0xFF)) fail()

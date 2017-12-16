@@ -2,11 +2,13 @@ package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.*
 import org.junit.Assert
+import org.junit.Ignore
 import org.junit.Test
 import kotlin.test.assertEquals
 
 class ResourcesVfsTest {
 	@Test
+	@Ignore
 	fun name() = syncTest {
 		for (v in ResourcesVfs["tresfolder"].list().filter { it.extensionLC == "txt" }.toList()) {
 			println(v)

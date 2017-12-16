@@ -20,18 +20,18 @@ class ResourcesVfsProviderJvm {
 					for (url in classLoader.urLs) {
 						//println("ResourcesVfsProviderJvm.url: $url")
 						val urlStr = url.toString()
-						val vfs = if (urlStr.startsWith("http")) {
-							UrlVfs(url)
-						} else {
-							LocalVfs(File(url.toURI()))
+						val vfs = when {
+							urlStr.startsWith("http") -> UrlVfs(url)
+							else -> LocalVfs(File(url.toURI()))
 						}
 
 						//println(vfs)
 
-						if (vfs.extension in setOf("jar", "zip")) {
-							//merged.vfsList += vfs.openAsZip()
-						} else {
-							merged.vfsList += vfs.jail()
+						when {
+							vfs.extension in setOf("jar", "zip") -> {
+								//merged.vfsList += vfs.openAsZip()
+							}
+							else -> merged.vfsList += vfs.jail()
 						}
 					}
 					//println(merged.options)

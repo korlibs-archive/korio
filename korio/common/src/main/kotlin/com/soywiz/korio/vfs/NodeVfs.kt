@@ -109,7 +109,7 @@ open class NodeVfs(val caseSensitive: Boolean = true) : Vfs() {
 				suspend override fun close() = s.close()
 			}.toAsyncStream()
 		}
-		return node?.stream?.clone() ?: throw com.soywiz.korio.FileNotFoundException(path)
+		return node?.stream?.duplicate() ?: throw com.soywiz.korio.FileNotFoundException(path)
 	}
 
 	suspend override fun stat(path: String): VfsStat {
