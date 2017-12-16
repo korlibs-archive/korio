@@ -29,9 +29,7 @@ open class KorioActivity : Activity(), Extra by Extra.Mixin() {
 
 	override fun onWindowFocusChanged(hasFocus: Boolean) {
 		super.onWindowFocusChanged(hasFocus)
-		eventLoop.queue {
-			KorioApp.resized(Unit)
-		}
+		eventLoop.queue { KorioApp.resized(Unit) }
 	}
 
 	suspend open fun requestPermission(name: String): Boolean {

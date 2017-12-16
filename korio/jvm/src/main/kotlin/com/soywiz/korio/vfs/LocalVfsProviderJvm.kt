@@ -126,53 +126,12 @@ class LocalVfsJvm : LocalVfs() {
 		}
 	}
 
-	suspend override fun list(path: String): SuspendingSequence<VfsFile> {
-		/*
-		val emitter = AsyncSequenceEmitter<VfsFile>()
-		val files = executeInWorker { Files.newDirectoryStream(resolvePath(path)) }
-		spawnAndForget {
-			executeInWorker {
-				try {
-					for (p in files.toList().sortedBy { it.toFile().name }) {
-						val file = p.toFile()
-						emitter.emit(VfsFile(that, file.absolutePath))
-					}
-				} finally {
-					emitter.close()
-				}
-			}
-		}
-		return emitter.toSequence()
-		*/
-		return executeInWorker {
-			File(path).listFiles().map { that.file("$path/${it.name}") }.toAsync()
-			//asyncGenerate(getCoroutineContext()) {
-			//	for (file in File(path).listFiles() ?: arrayOf()) {
-			//		yield(that.file("$path/${file.name}"))
-			//	}
-			//}
-		}
-	}
-
-	suspend override fun mkdir(path: String, attributes: List<Attribute>): Boolean = executeInWorker {
-		resolveFile(path).mkdir()
-	}
-
-	suspend override fun touch(path: String, time: Long, atime: Long) {
-		resolveFile(path).setLastModified(time)
-	}
-
-	suspend override fun delete(path: String): Boolean = executeInWorker {
-		resolveFile(path).delete()
-	}
-
-	suspend override fun rmdir(path: String): Boolean {
-		return resolveFile(path).delete()
-	}
-
-	suspend override fun rename(src: String, dst: String): Boolean = executeInWorker {
-		resolveFile(src).renameTo(resolveFile(dst))
-	}
+	suspend override fun list(path: String): SuspendingSequence<VfsFile> = executeInWorker { File(path).listFiles().map { that.file("$path/${it.name}") }.toAsync() }
+	suspend override fun mkdir(path: String, attributes: List<Attribute>): Boolean = executeInWorker { resolveFile(path).mkdir() }
+	suspend override fun touch(path: String, time: Long, atime: Long): Unit = executeInWorker { resolveFile(path).setLastModified(time); Unit }
+	suspend override fun delete(path: String): Boolean = executeInWorker { resolveFile(path).delete() }
+	suspend override fun rmdir(path: String): Boolean = executeInWorker { resolveFile(path).delete() }
+	suspend override fun rename(src: String, dst: String): Boolean = executeInWorker { resolveFile(src).renameTo(resolveFile(dst)) }
 
 	inline suspend fun <T> completionHandler(crossinline callback: (CompletionHandler<T, Unit>) -> Unit) = korioSuspendCoroutine<T> { c ->
 		val cevent = c.toEventLoop()
