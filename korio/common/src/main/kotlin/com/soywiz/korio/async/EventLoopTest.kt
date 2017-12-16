@@ -1,13 +1,14 @@
 package com.soywiz.korio.async
 
 import com.soywiz.kds.LinkedList
+import com.soywiz.korio.coroutine.currentThreadId
 import com.soywiz.korio.lang.Closeable
 
 class EventLoopFactoryTest : EventLoopFactory() {
 	override fun createEventLoop(): EventLoop = EventLoopTest()
 }
 
-class EventLoopTest : EventLoop(captureCloseables = true) {
+class EventLoopTest(val runOnThread: Long = currentThreadId) : EventLoop(captureCloseables = true) {
 	override var time: Long = 0L; private set
 
 	data class Entry(val el: EventLoopTest, val time: Long, val handler: () -> Unit) : Closeable {
@@ -45,6 +46,9 @@ class EventLoopTest : EventLoop(captureCloseables = true) {
 	var executing = false
 	fun executeTasks() = synchronized(lock) {
 		if (executing) return@synchronized
+		if (runOnThread != currentThreadId) {
+			println("WARNING!! Executing EventLoopTest.executeTasks in other thread! This can cause several problems.")
+		}
 		executing = true
 		try {
 			do {
@@ -68,7 +72,7 @@ class EventLoopTest : EventLoop(captureCloseables = true) {
 
 	override fun setImmediateInternal(handler: () -> Unit) {
 		synchronized(lock) { tasks.add(handler) }
-		executeTasks()
+		if (runOnThread == currentThreadId) executeTasks()
 	}
 
 	override fun step(ms: Int) {

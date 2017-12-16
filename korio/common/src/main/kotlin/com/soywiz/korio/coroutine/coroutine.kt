@@ -1,5 +1,6 @@
 package com.soywiz.korio.coroutine
 
+import com.soywiz.korio.KorioNative
 import com.soywiz.korio.async.EventLoop
 import com.soywiz.korio.async.eventLoop
 import com.soywiz.korio.async.toEventLoop
@@ -26,6 +27,10 @@ typealias AbstractCoroutineContextElement = kotlin.coroutines.experimental.Abstr
 suspend fun getCoroutineContext(): CoroutineContext = korioSuspendCoroutine<CoroutineContext> { c ->
 	c.resume(c.context)
 }
+
+suspend fun eventLoop(): EventLoop = getCoroutineContext().eventLoop
+
+val currentThreadId: Long get() = KorioNative.currentThreadId
 
 @Deprecated("Use getCoroutineContext() instead?")
 suspend fun <T> withCoroutineContext(callback: suspend CoroutineContext.() -> T) = korioSuspendCoroutine<T> { c ->

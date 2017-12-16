@@ -22,4 +22,15 @@ class UrlVfsTest {
 			httpClient.log
 		)
 	}
+
+	@Test
+	fun requestRightUrl() = syncTest {
+		val httpClient = LogHttpClient()
+		val url = UrlVfs("http://google.es/demo/file.png", httpClient)
+		println(url.readString())
+		assertEquals(
+			"[GET, http://google.es/demo/file.png, Headers(), null]",
+			httpClient.getAndClearLog().toString()
+		)
+	}
 }

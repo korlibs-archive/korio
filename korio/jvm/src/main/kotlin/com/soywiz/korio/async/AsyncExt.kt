@@ -1,13 +1,9 @@
 package com.soywiz.korio.async
 
-import com.soywiz.korio.CancellationException
-import com.soywiz.korio.coroutine.CoroutineContext
-import com.soywiz.korio.coroutine.getCoroutineContext
-import com.soywiz.korio.coroutine.korioStartCoroutine
+import com.soywiz.korio.coroutine.eventLoop
 import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import kotlin.coroutines.experimental.startCoroutine
 
 var _workerLazyPool: ExecutorService? = null
 val workerLazyPool: ExecutorService by lazy {
@@ -61,90 +57,42 @@ fun <T> Promise<T>.jvmSyncAwait(): T {
 	}
 }
 
-suspend fun <T> executeInNewThread(task: suspend () -> T): T = suspendCancellableCoroutine<T> { c ->
-	Thread {
-		// @TODO: Check this
-		task.startCoroutine(c)
-	}.apply {
-		isDaemon = true
-	}.start()
-}
-
 operator fun ExecutorService.invoke(callback: () -> Unit) {
 	this.execute(callback)
 }
 
-suspend fun <T> executeInWorkerSync(task: CheckRunning.() -> T): T = suspendCancellableCoroutine<T> { c ->
-	//println("executeInWorker")
+suspend private fun <T> _executeInside(task: suspend () -> T, taskRunner: (body: () -> Unit) -> Unit): T {
+	val deferred = Promise.Deferred<T>()
+	val parentEventLoop = eventLoop()
 	tasksInProgress.incrementAndGet()
-	workerLazyPool.execute {
-		val checkRunning = object : CheckRunning {
-			override var cancelled = false
-			override val coroutineContext: CoroutineContext get() = c.context
-
-			init {
-				c.onCancel {
-					cancelled = true
-				}
-			}
-
-			override fun checkCancelled() {
-				if (cancelled) throw CancellationException()
-			}
-		}
-
-		try {
-			c.resume(task(checkRunning))
-		} catch (t: Throwable) {
-			c.resumeWithException(t)
-		} finally {
-			tasksInProgress.decrementAndGet()
-		}
-	}
-}
-
-suspend fun <R> executeInWorkerJvm(task: suspend () -> R): R {
-	val deferred = Promise.Deferred<R>()
-	val parentEventLoop = getCoroutineContext().eventLoop
-	workerLazyPool.executeUpdatingTasksInProgress {
+	taskRunner {
 		syncTest {
 			try {
 				val res = task()
-				parentEventLoop.setImmediate { deferred.resolve(res) }
+				parentEventLoop.queue {
+					deferred.resolve(res)
+				}
 			} catch (e: Throwable) {
-				parentEventLoop.setImmediate { deferred.reject(e) }
+				parentEventLoop.queue { deferred.reject(e) }
+			} finally {
+				tasksInProgress.decrementAndGet()
 			}
 		}
 	}
 	return deferred.promise.await()
 }
 
-suspend fun <T> executeInWorkerCancellable(task: suspend CheckRunning.() -> T): T = suspendCancellableCoroutine<T> { c ->
-	//println("executeInWorker")
-	tasksInProgress.incrementAndGet()
-	workerLazyPool.execute {
-		val checkRunning = object : CheckRunning {
-			override var cancelled = false
+suspend fun <T> executeInNewThread(task: suspend () -> T): T = _executeInside(task) { body ->
+	Thread {
+		body()
+	}.apply {
+		isDaemon = true
+		start()
+	}
+}
 
-			override val coroutineContext: CoroutineContext = c.context
-
-			init {
-				c.onCancel {
-					cancelled = true
-				}
-			}
-
-			override fun checkCancelled() {
-				if (cancelled) throw CancellationException()
-			}
-		}
-
-		try {
-			task.korioStartCoroutine(checkRunning, c)
-		} catch (t: Throwable) {
-			c.resumeWithException(t)
-		} finally {
-			tasksInProgress.decrementAndGet()
-		}
+suspend fun <T> executeInWorkerJvm(task: suspend () -> T): T = _executeInside(task) { body ->
+	workerLazyPool.executeUpdatingTasksInProgress {
+		body()
 	}
 }

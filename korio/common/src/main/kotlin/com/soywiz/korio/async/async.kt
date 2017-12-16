@@ -125,8 +125,8 @@ fun <TEventLoop : EventLoop> sync(el: TEventLoop, step: Int = 10, block: suspend
 		}
 
 		override fun resumeWithException(exception: Throwable) = run {
-			val e = ExceptionHook.hook(exception)
 			tasksInProgress.decrementAndGet()
+			val e = ExceptionHook.hook(exception)
 			result = e
 		}
 	})
@@ -135,10 +135,12 @@ fun <TEventLoop : EventLoop> sync(el: TEventLoop, step: Int = 10, block: suspend
 		Thread_sleep(1L)
 		el.step(step)
 	}
+
 	if (result is Throwable) throw result as Throwable
 	return Unit
 }
 
+/*
 // Wait for a suspension block for testing purposes
 fun <T> sync(block: suspend () -> T): T {
 	if (OS.isJs) throw UnsupportedOperationException("sync block is not supported on javascript target. It is intended for testing.")
@@ -166,5 +168,7 @@ fun <T> sync(block: suspend () -> T): T {
 	@Suppress("UNCHECKED_CAST")
 	return result as T
 }
+*/
 
 fun Thread_sleep(time: Long): Unit = KorioNative.Thread_sleep(time)
+fun sleepBlocking(time: Long): Unit = KorioNative.Thread_sleep(time)

@@ -1,30 +1,47 @@
 package com.soywiz.korio.net.http
 
+import com.soywiz.klock.Klock
 import com.soywiz.korio.async.*
+import com.soywiz.korio.coroutine.currentThreadId
+import com.soywiz.korio.coroutine.eventLoop
 import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.error.ignoreErrors
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.stream.*
+import com.soywiz.korio.stream.AsyncStream
+import com.soywiz.korio.stream.slice
+import com.soywiz.korio.stream.withLength
 import com.soywiz.korio.util.toUintClamp
-import java.io.FileNotFoundException
 import java.net.BindException
 import java.net.HttpURLConnection
 import java.net.URL
 
 class HttpClientJvm : HttpClient() {
-	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = executeInWorker {
-		try {
-			//println("url: $url")
+	companion object {
+		var lastId = 0
+	}
+
+	val clientId = lastId++
+	var lastRequestId = 0
+
+	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
+		val result = executeInWorker {
+			val requestId = lastRequestId++
+			val id = "request[$clientId,$requestId]"
+
+			//println("url[$id] thread=$currentThreadId: $url ")
 			val aurl = URL(url)
 			HttpURLConnection.setFollowRedirects(false)
 			val con = aurl.openConnection() as HttpURLConnection
 			con.requestMethod = method.name
+			//println(" --> [$id]${method.name}")
 			//println("URL:$url")
 			//println("METHOD:${method.name}")
 			for (header in headers) {
 				//println("HEADER:$header")
 				con.addRequestProperty(header.first, header.second)
+				//println(" --> [$id]${header.first} - ${header.second}")
 			}
+			//println(" --> [$id]content=${content?.size()}")
 			if (content != null) {
 				con.doOutput = true
 
@@ -66,27 +83,38 @@ class HttpClientJvm : HttpClient() {
 			val length = pheaders["Content-Length"]?.toLongOrNull()
 
 			spawnAndForget {
-				val syncStream = if (con.responseCode < 400) con.inputStream else con.errorStream
-				try {
-					if (syncStream != null) {
-						val stream = syncStream.toAsync(length).toAsyncStream()
-						val temp = ByteArray(0x1000)
-						while (true) {
-							// @TODO: Totally cancel reading if nobody is consuming this. Think about the best way of doing this.
-							// node.js pause equivalent?
-							while (produceConsumer.availableCount > 4) { // Prevent filling the memory if nobody is consuming data
-								getCoroutineContext().eventLoop.sleep(100)
+				executeInNewThread {
+					val syncStream = ignoreErrors { con.inputStream } ?: ignoreErrors { con.errorStream }
+					try {
+						if (syncStream != null) {
+							//val stream = syncStream.toAsync(length).toAsyncStream()
+							val stream = syncStream
+							val temp = ByteArray(0x1000)
+							loop@ while (true) {
+								// @TODO: Totally cancel reading if nobody is consuming this. Think about the best way of doing this.
+								// node.js pause equivalent?
+								val chunkStartTime = Klock.currentTimeMillis()
+								while (produceConsumer.availableCount > 4) { // Prevent filling the memory if nobody is consuming data
+									//println("PREVENT!")
+									eventLoop().sleep(10)
+									val chunkCurrentTime = Klock.currentTimeMillis()
+									if ((chunkCurrentTime - chunkStartTime) >= 2000L) {
+										System.err.println("[$id] thread=$currentThreadId Two seconds passed without anyone reading data (available=${produceConsumer.availableCount}) from $url. Closing...")
+										break@loop
+									}
+								}
+								val read = stream.read(temp)
+								//println(" --- [$id][D] thread=$currentThreadId : $read")
+								if (read <= 0) break
+								produceConsumer.produce(temp.copyOf(read))
 							}
-							val read = stream.read(temp)
-							if (read <= 0) break
-							produceConsumer.produce(temp.copyOf(read))
 						}
+					} finally {
+						ignoreErrors { syncStream?.close() }
+						ignoreErrors { produceConsumer.close() }
+						ignoreErrors { con.disconnect() }
+						HttpStats.disconnections.incrementAndGet()
 					}
-				} finally {
-					ignoreErrors { syncStream.close() }
-					ignoreErrors { produceConsumer.close() }
-					ignoreErrors { con.disconnect() }
-					HttpStats.disconnections.incrementAndGet()
 				}
 			}
 
@@ -97,19 +125,14 @@ class HttpClientJvm : HttpClient() {
 			//		content = if (con.responseCode < 400) con.inputStream.readBytes().openAsync() else con.errorStream.toAsync().toAsyncStream()
 			//)
 
+			val acontent = produceConsumer.toAsyncInputStream()
 			Response(
 				status = con.responseCode,
 				statusText = con.responseMessage,
 				headers = pheaders,
-				content = produceConsumer.toAsyncInputStream()
-			)
-		} catch (e: FileNotFoundException) {
-			Response(
-				status = 404,
-				statusText = "NotFound",
-				headers = Http.Headers(),
-				content = byteArrayOf().openAsync()
+				content = if (length != null) acontent.withLength(length) else acontent
 			)
 		}
+		return result
 	}
 }
