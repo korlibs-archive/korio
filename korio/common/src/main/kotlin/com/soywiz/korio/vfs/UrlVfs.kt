@@ -2,6 +2,7 @@ package com.soywiz.korio.vfs
 
 import com.soywiz.kds.lmapOf
 import com.soywiz.korio.error.invalidOp
+import com.soywiz.korio.net.URI
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.net.http.HttpClient
 import com.soywiz.korio.net.http.createHttpClient
@@ -9,10 +10,12 @@ import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.LONG_ZERO_TO_MAX_RANGE
 
 fun UrlVfs(url: String): VfsFile = UrlVfs(url, Unit).root
+fun UrlVfs(url: String, client: HttpClient): VfsFile = UrlVfs(url, Unit, client).root
+fun UrlVfs(url: URI, client: HttpClient = createHttpClient()): VfsFile = UrlVfs(url.fullUri, Unit, client).root
 
-class UrlVfs(val url: String, val dummy: Unit) : Vfs() {
+class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHttpClient()) : Vfs() {
 	override val absolutePath: String = url
-	val client = createHttpClient()
+
 
 	fun getFullUrl(path: String) = url.trim('/') + '/' + path.trim('/')
 

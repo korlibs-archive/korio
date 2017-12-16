@@ -1,4 +1,4 @@
-package com.soywiz.korio.lang
+package com.soywiz.korio.net
 
 import org.junit.Test
 import kotlin.test.assertEquals
@@ -40,5 +40,16 @@ class URITest {
 	@Test
 	fun testIsOpaque() {
 		for (uri in URIS) assertEquals(uri.isOpaque, URI(uri.uri).isOpaque, uri.uri)
+	}
+
+	@Test
+	fun testResolve() {
+		assertEquals("https://www.google.es/", URI.resolve("https://google.es/", "https://www.google.es/"))
+		assertEquals("https://google.es/demo", URI.resolve("https://google.es/path", "demo"))
+		assertEquals("https://google.es/path/demo", URI.resolve("https://google.es/path/", "demo"))
+		assertEquals("https://google.es/demo", URI.resolve("https://google.es/path/", "/demo"))
+		assertEquals("https://google.es/test", URI.resolve("https://google.es/path/path2", "../test"))
+		assertEquals("https://google.es/path/test", URI.resolve("https://google.es/path/path2/", "../test"))
+		assertEquals("https://google.es/test", URI.resolve("https://google.es/path/path2/", "../../../test"))
 	}
 }

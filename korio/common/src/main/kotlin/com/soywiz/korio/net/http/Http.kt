@@ -127,12 +127,13 @@ interface Http {
 		fun withAppendedHeaders(newHeaders: List<Pair<String, String>>): Headers = Headers(this.items + newHeaders.toList())
 		fun withReplaceHeaders(newHeaders: List<Pair<String, String>>): Headers {
 			val replaceKeys = newHeaders.map { it.first.toLowerCase() }.toSet()
-
 			return Headers(this.items.filter { it.first.toLowerCase() !in replaceKeys } + newHeaders.toList())
 		}
 
 		fun withAppendedHeaders(vararg newHeaders: Pair<String, String>): Headers = withAppendedHeaders(newHeaders.toList())
 		fun withReplaceHeaders(vararg newHeaders: Pair<String, String>): Headers = withReplaceHeaders(newHeaders.toList())
+
+		fun containsAll(other: Http.Headers): Boolean = other.items.all { this.contains(it) }
 
 		operator fun plus(that: Headers): Headers = withAppendedHeaders(this.items + that.items)
 

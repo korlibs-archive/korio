@@ -30,6 +30,8 @@ data internal class Request(val method: Http.Method, val path: String, val heade
 	}
 }
 
+/*
+// Already defined!
 class FakeHttpClient(val defaultMessage: String = "{}") : HttpClient() {
 	private val log = arrayListOf<Request>()
 	private var responsePointer = 0
@@ -59,7 +61,7 @@ class FakeHttpClient(val defaultMessage: String = "{}") : HttpClient() {
 		return log.slice(start until end).map { it.format(format) }
 	}
 }
-
+ */
 class FakeHttpClientEndpoint(val defaultMessage: String = "{}") : HttpClientEndpoint {
 	private val log = arrayListOf<Request>()
 	private var responsePointer = 0

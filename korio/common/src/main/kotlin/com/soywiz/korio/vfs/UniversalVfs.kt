@@ -1,40 +1,40 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.error.invalidOp
-import com.soywiz.korio.lang.URL
+import com.soywiz.korio.net.URI
 
 object UniversalVfs {
 	@PublishedApi
-	internal var schemaBuilders = hashMapOf<String, (URL) -> VfsFile>()
+	internal var schemaBuilders = hashMapOf<String, (URI) -> VfsFile>()
 
-	fun registerSchema(schema: String, builder: (URL) -> VfsFile) {
+	fun registerSchema(schema: String, builder: (URI) -> VfsFile) {
 		schemaBuilders[schema] = builder
 	}
 
-	inline fun keepSchemas(callback: () -> Unit) {
+	inline fun temporal(callback: UniversalVfs.() -> Unit) {
 		val original = schemaBuilders.toMap()
 		try {
-			callback()
+			callback(this)
 		} finally {
 			schemaBuilders = HashMap(original)
 		}
 	}
 
 	init {
-		registerSchema("http") { UrlVfs(it.fullUrl) }
-		registerSchema("https") { UrlVfs(it.fullUrl) }
+		registerSchema("http") { UrlVfs(it) }
+		registerSchema("https") { UrlVfs(it) }
 		registerSchema("file") { rootLocalVfs[it.path] }
 	}
 
 	operator fun invoke(uri: String, base: VfsFile? = null): VfsFile {
 		return when {
-			URL.isAbsolute(uri) -> {
-				val url = URL(uri)
-				val builder = schemaBuilders[url.protocol]
+			URI.isAbsolute(uri) -> {
+				val uriUri = URI(uri)
+				val builder = schemaBuilders[uriUri.scheme]
 				if (builder != null) {
-					builder(url)
+					builder(uriUri)
 				} else {
-					invalidOp("Unsupported schema '${url.protocol}'")
+					invalidOp("Unsupported scheme '${uriUri.scheme}'")
 				}
 			}
 			(base != null) -> base[uri]

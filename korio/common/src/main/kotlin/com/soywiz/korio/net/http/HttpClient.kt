@@ -1,10 +1,12 @@
 package com.soywiz.korio.net.http
 
+import com.soywiz.kds.ext.getCyclic
+import com.soywiz.kds.lmapOf
 import com.soywiz.korio.KorioNative
 import com.soywiz.korio.async.AsyncThread
 import com.soywiz.korio.coroutine.withEventLoop
-import com.soywiz.kds.lmapOf
 import com.soywiz.korio.lang.*
+import com.soywiz.korio.net.URI
 import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.stream.*
 
@@ -63,16 +65,10 @@ abstract class HttpClient protected constructor() {
 		val simulateBrowser: Boolean = false
 	)
 
-	private fun isUrlAbsolute(url: String): Boolean = url.matches(Regex("^\\w+://"))
-	private fun mergeUrls(base: String, append: String): String {
-		return if (isUrlAbsolute(append)) {
-			append
-		} else {
-			base + "/" + append
-		}
-	}
+	private fun mergeUrls(base: String, append: String): String = URI.resolve(base, append)
 
 	suspend fun request(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null, config: RequestConfig = RequestConfig()): Response {
+		//println("HttpClient.request: $method:$url")
 		val contentLength = content?.getLength() ?: 0L
 		var actualHeaders = headers
 
@@ -89,21 +85,11 @@ abstract class HttpClient protected constructor() {
 			}
 		}
 
-		//println("$method: $url ($config)")
-		//for (header in actualHeaders) println(" ${header.first}: ${header.second}")
-
 		val response = requestInternal(method, url, actualHeaders, content).apply { if (config.throwErrors) checkErrors() }
 		if (config.followRedirects && config.maxRedirects >= 0) {
 			val redirectLocation = response.headers["location"]
 			if (redirectLocation != null) {
-				//for (header in response.headers) println(header)
-				//println("Method: $method")
-				//println("Location: $location")
-				val resolvedRedirectLocation = mergeUrls(url, redirectLocation).toString()
-				//println("Redirect: $redirectLocation")
-				//println("Redirect: ${URI(url).resolve(redirectLocation)}")
-
-				return request(method, resolvedRedirectLocation, headers.withReplaceHeaders(
+				return request(method, mergeUrls(url, redirectLocation), headers.withReplaceHeaders(
 					"Referer" to url
 				), content, config.copy(maxRedirects = config.maxRedirects - 1))
 			}
@@ -144,27 +130,79 @@ open class DelayedHttpClient(val delayMs: Int, val parent: HttpClient) : HttpCli
 
 fun HttpClient.delayed(ms: Int) = DelayedHttpClient(ms, this)
 
-class LogHttpClient(val redirect: HttpClient? = null) : HttpClient() {
+class FakeHttpClient(val redirect: HttpClient? = null) : HttpClient() {
 	val log = arrayListOf<String>()
-	var response = HttpClient.Response(200, "OK", Http.Headers(), "LogHttpClient.response".toByteArray(Charsets.UTF_8).openAsync())
+	var defaultResponse = HttpClient.Response(200, "OK", Http.Headers(), "LogHttpClient.response".toByteArray(Charsets.UTF_8).openAsync())
+	private val rules = LinkedHashMap<Rule, ArrayList<ResponseBuilder>>()
 
 	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
 		val contentString = content?.slice()?.readAll()?.toString(Charsets.UTF_8)
+		val requestNumber = log.size
 		log += "$method, $url, $headers, $contentString"
-		if (redirect != null) {
-			return redirect.request(method, url, headers, content)
-		} else {
-			return response
+		if (redirect != null) return redirect.request(method, url, headers, content)
+		val readedContent = content?.readAll()
+		val matchedRules = rules.entries.reversed().filter { it.key.matches(method, url, headers, readedContent) }
+		val rule = matchedRules.firstOrNull()
+		return rule?.value?.getCyclic(requestNumber)?.buildResponse() ?: defaultResponse
+	}
+
+	class ResponseBuilder {
+		internal var responseCode = 200
+		internal var responseContent = "LogHttpClient.response".toByteArray(UTF8)
+		internal var responseHeaders = Http.Headers()
+
+		fun response(content: String, code: Int = 200, charset: Charset = UTF8) {
+			responseCode = code
+			responseContent = content.toByteArray(charset)
+		}
+
+		fun response(content: ByteArray, code: Int = 200) {
+			responseCode = code
+			responseContent = content
+		}
+
+		fun redirect(url: String, code: Int = 302): Unit {
+			responseCode = code
+			responseHeaders += Http.Headers("Location" to url)
+		}
+
+		fun ok(content: String) = response(content, code = 200)
+		fun notFound(content: String = "404 - Not Found") = response(content, code = 404)
+		fun internalServerError(content: String = "500 - Internal Server Error") = response(content, code = 500)
+
+		internal fun buildResponse(): HttpClient.Response {
+			return HttpClient.Response(responseCode, HttpStatusMessage(responseCode), responseHeaders, responseContent.openAsync())
 		}
 	}
 
-	fun setTextResponse(text: String, status: Int = 200, statusText: String = "OK", headers: Http.Headers = Http.Headers()): LogHttpClient {
-		response = HttpClient.Response(status, statusText, headers, text.toByteArray(Charsets.UTF_8).openAsync())
-		return this
+	data class Rule(
+		val method: Http.Method?,
+		val url: String? = null,
+		val headers: Http.Headers? = null
+	) {
+		fun matches(method: Http.Method, url: String, headers: Http.Headers, content: ByteArray?): Boolean {
+			if (this.method != null && this.method != method) return false
+			if (this.url != null && this.url != url) return false
+			if (this.headers != null && !headers.containsAll(this.headers)) return false
+			return true
+		}
+	}
+
+	fun onRequest(
+		method: Http.Method? = null,
+		url: String? = null,
+		headers: Http.Headers? = null
+	): ResponseBuilder {
+		val responseBuilders = rules.getOrPut(Rule(method, url, headers)) { arrayListOf() }
+		val responseBuilder = ResponseBuilder()
+		responseBuilders += responseBuilder
+		return responseBuilder
 	}
 
 	fun getAndClearLog() = log.toList().apply { log.clear() }
 }
+
+fun LogHttpClient() = FakeHttpClient()
 
 object HttpStatusMessage {
 	val CODES = lmapOf(

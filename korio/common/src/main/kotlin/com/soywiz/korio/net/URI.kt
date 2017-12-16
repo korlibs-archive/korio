@@ -1,4 +1,4 @@
-package com.soywiz.korio.lang
+package com.soywiz.korio.net
 
 import com.soywiz.korio.util.StrReader
 import com.soywiz.korio.util.nullIf
@@ -38,12 +38,7 @@ data class URI private constructor(
 			.joinToString(", ") { "${it.first}=${it.second}" } + ")"
 	}
 
-	fun resolve(path: URI): URI {
-		if (path.isAbsolute) return path
-		return this.copy(path = com.soywiz.korio.vfs.VfsUtil.lightCombine(this.path, path.path))
-	}
-
-	fun resolve(path: String): URI = resolve(URI(path))
+	fun resolve(path: URI): URI = URI(resolve(this.fullUri, path.fullUri))
 
 	companion object {
 		operator fun invoke(
@@ -55,9 +50,11 @@ data class URI private constructor(
 			opaque: Boolean = false
 		): URI = URI(opaque, scheme, userInfo, host, path, query)
 
+		private val schemeRegex = Regex("\\w+:")
+
 		operator fun invoke(uri: String): URI {
 			val r = StrReader(uri)
-			val schemeColon = r.tryRegex(Regex("\\w+:"))
+			val schemeColon = r.tryRegex(schemeRegex)
 			return when {
 				schemeColon != null -> {
 					val isHierarchical = r.tryLit("//") != null
@@ -75,6 +72,14 @@ data class URI private constructor(
 					URI(opaque = false, scheme = null, userInfo = null, host = null, path = path, query = query)
 				}
 			}
+		}
+
+		fun isAbsolute(uri: String): Boolean = StrReader(uri).tryRegex(schemeRegex) != null
+
+		fun resolve(base: String, access: String): String = when {
+			isAbsolute(access) -> access
+			access.startsWith("/") -> URI(base).copy(path = access).fullUri
+			else -> URI(base).run { copy(path = "/" + com.soywiz.korio.vfs.VfsUtil.normalize(this.path.substringBeforeLast('/') + "/" + access).trimStart('/')).fullUri }
 		}
 	}
 }

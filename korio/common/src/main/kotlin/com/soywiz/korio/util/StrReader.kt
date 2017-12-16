@@ -12,6 +12,7 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 	}
 
 	val length: Int = this.str.length
+	val available: Int get() = length - this.pos
 	val eof: Boolean get() = (this.pos >= this.str.length)
 	val hasMore: Boolean get() = (this.pos < this.str.length)
 
@@ -53,6 +54,8 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 	fun readChar(): Char = if (hasMore) this.str[this.pos++] else '\u0000'
 	fun read(): Char = if (hasMore) this.str[this.pos++] else '\u0000'
 
+	fun readRemaining(): String = read(available)
+
 	fun readExpect(expected: String): String {
 		val readed = this.read(expected.length)
 		if (readed != expected) throw IllegalArgumentException("Expected '$expected' but found '$readed' at $pos")
@@ -65,13 +68,16 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 		return this.str.substring(min(pos, this.length), min(pos + length, this.length))
 	}
 
-	fun matchLit(lit: String): String? {
+	fun tryLit(lit: String): String? {
 		if (substr(this.pos, lit.length) != lit) return null
 		this.pos += lit.length
 		return lit
 	}
 
-	fun matchLitRange(lit: String): TRange? = if (substr(this.pos, lit.length) == lit) this.readRange(lit.length) else null
+	fun tryLitRange(lit: String): TRange? = if (substr(this.pos, lit.length) == lit) this.readRange(lit.length) else null
+
+	fun matchLit(lit: String): String? = tryLit(lit)
+	fun matchLitRange(lit: String): TRange? = tryLitRange(lit)
 
 	fun matchLitListRange(lits: Literals): TRange? {
 		for (len in lits.lengths) {
@@ -96,17 +102,17 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 		}
 	}
 
-	//fun matchEReg(v: Regex): String? {
-	//	val result = v.find(this.str.substring(this.pos)) ?: return null
-	//	val m = result.groups[0]!!.value
-	//	this.pos += m.length
-	//	return m
-	//}
-//
-	//fun matchERegRange(v: Regex): TRange? {
-	//	val result = v.find(this.str.substring(this.pos)) ?: return null
-	//	return this.readRange(result.groups[0]!!.value.length)
-	//}
+	fun tryRegex(v: Regex): String? {
+		val result = v.find(this.str.substring(this.pos)) ?: return null
+		val m = result.groups[0]!!.value
+		this.pos += m.length
+		return m
+	}
+
+	fun tryRegexRange(v: Regex): TRange? {
+		val result = v.find(this.str.substring(this.pos)) ?: return null
+		return this.readRange(result.groups[0]!!.value.length)
+	}
 
 	fun matchStartEnd(start: String, end: String): String? {
 		if (substr(this.pos, start.length) != start) return null
