@@ -6,6 +6,30 @@ import kotlin.test.assertEquals
 
 class withTimeoutTest {
 	@Test
+	fun noTimeout() = syncTest {
+		var out = ""
+		var result = "none"
+		try {
+			result = withTimeout(200, name = "timeout2") {
+				out += "a"
+				sleep(20)
+				out += "b"
+				sleep(50)
+				out += "c"
+				sleep(100)
+				out += "d"
+				"done"
+			}
+		} catch (e: CancellationException) {
+			out += "<CANCEL>"
+		}
+
+		sleep(500)
+		assertEquals("abcd", out)
+		assertEquals("done", result)
+	}
+
+	@Test
 	fun simple() = syncTest {
 		var out = ""
 		try {
