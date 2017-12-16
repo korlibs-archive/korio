@@ -2,13 +2,10 @@
 
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.async.AsyncSequence
-import com.soywiz.korio.async.async
-import com.soywiz.korio.async.asyncGenerate
-import com.soywiz.korio.async.await
-import com.soywiz.korio.coroutine.withCoroutineContext
-import com.soywiz.korio.stream.ByteArrayBuilder
 import com.soywiz.kds.lmapOf
+import com.soywiz.korio.async.*
+import com.soywiz.korio.coroutine.getCoroutineContext
+import com.soywiz.korio.error.ignoreErrors
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.LONG_ZERO_TO_MAX_RANGE
@@ -19,8 +16,11 @@ import kotlin.reflect.KClass
 class VfsFile(
 	val vfs: Vfs,
 	path: String
-//) : VfsNamed(VfsFile.normalize(path)) {
 ) : VfsNamed(path), AsyncInputOpenable {
+	val parent: VfsFile by lazy { VfsFile(vfs, pathInfo.folder) }
+	val root: VfsFile get() = vfs.root
+	val absolutePath: String by lazy { vfs.getAbsolutePath(path) }
+
 	operator fun get(path: String): VfsFile = VfsFile(vfs, VfsUtil.combine(this.path, path))
 
 	// @TODO: Kotlin suspend operator not supported yet!
@@ -39,23 +39,10 @@ class VfsFile(
 	suspend fun writeStream(src: AsyncInputStream, vararg attributes: Vfs.Attribute): Long = put(src, *attributes)
 	suspend fun writeFile(file: VfsFile, vararg attributes: Vfs.Attribute): Long = file.copyTo(this, *attributes)
 
+	suspend fun copyTo(target: AsyncOutputStream) = this.openUse { this.copyTo(target) }
 	suspend fun copyTo(target: VfsFile, vararg attributes: Vfs.Attribute): Long {
-		val inputStream = this.openInputStream()
-		try {
-			return target.writeStream(inputStream, *attributes)
-		} finally {
-			inputStream.close()
-		}
+		return this.openInputStream().use { target.writeStream(this, *attributes) }
 	}
-
-	suspend fun copyTo(target: AsyncOutputStream) {
-		this.openUse {
-			this.copyTo(target)
-		}
-	}
-
-	val parent: VfsFile by lazy { VfsFile(vfs, pathInfo.folder) }
-	val root: VfsFile get() = vfs.root
 
 	fun withExtension(ext: String): VfsFile = VfsFile(vfs, fullnameWithoutExtension + if (ext.isNotEmpty()) ".$ext" else "")
 	fun withCompoundExtension(ext: String): VfsFile = VfsFile(vfs, fullnameWithoutCompoundExtension + if (ext.isNotEmpty()) ".$ext" else "")
@@ -76,12 +63,10 @@ class VfsFile(
 	suspend fun readRangeBytes(range: IntRange): ByteArray = vfs.readRange(path, range.toLongRange())
 
 	// Aliases
-	suspend fun read(): ByteArray = vfs.readRange(path, LONG_ZERO_TO_MAX_RANGE)
-
 	suspend fun readAll(): ByteArray = vfs.readRange(path, LONG_ZERO_TO_MAX_RANGE)
-	suspend fun readBytes(): ByteArray = vfs.readRange(path, LONG_ZERO_TO_MAX_RANGE)
 
-	suspend fun readAsSyncStream(): SyncStream = read().openSync()
+	suspend fun read(): ByteArray = readAll()
+	suspend fun readBytes(): ByteArray = readAll()
 
 	suspend fun readString(charset: Charset = Charsets.UTF_8): String = read().toString(charset)
 	suspend fun writeString(data: String, vararg attributes: Vfs.Attribute): Unit = run { write(data.toByteArray(Charsets.UTF_8), *attributes) }
@@ -90,20 +75,14 @@ class VfsFile(
 	suspend fun readChunk(offset: Long, size: Int): ByteArray = vfs.readChunk(path, offset, size)
 	suspend fun writeChunk(data: ByteArray, offset: Long, resize: Boolean = false): Unit = vfs.writeChunk(path, data, offset, resize)
 
+	suspend fun readAsSyncStream(): SyncStream = read().openSync()
+
 	suspend fun stat(): VfsStat = vfs.stat(path)
 	suspend fun touch(time: Long, atime: Long = time): Unit = vfs.touch(path, time, atime)
 	suspend fun size(): Long = vfs.stat(path).size
-	suspend fun exists(): Boolean = try {
-		vfs.stat(path).exists
-	} catch (e: Throwable) {
-		false
-	}
-
+	suspend fun exists(): Boolean = ignoreErrors { vfs.stat(path).exists } ?: false
 	suspend fun isDirectory(): Boolean = stat().isDirectory
-
 	suspend fun setSize(size: Long): Unit = vfs.setSize(path, size)
-
-	fun jail(): VfsFile = JailVfs(this)
 
 	suspend fun delete() = vfs.delete(path)
 
@@ -112,8 +91,10 @@ class VfsFile(
 
 	suspend fun mkdir(attributes: List<Vfs.Attribute>) = vfs.mkdir(path, attributes)
 	suspend fun mkdirs(attributes: List<Vfs.Attribute>) {
-		// @TODO: Create tree up to this
-		mkdir(attributes)
+		if (!this.exists()) {
+			parent.mkdirs(attributes)
+			mkdir(attributes)
+		}
 	}
 
 	suspend fun mkdir(vararg attributes: Vfs.Attribute) = mkdir(attributes.toList())
@@ -136,10 +117,10 @@ class VfsFile(
 
 	suspend fun renameTo(dstPath: String) = vfs.rename(this.path, dstPath)
 
-	suspend fun list(): AsyncSequence<VfsFile> = vfs.list(path)
+	suspend fun list(): SuspendingSequence<VfsFile> = vfs.list(path)
 
-	suspend fun listRecursive(filter: (VfsFile) -> Boolean = { true }): AsyncSequence<VfsFile> = withCoroutineContext {
-		asyncGenerate(this@withCoroutineContext) {
+	suspend fun listRecursive(filter: (VfsFile) -> Boolean = { true }): SuspendingSequence<VfsFile> {
+		return asyncGenerate {
 			for (file in list()) {
 				if (!filter(file)) continue
 				yield(file)
@@ -191,8 +172,9 @@ class VfsFile(
 
 	suspend fun passthru(vararg cmdAndArgs: String, env: Map<String, String> = lmapOf(), charset: Charset = Charsets.UTF_8): Int = passthru(cmdAndArgs.toList(), env, charset)
 
-	suspend fun watch(handler: suspend (VfsFileEvent) -> Unit): Closeable = withCoroutineContext {
-		vfs.watch(path) { event -> async { handler(event) } }
+	suspend fun watch(handler: suspend (VfsFileEvent) -> Unit): Closeable {
+		val cc = getCoroutineContext()
+		return vfs.watch(path) { event -> async(cc) { handler(event) } }
 	}
 
 	suspend fun redirected(pathRedirector: suspend VfsFile.(String) -> String): VfsFile {
@@ -202,7 +184,7 @@ class VfsFile(
 		}, path)
 	}
 
-	override fun toString(): String = "$vfs[$path]"
+	fun jail(): VfsFile = JailVfs(this)
 
-	val absolutePath: String by lazy { vfs.getAbsolutePath(path) }
+	override fun toString(): String = "$vfs[$path]"
 }

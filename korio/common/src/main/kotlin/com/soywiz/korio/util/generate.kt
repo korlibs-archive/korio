@@ -3,7 +3,7 @@ package com.soywiz.korio.util
 import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.RestrictsSuspension
-import com.soywiz.korio.coroutine.withCoroutineContext
+import com.soywiz.korio.coroutine.getCoroutineContext
 import kotlin.coroutines.experimental.EmptyCoroutineContext
 import kotlin.coroutines.experimental.createCoroutine
 import kotlin.coroutines.experimental.suspendCoroutine
@@ -15,10 +15,11 @@ interface Generator<in T> {
 	suspend fun yield(value: T)
 }
 
-suspend fun <T> generateSync(block: suspend Generator<T>.() -> Unit): Iterable<T> = withCoroutineContext {
-	return@withCoroutineContext object : Iterable<T> {
+suspend fun <T> generateSync(block: suspend Generator<T>.() -> Unit): Iterable<T> {
+	val cc = getCoroutineContext()
+	return object : Iterable<T> {
 		override fun iterator(): Iterator<T> {
-			val iterator = GeneratorIterator<T>(this@withCoroutineContext)
+			val iterator = GeneratorIterator<T>(cc)
 			iterator.nextStep = block.createCoroutine(receiver = iterator, completion = iterator)
 			return iterator
 		}

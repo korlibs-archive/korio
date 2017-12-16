@@ -1,8 +1,8 @@
 package com.soywiz.korio.async
 
-import com.soywiz.korio.coroutine.CoroutineContext
-import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.kds.LinkedList2
+import com.soywiz.korio.coroutine.CoroutineContext
+import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.lang.Closeable
 
 class AsyncSignal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
@@ -37,7 +37,7 @@ class AsyncSignal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
 
 	operator fun invoke(handler: suspend (T) -> Unit): Closeable = add(handler)
 
-	suspend fun listen(): AsyncSequence<T> = asyncGenerate {
+	suspend fun listen(): SuspendingSequence<T> = asyncGenerate {
 		while (true) {
 			yield(waitOne())
 		}
@@ -59,14 +59,15 @@ suspend fun <T> AsyncSignal<T>.waitOne(): T = suspendCancellableCoroutine { c ->
 		c.resume(it)
 	}
 	c.onCancel {
-		close?.close()
+		close.close()
 	}
 }
 
 
-suspend fun <T> Signal<T>.addSuspend(handler: suspend (T) -> Unit): Closeable = withCoroutineContext {
-	this@addSuspend { value ->
-		async {
+suspend fun <T> Signal<T>.addSuspend(handler: suspend (T) -> Unit): Closeable {
+	val cc = getCoroutineContext()
+	return this@addSuspend { value ->
+		async(cc) {
 			handler(value)
 		}
 	}

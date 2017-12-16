@@ -8,8 +8,11 @@ import kotlin.test.assertEquals
 
 class ResourcesVfsTest {
 	@Test
-	@Ignore
 	fun name() = syncTest {
+		println("[A]")
+		val listing = ResourcesVfs["tresfolder"].list()
+		println("[B]")
+
 		for (v in ResourcesVfs["tresfolder"].list().filter { it.extensionLC == "txt" }.toList()) {
 			println(v)
 		}

@@ -1,8 +1,7 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.async.AsyncSequence
+import com.soywiz.korio.async.SuspendingSequence
 import com.soywiz.korio.async.asyncGenerate
-import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.korio.error.ignoreErrors
 
 open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
@@ -24,22 +23,20 @@ open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
 		return createNonExistsStat(path)
 	}
 
-	suspend override fun list(path: String): AsyncSequence<VfsFile> = withCoroutineContext {
-		return@withCoroutineContext asyncGenerate(this@withCoroutineContext) {
-			val emitted = LinkedHashSet<String>()
-			for (vfs in vfsList) {
-				val items = ignoreErrors { vfs[path].list() } ?: continue
+	suspend override fun list(path: String): SuspendingSequence<VfsFile> = asyncGenerate {
+		val emitted = LinkedHashSet<String>()
+		for (vfs in vfsList) {
+			val items = ignoreErrors { vfs[path].list() } ?: continue
 
-				try {
-					for (v in items) {
-						if (v.basename !in emitted) {
-							emitted += v.basename
-							yield(file("$path/${v.basename}"))
-						}
+			try {
+				for (v in items) {
+					if (v.basename !in emitted) {
+						emitted += v.basename
+						yield(file("$path/${v.basename}"))
 					}
-				} catch (e: Throwable) {
-
 				}
+			} catch (e: Throwable) {
+
 			}
 		}
 	}

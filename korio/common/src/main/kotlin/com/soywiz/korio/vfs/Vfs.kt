@@ -2,10 +2,7 @@
 
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.async.AsyncSequence
-import com.soywiz.korio.async.asyncGenerate
-import com.soywiz.korio.async.spawn
-import com.soywiz.korio.coroutine.withCoroutineContext
+import com.soywiz.korio.async.*
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.error.unsupported
 import com.soywiz.korio.lang.Closeable
@@ -111,7 +108,7 @@ abstract class Vfs {
 	suspend open fun setAttributes(path: String, attributes: List<Attribute>): Unit = Unit
 
 	suspend open fun stat(path: String): VfsStat = createNonExistsStat(path)
-	suspend open fun list(path: String): AsyncSequence<VfsFile> = withCoroutineContext { return@withCoroutineContext asyncGenerate<VfsFile>(this@withCoroutineContext) { } }
+	suspend open fun list(path: String): SuspendingSequence<VfsFile> = listOf<VfsFile>().toAsync()
 	suspend open fun mkdir(path: String, attributes: List<Attribute>): Boolean = unsupported()
 	suspend open fun rmdir(path: String): Boolean = delete(path) // For compatibility
 	suspend open fun delete(path: String): Boolean = unsupported()
@@ -154,7 +151,7 @@ abstract class Vfs {
 		suspend override fun put(path: String, content: AsyncInputStream, attributes: List<Attribute>) = initOnce().access(path).put(content, *attributes.toTypedArray())
 		suspend override fun setSize(path: String, size: Long): Unit = initOnce().access(path).setSize(size)
 		suspend override fun stat(path: String): VfsStat = initOnce().access(path).stat().copy(file = file(path))
-		suspend override fun list(path: String) = withCoroutineContext { asyncGenerate<VfsFile>(this@withCoroutineContext) { initOnce(); for (it in access(path).list()) yield(transform(it)) } }
+		suspend override fun list(path: String) = asyncGenerate { initOnce(); for (it in access(path).list()) yield(transform(it)) }
 		suspend override fun delete(path: String): Boolean = initOnce().access(path).delete()
 		suspend override fun setAttributes(path: String, attributes: List<Attribute>) = initOnce().access(path).setAttributes(*attributes.toTypedArray())
 		suspend override fun mkdir(path: String, attributes: List<Attribute>): Boolean = initOnce().access(path).mkdir(*attributes.toTypedArray())
@@ -167,10 +164,10 @@ abstract class Vfs {
 			return srcFile.renameTo(dstFile.path)
 		}
 
-		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable = withCoroutineContext {
+		suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): Closeable {
 			initOnce()
-			return@withCoroutineContext access(path).watch { e ->
-				spawn(this@withCoroutineContext) {
+			return access(path).watch { e ->
+				spawn {
 					val f1 = e.file.transform2()
 					val f2 = e.other?.transform2()
 					handler(e.copy(file = f1, other = f2))

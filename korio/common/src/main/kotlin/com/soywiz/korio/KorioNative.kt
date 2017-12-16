@@ -59,6 +59,7 @@ expect object KorioNative {
 
 	fun getRandomValues(data: ByteArray): Unit
 
+	suspend fun <T> executeInNewThread(callback: suspend () -> T): T
 	suspend fun <T> executeInWorker(callback: suspend () -> T): T
 
 	val File_separatorChar: Char

@@ -3,7 +3,7 @@ package com.soywiz.korio.vfs
 import com.soywiz.klock.Klock
 import com.soywiz.kmem.arraycopy
 import com.soywiz.korio.IOException
-import com.soywiz.korio.async.AsyncSequence
+import com.soywiz.korio.async.SuspendingSequence
 import com.soywiz.korio.async.toAsync
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.serialization.json.Json
@@ -180,7 +180,7 @@ class MapLikeStorageVfs(val storage: SimpleStorage) : Vfs() {
 		return true
 	}
 
-	suspend override fun list(path: String): AsyncSequence<VfsFile> {
+	suspend override fun list(path: String): SuspendingSequence<VfsFile> {
 		initOnce()
 		val npath = path.normalizePath()
 		val entry = files.getEntryInfo(npath) ?: throw IOException("Can't find '$path'")

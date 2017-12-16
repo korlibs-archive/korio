@@ -128,6 +128,10 @@ actual object KorioNative {
 
 	actual val eventLoopFactoryDefaultImpl: EventLoopFactory = EventLoopFactoryJs()
 
+	actual suspend fun <T> executeInNewThread(callback: suspend () -> T): T {
+		return callback()
+	}
+
 	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T {
 		return callback()
 	}

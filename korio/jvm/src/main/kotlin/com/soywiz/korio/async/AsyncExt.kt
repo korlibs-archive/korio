@@ -1,5 +1,6 @@
 package com.soywiz.korio.async
 
+import com.soywiz.korio.KorioNative
 import com.soywiz.korio.coroutine.eventLoop
 import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
@@ -61,38 +62,8 @@ operator fun ExecutorService.invoke(callback: () -> Unit) {
 	this.execute(callback)
 }
 
-suspend private fun <T> _executeInside(task: suspend () -> T, taskRunner: (body: () -> Unit) -> Unit): T {
-	val deferred = Promise.Deferred<T>()
-	val parentEventLoop = eventLoop()
-	tasksInProgress.incrementAndGet()
-	taskRunner {
-		syncTest {
-			try {
-				val res = task()
-				parentEventLoop.queue {
-					deferred.resolve(res)
-				}
-			} catch (e: Throwable) {
-				parentEventLoop.queue { deferred.reject(e) }
-			} finally {
-				tasksInProgress.decrementAndGet()
-			}
-		}
-	}
-	return deferred.promise.await()
-}
+@Deprecated("")
+suspend fun <T> executeInNewThread(task: suspend () -> T): T = KorioNative.executeInNewThread(task)
 
-suspend fun <T> executeInNewThread(task: suspend () -> T): T = _executeInside(task) { body ->
-	Thread {
-		body()
-	}.apply {
-		isDaemon = true
-		start()
-	}
-}
-
-suspend fun <T> executeInWorkerJvm(task: suspend () -> T): T = _executeInside(task) { body ->
-	workerLazyPool.executeUpdatingTasksInProgress {
-		body()
-	}
-}
+@Deprecated("")
+suspend fun <T> executeInWorkerJvm(task: suspend () -> T): T = KorioNative.executeInWorker(task)

@@ -4,7 +4,7 @@ import com.soywiz.kds.ext.getCyclic
 import com.soywiz.kds.lmapOf
 import com.soywiz.korio.KorioNative
 import com.soywiz.korio.async.AsyncThread
-import com.soywiz.korio.coroutine.withEventLoop
+import com.soywiz.korio.coroutine.eventLoop
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.URI
 import com.soywiz.korio.serialization.json.Json
@@ -120,11 +120,9 @@ open class DelayedHttpClient(val delayMs: Int, val parent: HttpClient) : HttpCli
 	private val queue = AsyncThread()
 
 	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response = queue {
-		withEventLoop {
-			println("Waiting $delayMs milliseconds for $url...")
-			sleep(delayMs)
-			parent.request(method, url, headers, content)
-		}
+		println("Waiting $delayMs milliseconds for $url...")
+		eventLoop().sleep(delayMs)
+		parent.request(method, url, headers, content)
 	}
 }
 

@@ -2,11 +2,10 @@
 
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.async.AsyncSequence
-import com.soywiz.korio.async.Signal
-import com.soywiz.korio.async.asyncGenerate
-import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.kds.lmapOf
+import com.soywiz.korio.async.Signal
+import com.soywiz.korio.async.SuspendingSequence
+import com.soywiz.korio.async.asyncGenerate
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
@@ -123,8 +122,8 @@ open class NodeVfs(val caseSensitive: Boolean = true) : Vfs() {
 		}
 	}
 
-	suspend override fun list(path: String): AsyncSequence<VfsFile> = withCoroutineContext {
-		return@withCoroutineContext asyncGenerate(this@withCoroutineContext) {
+	suspend override fun list(path: String): SuspendingSequence<VfsFile> {
+		return asyncGenerate {
 			val node = rootNode[path]
 			for ((name, _) in node.children) {
 				yield(file("$path/$name"))

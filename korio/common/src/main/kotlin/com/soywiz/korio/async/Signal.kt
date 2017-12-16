@@ -39,7 +39,7 @@ class Signal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
 
 	operator fun invoke(handler: (T) -> Unit): Closeable = add(handler)
 
-	suspend fun listen(): AsyncSequence<T> = asyncGenerate {
+	suspend fun listen(): SuspendingSequence<T> = asyncGenerate {
 		while (true) {
 			yield(waitOne())
 		}

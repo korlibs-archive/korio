@@ -3,7 +3,6 @@ package com.soywiz.korio.async
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.coroutine.korioStartCoroutine
-import com.soywiz.korio.coroutine.withCoroutineContext
 
 //class AsyncQueue(val context: CoroutineContext) {
 class AsyncQueue() {
@@ -15,7 +14,7 @@ class AsyncQueue() {
 	//	suspend operator fun invoke() = AsyncQueue(getCoroutineContext())
 	//}
 
-	operator suspend fun invoke(func: suspend () -> Unit): AsyncQueue = withCoroutineContext { invoke(this@withCoroutineContext, func) }
+	operator suspend fun invoke(func: suspend () -> Unit): AsyncQueue = invoke(getCoroutineContext(), func)
 
 	operator fun invoke(context: CoroutineContext, func: suspend () -> Unit): AsyncQueue {
 		//operator fun invoke(func: suspend () -> Unit): AsyncQueue {
@@ -71,7 +70,7 @@ class AsyncThread {
 		return newDeferred.promise.await() as T
 	}
 
-	suspend fun <T> sync(func: suspend () -> T): Promise<T> = withCoroutineContext { sync(this@withCoroutineContext, func) }
+	suspend fun <T> sync(func: suspend () -> T): Promise<T> = sync(getCoroutineContext(), func)
 
 	fun <T> sync(context: CoroutineContext, func: suspend () -> T): Promise<T> {
 		val newDeferred = Promise.Deferred<T>()

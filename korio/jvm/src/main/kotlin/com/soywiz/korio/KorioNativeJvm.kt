@@ -1,6 +1,7 @@
 package com.soywiz.korio
 
 import com.soywiz.korio.async.*
+import com.soywiz.korio.coroutine.eventLoop
 import com.soywiz.korio.net.AsyncSocketFactory
 import com.soywiz.korio.net.JvmAsyncSocketFactory
 import com.soywiz.korio.net.http.HttpClient
@@ -63,7 +64,41 @@ actual object KorioNative {
 		actual fun set(value: T) = jthreadLocal.set(value)
 	}
 
-	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T = executeInWorkerJvm { callback() }
+	suspend private fun <T> _executeInside(task: suspend () -> T, executionScope: (body: () -> Unit) -> Unit): T {
+		val deferred = Promise.Deferred<T>()
+		val parentEventLoop = eventLoop()
+		tasksInProgress.incrementAndGet()
+		executionScope {
+			syncTest {
+				try {
+					val res = task()
+					parentEventLoop.queue {
+						deferred.resolve(res)
+					}
+				} catch (e: Throwable) {
+					parentEventLoop.queue { deferred.reject(e) }
+				} finally {
+					tasksInProgress.decrementAndGet()
+				}
+			}
+		}
+		return deferred.promise.await()
+	}
+
+	actual suspend fun <T> executeInNewThread(callback: suspend () -> T): T = _executeInside(callback) { body ->
+		Thread {
+			body()
+		}.apply {
+			isDaemon = true
+			start()
+		}
+	}
+
+	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T = _executeInside(callback) { body ->
+		workerLazyPool.executeUpdatingTasksInProgress {
+			body()
+		}
+	}
 
 	actual val platformName: String = "jvm"
 	actual val rawOsName: String by lazy { System.getProperty("os.name") }
@@ -100,14 +135,14 @@ actual object KorioNative {
 	actual class SimplerMessageDigest actual constructor(name: String) {
 		val md = MessageDigest.getInstance(name)
 
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int) = executeInWorkerJvm { md.update(data, offset, size) }
-		actual suspend fun digest(): ByteArray = executeInWorkerJvm { md.digest() }
+		actual suspend fun update(data: ByteArray, offset: Int, size: Int) = executeInWorker { md.update(data, offset, size) }
+		actual suspend fun digest(): ByteArray = executeInWorker { md.digest() }
 	}
 
 	actual class SimplerMac actual constructor(name: String, key: ByteArray) {
 		val mac = Mac.getInstance(name).apply { init(SecretKeySpec(key, name)) }
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int) = executeInWorkerJvm { mac.update(data, offset, size) }
-		actual suspend fun finalize(): ByteArray = executeInWorkerJvm { mac.doFinal() }
+		actual suspend fun update(data: ByteArray, offset: Int, size: Int) = executeInWorker { mac.update(data, offset, size) }
+		actual suspend fun finalize(): ByteArray = executeInWorker { mac.doFinal() }
 	}
 
 	actual object SyncCompression {

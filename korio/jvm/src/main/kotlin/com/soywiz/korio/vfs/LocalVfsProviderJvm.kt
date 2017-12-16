@@ -1,10 +1,8 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.async.*
-import com.soywiz.korio.coroutine.getCoroutineContext
-import com.soywiz.korio.coroutine.korioSuspendCoroutine
-import com.soywiz.korio.coroutine.withCoroutineContext
 import com.soywiz.kds.lmapOf
+import com.soywiz.korio.async.*
+import com.soywiz.korio.coroutine.korioSuspendCoroutine
 import com.soywiz.korio.stream.AsyncStream
 import com.soywiz.korio.stream.AsyncStreamBase
 import com.soywiz.korio.stream.toAsyncStream
@@ -128,7 +126,7 @@ class LocalVfsJvm : LocalVfs() {
 		}
 	}
 
-	suspend override fun list(path: String): AsyncSequence<VfsFile> {
+	suspend override fun list(path: String): SuspendingSequence<VfsFile> {
 		/*
 		val emitter = AsyncSequenceEmitter<VfsFile>()
 		val files = executeInWorker { Files.newDirectoryStream(resolvePath(path)) }
@@ -184,14 +182,14 @@ class LocalVfsJvm : LocalVfs() {
 		})
 	}
 
-	suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): com.soywiz.korio.lang.Closeable = withCoroutineContext {
+	suspend override fun watch(path: String, handler: (VfsFileEvent) -> Unit): com.soywiz.korio.lang.Closeable {
 		var running = true
 		val fs = FileSystems.getDefault()
 		val watcher = fs.newWatchService()
 
 		fs.getPath(path).register(watcher, StandardWatchEventKinds.ENTRY_CREATE, StandardWatchEventKinds.ENTRY_DELETE, StandardWatchEventKinds.ENTRY_MODIFY)
 
-		spawnAndForget(this@withCoroutineContext) {
+		spawnAndForget {
 			while (running) {
 				val key = executeInWorker {
 					var r: WatchKey?
@@ -227,7 +225,7 @@ class LocalVfsJvm : LocalVfs() {
 			}
 		}
 
-		return@withCoroutineContext com.soywiz.korio.lang.Closeable {
+		return com.soywiz.korio.lang.Closeable {
 			running = false
 			watcher.close()
 		}

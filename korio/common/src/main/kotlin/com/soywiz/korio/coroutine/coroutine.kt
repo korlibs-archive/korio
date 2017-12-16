@@ -32,15 +32,15 @@ suspend fun eventLoop(): EventLoop = getCoroutineContext().eventLoop
 
 val currentThreadId: Long get() = KorioNative.currentThreadId
 
-@Deprecated("Use getCoroutineContext() instead?")
+@Deprecated("Use getCoroutineContext() instead")
 suspend fun <T> withCoroutineContext(callback: suspend CoroutineContext.() -> T) = korioSuspendCoroutine<T> { c ->
 	callback.startCoroutine(c.context, c)
 }
 
+@Deprecated("Use eventLoop() instead")
 suspend fun <T> withEventLoop(callback: suspend EventLoop.() -> T) = korioSuspendCoroutine<T> { c ->
 	callback.startCoroutine(c.context.eventLoop, c)
 }
-
 
 inline suspend fun <T> korioSuspendCoroutine(crossinline block: (Continuation<T>) -> Unit): T = _korioSuspendCoroutine { c ->
 	block(c.toEventLoop())
