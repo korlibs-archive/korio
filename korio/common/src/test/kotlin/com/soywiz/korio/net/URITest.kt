@@ -19,7 +19,8 @@ class URITest {
 		UriInfo("http://user:pass@hello/path?query", componentString = "URI(scheme=http, userInfo=user:pass, host=hello, path=/path, query=query)", isAbsolute = true, isOpaque = false),
 		UriInfo("http://hello/path", componentString = "URI(scheme=http, host=hello, path=/path)", isAbsolute = true, isOpaque = false),
 		UriInfo("http://hello?query", componentString = "URI(scheme=http, host=hello, path=, query=query)", isAbsolute = true, isOpaque = false),
-		UriInfo("mailto:demo@host.com", componentString = "URI(scheme=mailto, userInfo=demo, host=host.com, path=)", isAbsolute = true, isOpaque = true)
+		UriInfo("mailto:demo@host.com", componentString = "URI(scheme=mailto, userInfo=demo, host=host.com, path=)", isAbsolute = true, isOpaque = true),
+		UriInfo("http://hello?query#hash", componentString = "URI(scheme=http, host=hello, path=, query=query, fragment=hash)", isAbsolute = true, isOpaque = false)
 	)
 
 	@Test
