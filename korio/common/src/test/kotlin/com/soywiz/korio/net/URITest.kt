@@ -14,6 +14,7 @@ class URITest {
 		UriInfo("/hello?world?world", componentString = "URI(path=/hello, query=world?world)", isAbsolute = false, isOpaque = false),
 		UriInfo("http://", componentString = "URI(scheme=http, path=)", isAbsolute = true, isOpaque = false),
 		UriInfo("http://hello", componentString = "URI(scheme=http, host=hello, path=)", isAbsolute = true, isOpaque = false),
+		UriInfo("http://hello/", componentString = "URI(scheme=http, host=hello, path=/)", isAbsolute = true, isOpaque = false),
 		UriInfo("http://user:pass@hello", componentString = "URI(scheme=http, userInfo=user:pass, host=hello, path=)", isAbsolute = true, isOpaque = false),
 		UriInfo("http://user:pass@hello/path", componentString = "URI(scheme=http, userInfo=user:pass, host=hello, path=/path)", isAbsolute = true, isOpaque = false),
 		UriInfo("http://user:pass@hello/path?query", componentString = "URI(scheme=http, userInfo=user:pass, host=hello, path=/path, query=query)", isAbsolute = true, isOpaque = false),

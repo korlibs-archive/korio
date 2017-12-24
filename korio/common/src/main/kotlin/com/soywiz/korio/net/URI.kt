@@ -65,9 +65,9 @@ data class URI private constructor(
 					val scheme = schemeColon.dropLast(1)
 					val (nonFragment, fragment) = nonScheme.split('#', limit = 2).run { first() to getOrNull(1) }
 					val (nonQuery, query) = nonFragment.split('?', limit = 2).run { first() to getOrNull(1) }
-					val (authority, path) = nonQuery.split('/', limit = 2).run { first() to (getOrNull(1) ?: "") }
+					val (authority, path) = nonQuery.split('/', limit = 2).run { first() to getOrNull(1) }
 					val (host, userInfo) = authority.split('@', limit = 2).reversed().run { first() to getOrNull(1) }
-					URI(opaque = !isHierarchical, scheme = scheme, userInfo = userInfo, host = host.nullIf { isEmpty() }, path = if (path.isNotEmpty()) "/$path" else "", query = query, fragment = fragment)
+					URI(opaque = !isHierarchical, scheme = scheme, userInfo = userInfo, host = host.nullIf { isEmpty() }, path = if (path != null) "/$path" else "", query = query, fragment = fragment)
 				}
 				else -> {
 					val (nonFragment, fragment) = uri.split("#", limit = 2).run { first() to getOrNull(1) }
