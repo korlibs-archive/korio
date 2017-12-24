@@ -11,6 +11,8 @@ import com.soywiz.korio.serialization.json.Json
 import com.soywiz.korio.stream.*
 
 abstract class HttpClient protected constructor() {
+	var ignoreSslCertificates = false
+
 	suspend abstract protected fun requestInternal(method: Http.Method, url: String, headers: Http.Headers = Http.Headers(), content: AsyncStream? = null): Response
 
 	data class Response(

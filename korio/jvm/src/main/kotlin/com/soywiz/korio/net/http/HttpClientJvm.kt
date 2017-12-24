@@ -14,6 +14,10 @@ import com.soywiz.korio.util.toUintClamp
 import java.net.BindException
 import java.net.HttpURLConnection
 import java.net.URL
+import java.security.SecureRandom
+import java.security.cert.X509Certificate
+import javax.net.ssl.*
+
 
 class HttpClientJvm : HttpClient() {
 	companion object {
@@ -22,6 +26,14 @@ class HttpClientJvm : HttpClient() {
 
 	val clientId = lastId++
 	var lastRequestId = 0
+
+	class FakeHttpsTrustManager : X509TrustManager {
+		override fun getAcceptedIssuers(): Array<X509Certificate> = arrayOf<X509Certificate>()
+		override fun checkClientTrusted(x509Certificates: Array<X509Certificate>, s: String) = Unit
+		override fun checkServerTrusted(x509Certificates: Array<X509Certificate>, s: String) = Unit
+		fun isClientTrusted(chain: Array<X509Certificate>): Boolean = true
+		fun isServerTrusted(chain: Array<X509Certificate>): Boolean = true
+	}
 
 	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
 		val result = executeInWorker {
@@ -32,6 +44,13 @@ class HttpClientJvm : HttpClient() {
 			val aurl = URL(url)
 			HttpURLConnection.setFollowRedirects(false)
 			val con = aurl.openConnection() as HttpURLConnection
+			if (ignoreSslCertificates && (con is HttpsURLConnection)) {
+				con.hostnameVerifier = HostnameVerifier { _, _ -> true }
+				val context = SSLContext.getInstance("TLS")
+				context!!.init(null, arrayOf<TrustManager>(FakeHttpsTrustManager()), SecureRandom())
+				con.sslSocketFactory = context.socketFactory
+			}
+
 			con.requestMethod = method.name
 			//println(" --> [$id]${method.name}")
 			//println("URL:$url")
@@ -127,10 +146,10 @@ class HttpClientJvm : HttpClient() {
 
 			val acontent = produceConsumer.toAsyncInputStream()
 			Response(
-				status = con.responseCode,
-				statusText = con.responseMessage,
-				headers = pheaders,
-				content = if (length != null) acontent.withLength(length) else acontent
+					status = con.responseCode,
+					statusText = con.responseMessage,
+					headers = pheaders,
+					content = if (length != null) acontent.withLength(length) else acontent
 			)
 		}
 		return result
