@@ -51,7 +51,7 @@ object Base64 {
 		return m
 	}
 
-	fun encode(src: String, charset: Charset): String = encode(src, Charsets.UTF_8)
+	fun encode(src: String, charset: Charset): String = encode(src.toByteArray(charset))
 
 	@Suppress("UNUSED_CHANGED_VALUE")
 	fun encode(src: ByteArray): String {
