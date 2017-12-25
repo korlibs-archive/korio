@@ -558,7 +558,7 @@ suspend fun AsyncOutputStream.writeDoubleArray_be(array: DoubleArray) = writeByt
 
 suspend fun AsyncInputStream.readUntil(endByte: Byte, limit: Int = 0x1000): ByteArray {
 	val temp = ByteArray(1)
-	val out = ByteArrayBuilderSmall()
+	val out = ByteArrayBuilder()
 	try {
 		while (true) {
 			val c = run { readExact(temp, 0, 1); temp[0] }
@@ -575,7 +575,7 @@ suspend fun AsyncInputStream.readUntil(endByte: Byte, limit: Int = 0x1000): Byte
 
 suspend fun AsyncInputStream.readLine(eol: Char = '\n', charset: Charset = Charsets.UTF_8): String {
 	val temp = ByteArray(1)
-	val out = ByteArrayBuilderSmall()
+	val out = ByteArrayBuilder()
 	try {
 		while (true) {
 			val c = run { readExact(temp, 0, 1); temp[0] }

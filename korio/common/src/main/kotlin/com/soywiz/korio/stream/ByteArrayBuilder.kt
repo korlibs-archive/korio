@@ -8,49 +8,55 @@ import kotlin.math.max
 //@Deprecated("", replaceWith = ReplaceWith("ByteArrayBuilder"))
 //typealias OptByteBuffer = ByteArrayBuilder
 
-class ByteArrayBuilder {
+class ByteArrayBuilder() {
 	private val chunks = arrayListOf<ByteArray>()
+	private val small = Small()
 
-	var size: Int = 0; private set
+	val size get() = chunks.sumBy { it.size } + small.size
 
-	constructor() {
-	}
-
-	constructor(chunk: ByteArray) {
+	constructor(chunk: ByteArray) : this() {
 		append(chunk)
 	}
 
-	constructor(chunks: Iterable<ByteArray>) {
+	constructor(chunks: Iterable<ByteArray>) : this() {
 		for (chunk in chunks) append(chunk)
 	}
 
-	fun append(chunk: ByteArray) {
-		chunks += chunk
-		size += chunk.size
+	constructor(vararg chunks: ByteArray) : this() {
+		for (chunk in chunks) append(chunk)
+	}
+
+	private fun flush() {
+		if (small.size <= 0) return
+		chunks += small.toByteArray()
+		small.clear()
 	}
 
 	fun clear() {
 		chunks.clear()
-		size = 0
+		small.clear()
 	}
 
-	// @TODO: Optimize this. Maybe storing ranges instead of full arrays?
 	fun append(chunk: ByteArray, offset: Int, length: Int) {
+		flush()
 		val achunk = chunk.copyOfRange(offset, offset + length)
 		chunks += achunk
-		size += achunk.size
 	}
 
 	fun append(buffer: ByteArrayBuilder) {
-		for (c in buffer.chunks) append(c)
+		flush()
+		chunks += buffer.chunks
 	}
 
-	// @TODO: Optimize this. Maybe using a temporal array for this + storing ranges in arrays?
-	fun append(v: Byte) {
-		append(byteArrayOf(v))
-	}
+	fun append(chunk: ByteArray) = append(chunk, 0, chunk.size)
+	fun append(v: Byte) = small.append(v)
+
+	operator fun plusAssign(v: ByteArrayBuilder) = append(v)
+	operator fun plusAssign(v: ByteArray) = append(v)
+	operator fun plusAssign(v: Byte) = append(v)
 
 	fun toByteArray(): ByteArray {
+		flush()
 		val out = ByteArray(size)
 		var offset = 0
 		for (chunk in chunks) {
@@ -62,22 +68,51 @@ class ByteArrayBuilder {
 
 	// @TODO: Optimize this!
 	fun toString(charset: Charset): String = toByteArray().toString(charset)
+
+	private class Small(private var bytes: ByteArray, private var len: Int = 0) {
+		constructor(capacity: Int = 64) : this(ByteArray(capacity))
+
+		val size: Int get() = len
+
+		fun ensure(size: Int) {
+			if (len + size < bytes.size) return
+			bytes = bytes.copyOf(max(bytes.size + size, bytes.size * 2))
+		}
+
+		fun append(v: Byte) {
+			ensure(1)
+			bytes[len++] = v
+		}
+
+		fun clear() {
+			len = 0
+		}
+
+		fun toByteArray() = bytes.copyOf(len)
+
+		// @TODO: Optimize this!
+		fun toString(charset: Charset): String = toByteArray().toString(charset)
+	}
 }
 
+@Deprecated("", replaceWith = ReplaceWith("com.soywiz.korio.stream.ByteArrayBuilder"))
 class ByteArrayBuilderSmall(private var bytes: ByteArray, private var len: Int = 0) {
 	constructor(capacity: Int = 64) : this(ByteArray(capacity))
 
 	val size: Int get() = len
 
 	fun ensure(size: Int) {
-		if (len + size >= bytes.size) {
-			bytes = bytes.copyOf(max(bytes.size + size, bytes.size * 2))
-		}
+		if (len + size < bytes.size) return
+		bytes = bytes.copyOf(max(bytes.size + size, bytes.size * 2))
 	}
 
 	fun append(v: Byte) {
 		ensure(1)
 		bytes[len++] = v
+	}
+
+	fun clear() {
+		len = 0
 	}
 
 	fun toByteArray() = bytes.copyOf(len)
