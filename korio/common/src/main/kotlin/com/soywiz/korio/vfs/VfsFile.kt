@@ -16,7 +16,7 @@ import kotlin.reflect.KClass
 class VfsFile(
 	val vfs: Vfs,
 	path: String
-) : VfsNamed(path), AsyncInputOpenable {
+) : VfsNamed(path), AsyncInputOpenable, SuspendingSuspendSequence<VfsFile> {
 	val parent: VfsFile by lazy { VfsFile(vfs, pathInfo.folder) }
 	val root: VfsFile get() = vfs.root
 	val absolutePath: String by lazy { vfs.getAbsolutePath(path) }
@@ -118,6 +118,8 @@ class VfsFile(
 	suspend fun renameTo(dstPath: String) = vfs.rename(this.path, dstPath)
 
 	suspend fun list(): SuspendingSequence<VfsFile> = vfs.list(path)
+
+	override suspend fun iterator(): SuspendingIterator<VfsFile> = list().iterator()
 
 	suspend fun listRecursive(filter: (VfsFile) -> Boolean = { true }): SuspendingSequence<VfsFile> {
 		return asyncGenerate {

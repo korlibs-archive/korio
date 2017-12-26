@@ -13,6 +13,10 @@ interface SuspendingSequence<out T> {
 	operator fun iterator(): SuspendingIterator<T>
 }
 
+interface SuspendingSuspendSequence<out T> {
+	operator suspend fun iterator(): SuspendingIterator<T>
+}
+
 interface SuspendingIterator<out T> {
 	suspend operator fun hasNext(): Boolean
 	suspend operator fun next(): T
