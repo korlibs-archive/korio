@@ -172,7 +172,15 @@ actual object KorioNative {
 		}
 
 		actual fun deflate(data: ByteArray, level: Int): ByteArray {
-			return DeflaterInputStream(ByteArrayInputStream(data), Deflater(level)).readBytes()
+			val s = DeflaterInputStream(ByteArrayInputStream(data), Deflater(level))
+			val buffer = ByteArray((data.size * 1.1).toInt() + 1024)
+			var pos = 0
+			while (true) {
+				val read = s.read(buffer, pos, buffer.size - pos)
+				if (read <= 0) break
+				pos += read
+			}
+			return buffer.copyOf(pos)
 		}
 	}
 
