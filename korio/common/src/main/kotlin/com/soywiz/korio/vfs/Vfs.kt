@@ -2,7 +2,10 @@
 
 package com.soywiz.korio.vfs
 
-import com.soywiz.korio.async.*
+import com.soywiz.korio.async.SuspendingSequence
+import com.soywiz.korio.async.asyncGenerate
+import com.soywiz.korio.async.spawn
+import com.soywiz.korio.async.toAsync
 import com.soywiz.korio.error.invalidOp
 import com.soywiz.korio.error.unsupported
 import com.soywiz.korio.lang.Closeable
@@ -25,25 +28,25 @@ abstract class Vfs {
 	fun file(path: String) = root[path]
 
 	fun createExistsStat(
-		path: String, isDirectory: Boolean, size: Long, device: Long = -1, inode: Long = -1, mode: Int = 511,
-		owner: String = "nobody", group: String = "nobody", createTime: Long = 0L, modifiedTime: Long = createTime,
-		lastAccessTime: Long = modifiedTime, extraInfo: Any? = null
+			path: String, isDirectory: Boolean, size: Long, device: Long = -1, inode: Long = -1, mode: Int = 511,
+			owner: String = "nobody", group: String = "nobody", createTime: Long = 0L, modifiedTime: Long = createTime,
+			lastAccessTime: Long = modifiedTime, extraInfo: Any? = null
 	) = VfsStat(
-		file = file(path), exists = true, isDirectory = isDirectory, size = size, device = device, inode = inode,
-		mode = mode, owner = owner, group = group, createTime = createTime, modifiedTime = modifiedTime,
-		lastAccessTime = lastAccessTime, extraInfo = extraInfo
+			file = file(path), exists = true, isDirectory = isDirectory, size = size, device = device, inode = inode,
+			mode = mode, owner = owner, group = group, createTime = createTime, modifiedTime = modifiedTime,
+			lastAccessTime = lastAccessTime, extraInfo = extraInfo
 	)
 
 	fun createNonExistsStat(path: String, extraInfo: Any? = null) = VfsStat(
-		file = file(path), exists = false, isDirectory = false, size = 0L,
-		device = -1L, inode = -1L, mode = 511, owner = "nobody", group = "nobody",
-		createTime = 0L, modifiedTime = 0L, lastAccessTime = 0L, extraInfo = extraInfo
+			file = file(path), exists = false, isDirectory = false, size = 0L,
+			device = -1L, inode = -1L, mode = 511, owner = "nobody", group = "nobody",
+			createTime = 0L, modifiedTime = 0L, lastAccessTime = 0L, extraInfo = extraInfo
 	)
 
 	@Suppress("UNCHECKED_CAST")
 	suspend open fun <T : Any> readSpecial(path: String, clazz: KClass<T>): T =
-		(vfsSpecialReadersMap[clazz]?.readSpecial(this, path) as? T?)
-			?: invalidOp("Don't know how to readSpecial $clazz")
+			(vfsSpecialReadersMap[clazz]?.readSpecial(this, path) as? T?)
+					?: invalidOp("Don't know how to readSpecial $clazz")
 
 	suspend open fun exec(path: String, cmdAndArgs: List<String>, handler: VfsProcessHandler = VfsProcessHandler()): Int = throw UnsupportedOperationException()
 	suspend open fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler = VfsProcessHandler()): Int = throw UnsupportedOperationException()
@@ -69,7 +72,7 @@ abstract class Vfs {
 		try {
 			s.position = range.start
 			val readCount = min(Int.MAX_VALUE.toLong() - 1,
-				(range.endInclusive - range.start)
+					(range.endInclusive - range.start)
 			).toInt() + 1
 
 			return s.readBytesUpTo(readCount)
@@ -88,6 +91,10 @@ abstract class Vfs {
 		}
 	}
 
+	suspend fun put(path: String, content: ByteArray, attributes: List<Attribute> = listOf()): Long {
+		return put(path, content.openAsync(), attributes)
+	}
+
 	suspend fun readChunk(path: String, offset: Long, size: Int): ByteArray {
 		val s = open(path, VfsOpenMode.READ)
 		if (offset != 0L) s.setPosition(offset)
@@ -95,10 +102,9 @@ abstract class Vfs {
 	}
 
 	suspend fun writeChunk(path: String, data: ByteArray, offset: Long, resize: Boolean): Unit {
-		val s = open(path, VfsOpenMode.CREATE)
+		val s = open(path, if (resize) VfsOpenMode.CREATE_OR_TRUNCATE else VfsOpenMode.CREATE)
 		s.setPosition(offset)
 		s.writeBytes(data)
-		if (resize) s.setLength(s.getPosition())
 	}
 
 	suspend open fun setSize(path: String, size: Long): Unit {

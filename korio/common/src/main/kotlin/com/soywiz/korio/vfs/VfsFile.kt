@@ -32,12 +32,14 @@ class VfsFile(
 
 	suspend fun put(content: AsyncInputStream, attributes: List<Vfs.Attribute> = listOf()): Long = vfs.put(path, content, attributes)
 	suspend fun put(content: AsyncInputStream, vararg attributes: Vfs.Attribute): Long = vfs.put(path, content, attributes.toList())
-	suspend fun write(data: ByteArray, vararg attributes: Vfs.Attribute): Long = put(data.openAsync(), *attributes)
+	suspend fun write(data: ByteArray, vararg attributes: Vfs.Attribute): Long = vfs.put(path, data, attributes.toList())
 
-	suspend fun writeBytes(data: ByteArray, vararg attributes: Vfs.Attribute): Long = put(data.openAsync(), *attributes)
+	suspend fun writeBytes(data: ByteArray, vararg attributes: Vfs.Attribute): Long = vfs.put(path, data, attributes.toList())
 	suspend fun writeStream(src: AsyncStream, vararg attributes: Vfs.Attribute): Long = run { put(src, *attributes); src.getLength() }
 	suspend fun writeStream(src: AsyncInputStream, vararg attributes: Vfs.Attribute): Long = put(src, *attributes)
 	suspend fun writeFile(file: VfsFile, vararg attributes: Vfs.Attribute): Long = file.copyTo(this, *attributes)
+
+	suspend fun listNames(): List<String> = list().toList().map { it.basename }
 
 	suspend fun copyTo(target: AsyncOutputStream) = this.openUse { this.copyTo(target) }
 	suspend fun copyTo(target: VfsFile, vararg attributes: Vfs.Attribute): Long {

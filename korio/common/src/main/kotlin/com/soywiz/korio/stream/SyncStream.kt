@@ -362,7 +362,7 @@ fun SyncOutputStream.writeF64_be(v: Double): Unit = write(BYTES_TEMP.apply { BYT
 fun SyncStreamBase.toSyncStream(position: Long = 0L) = SyncStream(this, position)
 
 fun ByteArray.openSync(mode: String = "r"): SyncStream = MemorySyncStreamBase(ByteArrayBuffer(this)).toSyncStream(0L)
-fun ByteArray.openAsync(mode: String = "r"): AsyncStream = openSync(mode).toAsync()
+fun ByteArray.openAsync(mode: String = "r"): AsyncStream = MemoryAsyncStreamBase(ByteArrayBuffer(this)).toAsyncStream(0L)
 fun String.openAsync(charset: Charset = Charsets.UTF_8): AsyncStream = toByteArray(charset).openSync("r").toAsync()
 
 fun SyncOutputStream.writeStream(source: SyncInputStream): Unit = source.copyTo(this)

@@ -16,11 +16,10 @@ fun <T> Continuation<T>.toEventLoop(): Continuation<T> {
 	return object : Continuation<T> {
 		override val context: CoroutineContext = parent.context
 		override fun resume(value: T): Unit = run {
-			context.eventLoop.queue { parent.resume(value) }
+			context.eventLoop.queueContinuation(parent, value)
 		}
 		override fun resumeWithException(exception: Throwable): Unit = run {
-			val e = ExceptionHook.hook(exception)
-			context.eventLoop.queue { parent.resumeWithException(e) }
+			context.eventLoop.queueContinuationException(parent, ExceptionHook.hook(exception))
 		}
 	}
 }

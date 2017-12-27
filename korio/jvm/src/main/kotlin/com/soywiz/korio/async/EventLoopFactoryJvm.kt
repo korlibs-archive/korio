@@ -1,27 +1,79 @@
 package com.soywiz.korio.async
 
+import com.soywiz.kds.Pool
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.util.compareToChain
 import java.util.*
+import kotlin.coroutines.experimental.Continuation
 
 
 class EventLoopFactoryJvmAndCSharp : EventLoopFactory() {
 	override fun createEventLoop(): EventLoop = EventLoopJvmAndCSharp()
 }
 
+class ConcurrentSignal {
+	private val lock = java.lang.Object()
+
+	fun sleep(): Unit = run { synchronized(lock) { lock.wait() } }
+	fun sleep(timeout: Long): Unit = run { synchronized(lock) { lock.wait(timeout) } }
+	fun wake(): Unit = run { synchronized(lock) { lock.notifyAll() } }
+}
+
 class EventLoopJvmAndCSharp : EventLoop(captureCloseables = false) {
 	class Task(val time: Long, val callback: () -> Unit)
 
-	private val lock = Object()
+	private val lock = java.lang.Object()
+	val useLock = false
+	private val slock = ConcurrentSignal()
 
 	private val timedTasks = PriorityQueue<Task>(128, { a, b ->
 		if (a == b) 0 else a.time.compareTo(b.time).compareToChain { if (a == b) 0 else -1 }
 	})
 
-	private val immediateTasks = LinkedList<() -> Unit>()
+	class ImmediateTask {
+		var continuation: Continuation<*>? = null
+		var continuationResult: Any? = null
+		var continuationException: Throwable? = null
+		var callback: (() -> Unit)? = null
+
+		fun reset() {
+			continuation = null
+			continuationResult = null
+			continuationException = null
+			callback = null
+		}
+	}
+
+	private val immediateTasksPool = Pool({ it.reset() }) { ImmediateTask() }
+	private val immediateTasks = LinkedList<ImmediateTask>()
 
 	override fun setImmediateInternal(handler: () -> Unit) {
-		synchronized(lock) { immediateTasks += handler }
+		synchronized(lock) {
+			immediateTasks += immediateTasksPool.alloc().apply {
+				this.callback = handler
+			}
+		}
+		if (useLock) slock.wake()
+	}
+
+	override fun <T> queueContinuation(continuation: Continuation<T>, result: T): Unit {
+		synchronized(lock) {
+			immediateTasks += immediateTasksPool.alloc().apply {
+				this.continuation = continuation
+				this.continuationResult = result
+			}
+		}
+		if (useLock) slock.wake()
+	}
+
+	override fun <T> queueContinuationException(continuation: Continuation<T>, result: Throwable): Unit {
+		synchronized(lock) {
+			immediateTasks += immediateTasksPool.alloc().apply {
+				this.continuation = continuation
+				this.continuationException = result
+			}
+		}
+		if (useLock) slock.wake()
 	}
 
 	override fun setTimeoutInternal(ms: Int, callback: () -> Unit): Closeable {
@@ -43,16 +95,39 @@ class EventLoopJvmAndCSharp : EventLoop(captureCloseables = false) {
 					continue@timer
 				}
 				val task = synchronized(lock) { if (immediateTasks.isNotEmpty()) immediateTasks.removeFirst() else null } ?: break
-				task()
+				if (task.callback != null) {
+					task.callback?.invoke()
+				} else if (task.continuation != null) {
+					val cont = (task.continuation as? Continuation<Any?>)!!
+					if (task.continuationException != null) {
+						cont.resumeWithException(task.continuationException!!)
+					} else {
+						cont.resume(task.continuationResult)
+					}
+				}
+				synchronized(lock) {
+					immediateTasksPool.free(task)
+				}
 			}
 			break
 		}
 	}
 
+	var loopThread: Thread? = null
+
 	override fun loop() {
+		loopThread = Thread.currentThread()
+
 		while (synchronized(lock) { immediateTasks.isNotEmpty() || timedTasks.isNotEmpty() } || (tasksInProgress.get() != 0)) {
 			step(1)
-			Thread.sleep(1L)
+			if (useLock) {
+				if (synchronized(lock) { immediateTasks.isEmpty() }) {
+					slock.sleep(1L)
+				}
+			} else {
+				Thread.sleep(1L)
+			}
+
 			//println("immediateTasks: ${immediateTasks.size}, timedTasks: ${timedTasks.size}, tasksInProgress: ${tasksInProgress.get()}")
 		}
 		//_workerLazyPool?.shutdown()

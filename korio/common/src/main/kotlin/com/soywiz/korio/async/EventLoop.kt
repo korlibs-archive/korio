@@ -114,6 +114,9 @@ abstract class EventLoop(val captureCloseables: Boolean) : Closeable {
 
 	fun queue(handler: () -> Unit): Unit = setImmediate(handler)
 
+	open fun <T> queueContinuation(continuation: Continuation<T>, result: T): Unit = queue { continuation.resume(result) }
+	open fun <T> queueContinuationException(continuation: Continuation<T>, result: Throwable): Unit = queue { continuation.resumeWithException(result) }
+
 	fun animationFrameLoop(callback: () -> Unit): Closeable {
 		var closeable: Closeable? = null
 		var step: (() -> Unit)? = null
