@@ -17,7 +17,7 @@ open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
 
 	suspend override fun stat(path: String): VfsStat {
 		for (vfs in vfsList) {
-			val result = ignoreErrors { vfs[path].stat() } ?: continue
+			val result = vfs[path].stat()
 			if (result.exists) return result.copy(file = file(path))
 		}
 		return createNonExistsStat(path)
