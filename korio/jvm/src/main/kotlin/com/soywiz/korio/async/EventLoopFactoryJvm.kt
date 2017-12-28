@@ -130,9 +130,10 @@ class EventLoopJvmAndCSharp : EventLoop(captureCloseables = false) {
 
 			//println("immediateTasks: ${immediateTasks.size}, timedTasks: ${timedTasks.size}, tasksInProgress: ${tasksInProgress.get()}")
 		}
+
+		//_workerLazyPool?.shutdownNow()
 		//_workerLazyPool?.shutdown()
 		//_workerLazyPool?.awaitTermination(5, TimeUnit.SECONDS);
-		_workerLazyPool?.shutdownNow()
 	}
 }
 
