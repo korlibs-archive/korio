@@ -6,27 +6,27 @@ import java.util.concurrent.Executor
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
-var _workerLazyPool: ExecutorService? = null
-val workerLazyPool: ExecutorService by lazy {
-	//val pool = Executors.newCachedThreadPool()
-	val pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
-	_workerLazyPool = pool
-	//Runtime.getRuntime().addShutdownHook(object : Thread() {
-	//	override fun run() = pool.shutdown()
-	//})
-	pool
-}
+//var _workerLazyPool: ExecutorService? = null
+//val workerLazyPool: ExecutorService by lazy {
+//	//val pool = Executors.newCachedThreadPool()
+//	val pool = Executors.newFixedThreadPool(Runtime.getRuntime().availableProcessors())
+//	_workerLazyPool = pool
+//	//Runtime.getRuntime().addShutdownHook(object : Thread() {
+//	//	override fun run() = pool.shutdown()
+//	//})
+//	pool
+//}
 
-fun Executor.executeUpdatingTasksInProgress(action: () -> Unit) {
-	tasksInProgress.incrementAndGet()
-	this.execute {
-		try {
-			action()
-		} finally {
-			tasksInProgress.decrementAndGet()
-		}
-	}
-}
+//fun Executor.executeUpdatingTasksInProgress(action: () -> Unit) {
+//	tasksInProgress.incrementAndGet()
+//	this.execute {
+//		try {
+//			action()
+//		} finally {
+//			tasksInProgress.decrementAndGet()
+//		}
+//	}
+//}
 
 fun <T> Promise<T>.jvmSyncAwait(): T {
 	var completed = false

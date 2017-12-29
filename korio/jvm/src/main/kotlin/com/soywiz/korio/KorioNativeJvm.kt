@@ -95,10 +95,19 @@ actual object KorioNative {
 	}
 
 	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T = _executeInside(callback) { body ->
-		workerLazyPool.executeUpdatingTasksInProgress {
+		Thread {
 			body()
+		}.apply {
+			isDaemon = true
+			start()
 		}
 	}
+
+	//actual suspend fun <T> executeInWorker(callback: suspend () -> T): T = _executeInside(callback) { body ->
+	//	workerLazyPool.executeUpdatingTasksInProgress {
+	//		body()
+	//	}
+	//}
 
 	actual val platformName: String = "jvm"
 	actual val rawOsName: String by lazy { System.getProperty("os.name") }
