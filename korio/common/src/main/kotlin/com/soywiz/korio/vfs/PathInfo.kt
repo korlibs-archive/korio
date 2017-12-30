@@ -25,7 +25,8 @@ class PathInfo(val fullpath: String) {
 	val fullnameWithoutCompoundExtension: String by lazy { folderWithSlash + basenameWithoutCompoundExtension }
 	val basenameWithoutCompoundExtension: String by lazy { basename.substringBefore('.', basename) }
 
-	fun basenameWithExtension(ext: String): String = if (ext.isEmpty()) pathWithoutExtension else "$pathWithoutExtension.$ext"
+	fun basenameWithExtension(ext: String): String = if (ext.isEmpty()) basenameWithoutExtension else "$basenameWithoutExtension.$ext"
+	fun basenameWithCompoundExtension(ext: String): String = if (ext.isEmpty()) basenameWithoutCompoundExtension else "$basenameWithoutCompoundExtension.$ext"
 
 	val extension: String by lazy { basename.substringAfterLast('.', "") }
 	val extensionLC: String by lazy { extension.toLowerCase() }

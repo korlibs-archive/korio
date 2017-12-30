@@ -88,4 +88,20 @@ class PathInfoTest {
 		assertEquals(listOf("a", "a/b", "a/b/c"), PathInfo("a/b/c").getFullComponents())
 		assertEquals(listOf("a", "a/b", "a/b/"), PathInfo("a/b/").getFullComponents())
 	}
+
+	@Test
+	fun basenameWithExtension() {
+		assertEquals("c.jpg", PathInfo("a/b/c.txt").basenameWithExtension("jpg"))
+		assertEquals("c.jpg", PathInfo("a/b/c").basenameWithExtension("jpg"))
+		assertEquals("c", PathInfo("a/b/c.txt").basenameWithExtension(""))
+		assertEquals("c", PathInfo("a/b/c").basenameWithExtension(""))
+	}
+
+	@Test
+	fun pathWithExtension() {
+		assertEquals("a/b/c.jpg", PathInfo("a/b/c.txt").pathWithExtension("jpg"))
+		assertEquals("a/b/c.jpg", PathInfo("a/b/c").pathWithExtension("jpg"))
+		assertEquals("a/b/c", PathInfo("a/b/c.txt").pathWithExtension(""))
+		assertEquals("a/b/c", PathInfo("a/b/c").pathWithExtension(""))
+	}
 }
