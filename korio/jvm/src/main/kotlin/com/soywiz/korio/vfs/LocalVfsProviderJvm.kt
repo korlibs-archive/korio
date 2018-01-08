@@ -126,7 +126,7 @@ class LocalVfsJvm : LocalVfs() {
 		}
 	}
 
-	suspend override fun list(path: String): SuspendingSequence<VfsFile> = executeInWorker { File(path).listFiles().map { that.file("$path/${it.name}") }.toAsync() }
+	suspend override fun list(path: String): SuspendingSequence<VfsFile> = executeInWorker { (File(path).listFiles() ?: arrayOf()).map { that.file("$path/${it.name}") }.toAsync() }
 	suspend override fun mkdir(path: String, attributes: List<Attribute>): Boolean = executeInWorker { resolveFile(path).mkdir() }
 	suspend override fun touch(path: String, time: Long, atime: Long): Unit = executeInWorker { resolveFile(path).setLastModified(time); Unit }
 	suspend override fun delete(path: String): Boolean = executeInWorker { resolveFile(path).delete() }
