@@ -1,5 +1,5 @@
 buildscript {
-	ext.projectVersion = '0.19.0-SNAPSHOT'
+	ext.projectVersion = '0.19.0'
 	ext.projectName = 'korio'
 	ext.projectGroup = 'com.soywiz'
 	ext.projectDesc = 'Korio: Kotlin cORoutines I/O : Streams + Async TCP Client/Server + Virtual File System for JVM, Node.JS and Browser'
