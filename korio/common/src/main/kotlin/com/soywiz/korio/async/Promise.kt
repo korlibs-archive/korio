@@ -1,10 +1,10 @@
 package com.soywiz.korio.async
 
+import com.soywiz.kds.Queue
 import com.soywiz.korio.CancellationException
 import com.soywiz.korio.coroutine.Continuation
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.korioSuspendCoroutine
-import com.soywiz.kds.LinkedList
 import com.soywiz.korio.lang.Console
 import com.soywiz.korio.lang.printStackTrace
 import com.soywiz.korio.util.Cancellable
@@ -47,19 +47,19 @@ class Promise<T : Any?> : Cancellable {
 	private var value: T? = null
 	private var error: Throwable? = null
 	private var done: Boolean = false
-	private val resolvedHandlers = LinkedList<(T) -> Unit>()
-	private val rejectedHandlers = LinkedList<(Throwable) -> Unit>()
+	private val resolvedHandlers = Queue<(T) -> Unit>()
+	private val rejectedHandlers = Queue<(Throwable) -> Unit>()
 
 	private fun flush() {
 		if (!done) return
 		if (error != null) {
 			while (true) {
-				val handler = synchronized(rejectedHandlers) { if (rejectedHandlers.isNotEmpty()) rejectedHandlers.removeFirst() else null } ?: break
+				val handler = synchronized(rejectedHandlers) { if (rejectedHandlers.size != 0) rejectedHandlers.dequeue() else null } ?: break
 				handler(error ?: RuntimeException())
 			}
 		} else {
 			while (true) {
-				val handler = synchronized(resolvedHandlers) { if (resolvedHandlers.isNotEmpty()) resolvedHandlers.removeFirst() else null } ?: break
+				val handler = synchronized(resolvedHandlers) { if (resolvedHandlers.size != 0) resolvedHandlers.dequeue() else null } ?: break
 				handler(value as T)
 			}
 		}
@@ -71,7 +71,7 @@ class Promise<T : Any?> : Cancellable {
 			this.error = error
 			this.done = true
 
-			if (error != null && synchronized(resolvedHandlers) { this.rejectedHandlers.isEmpty() } && error !is com.soywiz.korio.CancellationException) {
+			if (error != null && synchronized(resolvedHandlers) { this.rejectedHandlers.size == 0 } && error !is com.soywiz.korio.CancellationException) {
 				if (error !is CancellationException) {
 					Console.error("## Not handled Promise exception:")
 					error.printStackTrace()
@@ -84,27 +84,27 @@ class Promise<T : Any?> : Cancellable {
 	}
 
 	fun then(resolved: (T) -> Unit) {
-		synchronized(resolvedHandlers) { resolvedHandlers += resolved }
+		synchronized(resolvedHandlers) { resolvedHandlers.queue(resolved) }
 		flush()
 	}
 
 	fun always(resolved: () -> Unit) {
 		then(
-			resolved = { resolved() },
-			rejected = { resolved() }
+				resolved = { resolved() },
+				rejected = { resolved() }
 		)
 	}
 
 	fun then(resolved: (T) -> Unit, rejected: (Throwable) -> Unit) {
-		synchronized(resolvedHandlers) { resolvedHandlers += resolved }
-		synchronized(rejectedHandlers) { rejectedHandlers += rejected }
+		synchronized(resolvedHandlers) { resolvedHandlers.queue(resolved) }
+		synchronized(rejectedHandlers) { rejectedHandlers.queue(rejected) }
 		flush()
 	}
 
 	fun then(c: Continuation<T>) {
 		this.then(
-			resolved = { c.resume(it) },
-			rejected = { c.resumeWithException(it) }
+				resolved = { c.resume(it) },
+				rejected = { c.resumeWithException(it) }
 		)
 	}
 

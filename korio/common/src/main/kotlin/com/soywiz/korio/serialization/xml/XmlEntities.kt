@@ -1,6 +1,6 @@
 package com.soywiz.korio.serialization.xml
 
-import com.soywiz.kds.ext.flip
+import com.soywiz.kds.flip
 import com.soywiz.kds.lmapOf
 import com.soywiz.korio.util.StrReader
 import com.soywiz.korio.util.transform

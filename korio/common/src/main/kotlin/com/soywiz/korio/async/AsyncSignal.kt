@@ -1,18 +1,17 @@
 package com.soywiz.korio.async
 
-import com.soywiz.kds.LinkedList2
 import com.soywiz.korio.coroutine.CoroutineContext
 import com.soywiz.korio.coroutine.getCoroutineContext
 import com.soywiz.korio.lang.Closeable
 
 class AsyncSignal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
-	inner class Node(val once: Boolean, val item: suspend (T) -> Unit) : LinkedList2.Node<Node>(), Closeable {
+	inner class Node(val once: Boolean, val item: suspend (T) -> Unit) : Closeable {
 		override fun close() {
 			handlers.remove(this)
 		}
 	}
 
-	private var handlers = LinkedList2<Node>()
+	private var handlers = ArrayList<Node>()
 
 	val listenerCount: Int get() = handlers.size
 

@@ -1,7 +1,7 @@
 package com.soywiz.korio.serialization.xml
 
-import com.soywiz.kds.ext.toCaseInsensitiveTreeMap
 import com.soywiz.kds.lmapOf
+import com.soywiz.kds.toCaseInsensitiveTreeMap
 import com.soywiz.korio.Language
 import com.soywiz.korio.util.Indenter
 
@@ -59,8 +59,8 @@ data class Xml(val type: Type, val name: String, val attributes: Map<String, Str
 
 				val children = level().children
 				return children.firstOrNull { it.type == Xml.Type.NODE }
-					?: children.firstOrNull()
-					?: Xml.Text("")
+						?: children.firstOrNull()
+						?: Xml.Text("")
 			} catch (t: NoSuchElementException) {
 				println("ERROR: XML: $str thrown a NoSuchElementException")
 				return Xml.Text("!!ERRORED!!")

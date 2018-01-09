@@ -2,17 +2,18 @@
 
 package com.soywiz.korio.async
 
-import com.soywiz.kds.LinkedList2
 import com.soywiz.korio.lang.Closeable
 
 class Signal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
-	inner class Node(val once: Boolean, val item: (T) -> Unit) : LinkedList2.Node<Node>(), Closeable {
+	inner class Node(val once: Boolean, val item: (T) -> Unit) : Closeable {
 		override fun close() {
 			handlers.remove(this)
 		}
 	}
 
-	private var handlers = LinkedList2<Node>()
+	private var handlersToRun = ArrayList<Node>()
+	private var handlers = ArrayList<Node>()
+	private var handlersNoOnce = ArrayList<Node>()
 
 	val listenerCount: Int get() = handlers.size
 
@@ -29,11 +30,19 @@ class Signal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
 	}
 
 	operator fun invoke(value: T) {
-		val it = handlers.iterator()
-		while (it.hasNext()) {
-			val node = it.next()
-			if (node.once) it.remove()
-			node.item(value)
+		val oldHandlers = handlers
+		handlersNoOnce.clear()
+		handlersToRun.clear()
+		for (handler in oldHandlers) {
+			handlersToRun.add(handler)
+			if (!handler.once) handlersNoOnce.add(handler)
+		}
+		val temp = handlers
+		handlers = handlersNoOnce
+		handlersNoOnce = temp
+
+		for (handler in handlersToRun) {
+			handler.item(value)
 		}
 	}
 

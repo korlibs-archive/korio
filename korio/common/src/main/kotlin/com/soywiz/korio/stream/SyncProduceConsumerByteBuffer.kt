@@ -1,7 +1,7 @@
 package com.soywiz.korio.stream
 
+import com.soywiz.kds.Queue
 import com.soywiz.kmem.arraycopy
-import com.soywiz.kds.LinkedList
 import com.soywiz.korio.lang.Semaphore
 import com.soywiz.korio.util.indexOf
 import kotlin.math.min
@@ -13,7 +13,7 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 
 	private var current: ByteArray = EMPTY
 	private var currentPos = 0
-	private val buffers = LinkedList<ByteArray>()
+	private val buffers = Queue<ByteArray>()
 	private var availableInBuffers = 0
 	private val availableInCurrent: Int get() = current.size - currentPos
 
@@ -22,13 +22,13 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 	val available: Int get() = availableInCurrent + availableInBuffers
 
 	fun produce(data: ByteArray): Unit = synchronized(this) {
-		buffers += data
+		buffers.enqueue(data)
 		availableInBuffers += data.size
 		producedSema.release()
 	}
 
 	private fun useNextBuffer() = synchronized(this) {
-		current = if (buffers.isEmpty()) EMPTY else buffers.removeFirst()
+		current = if (buffers.size == 0) EMPTY else buffers.dequeue()
 		currentPos = 0
 		availableInBuffers -= current.size
 	}

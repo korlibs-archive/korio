@@ -139,10 +139,10 @@ object Yaml {
 			flush()
 			val indentStr = readWhile(Char::isWhitespace).replace("\t", "     ")
 			val indent = indentStr.length
-			if (indents.isEmpty() || indent > indents.last) {
+			if (indents.isEmpty() || indent > indents.last!!) {
 				indents += indent
 			} else {
-				while (indents.isNotEmpty() && indent < indents.last) indents.removeLast()
+				while (indents.isNotEmpty() && indent < indents.last!!) indents.removeLast()
 				if (indents.isEmpty()) invalidOp
 			}
 			val indentLevel = indents.size - 1
