@@ -5,6 +5,7 @@ inline fun Long.mask(): Long = (1L shl this.toInt()) - 1L
 fun Int.toUInt(): Long = this.toLong() and 0xFFFFFFFFL
 fun Int.getBits(offset: Int, count: Int): Int = (this ushr offset) and count.mask()
 fun Int.extract(offset: Int, count: Int): Int = (this ushr offset) and count.mask()
+@Deprecated("Use kmem extract8")
 fun Int.extract8(offset: Int): Int = (this ushr offset) and 0xFF
 fun Int.extract(offset: Int): Boolean = ((this ushr offset) and 1) != 0
 

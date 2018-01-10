@@ -14,8 +14,8 @@ import com.soywiz.korio.util.use
 import kotlin.reflect.KClass
 
 class VfsFile(
-	val vfs: Vfs,
-	path: String
+		val vfs: Vfs,
+		path: String
 ) : VfsNamed(path), AsyncInputOpenable, SuspendingSuspendSequence<VfsFile> {
 	val parent: VfsFile by lazy { VfsFile(vfs, pathInfo.folder) }
 	val root: VfsFile get() = vfs.root
@@ -92,15 +92,13 @@ class VfsFile(
 	suspend fun setAttributes(vararg attributes: Vfs.Attribute) = vfs.setAttributes(path, attributes.toList())
 
 	suspend fun mkdir(attributes: List<Vfs.Attribute>) = vfs.mkdir(path, attributes)
-	suspend fun mkdirs(attributes: List<Vfs.Attribute>) {
-		if (!this.exists()) {
-			parent.mkdirs(attributes)
-			mkdir(attributes)
-		}
-	}
-
 	suspend fun mkdir(vararg attributes: Vfs.Attribute) = mkdir(attributes.toList())
-	suspend fun mkdirs(vararg attributes: Vfs.Attribute) = mkdirs(attributes.toList())
+
+	@Deprecated("Use mkdir instead", ReplaceWith("mkdir(attributes)"))
+	suspend fun mkdirs(attributes: List<Vfs.Attribute>) = mkdir(attributes)
+
+	@Deprecated("Use mkdir instead", ReplaceWith("mkdir(attributes)"))
+	suspend fun mkdirs(vararg attributes: Vfs.Attribute) = mkdir(attributes.toList())
 
 	suspend fun copyToTree(target: VfsFile, vararg attributes: Vfs.Attribute, notify: suspend (Pair<VfsFile, VfsFile>) -> Unit = {}): Unit {
 		notify(this to target)
@@ -115,7 +113,7 @@ class VfsFile(
 		}
 	}
 
-	suspend fun ensureParents() = this.apply { parent.mkdirs() }
+	suspend fun ensureParents() = this.apply { parent.mkdir() }
 
 	suspend fun renameTo(dstPath: String) = vfs.rename(this.path, dstPath)
 
