@@ -4,6 +4,6 @@ dependencies {
 	expectedBy project(":korio-common")
 	compile "com.soywiz:klock:$klockVersion"
 	compile "com.soywiz:korinject:$korinjectVersion"
-	compile "com.soywiz:kmem:$kmemVersion"
+	if (kmemVersion != '') compile "com.soywiz:kmem:$kmemVersion"
 	compile "com.soywiz:kds:$kdsVersion"
 }

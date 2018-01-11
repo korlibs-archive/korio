@@ -1,5 +1,6 @@
 package com.soywiz.korio.util
 
+import com.soywiz.kmem.insert
 import org.junit.Test
 import kotlin.test.assertEquals
 

@@ -3,6 +3,6 @@ apply plugin: 'kotlin-platform-common'
 dependencies {
 	compile "com.soywiz:klock-common:$klockVersion"
 	compile "com.soywiz:korinject-common:$korinjectVersion"
-	compile "com.soywiz:kmem-common:$kmemVersion"
+	if (kmemVersion != '') compile "com.soywiz:kmem-common:$kmemVersion"
 	compile "com.soywiz:kds-common:$kdsVersion"
 }

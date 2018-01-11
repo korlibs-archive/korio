@@ -84,7 +84,7 @@ class Promise<T : Any?> : Cancellable {
 	}
 
 	fun then(resolved: (T) -> Unit) {
-		synchronized(resolvedHandlers) { resolvedHandlers.queue(resolved) }
+		synchronized(resolvedHandlers) { resolvedHandlers.enqueue(resolved) }
 		flush()
 	}
 
@@ -96,8 +96,8 @@ class Promise<T : Any?> : Cancellable {
 	}
 
 	fun then(resolved: (T) -> Unit, rejected: (Throwable) -> Unit) {
-		synchronized(resolvedHandlers) { resolvedHandlers.queue(resolved) }
-		synchronized(rejectedHandlers) { rejectedHandlers.queue(rejected) }
+		synchronized(resolvedHandlers) { resolvedHandlers.enqueue(resolved) }
+		synchronized(rejectedHandlers) { rejectedHandlers.enqueue(rejected) }
 		flush()
 	}
 

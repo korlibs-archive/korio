@@ -1,6 +1,7 @@
 package com.soywiz.korio.util
 
 import com.soywiz.kmem.arraycopy
+import com.soywiz.kmem.toUnsigned
 import com.soywiz.korio.crypto.Hex
 import com.soywiz.korio.lang.Charsets
 import com.soywiz.korio.lang.toString

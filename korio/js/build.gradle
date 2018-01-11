@@ -4,7 +4,7 @@ dependencies {
 	expectedBy project(":korio-common")
 	compile "com.soywiz:klock-js:$klockVersion"
 	compile "com.soywiz:korinject-js:$korinjectVersion"
-	compile "com.soywiz:kmem-js:$kmemVersion"
+	if (kmemVersion != '') compile "com.soywiz:kmem-js:$kmemVersion"
 	compile "com.soywiz:kzlib-js:$kzlibVersion"
 	compile "com.soywiz:kds-js:$kdsVersion"
 }

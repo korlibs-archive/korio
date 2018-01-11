@@ -2,6 +2,7 @@
 
 package com.soywiz.korio.util
 
+import com.soywiz.kmem.*
 import com.soywiz.korio.crypto.Hex
 import kotlin.math.abs
 import kotlin.math.ceil
@@ -39,22 +40,8 @@ fun Long.toUintClamp(min: Int = 0, max: Int = Int.MAX_VALUE) = this.toIntClamp(0
 
 fun String.toNumber(): Number = this.toIntOrNull() as Number? ?: this.toLongOrNull() as Number? ?: this.toDoubleOrNull() as Number? ?: 0
 
-fun Byte.toUnsigned() = this.toInt() and 0xFF
-fun Int.toUnsigned() = this.toLong() and 0xFFFFFFFFL
-
-fun Int.signExtend(bits: Int) = (this shl (32 - bits)) shr (32 - bits)
-fun Long.signExtend(bits: Int) = (this shl (64 - bits)) shr (64 - bits)
-
 val Float.niceStr: String get() = if (this.toLong().toFloat() == this) "${this.toLong()}" else "$this"
 val Double.niceStr: String get() = if (this.toLong().toDouble() == this) "${this.toLong()}" else "$this"
-
-infix fun Int.umod(other: Int): Int {
-	val remainder = this % other
-	return when {
-		remainder < 0 -> remainder + other
-		else -> remainder
-	}
-}
 
 fun Double.convertRange(srcMin: Double, srcMax: Double, dstMin: Double, dstMax: Double): Double {
 	val ratio = (this - srcMin) / (srcMax - srcMin)
@@ -262,39 +249,15 @@ fun umul32_64(a: Int, b: Int, result: IntArray = IntArray(2)): IntArray {
 val Int.unsigned: Long get() = this.toLong() and 0xFFFFFFFF
 
 object BitUtils {
-	fun mask(value: Int): Int = (1 shl value) - 1
-	fun bitrev32(x: Int): Int {
-		var v = x
-		v = ((v ushr 1) and 0x55555555) or ((v and 0x55555555) shl 1); // swap odd and even bits
-		v = ((v ushr 2) and 0x33333333) or ((v and 0x33333333) shl 2); // swap consecutive pairs
-		v = ((v ushr 4) and 0x0F0F0F0F) or ((v and 0x0F0F0F0F) shl 4); // swap nibbles ...
-		v = ((v ushr 8) and 0x00FF00FF) or ((v and 0x00FF00FF) shl 8); // swap bytes
-		v = ((v ushr 16) and 0x0000FFFF) or ((v and 0x0000FFFF) shl 16); // swap 2-byte long pairs
-		return v;
-	}
-
-	fun rotr(value: Int, offset: Int): Int = (value ushr offset) or (value shl (32 - offset))
-
-	fun clz32(x: Int): Int {
-		var v = x
-		if (v == 0) return 32;
-		var result = 0;
-		// Binary search.
-		if ((v and 0xFFFF0000.toInt()) == 0) run { v = v shl 16; result += 16; }
-		if ((v and 0xFF000000.toInt()) == 0) run { v = v shl 8; result += 8; }
-		if ((v and 0xF0000000.toInt()) == 0) run { v = v shl 4; result += 4; }
-		if ((v and 0xC0000000.toInt()) == 0) run { v = v shl 2; result += 2; }
-		if ((v and 0x80000000.toInt()) == 0) run { v = v shl 1; result += 1; }
-		return result;
-	}
-
+	fun mask(value: Int): Int = value.mask()
+	fun bitrev32(x: Int): Int = x.reverseBits()
+	fun rotr(value: Int, offset: Int): Int = value.rotateRight(offset)
+	fun clz32(x: Int): Int = x.countLeadingZeros()
 	fun clo(x: Int): Int = clz32(x.inv())
 	fun clz(x: Int): Int = clz32(x)
 	fun seb(x: Int): Int = (x shl 24) shr 24
 	fun seh(x: Int): Int = (x shl 16) shr 16
-
 	fun wsbh(v: Int): Int = ((v and 0xFF00FF00.toInt()) ushr 8) or ((v and 0x00FF00FF) shl 8)
-
 	fun wsbw(v: Int): Int = (
 		((v and 0xFF000000.toInt()) ushr 24) or
 			((v and 0x00FF0000) ushr 8) or
@@ -317,19 +280,8 @@ infix fun Int.ule(that: Int) = IntEx.compareUnsigned(this, that) <= 0
 infix fun Int.ugt(that: Int) = IntEx.compareUnsigned(this, that) > 0
 infix fun Int.uge(that: Int) = IntEx.compareUnsigned(this, that) >= 0
 
+// @TODO: Move to Kmem
 fun Int.extractBool(offset: Int) = this.extract(offset, 1) != 0
 
-fun Int.bitReverse(): Int = BitUtils.bitrev32(this)
-fun Int.countLeadingZeros(): Int = BitUtils.clz(this)
-
-fun Int.countTrailingZeros(): Int {
-	var count = 0
-	var v = this
-	while ((v and 1) == 0) {
-		v = v shr 1
-		count++
-	}
-	return count
-}
-
+// @TODO: Move to Kmem
 infix fun Int.hasFlag(bits: Int) = (this and bits) == bits
