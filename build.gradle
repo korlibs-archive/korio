@@ -1,5 +1,5 @@
 buildscript {
-	ext.projectVersion = '0.19.2-SNAPSHOT'
+	ext.projectVersion = '0.20.0-SNAPSHOT'
 	ext.projectName = 'korio'
 	ext.projectGroup = 'com.soywiz'
 	ext.projectDesc = 'Korio: Kotlin cORoutines I/O : Streams + Async TCP Client/Server + Virtual File System for JVM, Node.JS and Browser'
@@ -10,13 +10,12 @@ buildscript {
 	ext.projectDevelName = 'Carlos Ballesteros Velasco'
 	ext.projectInceptionYear = 2017
 
-	ext.klockVersion = '0.4.4'
+	ext.klockVersion = '0.5.0'
 	ext.kmemVersion = ''
-	ext.kdsVersion = '0.5.0'
-	ext.korinjectVersion = '0.3.1'
-	ext.kzlibVersion = '0.3.1'
-	ext.kotlinVersion = '1.2.10'
-	//ext.dokkaVersion = '0.9.15'
+	ext.kdsVersion = '0.6.0'
+	ext.korinjectVersion = '0.5.0'
+	ext.kzlibVersion = '0.5.0'
+	ext.kotlinVersion = '1.2.20'
 
 	repositories {
 		mavenLocal()
@@ -26,7 +25,7 @@ buildscript {
 
 	dependencies {
 		classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
-		classpath "gradle.plugin.com.soywiz:korlibs-build-gradle-plugin:0.1.5"
+		classpath "gradle.plugin.com.soywiz:korlibs-build-gradle-plugin:0.1.7"
 	}
 }
 

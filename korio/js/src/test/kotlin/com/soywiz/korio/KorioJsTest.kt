@@ -1,8 +1,10 @@
 package com.soywiz.korio
 
-import kotlin.browser.window
+import com.soywiz.korinject.AsyncInjector
+import com.soywiz.korio.async.suspendTest
 import kotlin.js.Promise
 import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class KorioJsTest {
 	@Test
@@ -14,5 +16,22 @@ class KorioJsTest {
 				resolve("YAY!")
 			}, 1000);
 		}
+	}
+
+	@Test
+	fun demo() = suspendTest {
+		//assertEquals(true, false)
+		val injector = AsyncInjector()
+
+		class MyClass(var a: Int)
+		injector.mapPrototype {
+			sleep(10)
+			MyClass(99)
+		}
+
+		val a: MyClass = injector.get()
+		val b: MyClass = injector.get()
+		assertEquals(99, a.a)
+		assertEquals(99, b.a)
 	}
 }
