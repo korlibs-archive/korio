@@ -15,7 +15,8 @@ buildscript {
 	ext.kdsVersion = '0.6.0'
 	ext.korinjectVersion = '0.5.0'
 	ext.kzlibVersion = '0.5.0'
-	ext.kotlinVersion = '1.2.20'
+	ext.kloggerVersion = "0.5.0"
+	ext.kotlinVersion = '1.2.21'
 
 	repositories {
 		mavenLocal()
