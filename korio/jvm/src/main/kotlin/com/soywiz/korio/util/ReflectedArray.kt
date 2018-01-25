@@ -9,5 +9,5 @@ class ReflectedArray(val array: Any) {
 
 	val size: Int get() = java.lang.reflect.Array.getLength(array)
 	val length: Int get() = size
-	fun toList(): List<Any?> = (0 until length).map { get(it) }
+	fun toList(): List<Any?> = (0 until size).map { get(it) }
 }

@@ -160,6 +160,10 @@ fun SyncStream.toByteArray(): ByteArray {
 class MemorySyncStreamBase(var data: ByteArrayBuffer) : SyncStreamBase() {
 	constructor(initialCapacity: Int = 4096) : this(ByteArrayBuffer(initialCapacity))
 
+	var ilength: Int
+		get() = data.size
+		set(value) = run { data.size = value }
+
 	override var length: Long
 		get() = data.size.toLong()
 		set(value) = run { data.size = value.toInt() }
@@ -168,10 +172,11 @@ class MemorySyncStreamBase(var data: ByteArrayBuffer) : SyncStreamBase() {
 
 	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 		checkPosition(position)
-		if (position !in 0 until length) return 0
-		val end = min(this.length, position + len)
-		val actualLen = max((end - position).toInt(), 0)
-		arraycopy(this.data.data, position.toInt(), buffer, offset, actualLen)
+		val ipos = position.toInt()
+		if (position !in 0 until ilength) return 0
+		val end = min(this.ilength, ipos + len)
+		val actualLen = max((end - ipos), 0)
+		arraycopy(this.data.data, ipos, buffer, offset, actualLen)
 		return actualLen
 	}
 

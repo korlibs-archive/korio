@@ -59,7 +59,7 @@ class SyncStreamTest {
 		val out = MemorySyncStream()
 		for (v in values) out.writeU_VL(v)
 		out.position = 0
-		val readValues = (0 until values.size).map { out.readU_VL() }
+		val readValues = values.indices.map { out.readU_VL() }
 		assertEquals(values, readValues)
 	}
 
@@ -69,7 +69,7 @@ class SyncStreamTest {
 		val out = MemorySyncStream()
 		for (v in values) out.writeS_VL(v)
 		out.position = 0
-		val readValues = (0 until values.size).map { out.readS_VL() }
+		val readValues = values.indices.map { out.readS_VL() }
 		assertEquals(values, readValues)
 	}
 }

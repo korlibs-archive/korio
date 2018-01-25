@@ -519,8 +519,8 @@ suspend fun AsyncOutputStream.writeFile(source: VfsFile): Long = source.openUse(
 suspend fun AsyncInputStream.copyTo(target: AsyncOutputStream, chunkSize: Int = 0x10000): Long {
 	// Optimization to reduce suspensions
 	if (this is AsyncStream && base is MemoryAsyncStreamBase) {
-		target.write(base.data.data, position.toInt(), base._length - position.toInt())
-		return base._length.toLong()
+		target.write(base.data.data, position.toInt(), base.ilength - position.toInt())
+		return base.ilength.toLong()
 	}
 
 	val chunk = ByteArray(chunkSize)
@@ -635,23 +635,22 @@ fun AsyncInputStream.withLength(length: Long): AsyncInputStream {
 	}
 }
 
-
 class MemoryAsyncStreamBase(var data: ByteArrayBuffer) : AsyncStreamBase() {
 	constructor(initialCapacity: Int = 4096) : this(ByteArrayBuffer(initialCapacity))
 
-	var _length: Int
+	var ilength: Int
 		get() = data.size
 		set(value) = run { data.size = value }
 
-	suspend override fun setLength(value: Long) = run { _length = value.toInt() }
-	suspend override fun getLength(): Long = _length.toLong()
+	suspend override fun setLength(value: Long) = run { ilength = value.toInt() }
+	suspend override fun getLength(): Long = ilength.toLong()
 
 	fun checkPosition(position: Long) = run { if (position < 0) invalidOp("Invalid position $position") }
 
 	override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 		checkPosition(position)
-		if (position !in 0 until _length) return 0
-		val end = min(this._length.toLong(), position + len)
+		if (position !in 0 until ilength) return 0
+		val end = min(this.ilength.toLong(), position + len)
 		val actualLen = max((end - position).toInt(), 0)
 		arraycopy(this.data.data, position.toInt(), buffer, offset, actualLen)
 		return actualLen
