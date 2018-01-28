@@ -191,9 +191,13 @@ class MemorySyncStreamBase(var data: ByteArrayBuffer) : SyncStreamBase() {
 	override fun toString(): String = "MemorySyncStreamBase(${data.size})"
 }
 
-fun SyncStream.sliceWithStart(start: Long): SyncStream = sliceWithBounds(start, this.length)
-
+@Deprecated("Replace with sliceStart", ReplaceWith("sliceStart"))
 fun SyncStream.slice(): SyncStream = SyncStream(SliceSyncStreamBase(this.base, 0L, length))
+
+@Deprecated("Replace with sliceStart", ReplaceWith("sliceStart"))
+fun SyncStream.sliceWithStart(start: Long): SyncStream = sliceWithBounds(start, this.length)
+fun SyncStream.sliceStart(): SyncStream = sliceWithBounds(0L, this.length)
+fun SyncStream.sliceHere(): SyncStream = SyncStream(SliceSyncStreamBase(this.base, position, length))
 
 fun SyncStream.slice(range: IntRange): SyncStream = sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1))
 fun SyncStream.slice(range: LongRange): SyncStream = sliceWithBounds(range.start, (range.endInclusive + 1))

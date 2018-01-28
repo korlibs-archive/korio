@@ -240,10 +240,6 @@ class BufferedStreamBase(val base: AsyncStreamBase, val blockSize: Int = 2048, v
 	suspend override fun close() = base.close()
 }
 
-suspend fun AsyncStream.sliceWithStart(start: Long): AsyncStream {
-	return sliceWithBounds(start, this.getLength())
-}
-
 suspend fun AsyncStream.sliceWithSize(start: Long, length: Long): AsyncStream = sliceWithBounds(start, start + length)
 suspend fun AsyncStream.sliceWithSize(start: Int, length: Int): AsyncStream = sliceWithBounds(start.toLong(), (start + length).toLong())
 
@@ -262,7 +258,12 @@ suspend fun AsyncStream.sliceWithBounds(start: Long, end: Long): AsyncStream {
 	}
 }
 
+@Deprecated("Replace with sliceStart", ReplaceWith("sliceStart"))
 suspend fun AsyncStream.slice(): AsyncStream = this.sliceWithSize(0L, this.getLength())
+
+suspend fun AsyncStream.sliceWithStart(start: Long): AsyncStream = sliceWithBounds(start, this.getLength())
+suspend fun AsyncStream.sliceStart(): AsyncStream = this.sliceWithSize(0L, this.getLength())
+suspend fun AsyncStream.sliceHere(): AsyncStream = this.sliceWithSize(position, this.getLength())
 
 suspend fun AsyncStream.readSlice(length: Long): AsyncStream {
 	val start = getPosition()
