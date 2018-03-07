@@ -111,6 +111,8 @@ fun syncTest(block: suspend EventLoopTest.() -> Unit): Unit = suspendTest(block)
 @Deprecated("", ReplaceWith("suspendTest(block)"))
 fun syncTestIgnoreJs(block: suspend EventLoopTest.() -> Unit): Unit = suspendTestIgnoreJs(block)
 
+fun runBlocking(block: suspend EventLoopTest.() -> Unit): Unit = KorioNative.syncTest(block)
+
 fun suspendTest(block: suspend EventLoopTest.() -> Unit): Unit = KorioNative.syncTest(block)
 fun suspendTestIgnoreJs(block: suspend EventLoopTest.() -> Unit): Unit {
 	if (!OS.isJs) {
