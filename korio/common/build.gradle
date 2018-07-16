@@ -1,9 +1,0 @@
-apply plugin: 'kotlin-platform-common'
-
-dependencies {
-	compile "com.soywiz:klock-common:$klockVersion"
-	compile "com.soywiz:korinject-common:$korinjectVersion"
-	if (kmemVersion != '') compile "com.soywiz:kmem-common:$kmemVersion"
-	compile "com.soywiz:kds-common:$kdsVersion"
-	compile "com.soywiz:klogger-common:$kloggerVersion"
-}

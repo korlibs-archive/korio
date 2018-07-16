@@ -1,8 +1,0 @@
-apply plugin: 'kotlin-platform-jvm'
-//apply plugin: 'kotlin'
-
-dependencies {
-	compile project(":korio")
-	//testImplementation project(":korio-common")
-	compile "com.google.android:android:4.1.1.4"
-}
