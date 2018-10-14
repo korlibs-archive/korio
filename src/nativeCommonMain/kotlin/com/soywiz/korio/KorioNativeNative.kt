@@ -175,7 +175,7 @@ class LocalVfsNative : LocalVfs() {
 
 	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
 		val rpath = resolve(path)
-		var fd = platform.posix.fopen(rpath, mode.cmode) ?: throw FileNotFoundException("Can't find '$rpath'")
+		var fd: CPointer<FILE>? = platform.posix.fopen(rpath, mode.cmode) ?: throw FileNotFoundException("Can't find '$rpath'")
 
 		fun checkFd() {
 			if (fd == null) error("Error with file '$rpath'")
