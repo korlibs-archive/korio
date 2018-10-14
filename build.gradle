@@ -35,6 +35,8 @@ kotlin {
         }
     }
     sourceSets {
+		nativePosixAppleMain
+		nativePosixNonAppleMain
         nativeCommonMain
         nativeCommonTest
         nativePosixMain
@@ -44,7 +46,13 @@ kotlin {
         mingwX64Test {
             dependsOn nativeCommonTest
         }
-        configure([iosX64Main, iosArm32Main, iosArm64Main, macosX64Main, linuxX64Main]) {
+		configure([iosX64Main, iosArm32Main, iosArm64Main, macosX64Main]) {
+			dependsOn nativePosixAppleMain
+			dependsOn nativeCommonMain
+			dependsOn nativePosixMain
+		}
+        configure([linuxX64Main]) {
+			dependsOn nativePosixNonAppleMain
             dependsOn nativeCommonMain
             dependsOn nativePosixMain
         }
