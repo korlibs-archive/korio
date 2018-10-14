@@ -2,7 +2,7 @@ package com.soywiz.korio.stream
 
 import com.soywiz.kds.*
 import com.soywiz.kmem.*
-import com.soywiz.korio.*
+import com.soywiz.korio.concurrent.*
 import com.soywiz.korio.lang.Semaphore
 import com.soywiz.korio.util.*
 import kotlin.math.*
@@ -17,30 +17,31 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 	private val buffers = Queue<ByteArray>()
 	private var availableInBuffers = 0
 	private val availableInCurrent: Int get() = current.size - currentPos
+	private val lock = Lock()
 
 	private val producedSema = Semaphore(0)
 
 	val available: Int get() = availableInCurrent + availableInBuffers
 
-	fun produce(data: ByteArray): Unit = synchronized2(this) {
+	fun produce(data: ByteArray): Unit = lock {
 		buffers.enqueue(data)
 		availableInBuffers += data.size
 		producedSema.release()
 	}
 
-	private fun useNextBuffer() = synchronized2(this) {
+	private fun useNextBuffer() = lock {
 		current = if (buffers.size == 0) EMPTY else buffers.dequeue()
 		currentPos = 0
 		availableInBuffers -= current.size
 	}
 
-	private fun ensureCurrentBuffer() = synchronized2(this) {
+	private fun ensureCurrentBuffer() = lock {
 		if (availableInCurrent <= 0) {
 			useNextBuffer()
 		}
 	}
 
-	fun consume(data: ByteArray, offset: Int = 0, len: Int = data.size): Int = synchronized2(this) {
+	fun consume(data: ByteArray, offset: Int = 0, len: Int = data.size): Int = lock {
 		var totalRead = 0
 		var remaining = len
 		var outputPos = offset
@@ -60,7 +61,7 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 	fun consume(len: Int): ByteArray = ByteArray(len).run { this.copyOf(consume(this, 0, len)) }
 
 	fun consumeUntil(end: Byte, including: Boolean = true, limit: Int = Int.MAX_VALUE): ByteArray =
-		synchronized2(this) {
+		lock {
 			val out = ByteArrayBuilder()
 			while (true) {
 				ensureCurrentBuffer()
@@ -73,7 +74,7 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 				currentPos += len
 				if (p >= 0) break // found!
 			}
-			return@synchronized2 out.toByteArray()
+			return@lock out.toByteArray()
 		}
 
 	override fun write(buffer: ByteArray, offset: Int, len: Int) {

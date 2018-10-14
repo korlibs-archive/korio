@@ -3,6 +3,7 @@ package com.soywiz.korio.async
 import com.soywiz.kds.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.*
+import com.soywiz.korio.concurrent.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
@@ -25,16 +26,17 @@ open class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 	private val items = LinkedList<T?>()
 	private val consumers = LinkedList<(T?) -> Unit>()
 	private var closed = false
+	private val lock = Lock()
 
-	val availableCount get() = synchronized2(this) { items.size }
+	val availableCount get() = lock { items.size }
 
 	override fun produce(v: T) {
-		synchronized2(this) { items.addLast(v) }
+		lock { items.addLast(v) }
 		flush()
 	}
 
 	override fun close() {
-		synchronized2(this) {
+		lock {
 			items.addLast(null)
 			closed = true
 		}
@@ -46,7 +48,7 @@ open class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 			var done = false
 			var consumer: ((T?) -> Unit)? = null
 			var item: T? = null
-			synchronized2(this) {
+			lock {
 				if (consumers.isNotEmpty() && items.isNotEmpty()) {
 					consumer = consumers.removeFirst()
 					item = items.removeFirst()
@@ -66,13 +68,13 @@ open class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 		}
 		if (cancel != null) {
 			cancel {
-				synchronized2(this) {
+				lock {
 					consumers -= consumer
 				}
 				c.resumeWithException(CancellationException(""))
 			}
 		}
-		synchronized2(this) {
+		lock {
 			consumers += consumer
 		}
 		flush()
