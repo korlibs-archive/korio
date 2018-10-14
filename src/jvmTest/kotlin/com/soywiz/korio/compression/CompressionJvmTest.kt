@@ -42,9 +42,14 @@ class CompressionJvmTest {
 		assertEquals(expectedData, res2.toList().joinToString(""))
 	}
 
-	@Test fun compressGzipSync() = compressSync(GZIP)
-	@Test fun compressZlibSync() = compressSync(ZLib)
-	@Test fun compressDeflateSync() = compressSync(Deflate)
+	@Test
+	fun compressGzipSync() = compressSync(GZIP)
+
+	@Test
+	fun compressZlibSync() = compressSync(ZLib)
+
+	@Test
+	fun compressDeflateSync() = compressSync(Deflate)
 
 	fun compressSync(method: CompressionMethod) {
 		val str = "HELLO HELLO HELLO!"

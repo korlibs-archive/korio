@@ -4,7 +4,6 @@ import com.soywiz.kds.*
 import com.soywiz.korio.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.util.*
-import com.soywiz.korio.file.*
 
 data class Xml(
 	val type: Type,
@@ -66,8 +65,8 @@ data class Xml(
 
 				val children = level().children
 				return children.firstOrNull { it.type == Xml.Type.NODE }
-						?: children.firstOrNull()
-						?: Xml.Text("")
+					?: children.firstOrNull()
+					?: Xml.Text("")
 			} catch (t: NoSuchElementException) {
 				println("ERROR: XML: $str thrown a NoSuchElementException")
 				return Xml.Text("!!ERRORED!!")

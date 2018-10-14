@@ -3,7 +3,6 @@ package com.soywiz.korio.util
 import com.soywiz.klock.*
 import com.soywiz.korio.async.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.Deferred
 import kotlin.coroutines.*
 import kotlin.reflect.*
 

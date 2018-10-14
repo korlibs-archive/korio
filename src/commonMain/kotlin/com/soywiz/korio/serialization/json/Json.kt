@@ -2,18 +2,9 @@ package com.soywiz.korio.serialization.json
 
 import com.soywiz.korio.*
 import com.soywiz.korio.error.*
-import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.*
 import com.soywiz.korio.util.*
-import kotlin.collections.Iterable
-import kotlin.collections.LinkedHashMap
-import kotlin.collections.Map
-import kotlin.collections.arrayListOf
-import kotlin.collections.plusAssign
 import kotlin.collections.set
-import kotlin.collections.toList
-import kotlin.collections.withIndex
-import kotlin.math.*
 import kotlin.reflect.*
 
 object Json {
@@ -40,7 +31,8 @@ object Json {
 
 	fun decode(@Language("json") s: String): Any? = StrReader(s).decode()
 
-	inline fun <reified T : Any> decodeToType(@Language("json") s: String, mapper: ObjectMapper = Mapper): T = decodeToType(T::class, s, mapper)
+	inline fun <reified T : Any> decodeToType(@Language("json") s: String, mapper: ObjectMapper = Mapper): T =
+		decodeToType(T::class, s, mapper)
 
 	@Suppress("UNCHECKED_CAST")
 	@Deprecated("Put class first")
@@ -80,7 +72,8 @@ object Json {
 			}
 			'-', '+', in '0'..'9' -> {
 				unread()
-				val res = readWhile { (it in '0'..'9') || it == '.' || it == 'e' || it == 'E' || it == '-' || it == '+' }
+				val res =
+					readWhile { (it in '0'..'9') || it == '.' || it == 'e' || it == 'E' || it == '-' || it == '+' }
 				val dres = res.toDouble()
 				return if (dres.toInt().toDouble() == dres) dres.toInt() else dres
 			}
@@ -171,7 +164,7 @@ object Json {
 			}
 			is String -> b.inline(encodeString(obj))
 			is Number -> b.inline("$obj")
-		//else -> encodePretty(ClassFactory(obj::class).toMap(obj), b)
+			//else -> encodePretty(ClassFactory(obj::class).toMap(obj), b)
 			is CustomJsonSerializer -> {
 				b.inline(StringBuilder().apply { obj.encodeToJson(this) }.toString())
 			}

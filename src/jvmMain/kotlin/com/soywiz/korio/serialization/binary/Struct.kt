@@ -63,7 +63,7 @@ class StructReflect<T>(val clazz: Class<T>) {
 
 	val cf = ClassFactory(clazz)
 	val constructor = clazz.declaredConstructors.firstOrNull()
-			?: throw IllegalArgumentException("Class $clazz doesn't have constructors")
+		?: throw IllegalArgumentException("Class $clazz doesn't have constructors")
 	val fields = clazz.declaredFields
 	val globalBo = if (clazz.getAnnotation(LE::class.java) != null) {
 		ByteOrder.LITTLE_ENDIAN

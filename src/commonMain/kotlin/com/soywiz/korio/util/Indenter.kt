@@ -110,7 +110,11 @@ class Indenter(internal val actions: ArrayList<Action> = arrayListOf<Indenter.Ac
 		actions.add(Action.Unindent)
 	}
 
-	class IndenterEvaluator(val markHandler: ((sb: StringBuilder, line: Int, data: Any) -> Unit)?, val indentEmptyLines: Boolean, val doIndent: Boolean) {
+	class IndenterEvaluator(
+		val markHandler: ((sb: StringBuilder, line: Int, data: Any) -> Unit)?,
+		val indentEmptyLines: Boolean,
+		val doIndent: Boolean
+	) {
 		val out = StringBuilder()
 		var line = 0
 
@@ -170,7 +174,9 @@ class Indenter(internal val actions: ArrayList<Action> = arrayListOf<Indenter.Ac
 		return IndenterEvaluator(markHandler, indentEmptyLines, doIndent).apply { eval(actions) }.out.toString()
 	}
 
-	inline operator fun String.invoke(suffix: String = "", callback: () -> Unit) = line(this, after = suffix, callback = callback)
+	inline operator fun String.invoke(suffix: String = "", callback: () -> Unit) =
+		line(this, after = suffix, callback = callback)
+
 	inline operator fun String.unaryPlus() = line(this)
 
 	inline fun String.xml(callback: () -> Unit) {

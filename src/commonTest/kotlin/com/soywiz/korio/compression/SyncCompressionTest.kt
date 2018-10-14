@@ -1,6 +1,5 @@
 package com.soywiz.korio.compression
 
-import com.soywiz.korio.*
 import kotlin.test.*
 
 class SyncCompressionTest {

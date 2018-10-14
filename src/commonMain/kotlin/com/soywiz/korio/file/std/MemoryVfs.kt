@@ -6,7 +6,6 @@ import com.soywiz.kds.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.file.*
 
 fun MemoryVfs(items: Map<String, AsyncStream> = lmapOf(), caseSensitive: Boolean = true): VfsFile {
 	val vfs = NodeVfs(caseSensitive)

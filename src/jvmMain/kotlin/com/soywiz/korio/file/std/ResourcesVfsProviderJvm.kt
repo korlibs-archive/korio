@@ -44,7 +44,7 @@ class ResourcesVfsProviderJvm {
 					private fun normalize(path: String): String = path.trim('/')
 
 					private fun getResourceAsStream(npath: String) = classLoader.getResourceAsStream(npath)
-							?: invalidOp("Can't find '$npath' in ResourcesVfsProviderJvm")
+						?: invalidOp("Can't find '$npath' in ResourcesVfsProviderJvm")
 
 					override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream = executeInWorker {
 						val npath = normalize(path)

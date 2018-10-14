@@ -2,7 +2,6 @@ package com.soywiz.korio.util
 
 import com.soywiz.kmem.*
 import kotlin.test.*
-import kotlin.text.format
 
 class NumberExtTest {
 	@Test

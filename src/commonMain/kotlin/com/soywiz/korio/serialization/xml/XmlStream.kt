@@ -66,7 +66,7 @@ object XmlStream {
 							val close = (r.matchLit("/") != null) || processingEntityOrDocType
 							r.skipSpaces()
 							val name = r.matchIdentifier()
-									?: error("Couldn't match identifier after '<', offset=${r.pos}, around='${r.peek(10)}'")
+								?: error("Couldn't match identifier after '<', offset=${r.pos}, around='${r.peek(10)}'")
 							r.skipSpaces()
 							val attributes = lmapOf<String, String>()
 							while (r.peekChar() != '?' && r.peekChar() != '/' && r.peekChar() != '>') {
@@ -93,10 +93,14 @@ object XmlStream {
 							val openclose = r.matchLit("/") != null
 							val processingInstructionEnd = r.matchLit("?") != null
 							r.readExpect(">")
-							current = if (processingInstruction || processingEntityOrDocType) Element.ProcessingInstructionTag(name, attributes)
-							else if (openclose) Element.OpenCloseTag(name, attributes)
-							else if (close) Element.CloseTag(name)
-							else Element.OpenTag(name, attributes)
+							current =
+									if (processingInstruction || processingEntityOrDocType) Element.ProcessingInstructionTag(
+										name,
+										attributes
+									)
+									else if (openclose) Element.OpenCloseTag(name, attributes)
+									else if (close) Element.CloseTag(name)
+									else Element.OpenTag(name, attributes)
 							return
 						}
 					}

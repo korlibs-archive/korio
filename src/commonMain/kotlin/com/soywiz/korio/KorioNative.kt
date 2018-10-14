@@ -139,7 +139,7 @@ object KorioNativeDefaults {
 						val fline = cb.readUntil('\n'.toByte(), limit = LimitRequestFieldSize).toString(UTF8).trim()
 						//println("fline: $fline")
 						val match = HeaderRegex.matchEntire(fline)
-								?: throw IllegalStateException("Not a valid request '$fline'")
+							?: throw IllegalStateException("Not a valid request '$fline'")
 						val method = match.groupValues[1]
 						val url = match.groupValues[2]
 						val httpVersion = match.groupValues[3]

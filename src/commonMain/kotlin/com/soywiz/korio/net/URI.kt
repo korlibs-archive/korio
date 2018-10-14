@@ -1,7 +1,6 @@
 package com.soywiz.korio.net
 
 import com.soywiz.korio.file.*
-import com.soywiz.korio.file.*
 import com.soywiz.korio.util.*
 
 data class URI private constructor(

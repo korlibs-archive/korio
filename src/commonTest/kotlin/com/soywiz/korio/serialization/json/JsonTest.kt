@@ -137,7 +137,10 @@ class JsonTest {
 		//assertEquals("a", Json.decodeToType<String>("\"a\"", mapper))
 		//assertEquals('a', Json.decodeToType<Char>("\"a\"", mapper))
 
-		assertEquals(listOf(1, 2, 3, 4, 5).toString(), Json.decodeToType(List::class, """[1, 2, 3, 4, 5]""", mapper).toString())
+		assertEquals(
+			listOf(1, 2, 3, 4, 5).toString(),
+			Json.decodeToType(List::class, """[1, 2, 3, 4, 5]""", mapper).toString()
+		)
 		assertEquals(1, Json.decodeToType(Int::class, "1", mapper))
 		assertEquals(true, Json.decodeToType(Boolean::class, "true", mapper))
 		assertEquals("a", Json.decodeToType(String::class, "\"a\"", mapper))

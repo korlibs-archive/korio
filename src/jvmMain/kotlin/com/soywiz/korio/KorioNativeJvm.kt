@@ -12,11 +12,9 @@ import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
 import org.java_websocket.handshake.*
 import java.io.*
-import java.lang.*
 import java.nio.*
 import java.security.*
 import java.util.*
-import java.util.zip.*
 import javax.crypto.*
 import javax.crypto.spec.*
 import kotlin.coroutines.*
@@ -55,11 +53,12 @@ actual object KorioNative {
 
 	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T {
 		return withContext(newSingleThreadContext("worker")) {
-        callback()
-    }
+			callback()
+		}
 	}
 
-	actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit) = runBlocking(context) { callback() }
+	actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit) =
+		runBlocking(context) { callback() }
 
 	actual abstract class NativeThreadLocal<T> {
 		actual abstract fun initialValue(): T

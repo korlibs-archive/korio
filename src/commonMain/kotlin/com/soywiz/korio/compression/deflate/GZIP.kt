@@ -5,7 +5,6 @@ import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.crypto.*
 import com.soywiz.korio.error.*
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.*
 
 val GZIP = GZIPBase(true)
 val GZIPNoCrc = GZIPBase(false)

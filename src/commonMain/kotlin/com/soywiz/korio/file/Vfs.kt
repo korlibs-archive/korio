@@ -9,7 +9,6 @@ import com.soywiz.korio.file.std.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
-import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.math.*
 import kotlin.reflect.*
@@ -134,7 +133,8 @@ abstract class Vfs {
 		protected open suspend fun VfsFile.transform(): VfsFile = file(this.path)
 		//suspend protected fun transform2_f(f: VfsFile): VfsFile = transform(f)
 
-		override suspend fun getUnderlyingUnscapedFile(path: String): FinalVfsFile = access(path).transform().toUnscaped()
+		override suspend fun getUnderlyingUnscapedFile(path: String): FinalVfsFile =
+			access(path).transform().toUnscaped()
 
 		protected open suspend fun init() {
 		}

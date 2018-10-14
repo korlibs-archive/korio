@@ -55,7 +55,7 @@ fun <T : Any> runBlockingNoSuspensions(callback: suspend () -> T): T {
 
 	callback.startCoroutineUndispatched(object : Continuation<T?> {
 		override val context: CoroutineContext = object :
-				AbstractCoroutineContextElement(ContinuationInterceptor), ContinuationInterceptor, Delay {
+			AbstractCoroutineContextElement(ContinuationInterceptor), ContinuationInterceptor, Delay {
 			override val key: CoroutineContext.Key<*> = ContinuationInterceptor.Key
 
 			override fun <T> interceptContinuation(continuation: Continuation<T>): Continuation<T> {
@@ -67,8 +67,10 @@ fun <T : Any> runBlockingNoSuspensions(callback: suspend () -> T): T {
 				block.run()
 			}
 
-			override fun scheduleResumeAfterDelay(timeMillis: Long,
-												  continuation: CancellableContinuation<Unit>): Unit {
+			override fun scheduleResumeAfterDelay(
+				timeMillis: Long,
+				continuation: CancellableContinuation<Unit>
+			): Unit {
 				continuation.resume(Unit)
 			}
 		}
@@ -82,7 +84,8 @@ fun <T : Any> runBlockingNoSuspensions(callback: suspend () -> T): T {
 				exception.printStackTrace()
 			} else {
 				val value = result.getOrThrow()
-				val rvalue = value ?: (Unit as T) // @TODO: Kotlin-js BUG reteurns undefined instead of Unit! In runBlockingNoSuspensions { uncompress(i.toAsyncInputStream(), o.toAsyncOutputStream()) }
+				val rvalue = value
+					?: (Unit as T) // @TODO: Kotlin-js BUG reteurns undefined instead of Unit! In runBlockingNoSuspensions { uncompress(i.toAsyncInputStream(), o.toAsyncOutputStream()) }
 				//if (rvalue == null) error("ERROR: unexpected completed value=$value, rvalue=$rvalue, suspendCount=$suspendCount")
 				rresult = rvalue
 				completed = true

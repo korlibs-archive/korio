@@ -154,7 +154,10 @@ inline fun MemorySyncStreamToByteArray(initialCapacity: Int = 4096, callback: Sy
 	return buffer.toByteArray()
 }
 
-suspend inline fun MemorySyncStreamToByteArraySuspend(initialCapacity: Int = 4096, callback: suspend SyncStream.() -> Unit): ByteArray {
+suspend inline fun MemorySyncStreamToByteArraySuspend(
+	initialCapacity: Int = 4096,
+	callback: suspend SyncStream.() -> Unit
+): ByteArray {
 	val buffer = ByteArrayBuffer(initialCapacity)
 	val s = MemorySyncStream(buffer)
 	callback(s)

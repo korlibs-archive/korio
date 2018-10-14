@@ -21,7 +21,6 @@ import org.w3c.xhr.*
 import kotlin.browser.*
 import kotlin.collections.set
 import kotlin.coroutines.*
-import kotlin.coroutines.CoroutineContext
 import kotlin.reflect.*
 
 actual annotation class Synchronized

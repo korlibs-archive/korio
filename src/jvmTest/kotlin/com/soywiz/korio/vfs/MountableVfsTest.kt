@@ -3,7 +3,6 @@ package com.soywiz.korio.vfs
 import com.soywiz.korio.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.file.std.*
-import com.soywiz.korio.file.std.*
 import java.io.FileNotFoundException
 import kotlin.test.*
 

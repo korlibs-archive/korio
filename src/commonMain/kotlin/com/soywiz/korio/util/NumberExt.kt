@@ -3,7 +3,6 @@
 package com.soywiz.korio.util
 
 import com.soywiz.kmem.*
-import com.soywiz.korio.crypto.*
 import kotlin.math.*
 
 private val DIGITS = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ"

@@ -28,7 +28,8 @@ class XmlTest {
 
 	@kotlin.test.Test
 	fun name4() {
-		Xml("""
+		Xml(
+			"""
 			<?xml version="1.0" encoding="UTF-8"?>
 			<!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 1.1//EN" "http://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd">
 			<svg version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0" y="0" width="612" height="254" viewBox="0, 0, 612, 254">
@@ -52,7 +53,8 @@ class XmlTest {
 				<path d="M298,57 L321,57 L321,105 L365,57 L394,57 L351,103 L396,166 L368,166 L334,120 L322,133 L322,166 L298,166 L298,57 z" fill="#FFFFFF"/>
 			  </g>
 			</svg>
-		""".trimIndent())
+		""".trimIndent()
+		)
 	}
 
 }

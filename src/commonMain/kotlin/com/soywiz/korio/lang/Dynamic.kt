@@ -4,7 +4,8 @@ import com.soywiz.korio.serialization.*
 
 object Dynamic {
 	inline operator fun <T> invoke(callback: DynamicAccess.() -> T): T = DynamicAccess(callback)
-	inline operator fun <T, T2> invoke(value: T2, callback: DynamicAccess.(T2) -> T): T = DynamicAccess.run { callback(this, value) }
+	inline operator fun <T, T2> invoke(value: T2, callback: DynamicAccess.(T2) -> T): T =
+		DynamicAccess.run { callback(this, value) }
 
 	fun set(obj: Any?, key: Any?, value: Any?): Unit = when (obj) {
 		is MutableMap<*, *>, is MutableList<*> -> setUntyped(obj, key, value)
@@ -59,9 +60,9 @@ object Dynamic {
 	fun toBool(obj: Any?): Boolean = when (obj) {
 		is Boolean -> obj
 		is String -> when (obj.toLowerCase()) {
-		//"1", "true", "ok", "yes" -> true
+			//"1", "true", "ok", "yes" -> true
 			"", "0", "false", "ko", "no" -> false
-		//else -> false
+			//else -> false
 			else -> true
 		}
 		else -> toInt(obj) != 0

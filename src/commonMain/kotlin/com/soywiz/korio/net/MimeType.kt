@@ -2,7 +2,6 @@ package com.soywiz.korio.net
 
 import com.soywiz.kds.*
 import com.soywiz.korio.file.*
-import com.soywiz.korio.file.*
 
 class MimeType(val mime: String, val exts: List<String>) : Vfs.Attribute {
 	companion object {

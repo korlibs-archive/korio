@@ -68,6 +68,7 @@ fun ByteArray.syncUncompress(method: CompressionMethod): ByteArray = runBlocking
 //	println("ByteArray.syncUncompress: $out")
 	out
 }
+
 fun ByteArray.syncCompress(method: CompressionMethod, context: CompressionContext = CompressionContext()): ByteArray =
 	runBlockingNoSuspensions { method.compress(this, context) }
 
