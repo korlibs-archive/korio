@@ -3,9 +3,7 @@
 /build
 /out
 /classes
-/log.txt
-*.iml
+/web
 *.ipr
 *.iws
-.DS_Store
-
+*.iml
