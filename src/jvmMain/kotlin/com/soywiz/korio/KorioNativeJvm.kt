@@ -63,7 +63,7 @@ actual object KorioNative {
 	actual abstract class NativeThreadLocal<T> {
 		actual abstract fun initialValue(): T
 
-		val jthreadLocal = object : ThreadLocal<T>() {
+		val jthreadLocal = object : java.lang.ThreadLocal<T>() {
 			override fun initialValue(): T = this@NativeThreadLocal.initialValue()
 		}
 
