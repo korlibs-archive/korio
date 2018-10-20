@@ -168,7 +168,10 @@ fun suspendTest(callback: suspend () -> Unit) = KorioNative.suspendTest { callba
 fun suspendTest(context: CoroutineContext, callback: suspend () -> Unit) =
 	KorioNative.suspendTest { withContext(context) { callback() } }
 
-fun suspendTestExceptJs(callback: suspend () -> Unit) = if (OS.isJs) Unit else suspendTest(callback)
+fun suspendTestExceptJs(callback: suspend () -> Unit) = suspendTest {
+	if (OS.isJs) return@suspendTest
+	callback()
+}
 
 suspend fun launchImmediately(job: Job? = null, callback: suspend () -> Unit) =
 	launchImmediately(coroutineContext, job, callback)

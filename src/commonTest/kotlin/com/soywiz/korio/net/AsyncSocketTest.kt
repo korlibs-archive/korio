@@ -2,12 +2,15 @@ package com.soywiz.korio.net
 
 import com.soywiz.korio.async.*
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
 import kotlin.test.*
 
 class AsyncSocketTest {
 	@Test
-	fun testClientAndServer() = suspendTestExceptJs {
+	fun testClientAndServer() = suspendTest {
+		if (OS.isJs) return@suspendTest
+
 		var port = 0
 		val connected = CompletableDeferred<Unit>()
 		val readSignal = CompletableDeferred<Unit>()
