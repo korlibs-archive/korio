@@ -13,10 +13,20 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 			init_sockets()
 		}
 
-		operator fun invoke() = NativeSocket(platform.windows.socket(platform.windows.AF_INET, platform.windows.SOCK_STREAM, 0), Endpoint(IP(0, 0, 0, 0), 0))
+		operator fun invoke(): NativeSocket {
+			val socket = platform.windows.socket(platform.windows.AF_INET, platform.windows.SOCK_STREAM, platform.windows.IPPROTO_TCP)
+			return NativeSocket(socket, Endpoint(IP(0, 0, 0, 0), 0))
+		}
 		suspend fun connect(host: String, port: Int) = NativeSocket().apply { connect(host, port) }
 		suspend fun bound(host: String, port: Int) = NativeSocket().apply { bind(host, port) }
 		//suspend fun listen(host: String, port: Int) = NativeSocket().listen(host, port)
+
+		fun checkErrors(name: String = "") {
+			val error = platform.windows.WSAGetLastError()
+			if (error != 0) {
+				error("WSA error($name): $error")
+			}
+		}
 	}
 
 	data class Endpoint(val ip: IP, val port: Int) {
@@ -48,6 +58,7 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 					// gethostbyname unusable on windows
 					val addr = allocArray<LPADDRINFOVar>(1)
 					val res = platform.windows.getaddrinfo(host, null, null, addr)
+					checkErrors("getaddrinfo")
 					val info = addr[0]!!.pointed
 					val inetaddr = info.ai_addr!!.pointed.sa_data
 					return IP(
@@ -77,7 +88,9 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 			val ip = IP.fromHost(host)
 			val addr = allocArray<sockaddr_in>(1)
 			addr.set(ip, port)
-			val connected = platform.windows.connect(sockfd, addr as CValuesRef<sockaddr>?, sockaddr_in.size.convert())
+			//val connected = platform.windows.connect(sockfd, addr as CValuesRef<sockaddr>?, sockaddr_in.size.convert())
+			val connected = platform.windows.connect(sockfd, addr.uncheckedCast(), sockaddr_in.size.convert())
+			checkErrors("connect")
 			endpoint = Endpoint(ip, port)
 			setSocketBlockingEnabled(false)
 			if (connected != 0) {
@@ -94,7 +107,9 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 			val addr = alloc<sockaddr_in>()
 			addr.ptr.set(ip, port)
 			platform.posix.bind(sockfd, addr.ptr.reinterpret(), sockaddr_in.size.convert())
+			checkErrors("bind")
 			platform.posix.listen(sockfd, backlog)
+			checkErrors("listen")
 			setSocketBlockingEnabled(false)
 		}
 	}
@@ -112,6 +127,7 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 			val socklen = alloc<platform.windows.socklen_tVar>()
 			socklen.value = sockaddr.size.convert()
 			val fd = platform.posix.accept(sockfd, addr.ptr, socklen.ptr)
+			checkErrors("accept")
 			if (fd.toInt() < 0) {
 				val errno = posix_errno()
 				//println("accept: fd=$fd, errno=$errno")
@@ -131,6 +147,7 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 		get() = run {
 			val bytes_available = intArrayOf(0, 0)
 			platform.windows.ioctlsocket(sockfd, platform.windows.FIONREAD, bytes_available.refTo(0).uncheckedCast())
+			checkErrors("ioctlsocket")
 			bytes_available[0]
 		}
 
@@ -148,7 +165,9 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 	private var _connected = false
 
 	fun recv(data: ByteArray, offset: Int = 0, count: Int = data.size - offset): Int {
-		return platform.windows.recv(sockfd, data.refTo(offset), count.convert(), 0).convert()
+		val result = platform.windows.recv(sockfd, data.refTo(offset), count.convert(), 0).toInt()
+		checkErrors("recv")
+		return result
 	}
 
 	fun recv(count: Int): ByteArray {
@@ -175,7 +194,9 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 		if (count <= 0) return
 
 		memScoped {
-			val result = send(sockfd, data.refTo(offset), count.convert(), 0)
+			//val result = platform.windows.send(sockfd, data.refTo(offset), count.convert(), 0)
+			val result = platform.posix.send(sockfd, data.refTo(offset), count.convert(), 0)
+			checkErrors("send")
 			if (result < count) {
 				_connected = false
 				error("Socket write error")
@@ -185,6 +206,7 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 
 	fun close() {
 		platform.windows.closesocket(sockfd)
+		checkErrors("closesocket")
 		//platform.posix.shutdown(sockfd, SHUT_RDWR)
 		_connected = false
 	}
@@ -194,7 +216,9 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 		memScoped {
 			val mode = alloc<u_longVar>()
 			mode.value = if (blocking) 0.convert() else 1.convert()
-			return (platform.windows.ioctlsocket(sockfd, platform.windows.FIONBIO.convert(), mode.ptr) == 0)
+			val result = (platform.windows.ioctlsocket(sockfd, platform.windows.FIONBIO.convert(), mode.ptr) == 0)
+			checkErrors("ioctlsocket")
+			return result
 		}
 	}
 
@@ -204,7 +228,10 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 			val addressLength = alloc<platform.windows.socklen_tVar>()
 			addressLength.value = sockaddr_in.size.convert()
 			val result = platform.windows.getsockname(sockfd, localAddress.ptr.reinterpret(), addressLength.ptr)
-			if (result < 0) error("error getting local socket address")
+			checkErrors("getsockname")
+			if (result < 0) {
+				return Endpoint(IP(0, 0, 0, 0), 0)
+			}
 			val ip = localAddress.sin_addr.readValue()
 			val port = swapBytes(localAddress.sin_port)
 			//println("result: $result")

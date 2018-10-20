@@ -10,7 +10,7 @@ class AsyncSocketTest {
 	@Test
 	fun testClientAndServer() = suspendTest {
 		if (OS.isJs) return@suspendTest
-		if (OS.isWindows) return@suspendTest
+		if (OS.isWindows && OS.isNative) return@suspendTest
 
 		var port = 0
 		val connected = CompletableDeferred<Unit>()

@@ -52,7 +52,7 @@ actual object KorioNative {
 	}
 
 	actual val platformName: String get() = "native"
-	actual val rawOsName: String = "unknown"
+	actual val rawOsName: String = com.soywiz.korio.TARGET_INFO
 
 	actual fun getRandomValues(data: ByteArray): Unit {
 		for (n in 0 until data.size) {
