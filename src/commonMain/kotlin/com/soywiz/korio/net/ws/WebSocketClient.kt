@@ -17,6 +17,9 @@ abstract class WebSocketClient protected constructor(val url: String, val protoc
 	open suspend fun send(message: ByteArray): Unit = Unit
 }
 
+suspend fun WebSocketClient.readString() = onStringMessage.waitOne()
+suspend fun WebSocketClient.readBinary() = onBinaryMessage.waitOne()
+
 suspend fun WebSocketClient(
 	url: String,
 	protocols: List<String>? = null,
