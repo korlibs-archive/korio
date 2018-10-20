@@ -1,6 +1,5 @@
 package com.soywiz.korio
 
-import com.soywiz.korio.async.*
 import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.deflate.*
 import com.soywiz.korio.file.*
@@ -8,11 +7,8 @@ import com.soywiz.korio.file.std.*
 import com.soywiz.korio.net.*
 import com.soywiz.korio.net.http.*
 import com.soywiz.korio.net.ws.*
-import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
-import org.java_websocket.handshake.*
 import java.io.*
-import java.nio.*
 import java.security.*
 import java.util.*
 import javax.crypto.*
@@ -71,7 +67,7 @@ actual object KorioNative {
 		actual fun set(value: T) = jthreadLocal.set(value)
 	}
 
-	actual val systemLanguageStrings get() = listOf(Locale.getDefault().getISO3Language())
+	actual val systemLanguageStrings get() = listOf(Locale.getDefault().isO3Language)
 
 	actual val platformName: String = "jvm"
 	actual val rawOsName: String by lazy { System.getProperty("os.name") }
@@ -113,7 +109,7 @@ actual object KorioNative {
 	actual fun Thread_sleep(time: Long) = Thread.sleep(time)
 
 	actual val asyncSocketFactory: AsyncSocketFactory by lazy { JvmAsyncSocketFactory() }
-	actual val websockets: WebSocketClientFactory by lazy { JvmWebSocketClientFactory() }
+	actual val websockets: WebSocketClientFactory get() = com.soywiz.korio.net.ws.RawSocketWebSocketClientFactory
 	actual val File_separatorChar: Char by lazy { File.separatorChar }
 
 	actual fun uncompress(input: ByteArray, outputHint: Int, method: String): ByteArray {
@@ -151,6 +147,7 @@ actual object KorioNative {
 	}
 }
 
+/*
 class JvmWebSocketClientFactory : WebSocketClientFactory() {
 	override suspend fun create(
 		url: String,
@@ -208,5 +205,5 @@ class JvmWebSocketClientFactory : WebSocketClientFactory() {
 			if (res is Throwable) throw res
 		}
 	}
-
 }
+*/

@@ -10,9 +10,16 @@ import kotlin.coroutines.*
 
 val asyncSocketFactory: AsyncSocketFactory get() = KorioNative.asyncSocketFactory
 
+val ANY_PORT = 0
+
+suspend fun createTcpClient(host: String, port: Int, secure: Boolean = false): AsyncClient = asyncSocketFactory.createClient(secure).apply { connect(host, port) }
+
+suspend fun createTcpClient(secure: Boolean = false): AsyncClient = asyncSocketFactory.createClient(secure)
+suspend fun createTcpServer(port: Int = ANY_PORT, host: String = "127.0.0.1", backlog: Int = 511, secure: Boolean = false): AsyncServer = asyncSocketFactory.createServer(port, host, backlog, secure)
+
 abstract class AsyncSocketFactory {
-	abstract suspend fun createClient(): AsyncClient
-	abstract suspend fun createServer(port: Int, host: String = "127.0.0.1", backlog: Int = 511): AsyncServer
+	abstract suspend fun createClient(secure: Boolean = false): AsyncClient
+	abstract suspend fun createServer(port: Int, host: String = "127.0.0.1", backlog: Int = 511, secure: Boolean = false): AsyncServer
 }
 
 interface AsyncClient : AsyncInputStream, AsyncOutputStream, AsyncCloseable {
@@ -32,10 +39,10 @@ interface AsyncClient : AsyncInputStream, AsyncOutputStream, AsyncCloseable {
 	}
 
 	companion object {
-		suspend operator fun invoke(host: String, port: Int) = createAndConnect(host, port)
-		suspend fun create(): AsyncClient = asyncSocketFactory.createClient()
-		suspend fun createAndConnect(host: String, port: Int): AsyncClient {
-			val socket = asyncSocketFactory.createClient()
+		suspend operator fun invoke(host: String, port: Int, secure: Boolean = false) = createAndConnect(host, port, secure)
+		suspend fun create(secure: Boolean = false): AsyncClient = asyncSocketFactory.createClient(secure)
+		suspend fun createAndConnect(host: String, port: Int, secure: Boolean = false): AsyncClient {
+			val socket = asyncSocketFactory.createClient(secure)
 			socket.connect(host, port)
 			return socket
 		}
@@ -53,7 +60,16 @@ interface AsyncServer {
 			asyncSocketFactory.createServer(port, host, backlog)
 	}
 
-	suspend fun listen(handler: suspend (AsyncClient) -> Unit): Closeable
+	suspend fun accept(): AsyncClient
+
+	suspend fun listen(handler: suspend (AsyncClient) -> Unit): Closeable {
+		val job = launchImmediately {
+			while (true) {
+				handler(accept())
+			}
+		}
+		return Closeable { job.cancel() }
+	}
 
 	suspend fun listen(): SuspendingSequence<AsyncClient> {
 		val ctx = coroutineContext

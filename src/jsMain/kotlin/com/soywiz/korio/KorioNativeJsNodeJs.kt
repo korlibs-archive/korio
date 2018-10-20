@@ -238,12 +238,8 @@ class NodeJsAsyncServer : AsyncServer {
 	override val port: Int
 		get() = TODO("not implemented") //To change initializer of created properties use File | Settings | File Templates.
 
-	override suspend fun listen(handler: suspend (AsyncClient) -> Unit): Closeable {
+	override suspend fun accept(): AsyncClient {
 		TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
-	}
-
-	override suspend fun listen(): SuspendingSequence<AsyncClient> {
-		return super.listen()
 	}
 
 	suspend fun init(port: Int, host: String, backlog: Int): AsyncServer = this.apply {

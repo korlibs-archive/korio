@@ -11,8 +11,8 @@ import java.nio.channels.CompletionHandler
 import kotlin.coroutines.*
 
 class JvmAsyncSocketFactory : AsyncSocketFactory() {
-	override suspend fun createClient(): AsyncClient = JvmAsyncClient()
-	override suspend fun createServer(port: Int, host: String, backlog: Int): AsyncServer =
+	override suspend fun createClient(secure: Boolean): AsyncClient = JvmAsyncClient()
+	override suspend fun createServer(port: Int, host: String, backlog: Int, secure: Boolean): AsyncServer =
 		JvmAsyncServer(port, host, backlog).apply { init() }
 }
 
@@ -104,28 +104,20 @@ class JvmAsyncServer(override val requestPort: Int, override val host: String, o
 
 	override val port: Int get() = (ssc.localAddress as? InetSocketAddress)?.port ?: -1
 
-	override suspend fun listen(handler: suspend (AsyncClient) -> Unit): Closeable {
-		val ctx = coroutineContext
-		var running = true
-		fun step() {
-			if (!running) return
+	override suspend fun accept(): AsyncClient = suspendCoroutine { c ->
+		val ctx = c.context
 
-			ssc.accept(kotlin.Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
-				override fun completed(result: AsynchronousSocketChannel, attachment: Unit) {
-					launchImmediately(ctx) {
-						handler(JvmAsyncClient(result))
-					}
-					step()
+		ssc.accept(kotlin.Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
+			override fun completed(result: AsynchronousSocketChannel, attachment: Unit) {
+				launchImmediately(ctx) {
+					c.resume(JvmAsyncClient(result))
 				}
+			}
 
-				override fun failed(exc: Throwable, attachment: Unit) = run {
-					exc.printStackTrace()
-					step()
-				}
-			})
-		}
-		step()
-
-		return Closeable { running = false }
+			override fun failed(exc: Throwable, attachment: Unit) = run {
+				exc.printStackTrace()
+				c.resumeWithException(exc)
+			}
+		})
 	}
 }

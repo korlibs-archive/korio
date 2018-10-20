@@ -10,11 +10,22 @@ data class URI private constructor(
 	val host: String?,
 	val path: String,
 	val query: String?,
-	val fragment: String?
+	val fragment: String?,
+	val defaultPort: Int
 ) {
 	val user: String? get() = userInfo?.substringBefore(':')
 	val password: String? get() = userInfo?.substringAfter(':')
 	val isHierarchical get() = !isOpaque
+
+	val port: Int get() = if (defaultPort == DEFAULT_PORT) {
+		when (scheme) {
+			"http", "ws" -> 80
+			"https", "wss" -> 443
+			else -> -1
+		}
+	} else {
+		defaultPort
+	}
 
 	val fullUri: String by lazy {
 		val out = StringBuilder()
@@ -43,6 +54,8 @@ data class URI private constructor(
 	fun resolve(path: URI): URI = URI(resolve(this.fullUri, path.fullUri))
 
 	companion object {
+		val DEFAULT_PORT = 0
+
 		operator fun invoke(
 			scheme: String?,
 			userInfo: String?,
@@ -50,8 +63,9 @@ data class URI private constructor(
 			path: String,
 			query: String?,
 			fragment: String?,
-			opaque: Boolean = false
-		): URI = URI(opaque, scheme, userInfo, host, path, query, fragment)
+			opaque: Boolean = false,
+			port: Int = DEFAULT_PORT
+		): URI = URI(opaque, scheme, userInfo, host, path, query, fragment, port)
 
 		private val schemeRegex = Regex("\\w+:")
 

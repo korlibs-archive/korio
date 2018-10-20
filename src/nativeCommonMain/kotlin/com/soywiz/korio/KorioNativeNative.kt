@@ -95,7 +95,7 @@ actual object KorioNative {
 		zlibDeflate(input, outputHint, level)
 
 	actual val asyncSocketFactory: AsyncSocketFactory get() = NativeAsyncSocketFactory
-	actual val websockets: WebSocketClientFactory get() = NativeWebSocketClientFactory
+	actual val websockets: WebSocketClientFactory get() = com.soywiz.korio.net.ws.RawSocketWebSocketClientFactory
 	actual val systemLanguageStrings: List<String> get() = listOf("english")
 
 	// @TODO
@@ -142,23 +142,6 @@ class NativeHttpClient : HttpClient() {
 	suspend override fun requestInternal(
 		method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?
 	): Response = TODO()
-}
-
-object NativeAsyncSocketFactory : AsyncSocketFactory() {
-	override suspend fun createClient(): AsyncClient = TODO()
-	override suspend fun createServer(port: Int, host: String, backlog: Int): AsyncServer = TODO()
-}
-
-object NativeWebSocketClientFactory : WebSocketClientFactory() {
-	override suspend fun create(
-		url: String,
-		protocols: List<String>?,
-		origin: String?,
-		wskey: String?,
-		debug: Boolean
-	): WebSocketClient {
-		TODO()
-	}
 }
 
 class LocalVfsNative : LocalVfs() {
