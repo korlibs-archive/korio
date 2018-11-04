@@ -1,6 +1,7 @@
 package com.soywiz.korio.file.std
 
 import com.soywiz.kds.*
+import com.soywiz.klock.DateTime
 import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.Closeable
@@ -141,7 +142,7 @@ class LocalVfsJvm : LocalVfs() {
 		val file = resolveFile(path)
 		val fullpath = "$path/${file.name}"
 		if (file.exists()) {
-			val lastModified = file.lastModified()
+			val lastModified = DateTime.fromUnix(file.lastModified())
 			createExistsStat(
 				fullpath,
 				isDirectory = file.isDirectory,
@@ -161,8 +162,8 @@ class LocalVfsJvm : LocalVfs() {
 	override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean =
 		executeIo { resolveFile(path).mkdirs() }
 
-	override suspend fun touch(path: String, time: Long, atime: Long): Unit =
-		executeIo { resolveFile(path).setLastModified(time); Unit }
+	override suspend fun touch(path: String, time: DateTime, atime: DateTime): Unit =
+		executeIo { resolveFile(path).setLastModified(time.unixMillisLong); Unit }
 
 	override suspend fun delete(path: String): Boolean = executeIo { resolveFile(path).delete() }
 	override suspend fun rmdir(path: String): Boolean = executeIo { resolveFile(path).delete() }

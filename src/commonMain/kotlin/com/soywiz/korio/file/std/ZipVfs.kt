@@ -53,7 +53,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 				isDirectory = isDirectory,
 				size = uncompressedSize,
 				inode = inode,
-				createTime = this.time.utcTimestamp
+				createTime = this.time.utc
 			)
 		} else {
 			vfs.createNonExistsStat(file.path)
@@ -239,8 +239,7 @@ private class DosFileDateTime(var dosTime: Int, var dosDate: Int) {
 		//println("DosFileDateTime: $fullYear-$month1-$day $hours-$minutes-$seconds")
 	}
 
-	val date: DateTime = DateTime.createAdjusted(fullYear, month1, day, hours, minutes, seconds)
-	val utcTimestamp: Long = date.unix
+	val utc: DateTime = DateTime.createAdjusted(fullYear, month1, day, hours, minutes, seconds)
 }
 
 suspend fun VfsFile.openAsZip() =

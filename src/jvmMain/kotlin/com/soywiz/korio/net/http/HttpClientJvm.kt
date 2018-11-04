@@ -110,12 +110,12 @@ class HttpClientJvm : HttpClient() {
 						loop@ while (true) {
 							// @TODO: Totally cancel reading if nobody is consuming this. Think about the best way of doing this.
 							// node.js pause equivalent?
-							val chunkStartTime = Klock.currentTimeMillis()
+							val chunkStartTime = DateTime.now()
 							while (produceConsumer.availableCount > 4) { // Prevent filling the memory if nobody is consuming data
 								//println("PREVENT!")
 								delay(10)
-								val chunkCurrentTime = Klock.currentTimeMillis()
-								if ((chunkCurrentTime - chunkStartTime) >= 2000L) {
+								val chunkCurrentTime = DateTime.now()
+								if ((chunkCurrentTime - chunkStartTime) >= 2.seconds) {
 									System.err.println("[$id] thread=$currentThreadId Two seconds passed without anyone reading data (available=${produceConsumer.availableCount}) from $url. Closing...")
 									break@loop
 								}

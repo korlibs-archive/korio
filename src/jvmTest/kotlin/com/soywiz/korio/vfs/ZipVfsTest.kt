@@ -15,7 +15,7 @@ class ZipVfsTest {
 		val helloZip = ResourcesVfs["hello.zip"].openAsZip()
 
 		assertEquals(
-			"[VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello], exists=true, isDirectory=true, size=0, device=-1, inode=0, mode=511, owner=nobody, group=nobody, createTime=1482710410000, modifiedTime=1482710410000, lastAccessTime=1482710410000, extraInfo=null, id=null)]",
+			"[VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello], exists=true, isDirectory=true, size=0, device=-1, inode=0, mode=511, owner=nobody, group=nobody, createTime=Mon, 26 Dec 2016 00:00:10 UTC, modifiedTime=Thu, 01 Jan 1970 00:00:00 UTC, lastAccessTime=Thu, 01 Jan 1970 00:00:00 UTC, extraInfo=null, id=null)]",
 			helloZip.list().toList().map { it.stat() }.toString()
 		)
 	}
@@ -25,7 +25,7 @@ class ZipVfsTest {
 		val helloZip = ResourcesVfs["hello.zip"].openAsZip()
 
 		assertEquals(
-			"[VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello/world.txt], exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=1482710410000, modifiedTime=1482710410000, lastAccessTime=1482710410000, extraInfo=null, id=null)]",
+			"[VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello/world.txt], exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=Mon, 26 Dec 2016 00:00:10 UTC, modifiedTime=Thu, 01 Jan 1970 00:00:00 UTC, lastAccessTime=Thu, 01 Jan 1970 00:00:00 UTC, extraInfo=null, id=null)]",
 			helloZip["hello"].list().toList().map { it.stat() }.toString()
 		)
 	}
@@ -35,7 +35,7 @@ class ZipVfsTest {
 		val helloZip = ResourcesVfs["hello.zip"].openAsZip()
 
 		assertEquals(
-			"VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello/world.txt], exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=1482710410000, modifiedTime=1482710410000, lastAccessTime=1482710410000, extraInfo=null, id=null)",
+			"VfsStat(file=ZipVfs(ResourcesVfs[/hello.zip])[/hello/world.txt], exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=Mon, 26 Dec 2016 00:00:10 UTC, modifiedTime=Thu, 01 Jan 1970 00:00:00 UTC, lastAccessTime=Thu, 01 Jan 1970 00:00:00 UTC, extraInfo=null, id=null)",
 			helloZip["hello/world.txt"].stat().toString()
 		)
 	}
@@ -59,7 +59,7 @@ class ZipVfsTest {
 
 		assertEquals(
 			"2016-12-26 00:00:10",
-			SimplerDateFormat("YYYY-MM-dd HH:mm:ss").format(createTime)
+			DateFormat("YYYY-MM-dd HH:mm:ss").format(createTime)
 		)
 	}
 

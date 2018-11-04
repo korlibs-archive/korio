@@ -6,7 +6,7 @@ import kotlin.test.*
 
 class SleepTest {
 	// @TODO: Change once we don't wait all the delay time
-	val time get() = Klock.currentTimeMillis()
+	val time get() = DateTime.now()
 
 	@Test
 	fun name() = suspendTest {
@@ -14,6 +14,6 @@ class SleepTest {
 		delay(10)
 		delay(20)
 		val end = time
-		assertTrue((end - start) > 25L)
+		assertTrue((end - start) > 25.milliseconds)
 	}
 }

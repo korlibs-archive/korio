@@ -3,6 +3,7 @@
 package com.soywiz.korio.file
 
 import com.soywiz.kds.*
+import com.soywiz.klock.DateTime
 import com.soywiz.klogger.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.error.*
@@ -103,7 +104,7 @@ class VfsFile(
 	suspend fun readAsSyncStream(): SyncStream = read().openSync()
 
 	suspend fun stat(): VfsStat = vfs.stat(path)
-	suspend fun touch(time: Long, atime: Long = time): Unit = vfs.touch(path, time, atime)
+	suspend fun touch(time: DateTime, atime: DateTime = time): Unit = vfs.touch(path, time, atime)
 	suspend fun size(): Long = vfs.stat(path).size
 	suspend fun exists(): Boolean = ignoreErrors { vfs.stat(path).exists } ?: false
 	suspend fun isDirectory(): Boolean = stat().isDirectory

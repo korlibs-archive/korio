@@ -1,15 +1,17 @@
 package com.soywiz.korio.time
 
-import com.soywiz.klock.*
-import kotlin.test.*
+import com.soywiz.klock.DateFormat
+import com.soywiz.klock.format
+import com.soywiz.klock.parse
+import kotlin.test.assertEquals
 
 class SimplerDateFormatTest {
 	// Sun, 06 Nov 1994 08:49:37 GMT
-	val format = SimplerDateFormat("EEE, dd MMM yyyy HH:mm:ss z")
+	val format = DateFormat("EEE, dd MMM yyyy HH:mm:ss z")
 
 	@kotlin.test.Test
 	fun testParse() {
-		assertEquals(784111777000, format.parse("Sun, 06 Nov 1994 08:49:37 UTC"))
+		assertEquals(784111777000L, format.parse("Sun, 06 Nov 1994 08:49:37 UTC").utc.unixMillisLong)
 	}
 
 	@kotlin.test.Test

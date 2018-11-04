@@ -15,7 +15,7 @@ class TimeTest {
 		)
 		assertEquals("Thu, 12 Oct 2017 22:58:29 UTC", (DateTime.fromUnix(1507935509943) - 1.days).toString())
 
-		assertEquals("Sat, 14 Oct 2017 00:58:29 GMT+0200", DateTime.fromUnix(1507935509943).toOffset(120).toString())
+		assertEquals("Sat, 14 Oct 2017 00:58:29 GMT+0200", DateTime.fromUnix(1507935509943).toOffset(120.minutes).toString())
 
 		//assertEquals("------", DateTime.nowLocal().toString())
 

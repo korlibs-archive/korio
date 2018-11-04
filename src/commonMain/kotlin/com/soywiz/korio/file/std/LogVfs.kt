@@ -1,5 +1,6 @@
 package com.soywiz.korio.file.std
 
+import com.soywiz.klock.DateTime
 import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
@@ -96,7 +97,7 @@ class LogVfs(val parent: VfsFile) : Vfs.Proxy() {
 		return super.mkdir(path, attributes)
 	}
 
-	override suspend fun touch(path: String, time: Long, atime: Long) {
+	override suspend fun touch(path: String, time: DateTime, atime: DateTime) {
 		modifiedFiles += path
 		log += "touch($path, $time, $atime)"
 		super.touch(path, time, atime)

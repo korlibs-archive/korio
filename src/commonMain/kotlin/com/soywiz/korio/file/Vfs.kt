@@ -29,8 +29,8 @@ abstract class Vfs {
 
 	fun createExistsStat(
 		path: String, isDirectory: Boolean, size: Long, device: Long = -1, inode: Long = -1, mode: Int = 511,
-		owner: String = "nobody", group: String = "nobody", createTime: Long = 0L, modifiedTime: Long = createTime,
-		lastAccessTime: Long = modifiedTime, extraInfo: Any? = null, id: String? = null
+		owner: String = "nobody", group: String = "nobody", createTime: DateTime = DateTime.EPOCH, modifiedTime: DateTime = DateTime.EPOCH,
+		lastAccessTime: DateTime = modifiedTime, extraInfo: Any? = null, id: String? = null
 	) = VfsStat(
 		file = file(path), exists = true, isDirectory = isDirectory, size = size, device = device, inode = inode,
 		mode = mode, owner = owner, group = group, createTime = createTime, modifiedTime = modifiedTime,
@@ -40,7 +40,7 @@ abstract class Vfs {
 	fun createNonExistsStat(path: String, extraInfo: Any? = null) = VfsStat(
 		file = file(path), exists = false, isDirectory = false, size = 0L,
 		device = -1L, inode = -1L, mode = 511, owner = "nobody", group = "nobody",
-		createTime = 0L, modifiedTime = 0L, lastAccessTime = 0L, extraInfo = extraInfo
+		createTime = DateTime.EPOCH, modifiedTime = DateTime.EPOCH, lastAccessTime = DateTime.EPOCH, extraInfo = extraInfo
 	)
 
 	open suspend fun exec(
@@ -123,7 +123,7 @@ abstract class Vfs {
 	open suspend fun watch(path: String, handler: (FileEvent) -> Unit): Closeable =
 		DummyCloseable
 
-	open suspend fun touch(path: String, time: Long, atime: Long) = Unit
+	open suspend fun touch(path: String, time: DateTime, atime: DateTime) = Unit
 
 	open suspend fun getUnderlyingUnscapedFile(path: String): FinalVfsFile =
 		FinalVfsFile(this, path)
@@ -175,7 +175,7 @@ abstract class Vfs {
 		override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean =
 			initOnce().access(path).mkdir(*attributes.toTypedArray())
 
-		override suspend fun touch(path: String, time: Long, atime: Long): Unit =
+		override suspend fun touch(path: String, time: DateTime, atime: DateTime): Unit =
 			initOnce().access(path).touch(time, atime)
 
 		override suspend fun rename(src: String, dst: String): Boolean {
@@ -252,9 +252,9 @@ data class VfsStat(
 	val mode: Int = 511,
 	val owner: String = "nobody",
 	val group: String = "nobody",
-	val createTime: Long = 0L,
-	val modifiedTime: Long = createTime,
-	val lastAccessTime: Long = modifiedTime,
+	val createTime: DateTime = DateTime.EPOCH,
+	val modifiedTime: DateTime = createTime,
+	val lastAccessTime: DateTime = modifiedTime,
 	val extraInfo: Any? = null,
 	val id: String? = null
 ) : Path by file
@@ -265,9 +265,9 @@ data class VfsStat(
 
 //val INIT = Unit.apply { println("UTC_OFFSET: $UTC_OFFSET")  }
 
-val VfsStat.createDate: DateTime get() = DateTime.fromUnix(createTime)
-val VfsStat.modifiedDate: DateTime get() = DateTime.fromUnix(modifiedTime)
-val VfsStat.lastAccessDate: DateTime get() = DateTime.fromUnix(lastAccessTime)
+val VfsStat.createDate: DateTime get() = createTime
+val VfsStat.modifiedDate: DateTime get() = modifiedTime
+val VfsStat.lastAccessDate: DateTime get() = lastAccessTime
 
 suspend fun ByteArray.writeToFile(path: String) = LocalVfs(path).write(this)
 suspend fun ByteArray.writeToFile(file: VfsFile) = file.write(this)

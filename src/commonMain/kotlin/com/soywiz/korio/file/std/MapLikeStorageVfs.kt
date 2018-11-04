@@ -29,8 +29,8 @@ private class StorageFiles(val storage: SimpleStorage) {
 		val isFile: Boolean,
 		val size: Long = 0L,
 		val children: List<String> = listOf(),
-		val createdTime: Long = 0L,
-		val modifiedTime: Long = 0L
+		val createdTime: DateTime = DateTime.EPOCH,
+		val modifiedTime: DateTime = DateTime.EPOCH
 	) {
 		val isDirectory get() = !isFile
 	}
@@ -44,8 +44,8 @@ private class StorageFiles(val storage: SimpleStorage) {
 		isFile: Boolean,
 		size: Long,
 		children: List<String>,
-		createdTime: Long = 0L,
-		modifiedTime: Long = 0L
+		createdTime: DateTime = DateTime.EPOCH,
+		modifiedTime: DateTime = DateTime.EPOCH
 	) {
 		val oldEntry = getEntryInfo(fileName)
 
@@ -59,8 +59,8 @@ private class StorageFiles(val storage: SimpleStorage) {
 					EntryInfo::isFile.name to isFile,
 					EntryInfo::size.name to size.toDouble(),
 					EntryInfo::children.name to children,
-					EntryInfo::createdTime.name to createdTime.toDouble(),
-					EntryInfo::modifiedTime.name to modifiedTime.toDouble()
+					EntryInfo::createdTime.name to createdTime.unixMillisDouble,
+					EntryInfo::modifiedTime.name to modifiedTime.unixMillisDouble
 				)
 			)
 		)
@@ -75,8 +75,8 @@ private class StorageFiles(val storage: SimpleStorage) {
 			di[EntryInfo::isFile.name]!! as Boolean,
 			(di[EntryInfo::size.name]!! as Number).toLong(),
 			(di[EntryInfo::children.name] as Iterable<String>).toList(),
-			(di[EntryInfo::createdTime.name] as Number).toLong(),
-			(di[EntryInfo::modifiedTime.name] as Number).toLong()
+			(DateTime.fromUnix((di[EntryInfo::createdTime.name] as Number).toDouble())),
+			(DateTime.fromUnix((di[EntryInfo::modifiedTime.name] as Number).toDouble()))
 		)
 	}
 
@@ -187,7 +187,7 @@ class MapLikeStorageVfs(val storage: SimpleStorage) : Vfs() {
 		val nparent = PathInfo(npath).folder.normalizePath()
 		if (!files.hasEntryInfo(nparent)) mkdir(nparent, attributes) // Create Parents
 		val parent = ensureParentDirectory(nparent, npath)
-		val now = Klock.currentTimeMillis()
+		val now = DateTime.now()
 		if (files.hasEntryInfo(npath)) return false
 		files.setEntryInfo(nparent, parent.copy(children = parent.children + npath))
 		files.setEntryInfo(npath, isFile = false, size = 0L, children = listOf(), createdTime = now, modifiedTime = now)
@@ -212,7 +212,7 @@ class MapLikeStorageVfs(val storage: SimpleStorage) : Vfs() {
 			files.setEntryInfo(nparent, parent.copy(children = parent.children + npath))
 		}
 
-		val now = Klock.currentTimeMillis()
+		val now = DateTime.now()
 		var info = files.getEntryInfo(npath) ?: StorageFiles.EntryInfo(
 			isFile = true,
 			size = 0L,
@@ -252,7 +252,7 @@ class MapLikeStorageVfs(val storage: SimpleStorage) : Vfs() {
 		}.toAsyncStream()
 	}
 
-	override suspend fun touch(path: String, time: Long, atime: Long) {
+	override suspend fun touch(path: String, time: DateTime, atime: DateTime) {
 		initOnce()
 		val npath = path.normalizePath()
 		if (files.hasEntryInfo(npath)) {
