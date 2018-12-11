@@ -5,6 +5,7 @@ import com.soywiz.korio.lang.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.intrinsics.*
 import kotlin.coroutines.*
+import kotlin.coroutines.intrinsics.*
 
 // Fails on JS:     InvalidOperationException: ioSync completed=true, result=null, resultEx=null, suspendCount=3015
 ///**
@@ -46,6 +47,7 @@ import kotlin.coroutines.*
 /**
  * Allows to execute a suspendable block as long as you can ensure no suspending will happen at all..
  */
+@UseExperimental(InternalCoroutinesApi::class)
 fun <T : Any> runBlockingNoSuspensions(callback: suspend () -> T): T {
 	//TODO("runBlockingNoSuspensions not supported yet!")
 	var completed = false
@@ -97,3 +99,26 @@ fun <T : Any> runBlockingNoSuspensions(callback: suspend () -> T): T {
 	if (resultEx != null) throw resultEx!!
 	return rresult
 }
+
+internal fun <T> (suspend () -> T).startCoroutineUndispatched(completion: Continuation<T>) {
+	startDirect(completion) {
+		withCoroutineContext(completion.context, null) {
+			startCoroutineUninterceptedOrReturn(completion)
+		}
+	}
+}
+
+private inline fun <T> startDirect(completion: Continuation<T>, block: () -> Any?) {
+	val value = try {
+		block()
+	} catch (e: Throwable) {
+		completion.resumeWithException(e)
+		return
+	}
+	if (value !== COROUTINE_SUSPENDED) {
+		@Suppress("UNCHECKED_CAST")
+		completion.resume(value as T)
+	}
+}
+
+internal inline fun <T> withCoroutineContext(context: CoroutineContext, countOrElement: Any?, block: () -> T): T = block()

@@ -134,7 +134,7 @@ interface Http {
 
 		fun toListGrouped(): List<Pair<String, List<String>>> {
 			return this.items.groupBy { it.first.toLowerCase() }
-				.map { it.value.first().first to it.value.map { it.second } }.sortedBy2 { it.first.toLowerCase() }
+				.map { it.value.first().first to it.value.map { it.second } }.sortedBy { it.first.toLowerCase() }
 		}
 
 		fun withAppendedHeaders(newHeaders: List<Pair<String, String>>): Headers =

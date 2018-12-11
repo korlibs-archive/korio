@@ -102,7 +102,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 				val diskNumberStart = readU16_le()
 				val internalAttributes = readU16_le()
 				val externalAttributes = readS32_le()
-				val headerOffset = readS32_le()
+				val headerOffset = readU32_le()
 				val name = readString(fileNameLength)
 				val extra = readBytes(extraLength)
 
@@ -119,10 +119,10 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 					isDirectory = isDirectory,
 					time = DosFileDateTime(fileTime, fileDate),
 					inode = n.toLong(),
-					offset = headerOffset,
-					headerEntry = s.sliceStart(headerOffset.toUInt()),
-					compressedSize = compressedSize.toUInt(),
-					uncompressedSize = uncompressedSize.toUInt()
+					offset = headerOffset.toInt(),
+					headerEntry = s.sliceStart(headerOffset),
+					compressedSize = compressedSize.unsigned,
+					uncompressedSize = uncompressedSize.unsigned
 				)
 				val components = listOf("") + PathInfo(normalizedName).getPathFullComponents()
 				for (m in 1 until components.size) {

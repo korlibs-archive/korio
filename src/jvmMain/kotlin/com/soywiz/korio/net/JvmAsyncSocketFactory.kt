@@ -1,7 +1,6 @@
 package com.soywiz.korio.net
 
 import com.soywiz.korio.async.*
-import com.soywiz.korio.lang.Closeable
 import kotlinx.coroutines.*
 import java.io.*
 import java.net.*

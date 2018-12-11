@@ -126,6 +126,7 @@ object KorioNativeDefaults {
 			}
 
 			override suspend fun listenInternal(port: Int, host: String) {
+				val context = coroutineContext
 				val socket = KorioNative.asyncSocketFactory.createServer(port, host)
 				actualPort = socket.port
 				val close = socket.listen { client ->
@@ -161,7 +162,7 @@ object KorioNativeDefaults {
 						var bodyHandler: (ByteArray) -> Unit = {}
 						var endHandler: () -> Unit = {}
 
-						launchImmediately {
+						launchImmediately(coroutineContext) {
 							handler(object : HttpServer.Request(Http.Method(method), url, headers) {
 								override suspend fun _handler(handler: (ByteArray) -> Unit) =
 									run { bodyHandler = handler }

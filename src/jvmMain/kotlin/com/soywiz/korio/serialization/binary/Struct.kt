@@ -156,11 +156,11 @@ fun ByteArray.readStructElement(offset: Int, type: Struct.Type, littleEndian: Bo
 	val data = this
 	return when (type) {
 		Struct.Type.S1 -> data.readS8(offset).toByte()
-		Struct.Type.S2 -> data.readS16_LEBE(offset, littleEndian).toShort()
-		Struct.Type.S4 -> data.readS32_LEBE(offset, littleEndian)
-		Struct.Type.S8 -> data.readS64_LEBE(offset, littleEndian)
-		Struct.Type.F4 -> data.readF32_LEBE(offset, littleEndian)
-		Struct.Type.F8 -> data.readF64_LEBE(offset, littleEndian)
+		Struct.Type.S2 -> data.readS16(offset, littleEndian).toShort()
+		Struct.Type.S4 -> data.readS32(offset, littleEndian)
+		Struct.Type.S8 -> data.readS64(offset, littleEndian)
+		Struct.Type.F4 -> data.readF32(offset, littleEndian)
+		Struct.Type.F8 -> data.readF64(offset, littleEndian)
 		is Struct.Type.CUSTOM -> data.readStruct(offset, type.elementClazz)
 		is Struct.Type.ARRAY -> {
 			val elementSize = type.elementType.size
@@ -218,11 +218,11 @@ fun <T : Struct> SyncStream.readStruct(clazz: Class<T>): T {
 fun ByteArray.writeStructElement(offset: Int, type: Struct.Type, value: Any, littleEndian: Boolean): Int {
 	when (type) {
 		Struct.Type.S1 -> write8(offset, (value as Byte).toInt())
-		Struct.Type.S2 -> write16_LEBE(offset, (value as Short).toInt(), littleEndian)
-		Struct.Type.S4 -> write32_LEBE(offset, (value as Int).toInt(), littleEndian)
-		Struct.Type.S8 -> write64_LEBE(offset, (value as Long).toLong(), littleEndian)
-		Struct.Type.F4 -> writeF32_LEBE(offset, (value as Float).toFloat(), littleEndian)
-		Struct.Type.F8 -> writeF64_LEBE(offset, (value as Double).toDouble(), littleEndian)
+		Struct.Type.S2 -> write16(offset, (value as Short).toInt(), littleEndian)
+		Struct.Type.S4 -> write32(offset, (value as Int).toInt(), littleEndian)
+		Struct.Type.S8 -> write64(offset, (value as Long).toLong(), littleEndian)
+		Struct.Type.F4 -> writeF32(offset, (value as Float).toFloat(), littleEndian)
+		Struct.Type.F8 -> writeF64(offset, (value as Double).toDouble(), littleEndian)
 		is Struct.Type.CUSTOM -> writeStruct(offset, value as Struct)
 		is Struct.Type.ARRAY -> {
 			var co = offset
@@ -252,7 +252,7 @@ fun <T : Struct> T.getStructBytes(): ByteArray = ByteArray(StructReflect[this::c
 
 fun <T : Struct> SyncStream.writeStruct(obj: T) = this.writeBytes(obj.getStructBytes())
 
-inline suspend fun <reified T : Struct> AsyncStream.readStruct() = this.readStruct(T::class.java)
+suspend inline fun <reified T : Struct> AsyncStream.readStruct() = this.readStruct(T::class.java)
 suspend fun <T : Struct> AsyncStream.readStruct(clazz: Class<T>): T {
 	return readBytesExact(clazz.getStructSize()).readStruct(0, clazz)
 }

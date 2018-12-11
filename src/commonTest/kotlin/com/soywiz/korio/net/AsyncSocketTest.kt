@@ -4,6 +4,7 @@ import com.soywiz.korio.async.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
+import kotlin.coroutines.coroutineContext
 import kotlin.test.*
 
 class AsyncSocketTest {
@@ -17,7 +18,7 @@ class AsyncSocketTest {
 		val readSignal = CompletableDeferred<Unit>()
 		val read = arrayListOf<ByteArray>()
 
-		launchImmediately {
+		launchImmediately(coroutineContext) {
 			val server = createTcpServer(ANY_PORT)
 			port = server.port
 			connected.complete(Unit)

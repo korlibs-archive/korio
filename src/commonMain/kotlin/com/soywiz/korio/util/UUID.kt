@@ -1,29 +1,32 @@
 package com.soywiz.korio.util
 
-import com.soywiz.kmem.*
-import com.soywiz.korio.*
-import com.soywiz.korio.crypto.*
-import com.soywiz.korio.error.*
-import com.soywiz.korio.lang.*
+import com.soywiz.kmem.UByteArrayInt
+import com.soywiz.kmem.asByteArray
+import com.soywiz.kmem.asUByteArrayInt
+import com.soywiz.korio.KorioNative
+import com.soywiz.korio.crypto.Hex
+import com.soywiz.korio.error.invalidArg
+import com.soywiz.korio.lang.format
 
-class UUID(val data: UByteArray) {
+@Suppress("EXPERIMENTAL_API_USAGE")
+class UUID(val data: UByteArrayInt) {
 	companion object {
 		private val regex =
 			Regex("[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}", RegexOption.IGNORE_CASE)
 
-		private fun fix(data: UByteArray, version: Int, variant: Int): UByteArray {
-			data[6] = (data[6] and 0b0000_1111) or (version shl 4)
-			data[8] = (data[8] and 0x00_111111) or (variant shl 6)
+		private fun fix(data: UByteArrayInt, version: Int, variant: Int): UByteArrayInt {
+			data[6] = ((data[6] and 0b0000_1111) or (version shl 4))
+			data[8] = ((data[8] and 0x00_111111) or (variant shl 6))
 			return data
 		}
 
-		fun randomUUID(): UUID = UUID(fix(UByteArray(16).apply {
-			KorioNative.getRandomValues(this.data)
+		fun randomUUID(): UUID = UUID(fix(UByteArrayInt(16).apply {
+			KorioNative.getRandomValues(this.asByteArray())
 		}, version = 4, variant = 1))
 
 		operator fun invoke(str: String): UUID {
 			if (regex.matchEntire(str) == null) invalidArg("Invalid UUID")
-			return UUID(UByteArray(Hex.decode(str.replace("-", ""))))
+			return UUID(Hex.decode(str.replace("-", "")).asUByteArrayInt())
 		}
 	}
 

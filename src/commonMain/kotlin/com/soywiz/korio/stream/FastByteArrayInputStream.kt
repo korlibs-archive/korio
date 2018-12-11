@@ -57,7 +57,7 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 	// Bytes
 	fun readBytes(count: Int) = increment(count) { ba.readByteArray(offset, count) }
 
-	fun readUBytes(count: Int) = UByteArray(readBytes(count))
+	fun readUBytes(count: Int): UByteArray = readBytes(count).asUByteArray()
 
 	// Arrays
 	fun readShortArray_le(count: Int): ShortArray = increment(count * 2) { ba.readShortArray_le(offset, count) }

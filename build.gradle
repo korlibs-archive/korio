@@ -1,5 +1,5 @@
 plugins {
-    id 'kotlin-multiplatform' version '1.3.0'
+    id 'kotlin-multiplatform' version '1.3.11'
     id 'com.moowork.node' version '1.2.0'
 }
 
@@ -7,50 +7,33 @@ repositories {
     mavenLocal()
     jcenter()
     maven { url "https://dl.bintray.com/soywiz/soywiz" }
-    maven { url "https://dl.bintray.com/kotlin/kotlin-eap" }
 }
 
 kotlin {
     targets {
-        fromPreset(presets.iosX64, 'iosX64') {
-			//compilations.main.cinterops { ckorio }
-		}
-        fromPreset(presets.iosArm32, 'iosArm32') {
-			//compilations.main.cinterops { ckorio }
-		}
-        fromPreset(presets.iosArm64, 'iosArm64') {
-			//compilations.main.cinterops { ckorio }
-		}
-        fromPreset(presets.macosX64, 'macosX64') {
-			//compilations.main.cinterops { ckorio }
-		}
-        fromPreset(presets.linuxX64, 'linuxX64') {
-			//compilations.main.cinterops { ckorio }
-		}
-        fromPreset(presets.mingwX64, 'mingwX64') {
-			//compilations.main.cinterops { ckorio }
-		}
+        fromPreset(presets.iosX64, 'iosX64')
+        fromPreset(presets.iosArm32, 'iosArm32')
+        fromPreset(presets.iosArm64, 'iosArm64')
+        fromPreset(presets.macosX64, 'macosX64')
+        fromPreset(presets.linuxX64, 'linuxX64')
+        fromPreset(presets.mingwX64, 'mingwX64')
         fromPreset(presets.jvm, 'jvm')
         fromPreset(presets.js, 'js') {
             compilations.main {
-				configure([compileKotlinJs, compileTestKotlinJs]) {
-					kotlinOptions {
-						languageVersion = "1.3"
-						sourceMap = true
-						metaInfo = true
-						moduleKind = "umd"
-					}
-				}
+                compileKotlinJs.kotlinOptions {
+                    languageVersion = "1.3"
+                    sourceMap = true
+                    metaInfo = true
+                    moduleKind = "umd"
+                }
+                compileTestKotlinJs.kotlinOptions {
+                    languageVersion = "1.3"
+                    moduleKind = "umd"
+                }
             }
         }
-		//configure([macosX64]) {
-		//	compilations.main.cinterops { err }
-		//}
     }
     sourceSets {
-		nonJsMain
-		nativePosixAppleMain
-		nativePosixNonAppleMain
         nativeCommonMain
         nativeCommonTest
         nativePosixMain
@@ -60,56 +43,17 @@ kotlin {
         mingwX64Test {
             dependsOn nativeCommonTest
         }
-		configure([iosX64Main, iosArm32Main, iosArm64Main, macosX64Main]) {
-			dependsOn nativePosixAppleMain
-			dependsOn nativeCommonMain
-			dependsOn nativePosixMain
-		}
-        configure([linuxX64Main]) {
-			dependsOn nativePosixNonAppleMain
+        configure([iosX64Main, iosArm32Main, iosArm64Main, macosX64Main, linuxX64Main]) {
             dependsOn nativeCommonMain
             dependsOn nativePosixMain
         }
         configure([iosX64Test, iosArm32Test, iosArm64Test, macosX64Test, linuxX64Test]) {
             dependsOn nativeCommonTest
-			dependsOn nonJsMain
         }
-		configure([jvmMain]) {
-			dependsOn nonJsMain
-		}
     }
 }
 
 dependencies {
-	//jvmMainImplementation "org.java-websocket:Java-WebSocket:1.3.8"
-
-	def coroutines = "kotlinx-coroutines-core"
-	commonMainApi "org.jetbrains.kotlinx:$coroutines-common:$coroutinesVersion"
-	jvmMainApi "org.jetbrains.kotlinx:$coroutines:$coroutinesVersion"
-	jsMainApi "org.jetbrains.kotlinx:$coroutines-js:$coroutinesVersion"
-	linuxX64MainApi "org.jetbrains.kotlinx:$coroutines-native_debug_linux_x64:$coroutinesVersion"
-	mingwX64MainApi "org.jetbrains.kotlinx:$coroutines-native_debug_mingw_x64:$coroutinesVersion"
-	macosX64MainApi "org.jetbrains.kotlinx:$coroutines-native_debug_macos_x64:$coroutinesVersion"
-	iosX64MainApi "org.jetbrains.kotlinx:$coroutines-native_debug_ios_x64:$coroutinesVersion"
-	iosArm32MainApi "org.jetbrains.kotlinx:$coroutines-native_debug_ios_arm32:$coroutinesVersion"
-	iosArm64MainApi "org.jetbrains.kotlinx:$coroutines-native_debug_ios_arm64:$coroutinesVersion"
-
-	def atomicfu = "atomicfu"
-	commonMainApi "org.jetbrains.kotlinx:$atomicfu-common:$atomicfuVersion"
-	jvmMainApi "org.jetbrains.kotlinx:$atomicfu:$atomicfuVersion"
-	jsMainApi "org.jetbrains.kotlinx:$atomicfu-js:$atomicfuVersion"
-	linuxX64MainApi "org.jetbrains.kotlinx:$atomicfu-native_debug_linux_x64:$atomicfuVersion"
-	mingwX64MainApi "org.jetbrains.kotlinx:$atomicfu-native_debug_mingw_x64:$atomicfuVersion"
-	macosX64MainApi "org.jetbrains.kotlinx:$atomicfu-native_debug_macos_x64:$atomicfuVersion"
-	iosX64MainApi "org.jetbrains.kotlinx:$atomicfu-native_debug_ios_x64:$atomicfuVersion"
-	iosArm32MainApi "org.jetbrains.kotlinx:$atomicfu-native_debug_ios_arm32:$atomicfuVersion"
-	iosArm64MainApi "org.jetbrains.kotlinx:$atomicfu-native_debug_ios_arm64:$atomicfuVersion"
-
-	commonMainApi "com.soywiz:klock:$klockVersion"
-	commonMainApi "com.soywiz:kds:$kdsVersion"
-	commonMainApi "com.soywiz:klogger:$kloggerVersion"
-	commonMainApi "com.soywiz:kmem:$kmemVersion"
-
     commonMainImplementation "org.jetbrains.kotlin:kotlin-stdlib-common"
     commonTestImplementation "org.jetbrains.kotlin:kotlin-test-annotations-common"
     commonTestImplementation "org.jetbrains.kotlin:kotlin-test-common"
@@ -126,21 +70,18 @@ dependencies {
 node {
     version = '8.11.4'
     download = true
-    nodeModulesDir = file("$buildDir/yarn")
+    nodeModulesDir = file("$buildDir/npm")
 }
 
 def jsCompilations = kotlin.targets.js.compilations
-task addYarnDeps(type: YarnTask) {
-    doFirst {
-        mkdir "$buildDir/yarn"
-    }
-    args = ["add", "mocha@5.2.0"]
+task installMocha(type: NpmTask) {
+    args = ["install", "mocha@5.2.0"]
 }
 
 task populateNodeModules {
     doLast {
         copy {
-            from "$buildDir/yarn/node_modules"
+            from "$buildDir/npm/node_modules"
             from jsCompilations.main.output.allOutputs
             jsCompilations.test.runtimeDependencyFiles.each {
                 if (it.exists() && !it.isDirectory()) {
@@ -152,12 +93,15 @@ task populateNodeModules {
     }
 }
 
-task runMocha(type: NodeTask, dependsOn: [jsCompilations.test.compileKotlinTaskName, addYarnDeps, populateNodeModules]) {
+task runMocha(type: NodeTask, dependsOn: [jsCompilations.test.compileKotlinTaskName, installMocha, populateNodeModules]) {
     script = file("$buildDir/node_modules/mocha/bin/mocha")
-    args = [relativePath("${jsCompilations.test.output.classesDirs.first()}/korio_test.js")]
+    args = ["--timeout", "15000", relativePath("${jsCompilations.test.output.classesDirs.first()}/${project.name}_test.js")]
 }
 
-jsTest.dependsOn runMocha
+// Only run JS tests if not in windows
+if (!org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS)) {
+    jsTest.dependsOn runMocha
+}
 
 // Fix for https://github.com/srs/gradle-node-plugin/issues/301
 repositories.whenObjectAdded {
@@ -176,12 +120,12 @@ apply plugin: 'maven-publish'
 def pomBaseData = {
     licenses {
         license {
-            name "MIT License"
-            url "https://raw.githubusercontent.com/korlibs/korio/master/LICENSE"
+            name project.property("project.license.name")
+            url project.property("project.license.url")
         }
     }
     scm {
-        url "https://github.com/korlibs/korio"
+        url project.property("project.scm.url")
     }
 }
 
@@ -189,8 +133,8 @@ def generatePom = { pom ->
     pom.withXml {
         def root = it.asNode()
         root.appendNode('name', project.name)
-        root.appendNode('description', 'I/O utilities for kotlin (JVM, JS, Native and COMMON)')
-        root.appendNode('url', 'https://github.com/korlibs/korio')
+        root.appendNode('description', project.property("project.description"))
+        root.appendNode('url', project.property("project.scm.url"))
         root.children().last() + pomBaseData
     }
 }
@@ -217,4 +161,8 @@ if (publishUser && publishPassword) {
             generatePom(pom)
         }
     }
+}
+
+if (project.file('build.project.gradle').exists()) {
+    apply from: project.file('build.project.gradle')
 }

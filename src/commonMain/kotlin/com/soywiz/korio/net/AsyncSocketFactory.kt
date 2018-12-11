@@ -6,6 +6,7 @@ import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import kotlinx.atomicfu.*
+import kotlinx.coroutines.coroutineScope
 import kotlin.coroutines.*
 
 val asyncSocketFactory: AsyncSocketFactory get() = KorioNative.asyncSocketFactory
@@ -63,9 +64,11 @@ interface AsyncServer {
 	suspend fun accept(): AsyncClient
 
 	suspend fun listen(handler: suspend (AsyncClient) -> Unit): Closeable {
-		val job = launchImmediately {
-			while (true) {
-				handler(accept())
+		val job = coroutineScope {
+			launchImmediately {
+				while (true) {
+					handler(accept())
+				}
 			}
 		}
 		return Closeable { job.cancel() }

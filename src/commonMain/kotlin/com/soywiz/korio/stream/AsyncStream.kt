@@ -355,7 +355,7 @@ private suspend fun AsyncInputStream.readTempExact(len: Int, temp: ByteArray): B
 //suspend private fun AsyncInputStream.readTempExact(len: Int): ByteArray = readTempExact(len, BYTES_TEMP)
 
 suspend fun AsyncInputStream.read(data: ByteArray): Int = read(data, 0, data.size)
-suspend fun AsyncInputStream.read(data: UByteArray): Int = read(data.data, 0, data.size)
+suspend fun AsyncInputStream.read(data: UByteArray): Int = read(data.asByteArray(), 0, data.size)
 
 val EMPTY_BYTE_ARRAY = ByteArray(0)
 
@@ -486,7 +486,7 @@ suspend fun AsyncInputStream.skip(count: Int) {
 	}
 }
 
-suspend fun AsyncInputStream.readUByteArray(count: Int): UByteArray = UByteArray(readBytesExact(count))
+suspend fun AsyncInputStream.readUByteArray(count: Int): UByteArray = readBytesExact(count).asUByteArray()
 suspend fun AsyncInputStream.readShortArray_le(count: Int): ShortArray =
 	readBytesExact(count * 2).readShortArray_le(0, count)
 

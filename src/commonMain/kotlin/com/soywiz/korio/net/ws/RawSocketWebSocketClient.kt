@@ -8,6 +8,7 @@ import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
+import kotlinx.coroutines.coroutineScope
 import kotlin.coroutines.*
 import kotlin.random.*
 
@@ -121,35 +122,37 @@ class RawSocketWebSocketClient(
 			}
 		}
 
-		launchImmediately {
-			onOpen(Unit)
-			try {
-				loop@ while (!closed) {
-					val frame = readWsFrame()
-					val payload = if (frame.frameIsBinary) frame.data else frame.data.toString(UTF8)
-					when (frame.type) {
-						WsOpcode.Close -> {
-							break@loop
-						}
-						WsOpcode.Ping -> {
-							sendWsFrame(WsFrame(frame.data, WsOpcode.Pong))
-						}
-						WsOpcode.Pong -> {
-							lastPong = DateTime.now()
-						}
-						else -> {
-							when (payload) {
-								is String -> onStringMessage(payload)
-								is ByteArray -> onBinaryMessage(payload)
+		coroutineScope {
+			launchImmediately {
+				onOpen(Unit)
+				try {
+					loop@ while (!closed) {
+						val frame = readWsFrame()
+						val payload = if (frame.frameIsBinary) frame.data else frame.data.toString(UTF8)
+						when (frame.type) {
+							WsOpcode.Close -> {
+								break@loop
 							}
-							onAnyMessage(payload)
+							WsOpcode.Ping -> {
+								sendWsFrame(WsFrame(frame.data, WsOpcode.Pong))
+							}
+							WsOpcode.Pong -> {
+								lastPong = DateTime.now()
+							}
+							else -> {
+								when (payload) {
+									is String -> onStringMessage(payload)
+									is ByteArray -> onBinaryMessage(payload)
+								}
+								onAnyMessage(payload)
+							}
 						}
 					}
+				} catch (e: Throwable) {
+					onError(e)
 				}
-			} catch (e: Throwable) {
-				onError(e)
+				onClose(Unit)
 			}
-			onClose(Unit)
 		}
 	}
 

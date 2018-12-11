@@ -97,13 +97,13 @@ expect val UTF8: Charset
 
 class UTF16Charset(val le: Boolean) : Charset("UTF-16-" + (if (le) "LE" else "BE")) {
 	override fun decode(out: StringBuilder, src: ByteArray, start: Int, end: Int) {
-		for (n in start until end step 2) out.append(src.readS16_LEBE(n, le).toChar())
+		for (n in start until end step 2) out.append(src.readS16(n, le).toChar())
 	}
 
 	override fun encode(out: ByteArrayBuilder, src: CharSequence, start: Int, end: Int) {
 		val temp = ByteArray(2)
 		for (n in start until end) {
-			temp.write16_LEBE(0, src[n].toInt(), le)
+			temp.write16(0, src[n].toInt(), le)
 			out.append(temp)
 		}
 	}

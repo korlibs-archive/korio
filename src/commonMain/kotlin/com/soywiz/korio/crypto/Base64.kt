@@ -20,7 +20,7 @@ object Base64 {
 
 	fun decode(src: ByteArray, dst: ByteArray): Int {
 		var m = 0
-		val srcu = UByteArray(src)
+		val srcu = src.asUByteArrayInt()
 
 		var n = 0
 		while (n < src.size) {

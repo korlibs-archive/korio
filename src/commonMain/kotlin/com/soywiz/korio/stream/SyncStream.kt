@@ -304,7 +304,7 @@ fun SyncInputStream.readExact(out: ByteArray, offset: Int, len: Int): Unit {
 }
 
 fun SyncInputStream.read(data: ByteArray): Int = read(data, 0, data.size)
-fun SyncInputStream.read(data: UByteArray): Int = read(data.data, 0, data.size)
+fun SyncInputStream.read(data: UByteArray): Int = read(data.asByteArray(), 0, data.size)
 
 fun SyncInputStream.readBytesExact(len: Int): ByteArray = ByteArray(len).apply { readExact(this, 0, len) }
 
@@ -379,7 +379,7 @@ fun SyncInputStream.readF64_be(): Double = readSmallTempExact(8).readF64_be(0)
 fun SyncStream.readAvailable(): ByteArray = readBytes(available.toInt())
 fun SyncStream.readAll(): ByteArray = readBytes(available.toInt())
 
-fun SyncInputStream.readUByteArray(count: Int): UByteArray = UByteArray(readBytesExact(count))
+fun SyncInputStream.readUByteArray(count: Int): UByteArray = readBytesExact(count).asUByteArray()
 
 fun SyncInputStream.readShortArray_le(count: Int): ShortArray = readBytesExact(count * 2).readShortArray_le(0, count)
 fun SyncInputStream.readShortArray_be(count: Int): ShortArray = readBytesExact(count * 2).readShortArray_be(0, count)

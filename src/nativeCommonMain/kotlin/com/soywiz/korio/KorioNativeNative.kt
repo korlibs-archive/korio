@@ -1,6 +1,7 @@
 package com.soywiz.korio
 
 import com.soywiz.kds.*
+import com.soywiz.klock.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.crypto.*
 import com.soywiz.korio.error.*
@@ -255,7 +256,7 @@ class LocalVfsNative : LocalVfs() {
 		com.soywiz.korio.doMkdir(resolve(path), "0777".toInt(8).convert()) == 0
 	}
 
-	override suspend fun touch(path: String, time: Long, atime: Long): Unit = executeInWorker {
+	override suspend fun touch(path: String, time: DateTime, atime: DateTime): Unit = executeInWorker {
 		// @TODO:
 		println("TODO:LocalVfsNative.touch")
 	}

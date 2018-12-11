@@ -10,6 +10,8 @@ import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.intrinsics.*
 import kotlin.coroutines.*
+import kotlin.coroutines.intrinsics.createCoroutineUnintercepted
+import kotlin.coroutines.intrinsics.intercepted
 import kotlin.math.*
 
 typealias CancelHandler = Signal<Unit>
@@ -81,12 +83,12 @@ open class ProduceConsumer<T> : Consumer<T>, Producer<T> {
 	}
 }
 
-fun <T> asyncProducer(context: CoroutineContext, callback: suspend Producer<T>.() -> Unit): Consumer<T> {
-	val p = ProduceConsumer<T>()
-
-	callback.startCoroutineCancellable(p, completion = EmptyContinuation(context))
-	return p
-}
+fun <T> asyncProducer(context: CoroutineContext, callback: suspend Producer<T>.() -> Unit): Consumer<T> =
+	ProduceConsumer<T>().apply {
+		launchAsap(context) {
+			callback(this@apply)
+		}
+	}
 
 fun Producer<ByteArray>.toAsyncOutputStream() = AsyncProducerStream(this)
 fun Consumer<ByteArray>.toAsyncInputStream() = AsyncConsumerStream(this)

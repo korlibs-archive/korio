@@ -1,7 +1,7 @@
 package com.soywiz.korio.async
 
+import com.soywiz.klock.*
 import kotlinx.coroutines.*
-import java.util.concurrent.*
 import java.util.concurrent.CancellationException
 import kotlin.test.*
 
@@ -12,7 +12,7 @@ class withTimeoutTest {
 		var out = ""
 		var result = "none"
 		try {
-			result = withTimeout(300, TimeUnit.MILLISECONDS) {
+			result = withTimeout(300.milliseconds) {
 				out += "a"
 				delay(20)
 				out += "b"
@@ -36,7 +36,7 @@ class withTimeoutTest {
 	fun simple() = suspendTest {
 		var out = ""
 		try {
-			withTimeout(100, TimeUnit.MILLISECONDS) {
+			withTimeout(100.milliseconds) {
 				out += "a"
 				delay(20)
 				out += "b"
@@ -59,9 +59,9 @@ class withTimeoutTest {
 		var out = ""
 		try {
 			out += "0"
-			withTimeout(50, TimeUnit.MILLISECONDS) {
+			withTimeout(50.milliseconds) {
 				try {
-					withTimeout(100, TimeUnit.MILLISECONDS) {
+					withTimeout(100.milliseconds) {
 						out += "a"
 						delay(20)
 						out += "b"

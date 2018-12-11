@@ -1,10 +1,11 @@
 package com.soywiz.korio.async
 
-import com.soywiz.kds.*
-import com.soywiz.klock.*
-import com.soywiz.korio.*
-import com.soywiz.korio.lang.*
-import com.soywiz.korio.util.*
+import com.soywiz.kds.PriorityQueue
+import com.soywiz.klock.TimeSpan
+import com.soywiz.korio.KorioNative
+import com.soywiz.korio.lang.Closeable
+import com.soywiz.korio.lang.printStackTrace
+import com.soywiz.korio.util.OS
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
@@ -62,12 +63,12 @@ suspend fun delay(time: TimeSpan): Unit = delay(time.millisecondsLong)
 
 suspend fun CoroutineContext.delay(time: TimeSpan) = delayMs(time.millisecondsLong)
 
-fun CoroutineContext.animationFrameLoop(callback: suspend (Closeable) -> Unit): Closeable {
+fun CoroutineScope.animationFrameLoop(callback: suspend (Closeable) -> Unit): Closeable {
 	var running = true
 	val close = Closeable {
 		running = false
 	}
-	launchImmediately(this) {
+	launchImmediately {
 		while (running) {
 			callback(close)
 			delayNextFrame()
@@ -80,6 +81,7 @@ interface CoroutineContextHolder {
 	val coroutineContext: CoroutineContext
 }
 
+@InternalCoroutinesApi
 class TestCoroutineDispatcher(val frameTime: Int = 16) :
 	AbstractCoroutineContextElement(ContinuationInterceptor),
 	ContinuationInterceptor,
@@ -173,23 +175,47 @@ fun suspendTestExceptJs(callback: suspend () -> Unit) = suspendTest {
 	callback()
 }
 
-suspend fun launchImmediately(job: Job? = null, callback: suspend () -> Unit) =
-	launchImmediately(coroutineContext, job, callback)
-
-suspend fun launchAsap(job: Job? = null, callback: suspend () -> Unit) = launchAsap(coroutineContext, job, callback)
-
-suspend fun <T> asyncImmediately(job: Job? = null, callback: suspend () -> T) =
-	asyncImmediately(coroutineContext, job, callback)
-
-suspend fun <T> asyncAsap(job: Job? = null, callback: suspend () -> T) =
-	asyncAsap(coroutineContext, job, callback)
-
-
-fun launchImmediately(coroutineContext: CoroutineContext, job: Job? = null, callback: suspend () -> Unit) =
-	launch(coroutineContext, start = CoroutineStart.UNDISPATCHED, parent = job) {
+fun CoroutineScope.launchImmediately(callback: suspend () -> Unit) =
+	launch(coroutineContext, start = CoroutineStart.UNDISPATCHED) {
 		try {
 			callback()
-		} catch (e: JobCancellationException) {
+		} catch (e: CancellationException) {
+			throw e
+		} catch (e: Throwable) {
+			e.printStackTrace()
+			throw e
+		}
+	}
+
+fun CoroutineScope.launchAsap(callback: suspend () -> Unit) =
+	launch(coroutineContext, start = CoroutineStart.DEFAULT) {
+		try {
+			callback()
+		} catch (e: CancellationException) {
+			throw e
+		} catch (e: Throwable) {
+			e.printStackTrace()
+			throw e
+		}
+	}
+
+fun <T> CoroutineScope.asyncImmediately(callback: suspend () -> T) =
+	async(coroutineContext, start = CoroutineStart.UNDISPATCHED) {
+		try {
+			callback()
+		} catch (e: CancellationException) {
+			throw e
+		} catch (e: Throwable) {
+			e.printStackTrace()
+			throw e
+		}
+	}
+
+fun <T> CoroutineScope.asyncAsap(callback: suspend () -> T) =
+	async(coroutineContext, start = CoroutineStart.DEFAULT) {
+		try {
+			callback()
+		} catch (e: CancellationException) {
 			throw e
 		} catch (e: Throwable) {
 			e.printStackTrace()
@@ -198,40 +224,11 @@ fun launchImmediately(coroutineContext: CoroutineContext, job: Job? = null, call
 	}
 
 
-fun launchAsap(coroutineContext: CoroutineContext, job: Job? = null, callback: suspend () -> Unit) =
-	launch(coroutineContext, start = CoroutineStart.DEFAULT, parent = job) {
-		try {
-			callback()
-		} catch (e: JobCancellationException) {
-			throw e
-		} catch (e: Throwable) {
-			e.printStackTrace()
-			throw e
-		}
-	}
+fun launchImmediately(context: CoroutineContext, callback: suspend () -> Unit) =
+	CoroutineScope(context).launchImmediately(callback)
 
+fun launchAsap(context: CoroutineContext, callback: suspend () -> Unit) = CoroutineScope(context).launchAsap(callback)
+fun <T> asyncImmediately(context: CoroutineContext, callback: suspend () -> T) =
+	CoroutineScope(context).asyncImmediately(callback)
 
-fun <T> asyncImmediately(coroutineContext: CoroutineContext, job: Job? = null, callback: suspend () -> T) =
-	async(coroutineContext, start = CoroutineStart.UNDISPATCHED, parent = job) {
-		try {
-			callback()
-		} catch (e: JobCancellationException) {
-			throw e
-		} catch (e: Throwable) {
-			e.printStackTrace()
-			throw e
-		}
-	}
-
-fun <T> asyncAsap(coroutineContext: CoroutineContext, job: Job? = null, callback: suspend () -> T) =
-	async(coroutineContext, start = CoroutineStart.DEFAULT, parent = job) {
-		try {
-			callback()
-		} catch (e: JobCancellationException) {
-			throw e
-		} catch (e: Throwable) {
-			e.printStackTrace()
-			throw e
-		}
-	}
-
+fun <T> asyncAsap(context: CoroutineContext, callback: suspend () -> T) = CoroutineScope(context).asyncAsap(callback)

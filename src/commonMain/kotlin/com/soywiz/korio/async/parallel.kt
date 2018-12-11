@@ -4,12 +4,12 @@ import kotlinx.coroutines.*
 
 object ParallelContext
 
-suspend fun parallel(callback: ParallelContext.() -> Unit) {
-	val res = launch(KorioDefaultDispatcher, parent = Job()) { callback(ParallelContext) }
+suspend fun CoroutineScope.parallel(callback: ParallelContext.() -> Unit) {
+	val res = launch(KorioDefaultDispatcher) { callback(ParallelContext) }
 	res.join()
 }
 
-fun ParallelContext.sequence(callback: suspend ParallelContext.() -> Unit) {
+fun CoroutineScope.sequence(callback: suspend ParallelContext.() -> Unit) {
 	async(KorioDefaultDispatcher) { callback(ParallelContext) }
 }
 
