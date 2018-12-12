@@ -14,12 +14,6 @@ import kotlin.coroutines.*
 import kotlin.math.*
 import kotlin.reflect.*
 
-expect annotation class Synchronized()
-expect annotation class JvmField()
-expect annotation class JvmStatic()
-expect annotation class JvmOverloads()
-expect annotation class Transient()
-
 annotation class Language(val value: String, val prefix: String = "", val suffix: String = "")
 //expect annotation class Language(val value: String, val prefix: String = "", val suffix: String = "")
 

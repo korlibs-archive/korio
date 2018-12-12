@@ -11,6 +11,7 @@ import com.soywiz.korio.file.*
 import com.soywiz.korio.file.std.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.util.*
+import kotlin.jvm.*
 import kotlin.math.*
 
 //interface SmallTemp {
@@ -587,7 +588,6 @@ suspend fun AsyncOutputStream.writeStream(source: AsyncInputStream): Long = sour
 suspend fun AsyncOutputStream.writeFile(source: VfsFile): Long =
 	source.openUse(VfsOpenMode.READ) { this@writeFile.writeStream(this) }
 
-@JvmOverloads
 suspend fun AsyncInputStream.copyTo(target: AsyncOutputStream, chunkSize: Int = 0x10000): Long {
 	// Optimization to reduce suspensions
 	if (this is AsyncStream && base is MemoryAsyncStreamBase) {

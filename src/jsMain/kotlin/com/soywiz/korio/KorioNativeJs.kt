@@ -23,12 +23,6 @@ import kotlin.collections.set
 import kotlin.coroutines.*
 import kotlin.reflect.*
 
-actual annotation class Synchronized
-actual annotation class JvmField
-actual annotation class JvmStatic
-actual annotation class JvmOverloads
-actual annotation class Transient
-
 /*
 actual annotation class Language actual constructor(
 	actual val value: String,

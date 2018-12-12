@@ -77,10 +77,6 @@ fun CoroutineScope.animationFrameLoop(callback: suspend (Closeable) -> Unit): Cl
 	return close
 }
 
-interface CoroutineContextHolder {
-	val coroutineContext: CoroutineContext
-}
-
 @InternalCoroutinesApi
 class TestCoroutineDispatcher(val frameTime: Int = 16) :
 	AbstractCoroutineContextElement(ContinuationInterceptor),
@@ -170,9 +166,18 @@ fun suspendTest(callback: suspend () -> Unit) = KorioNative.suspendTest { callba
 fun suspendTest(context: CoroutineContext, callback: suspend () -> Unit) =
 	KorioNative.suspendTest { withContext(context) { callback() } }
 
-fun suspendTestExceptJs(callback: suspend () -> Unit) = suspendTest {
-	if (OS.isJs) return@suspendTest
-	callback()
+// @TODO: Kotlin.JS bug!
+//fun suspendTestExceptJs(callback: suspend () -> Unit) = suspendTest {
+//	if (OS.isJs) return@suspendTest
+//	callback()
+//}
+
+fun suspendTestExceptJs(callback: suspend () -> Unit) {
+	if (!OS.isJs) {
+		suspendTest {
+			callback()
+		}
+	}
 }
 
 fun CoroutineScope.launchImmediately(callback: suspend () -> Unit) =

@@ -23,12 +23,6 @@ import kotlinx.coroutines.*
 import kotlinx.cinterop.*
 import platform.posix.*
 
-actual annotation class Synchronized
-actual annotation class JvmField
-actual annotation class JvmStatic
-actual annotation class JvmOverloads
-actual annotation class Transient
-
 actual open class IOException actual constructor(msg: String) : Exception(msg)
 actual open class EOFException actual constructor(msg: String) : IOException(msg)
 actual open class FileNotFoundException actual constructor(msg: String) : IOException(msg)

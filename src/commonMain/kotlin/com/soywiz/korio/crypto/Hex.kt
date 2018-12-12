@@ -1,6 +1,6 @@
 package com.soywiz.korio.crypto
 
-import com.soywiz.korio.*
+import kotlin.jvm.*
 
 object Hex {
 	private val DIGITS = "0123456789ABCDEF"
@@ -19,7 +19,6 @@ object Hex {
 
 	fun isHexDigit(c: Char): Boolean = decodeChar(c) >= 0
 
-	@JvmOverloads
 	fun decode(str: String): ByteArray {
 		val out = ByteArray((str.length + 1) / 2)
 		var opos = 0
