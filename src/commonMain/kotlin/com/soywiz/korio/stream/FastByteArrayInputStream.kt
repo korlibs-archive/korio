@@ -1,6 +1,7 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.kmem.*
+import com.soywiz.korio.compat.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.util.*
 
@@ -114,7 +115,7 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 		val startOffset = offset
 		val index = ba.indexOf(offset, 0.toByte())
 		val end = if (index >= 0) index else ba.size
-		val str = ba.copyOfRange(startOffset, end - startOffset).toString(charset)
+		val str = ba.copyOfRangeCompat(startOffset, end - startOffset).toString(charset)
 		offset = if (index >= 0) end + 1 else end
 		return str
 	}

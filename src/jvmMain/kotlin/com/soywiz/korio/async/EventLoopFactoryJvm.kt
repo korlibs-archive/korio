@@ -39,7 +39,7 @@ class EventLoopJvmAndCSharp : EventLoop(captureCloseables = false) {
 	}
 
 	private val immediateTasksPool = Pool({ it.reset() }) { ImmediateTask() }
-	private val immediateTasks = LinkedList<ImmediateTask>()
+	private val immediateTasks = Deque<ImmediateTask>()
 
 	override fun setImmediateInternal(handler: () -> Unit) {
 		synchronized2(lock) {

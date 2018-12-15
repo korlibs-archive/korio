@@ -256,7 +256,7 @@ object DynamicJvm {
 			val resultClass = target as Class<Any>
 			if (resultClass.isAssignableFrom(Map::class.java)) {
 				if (genericType is ParameterizedType) {
-					val result = lmapOf<Any?, Any?>()
+					val result = linkedMapOf<Any?, Any?>()
 					val keyType = genericType.actualTypeArguments[0] as? Class<*>?
 					val valueType = genericType.actualTypeArguments[1] as? Class<*>?
 					for (entry in value.entries) {
@@ -333,7 +333,7 @@ object DynamicJvm {
 			is Iterable<*> -> value
 			else -> {
 				val clazz = value::class.java
-				val out = lmapOf<Any?, Any?>()
+				val out = linkedMapOf<Any?, Any?>()
 				for (field in clazz.declaredFields) {
 					if (Modifier.isStatic(field.modifiers)) continue
 					if (field.name.startsWith('$')) continue

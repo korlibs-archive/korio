@@ -4,7 +4,7 @@ import com.soywiz.kds.*
 
 object QueryString {
 	fun decode(str: CharSequence): Map<String, List<String>> {
-		val out = lmapOf<String, ArrayList<String>>()
+		val out = linkedMapOf<String, ArrayList<String>>()
 		for (chunk in str.split('&')) {
 			val parts = chunk.split('=', limit = 2)
 			val key = URLDecoder.decode(parts[0], "UTF-8")

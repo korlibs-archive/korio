@@ -15,7 +15,7 @@ class MimeType(val mime: String, val exts: List<String>) : Vfs.Attribute {
 		val TEXT_CSS = MimeType("text/css", listOf("css"))
 		val TEXT_JS = MimeType("application/javascript", listOf("js"))
 
-		private val byExtensions = lmapOf<String, MimeType>()
+		private val byExtensions = LinkedHashMap<String, MimeType>()
 
 		fun register(mimeType: MimeType) {
 			for (ext in mimeType.exts) byExtensions[ext] = mimeType

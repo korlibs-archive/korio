@@ -7,7 +7,7 @@ import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 
-fun MemoryVfs(items: Map<String, AsyncStream> = lmapOf(), caseSensitive: Boolean = true): VfsFile {
+fun MemoryVfs(items: Map<String, AsyncStream> = LinkedHashMap(), caseSensitive: Boolean = true): VfsFile {
 	val vfs = NodeVfs(caseSensitive)
 	for ((path, stream) in items) {
 		val info = PathInfo(path)
@@ -19,7 +19,7 @@ fun MemoryVfs(items: Map<String, AsyncStream> = lmapOf(), caseSensitive: Boolean
 }
 
 fun MemoryVfsMix(
-	items: Map<String, Any> = lmapOf(),
+	items: Map<String, Any> = LinkedHashMap(),
 	caseSensitive: Boolean = true,
 	charset: Charset = UTF8
 ): VfsFile = MemoryVfs(items.mapValues { (_, v) ->

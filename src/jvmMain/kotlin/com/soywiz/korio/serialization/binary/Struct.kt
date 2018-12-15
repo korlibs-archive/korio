@@ -140,7 +140,7 @@ class StructReflect<T>(val clazz: Class<T>) {
 	}
 
 	companion object {
-		val cache = lmapOf<Class<*>, StructReflect<*>>()
+		val cache = linkedMapOf<Class<*>, StructReflect<*>>()
 		@Suppress("UNCHECKED_CAST")
 		operator fun <T> get(clazz: Class<T>): StructReflect<T> {
 			return cache.getOrPut(clazz) {

@@ -6,7 +6,7 @@ import com.soywiz.korio.util.*
 
 object XmlEntities {
 	// Predefined entities in XML 1.0
-	private val charToEntity = lmapOf('"' to "&quot;", '\'' to "&apos;", '<' to "&lt;", '>' to "&gt;", '&' to "&amp;")
+	private val charToEntity = linkedMapOf('"' to "&quot;", '\'' to "&apos;", '<' to "&lt;", '>' to "&gt;", '&' to "&amp;")
 	private val entities = StrReader.Literals.fromList(charToEntity.values.toTypedArray())
 	private val entityToChar = charToEntity.flip()
 

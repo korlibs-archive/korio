@@ -23,7 +23,7 @@ class XmlTest {
 
 	@kotlin.test.Test
 	fun name3() {
-		assertEquals("""<test z="1" b="2"/>""", Xml.Tag("test", lmapOf("z" to 1, "b" to 2), listOf()).outerXml)
+		assertEquals("""<test z="1" b="2"/>""", Xml.Tag("test", linkedMapOf("z" to 1, "b" to 2), listOf()).outerXml)
 	}
 
 	@kotlin.test.Test

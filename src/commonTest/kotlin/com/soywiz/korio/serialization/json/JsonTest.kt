@@ -37,11 +37,11 @@ class JsonTest {
 		//mapper.registerType { DemoSet(it["demos"].genSet<Demo>()) }
 		//mapper.registerType { ClassWithEnum(it["a"]?.gen() ?: MyEnum.HELLO) }
 		//mapper.registerUntypeEnum<MyEnum>()
-		//mapper.registerUntype<Demo> { lmapOf("a" to it.a.gen(), "b" to it.b.gen()) }
-		//mapper.registerUntype<Demo2> { lmapOf("a" to it.a.gen()) }
-		//mapper.registerUntype<DemoList> { lmapOf("demos" to it.demos.gen()) }
-		//mapper.registerUntype<DemoSet> { lmapOf("demos" to it.demos.gen()) }
-		//mapper.registerUntype<ClassWithEnum> { lmapOf("a" to it.a.gen()) }
+		//mapper.registerUntype<Demo> { linkedMapOf("a" to it.a.gen(), "b" to it.b.gen()) }
+		//mapper.registerUntype<Demo2> { linkedMapOf("a" to it.a.gen()) }
+		//mapper.registerUntype<DemoList> { linkedMapOf("demos" to it.demos.gen()) }
+		//mapper.registerUntype<DemoSet> { linkedMapOf("demos" to it.demos.gen()) }
+		//mapper.registerUntype<ClassWithEnum> { linkedMapOf("a" to it.a.gen()) }
 
 		mapper.registerEnum(MyEnum::class, MyEnum.values())
 		mapper.registerType(Demo::class) { Demo(it["a"].gen(Int::class), it["b"].gen(String::class)) }
@@ -50,16 +50,16 @@ class JsonTest {
 		mapper.registerType(DemoSet::class) { DemoSet(it["demos"].genSet(Demo::class)) }
 		mapper.registerType(ClassWithEnum::class) { ClassWithEnum(it["a"]?.gen(MyEnum::class) ?: MyEnum.HELLO) }
 		mapper.registerUntypeEnum(MyEnum::class)
-		mapper.registerUntype(Demo::class) { lmapOf("a" to it.a.gen(), "b" to it.b.gen()) }
-		mapper.registerUntype(Demo2::class) { lmapOf("a" to it.a.gen()) }
-		mapper.registerUntype(DemoList::class) { lmapOf("demos" to it.demos.gen()) }
-		mapper.registerUntype(DemoSet::class) { lmapOf("demos" to it.demos.gen()) }
-		mapper.registerUntype(ClassWithEnum::class) { lmapOf("a" to it.a.gen()) }
+		mapper.registerUntype(Demo::class) { linkedMapOf("a" to it.a.gen(), "b" to it.b.gen()) }
+		mapper.registerUntype(Demo2::class) { linkedMapOf("a" to it.a.gen()) }
+		mapper.registerUntype(DemoList::class) { linkedMapOf("demos" to it.demos.gen()) }
+		mapper.registerUntype(DemoSet::class) { linkedMapOf("demos" to it.demos.gen()) }
+		mapper.registerUntype(ClassWithEnum::class) { linkedMapOf("a" to it.a.gen()) }
 	}
 
 	@kotlin.test.Test
 	fun decode1() {
-		assertEquals(lmapOf("a" to 1).toString(), Json.decode("""{"a":1}""").toString())
+		assertEquals(linkedMapOf("a" to 1).toString(), Json.decode("""{"a":1}""").toString())
 		//assertEquals(-1e7, Json.decode("""-1e7"""))
 		assertEquals(-10000000, Json.decode("""-1e7"""))
 	}
@@ -92,7 +92,7 @@ class JsonTest {
 	@kotlin.test.Test
 	fun encode2() {
 		assertEquals("[1,2,3]", Json.encode(listOf(1, 2, 3), mapper))
-		assertEquals("""{"a":1,"b":2}""", Json.encode(lmapOf("a" to 1, "b" to 2), mapper))
+		assertEquals("""{"a":1,"b":2}""", Json.encode(linkedMapOf("a" to 1, "b" to 2), mapper))
 	}
 
 	@kotlin.test.Test
@@ -180,9 +180,9 @@ class JsonTest {
 		mapper.registerType { V(it["a"].gen(Int::class), it["b"].gen(Int::class)) }
 		mapper.registerType { Demo(it["v"].toDynamicMap().map { it.key.toString() to it.value.gen<V>() }.toMap()) }
 
-		//assertEquals(Demo(lmapOf("z" to V(1, 2))), Json.decodeToType<Demo>("""{"v":{"z":{"a":1,"b":2}}}""", mapper))
+		//assertEquals(Demo(linkedMapOf("z" to V(1, 2))), Json.decodeToType<Demo>("""{"v":{"z":{"a":1,"b":2}}}""", mapper))
 		assertEquals(
-			Demo(lmapOf("z" to V(1, 2))),
+			Demo(linkedMapOf("z" to V(1, 2))),
 			Json.decodeToType(Demo::class, """{"v":{"z":{"a":1,"b":2}}}""", mapper)
 		)
 	}
@@ -192,12 +192,12 @@ class JsonTest {
 		data class V(val a: Int, val b: Int)
 		data class Demo(val v: Map<String, V>)
 
-		mapper.registerUntype<V> { lmapOf("a" to it.a.gen(), "b" to it.b.gen()) }
-		mapper.registerUntype<Demo> { lmapOf("v" to it.v.gen()) }
+		mapper.registerUntype<V> { linkedMapOf("a" to it.a.gen(), "b" to it.b.gen()) }
+		mapper.registerUntype<Demo> { linkedMapOf("v" to it.v.gen()) }
 
 		assertEquals(
 			"""{"v":{"z1":{"a":1,"b":2},"z2":{"a":1,"b":2}}}""",
-			Json.encode(Demo(lmapOf("z1" to V(1, 2), "z2" to V(1, 2))), mapper)
+			Json.encode(Demo(linkedMapOf("z1" to V(1, 2), "z2" to V(1, 2))), mapper)
 		)
 	}
 }

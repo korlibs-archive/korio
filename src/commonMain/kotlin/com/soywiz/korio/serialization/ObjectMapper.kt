@@ -13,8 +13,8 @@ import kotlin.reflect.*
  * Bools, Numbers, Strings, Lists and Maps (json supported)
  */
 class ObjectMapper {
-	val _typers = lmapOf<KClass<*>, TypeContext.(Any?) -> Any?>()
-	val _untypers = lmapOf<KClass<*>, UntypeContext.(Any?) -> Any?>()
+	val _typers = linkedMapOf<KClass<*>, TypeContext.(Any?) -> Any?>()
+	val _untypers = linkedMapOf<KClass<*>, UntypeContext.(Any?) -> Any?>()
 	var fallbackTyper: ((KClass<*>, Any) -> Any)? = null
 	var fallbackUntyper: ((Any) -> Any)? = null
 

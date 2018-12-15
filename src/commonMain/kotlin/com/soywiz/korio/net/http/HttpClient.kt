@@ -253,7 +253,7 @@ class FakeHttpClient(val redirect: HttpClient? = null) : HttpClient() {
 fun LogHttpClient() = FakeHttpClient()
 
 object HttpStatusMessage {
-	val CODES = lmapOf(
+	val CODES = linkedMapOf(
 		100 to "Continue",
 		101 to "Switching Protocols",
 		200 to "OK",

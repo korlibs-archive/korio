@@ -149,7 +149,7 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 			//fun invoke(lits:Array<String>): Literals = fromList(lits)
 			fun fromList(lits: Array<String>): Literals {
 				val lengths = lits.map { it.length }.sorted().reversed().distinct().toTypedArray()
-				val map = lmapOf<String, Boolean>()
+				val map = linkedMapOf<String, Boolean>()
 				for (lit in lits) map[lit] = true
 				return Literals(lits, map, lengths)
 			}

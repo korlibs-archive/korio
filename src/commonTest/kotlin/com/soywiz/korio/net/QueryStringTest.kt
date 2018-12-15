@@ -10,7 +10,7 @@ class QueryStringTest {
 
 	@kotlin.test.Test
 	fun name() {
-		assertEquals(lmapOf("a" to listOf("2"), "b" to listOf("3")), QueryString.decode("a=2&b=3"))
+		assertEquals(linkedMapOf("a" to listOf("2"), "b" to listOf("3")), QueryString.decode("a=2&b=3"))
 		assertIdem("a=1&b=2")
 	}
 }

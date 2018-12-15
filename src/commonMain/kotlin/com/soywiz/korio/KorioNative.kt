@@ -92,7 +92,7 @@ expect object KorioNative {
 	fun suspendTest(callback: suspend () -> Unit)
 }
 
-object KorioNativeDefaults {
+internal object KorioNativeDefaults {
 	fun printStackTrace(e: Throwable) {
 		Logger("KorioNativeDefaults").error { "printStackTrace:" }
 		Logger("KorioNativeDefaults").error { e.message ?: "Error" }

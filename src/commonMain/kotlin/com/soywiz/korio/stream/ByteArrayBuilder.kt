@@ -1,6 +1,7 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.kmem.*
+import com.soywiz.korio.compat.*
 import com.soywiz.korio.lang.*
 import kotlin.math.*
 
@@ -36,7 +37,7 @@ class ByteArrayBuilder() {
 
 	fun append(chunk: ByteArray, offset: Int, length: Int) {
 		flush()
-		val achunk = chunk.copyOfRange(offset, offset + length)
+		val achunk = chunk.copyOfRangeCompat(offset, offset + length)
 		chunks += achunk
 	}
 

@@ -1,6 +1,7 @@
 package com.soywiz.korio.lang
 
 import com.soywiz.kmem.*
+import com.soywiz.korio.compat.*
 import com.soywiz.korio.stream.*
 
 abstract class Charset(val name: String) {
@@ -144,7 +145,7 @@ fun ByteArray.readStringz(o: Int, size: Int, charset: Charset = UTF8): String {
 		if (this[idx] == 0.toByte()) break
 		idx++
 	}
-	return this.copyOfRange(o, idx).toString(charset)
+	return this.copyOfRangeCompat(o, idx).toString(charset)
 }
 
 fun ByteArray.readStringz(o: Int, charset: Charset = UTF8): String {
@@ -152,5 +153,5 @@ fun ByteArray.readStringz(o: Int, charset: Charset = UTF8): String {
 }
 
 fun ByteArray.readString(o: Int, size: Int, charset: Charset = UTF8): String {
-	return this.copyOfRange(o, o + size).toString(charset)
+	return this.copyOfRangeCompat(o, o + size).toString(charset)
 }

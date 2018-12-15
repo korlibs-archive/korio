@@ -32,6 +32,6 @@ class DynamicTest {
 			fun <T> to(): T = obj as T
 		}
 
-		assertEquals(10, DynamicObj(lmapOf("a" to 10)).get("a").to<Int>())
+		assertEquals(10, DynamicObj(linkedMapOf("a" to 10)).get("a").to<Int>())
 	}
 }

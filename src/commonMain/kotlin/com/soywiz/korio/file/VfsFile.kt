@@ -2,7 +2,7 @@
 
 package com.soywiz.korio.file
 
-import com.soywiz.kds.lmapOf
+import com.soywiz.kds.*
 import com.soywiz.klock.DateTime
 import com.soywiz.klogger.error
 import com.soywiz.klogger.log
@@ -161,13 +161,13 @@ class VfsFile(
 
 	suspend fun exec(
 		cmdAndArgs: List<String>,
-		env: Map<String, String> = lmapOf(),
+		env: Map<String, String> = LinkedHashMap(),
 		handler: VfsProcessHandler = VfsProcessHandler()
 	): Int = vfs.exec(path, cmdAndArgs, env, handler)
 
 	suspend fun execToString(
 		cmdAndArgs: List<String>,
-		env: Map<String, String> = lmapOf(),
+		env: Map<String, String> = LinkedHashMap(),
 		charset: Charset = UTF8,
 		captureError: Boolean = false,
 		throwOnError: Boolean = true
@@ -199,7 +199,7 @@ class VfsFile(
 
 	suspend fun passthru(
 		cmdAndArgs: List<String>,
-		env: Map<String, String> = lmapOf(),
+		env: Map<String, String> = LinkedHashMap(),
 		charset: Charset = UTF8
 	): Int {
 		return exec(cmdAndArgs.toList(), env, object : VfsProcessHandler() {
@@ -210,7 +210,7 @@ class VfsFile(
 
 	suspend fun passthru(
 		vararg cmdAndArgs: String,
-		env: Map<String, String> = lmapOf(),
+		env: Map<String, String> = LinkedHashMap(),
 		charset: Charset = UTF8
 	): Int = passthru(cmdAndArgs.toList(), env, charset)
 

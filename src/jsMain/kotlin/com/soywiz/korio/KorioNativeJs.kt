@@ -2,6 +2,7 @@ package com.soywiz.korio
 
 import com.soywiz.kds.*
 import com.soywiz.korio.async.*
+import com.soywiz.korio.compat.*
 import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.deflate.*
 import com.soywiz.korio.crypto.*
@@ -119,7 +120,13 @@ actual object KorioNative {
 	actual fun localVfs(path: String): VfsFile {
 		return when {
 			isNodeJs -> NodeJsLocalVfs()[path]
-			else -> UrlVfs(document.location?.href ?: ".")[path]
+			else -> {
+				val href = document.location?.href ?: "."
+				val url = if (href.endsWith("/")) href else href.substringBeforeLast('/')
+				//println("href: $href")
+				//println("url: $url")
+				UrlVfs(url)[path]
+			}
 		}
 	}
 
@@ -177,7 +184,7 @@ actual object KorioNative {
 
 		// @TODO: Optimize this!
 		actual suspend fun update(data: ByteArray, offset: Int, size: Int): Unit =
-			update(data.copyOfRange(offset, offset + size))
+			update(data.copyOfRangeCompat(offset, offset + size))
 
 		suspend fun update(data: ByteArray): Unit = hash.update(data)
 		// @TODO: Optimize: Can return ByteArray directly?
@@ -193,7 +200,7 @@ actual object KorioNative {
 		}
 		val hmac = require("crypto").createHmac(hname, key)
 		actual suspend fun update(data: ByteArray, offset: Int, size: Int): Unit =
-			update(data.copyOfRange(offset, offset + size))
+			update(data.copyOfRangeCompat(offset, offset + size))
 
 		suspend fun update(data: ByteArray): Unit = hmac.update(data)
 		actual suspend fun finalize(): ByteArray = Hex.decode(hmac.digest("hex"))
@@ -277,7 +284,7 @@ fun jsObject(vararg pairs: Pair<String, Any?>): dynamic {
 
 fun jsToObjectMap(obj: dynamic): Map<String, Any?>? {
 	if (obj == null) return null
-	val out = lmapOf<String, Any?>()
+	val out = linkedMapOf<String, Any?>()
 	val keys = jsObjectKeys(obj)
 	for (n in 0 until keys.length) {
 		val key = keys[n]

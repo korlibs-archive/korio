@@ -3,6 +3,7 @@ package com.soywiz.korio.async
 import com.soywiz.kds.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.*
+import com.soywiz.korio.compat.*
 import com.soywiz.korio.concurrent.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
@@ -25,8 +26,8 @@ interface Producer<T> : Closeable {
 }
 
 open class ProduceConsumer<T> : Consumer<T>, Producer<T> {
-	private val items = LinkedList<T?>()
-	private val consumers = LinkedList<(T?) -> Unit>()
+	private val items = Deque<T?>()
+	private val consumers = Deque<(T?) -> Unit>()
 	private var closed = false
 	private val lock = Lock()
 
@@ -95,7 +96,7 @@ fun Consumer<ByteArray>.toAsyncInputStream() = AsyncConsumerStream(this)
 
 class AsyncProducerStream(val producer: Producer<ByteArray>) : AsyncOutputStream {
 	override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
-		producer.produce(buffer.copyOfRange(offset, offset + len))
+		producer.produce(buffer.copyOfRangeCompat(offset, offset + len))
 	}
 
 	override suspend fun close() {

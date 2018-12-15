@@ -18,7 +18,7 @@ open class BitReader(val s: AsyncInputWithLengthStream) {
 	}
 
 	var syncSize = 0; private set
-	private val sbuffers = LinkedList<ByteArray>()
+	private val sbuffers = Deque<ByteArray>()
 	private var cbuffer = byteArrayOf()
 	private var cbufferPos = 0
 

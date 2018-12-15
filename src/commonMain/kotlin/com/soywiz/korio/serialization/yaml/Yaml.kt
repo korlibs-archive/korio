@@ -104,7 +104,7 @@ object Yaml {
 							if (TRACE) println("${levelStr}LIT: $key")
 							return parseStr(kkey)
 						} else {
-							if (map == null) map = lmapOf()
+							if (map == null) map = LinkedHashMap()
 							if (s.read().str != ":") invalidOp
 							if (TRACE) println("${levelStr}MAP[$key]...")
 							val value = read(s, level + 1)
@@ -132,7 +132,7 @@ object Yaml {
 			}
 		}
 
-		val indents = LinkedList<Int>()
+		val indents = Deque<Int>()
 		linestart@ while (hasMore) {
 			// Line start
 			flush()

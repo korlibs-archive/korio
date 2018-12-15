@@ -1,5 +1,6 @@
 package com.soywiz.korio.net
 
+import com.soywiz.kds.Deque
 import com.soywiz.korio.async.*
 import com.soywiz.korio.stream.*
 import kotlinx.coroutines.*
@@ -20,7 +21,7 @@ class AsyncClientServerTest {
 		val clientsCount = 2000
 		//val clientsCount = 10
 		var counter = 0
-		val correctEchoes = LinkedList<Boolean>()
+		val correctEchoes = Deque<Boolean>()
 
 		val clients = (0 until clientsCount).map { clientId ->
 			asyncImmediately(coroutineContext) {

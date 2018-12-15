@@ -71,7 +71,7 @@ class HttpClientNodeJs : HttpClient() {
 					status = statusCode,
 					statusText = statusMessage,
 					headers = Http.Headers(
-						(jsToObjectMap(jsHeadersObj) ?: lmapOf()).mapValues { "${it.value}" }
+						(jsToObjectMap(jsHeadersObj) ?: LinkedHashMap()).mapValues { "${it.value}" }
 					),
 					content = out.openAsync()
 				)

@@ -11,7 +11,7 @@ class CopyToTreeTest {
 	@Test
 	fun name() = suspendTest {
 		val mem = MemoryVfs(
-			lmapOf(
+			linkedMapOf(
 				"root.txt" to "hello".toByteArray().openAsync(),
 				"hello/world.txt" to "hello".toByteArray().openAsync()
 			)

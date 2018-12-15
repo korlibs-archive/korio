@@ -3,6 +3,7 @@ package com.soywiz.korio.net.http
 import com.soywiz.kds.*
 import com.soywiz.korio.*
 import com.soywiz.korio.async.*
+import com.soywiz.korio.compat.*
 import com.soywiz.korio.error.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
@@ -83,7 +84,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 	val requestConfig = RequestConfig()
 
 	data class RequestConfig(
-		val beforeSendHeadersInterceptors: MutableMap<String, suspend (Request) -> Unit> = lmapOf()
+		val beforeSendHeadersInterceptors: MutableMap<String, suspend (Request) -> Unit> = LinkedHashMap()
 	) : Extra by Extra.Mixin() {
 		// TODO:
 		fun registerComponent(component: Any, dependsOn: List<Any>): Unit = TODO()
@@ -292,7 +293,7 @@ class FakeRequest(
 	}
 
 	override suspend fun _write(data: ByteArray, offset: Int, size: Int) {
-		log += "_write(${data.copyOfRange(offset, offset + size).toString(UTF8)})"
+		log += "_write(${data.copyOfRangeCompat(offset, offset + size).toString(UTF8)})"
 		buf.append(data, offset, size)
 	}
 

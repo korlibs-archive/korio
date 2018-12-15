@@ -36,7 +36,7 @@ class YamlTest {
 	@kotlin.test.Test
 	fun name2() {
 		assertEquals(
-			lmapOf("hr" to 65, "avg" to 0.278, "rbi" to 147),
+			linkedMapOf("hr" to 65, "avg" to 0.278, "rbi" to 147),
 			Yaml.read(
 				"""
 				hr:  65    # Home runs
@@ -58,7 +58,7 @@ class YamlTest {
 	@kotlin.test.Test
 	fun name4() {
 		assertEquals(
-			listOf(lmapOf("a" to 1), lmapOf("a" to 2)),
+			listOf(linkedMapOf("a" to 1), linkedMapOf("a" to 2)),
 			Yaml.read(
 				"""
 				|-
@@ -74,12 +74,12 @@ class YamlTest {
 	fun name5() {
 		assertEquals(
 			listOf(
-				lmapOf(
+				linkedMapOf(
 					"name" to "Mark McGwire",
 					"hr" to 65,
 					"avg" to 0.278
 				),
-				lmapOf(
+				linkedMapOf(
 					"name" to "Sammy Sosa",
 					"hr" to 63,
 					"avg" to 0.288
@@ -103,7 +103,7 @@ class YamlTest {
 	@kotlin.test.Test
 	fun name6() {
 		assertEquals(
-			lmapOf(
+			linkedMapOf(
 				"hr" to listOf("Mark McGwire", "Sammy Sosa"),
 				"rbi" to listOf("Sammy Sosa", "Ken Griffey")
 			),
@@ -124,7 +124,7 @@ class YamlTest {
 	@kotlin.test.Test
 	fun name7() {
 		assertEquals(
-			lmapOf(
+			linkedMapOf(
 				"null" to null,
 				"booleans" to listOf(true, false),
 				"string" to "012345"

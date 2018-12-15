@@ -129,7 +129,7 @@ class TestCoroutineDispatcher(val frameTime: Int = 16) :
 		if (exception != null) throw exception ?: error("error")
 		//println("TASKS: ${tasks.size}")
 		while (tasks.isNotEmpty()) {
-			val task = tasks.removeHead()
+			val task = tasks.removeHead()!!
 			this.time = task.time
 			//println("RUN: $task")
 			task.callback.startCoroutine(object : Continuation<Unit> {

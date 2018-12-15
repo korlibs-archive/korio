@@ -37,7 +37,7 @@ class LocalVfsJvm : LocalVfs() {
 	): Int = executeIo {
 		val actualCmd = if (OS.isWindows) listOf("cmd", "/c") + cmdAndArgs else cmdAndArgs
 		val pb = ProcessBuilder(actualCmd)
-		pb.environment().putAll(lmapOf())
+		pb.environment().putAll(LinkedHashMap())
 		pb.directory(resolveFile(path))
 
 		val p = pb.start()

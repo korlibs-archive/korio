@@ -3,6 +3,7 @@ package com.soywiz.korio.stream
 import com.soywiz.kds.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
+import com.soywiz.korio.compat.*
 import com.soywiz.korio.util.*
 import kotlin.math.*
 
@@ -13,7 +14,7 @@ class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 
 	private var current: ByteArray = EMPTY
 	private var currentPos = 0
-	private val buffers = LinkedList<ByteArray>()
+	private val buffers = Deque<ByteArray>()
 	private var availableInBuffers = 0
 	private val availableInCurrent: Int get() = current.size - currentPos
 
@@ -73,7 +74,7 @@ class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 	}
 
 	override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
-		produce(buffer.copyOfRange(offset, offset + len))
+		produce(buffer.copyOfRangeCompat(offset, offset + len))
 	}
 
 	override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {

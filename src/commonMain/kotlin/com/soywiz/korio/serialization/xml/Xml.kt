@@ -12,7 +12,7 @@ data class Xml(
 	val allChildren: List<Xml>,
 	val content: String
 ) {
-	val attributesLC = attributes.toCaseInsensitiveTreeMap()
+	val attributesLC = attributes.toCaseInsensitiveMap()
 	val nameLC: String = name.toLowerCase().trim()
 	val descendants: Iterable<Xml> get() = allChildren.flatMap { it.descendants + it }
 	val allChildrenNoComments get() = allChildren.filter { !it.isComment }
@@ -25,11 +25,11 @@ data class Xml(
 		}
 
 		fun Text(text: String): Xml {
-			return Xml(Xml.Type.TEXT, "_text_", lmapOf(), listOf(), text)
+			return Xml(Xml.Type.TEXT, "_text_", LinkedHashMap(), listOf(), text)
 		}
 
 		fun Comment(text: String): Xml {
-			return Xml(Xml.Type.COMMENT, "_comment_", lmapOf(), listOf(), text)
+			return Xml(Xml.Type.COMMENT, "_comment_", LinkedHashMap(), listOf(), text)
 		}
 
 		//operator fun invoke(@Language("xml") str: String): Xml = parse(str)

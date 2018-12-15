@@ -42,7 +42,7 @@ class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHt
 				val res = client.request(
 					Http.Method.GET,
 					fullUrl,
-					Http.Headers(lmapOf("range" to "bytes=$position-${position + len - 1}"))
+					Http.Headers(linkedMapOf("range" to "bytes=$position-${position + len - 1}"))
 				)
 				val s = res.content
 				var coffset = offset
@@ -71,7 +71,7 @@ class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHt
 	override suspend fun readRange(path: String, range: LongRange): ByteArray = client.requestAsBytes(
 		Http.Method.GET,
 		getFullUrl(path),
-		Http.Headers(if (range == LONG_ZERO_TO_MAX_RANGE) lmapOf() else lmapOf("range" to "bytes=${range.start}-${range.endInclusive}"))
+		Http.Headers(if (range == LONG_ZERO_TO_MAX_RANGE) LinkedHashMap() else linkedHashMapOf("range" to "bytes=${range.start}-${range.endInclusive}"))
 	).content
 
 	class HttpHeaders(val headers: Http.Headers) : Attribute

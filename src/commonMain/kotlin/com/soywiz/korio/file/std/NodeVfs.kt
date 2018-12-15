@@ -35,8 +35,8 @@ open class NodeVfs(val caseSensitive: Boolean = true) : Vfs() {
 		}
 
 		var data: Any? = null
-		val children = lmapOf<String, Node>()
-		val childrenLC = lmapOf<String, Node>()
+		val children = linkedMapOf<String, Node>()
+		val childrenLC = linkedMapOf<String, Node>()
 		val root: Node get() = parent?.root ?: this
 		var stream: AsyncStream? = null
 

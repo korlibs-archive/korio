@@ -6,7 +6,7 @@ import kotlin.test.*
 class DynamicNodeTest {
 	@Test
 	fun name() {
-		val info = DynamicNode(lmapOf("hello" to "Carlos", "world" to 10, "list" to listOf(0, 10, 20, 30)))
+		val info = DynamicNode(linkedMapOf("hello" to "Carlos", "world" to 10, "list" to listOf(0, 10, 20, 30)))
 		assertEquals("Carlos", info["hello"].asString())
 		assertEquals(10, info["world"].toInt())
 		assertEquals(0, info["list"][0].toInt())

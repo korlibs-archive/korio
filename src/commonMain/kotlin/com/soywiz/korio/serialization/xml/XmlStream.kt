@@ -68,7 +68,7 @@ object XmlStream {
 							val name = r.matchIdentifier()
 								?: error("Couldn't match identifier after '<', offset=${r.pos}, around='${r.peek(10)}'")
 							r.skipSpaces()
-							val attributes = lmapOf<String, String>()
+							val attributes = linkedMapOf<String, String>()
 							while (r.peekChar() != '?' && r.peekChar() != '/' && r.peekChar() != '>') {
 								val key = r.matchStringOrId() ?: throw IllegalArgumentException(
 									"Malformed document or unsupported xml construct around ~${r.peek(
