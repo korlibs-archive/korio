@@ -2,19 +2,14 @@
 
 package com.soywiz.korio.file
 
-import com.soywiz.kds.*
-import com.soywiz.klock.DateTime
-import com.soywiz.klogger.error
-import com.soywiz.klogger.log
+import com.soywiz.klock.*
 import com.soywiz.korio.async.*
-import com.soywiz.korio.error.ignoreErrors
-import com.soywiz.korio.file.std.JailVfs
+import com.soywiz.korio.error.*
+import com.soywiz.korio.file.std.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.LONG_ZERO_TO_MAX_RANGE
-import com.soywiz.korio.util.toLongRange
-import com.soywiz.korio.util.use
-import kotlin.coroutines.coroutineContext
+import com.soywiz.korio.util.*
+import kotlin.coroutines.*
 
 class VfsFile(
 	val vfs: Vfs,
@@ -203,9 +198,11 @@ class VfsFile(
 		charset: Charset = UTF8
 	): Int {
 		return exec(cmdAndArgs.toList(), env, object : VfsProcessHandler() {
-			override suspend fun onOut(data: ByteArray) = com.soywiz.klogger.Console.log(data.toString(charset))
-			override suspend fun onErr(data: ByteArray) = com.soywiz.klogger.Console.error(data.toString(charset))
-		})
+			override suspend fun onOut(data: ByteArray) = print(data.toString(charset))
+			override suspend fun onErr(data: ByteArray) = print(data.toString(charset))
+		}).also {
+			println()
+		}
 	}
 
 	suspend fun passthru(

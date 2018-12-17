@@ -1,6 +1,5 @@
 package com.soywiz.korio
 
-import com.soywiz.klogger.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.crypto.*
 import com.soywiz.korio.file.*
@@ -94,8 +93,8 @@ expect object KorioNative {
 
 internal object KorioNativeDefaults {
 	fun printStackTrace(e: Throwable) {
-		Logger("KorioNativeDefaults").error { "printStackTrace:" }
-		Logger("KorioNativeDefaults").error { e.message ?: "Error" }
+		println("printStackTrace:")
+		println(e.message ?: "Error")
 	}
 
 	fun createServer(): HttpServer {

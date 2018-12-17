@@ -1,6 +1,5 @@
 package com.soywiz.korio.file.std
 
-import com.soywiz.klogger.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.error.*
 import com.soywiz.korio.file.*
@@ -48,8 +47,6 @@ class IsoVfs(val iso: ISO.IsoFile) : Vfs() {
 }
 
 object ISO {
-	val logger = Logger("ISO")
-
 	val CHARSET = ASCII
 	//val CHARSET = UTF8
 
@@ -125,7 +122,6 @@ object ISO {
 				}
 				if (dr.name == "" || dr.name == "\u0001") continue
 				val file = IsoFile(this@IsoReader, dr, parent)
-				logger.info { "IsoFile: ${file.fullname}" }
 
 				if (dr.isDirectory) readDirectoryRecords(file, getSectorMemory(dr.extent, dr.size))
 			}

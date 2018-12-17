@@ -59,6 +59,5 @@ dependencies {
 
 	commonMainApi "com.soywiz:klock:$klockVersion"
 	commonMainApi "com.soywiz:kds:$kdsVersion"
-	commonMainApi "com.soywiz:klogger:$kloggerVersion"
 	commonMainApi "com.soywiz:kmem:$kmemVersion"
 }
