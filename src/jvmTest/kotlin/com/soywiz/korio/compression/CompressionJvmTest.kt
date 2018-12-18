@@ -25,7 +25,7 @@ class CompressionJvmTest {
 	fun gzipAsync() = suspendTest {
 		val data = compressedData
 		val res = data.uncompress(GZIPNoCrc)
-		val res2 = res.readIntArray_le(0, 4096 / 4)
+		val res2 = res.readIntArrayLE(0, 4096 / 4)
 		val actualData = res2.toList().joinToString("")
 		if (expectedData != actualData) {
 			println("EX: $expectedData")
@@ -38,7 +38,7 @@ class CompressionJvmTest {
 	fun gzipSync() {
 		val data = compressedData
 		val res = data.syncUncompress(GZIPNoCrc)
-		val res2 = res.readIntArray_le(0, 4096 / 4)
+		val res2 = res.readIntArrayLE(0, 4096 / 4)
 		assertEquals(expectedData, res2.toList().joinToString(""))
 	}
 

@@ -63,7 +63,7 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 
 	fun consumeUntil(end: Byte, including: Boolean = true, limit: Int = Int.MAX_VALUE): ByteArray =
 		lock {
-			val out = ByteArrayBuilder()
+			val out = ByteArrayBuilder2()
 			while (true) {
 				ensureCurrentBuffer()
 				if (availableInCurrent <= 0) break // no more data!

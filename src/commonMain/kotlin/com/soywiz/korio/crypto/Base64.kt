@@ -53,7 +53,7 @@ object Base64 {
 		var ipos = 0
 		val extraBytes = src.size % 3
 		while (ipos < src.size - 2) {
-			val num = src.readU24_be(ipos)
+			val num = src.readU24BE(ipos)
 			ipos += 3
 
 			out.append(TABLE[(num ushr 18) and 0x3F])

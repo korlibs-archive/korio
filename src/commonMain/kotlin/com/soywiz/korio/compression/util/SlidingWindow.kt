@@ -20,6 +20,6 @@ class SlidingWindow(val nbits: Int) {
 	}
 
 	fun putBytes(bytes: ByteArray, offset: Int, len: Int) {
-		for (n in 0 until len) put(bytes[offset + n].toUnsigned())
+		for (n in 0 until len) put(bytes[offset + n].unsigned)
 	}
 }

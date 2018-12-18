@@ -4,6 +4,7 @@ import com.soywiz.kmem.*
 import com.soywiz.korio.crypto.*
 import com.soywiz.korio.error.*
 import com.soywiz.korio.stream.*
+import kotlin.math.*
 
 object FastDeflate {
 	fun uncompress(input: ByteArray, outputHint: Int, method: String): ByteArray {
@@ -79,8 +80,8 @@ object FastDeflate {
 		windowBits: Int,
 		reader: BitReader,
 		expectedOutSize: Int = 64,
-		out: ByteArrayBuilder.Small = ByteArrayBuilder.Small(expectedOutSize)
-	): ByteArrayBuilder.Small = out.apply {
+		out: ByteArrayBuilder = ByteArrayBuilder(expectedOutSize)
+	): ByteArrayBuilder = out.apply {
 		val temp = TempState()
 		val dynTree = HuffmanTree()
 		val dynDist = HuffmanTree()
@@ -224,7 +225,7 @@ object FastDeflate {
 		}
 	}
 
-	class SlidingWindowWithOutput(nbits: Int, val out: ByteArrayBuilder.Small) : SlidingWindow(nbits) {
+	class SlidingWindowWithOutput(nbits: Int, val out: ByteArrayBuilder) : SlidingWindow(nbits) {
 		//fun getPutCopyOut(distance: Int, length: Int) {
 		//	var src = (pos - distance) and mask
 		//	var dst = (pos) and mask
@@ -237,22 +238,23 @@ object FastDeflate {
 		//	}
 		//}
 		fun getPutCopyOut(distance: Int, length: Int) {
-			out.ensure(length)
+			//out.ensure(length)
+			//out.size = max(out.size, length)
 			var src = (pos - distance) and mask
 			var dst = pos
-			val outBytes = out._bytes
-			var outPos = out._len
+			val outBytes = out.data
+			var outPos = out.size
 			for (n in 0 until length) {
 				val v = data[src]
 				data[dst] = v
 				outBytes[outPos++] = v
-				out.appendUnsafe(v)
+				out.appendByte(v.unsigned)
 
 				src = (src + 1) and mask
 				dst = (dst + 1) and mask
 			}
 			pos = dst
-			out._len = outPos
+			out.size = outPos
 		}
 
 		fun putOut(bytes: ByteArray, offset: Int, len: Int) {
@@ -262,7 +264,7 @@ object FastDeflate {
 
 		fun putOut(byte: Byte) {
 			out.append(byte)
-			put(byte.toUnsigned())
+			put(byte.unsigned)
 		}
 	}
 
@@ -280,7 +282,7 @@ object FastDeflate {
 		}
 
 		fun putBytes(bytes: ByteArray, offset: Int, len: Int) {
-			for (n in 0 until len) put(bytes[offset + n].toUnsigned())
+			for (n in 0 until len) put(bytes[offset + n].unsigned)
 		}
 	}
 

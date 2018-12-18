@@ -168,20 +168,11 @@ fun ByteArray.readStructElement(offset: Int, type: Struct.Type, littleEndian: Bo
 			val count = type.count
 			when (elementType) {
 				Struct.Type.S1 -> readByteArray(offset, count)
-				Struct.Type.S2 -> if (littleEndian) readShortArray_le(offset, count) else readShortArray_be(
-					offset,
-					count
-				)
-				Struct.Type.S4 -> if (littleEndian) readIntArray_le(offset, count) else readIntArray_be(offset, count)
-				Struct.Type.S8 -> if (littleEndian) readLongArray_le(offset, count) else readLongArray_be(offset, count)
-				Struct.Type.F4 -> if (littleEndian) readFloatArray_le(offset, count) else readFloatArray_be(
-					offset,
-					count
-				)
-				Struct.Type.F8 -> if (littleEndian) readDoubleArray_le(offset, count) else readDoubleArray_be(
-					offset,
-					count
-				)
+				Struct.Type.S2 -> readShortArray(offset, count, littleEndian)
+				Struct.Type.S4 -> readIntArray(offset, count, littleEndian)
+				Struct.Type.S8 -> readLongArray(offset, count, littleEndian)
+				Struct.Type.F4 -> readFloatArray(offset, count, littleEndian)
+				Struct.Type.F8 -> readDoubleArray(offset, count, littleEndian)
 				else -> {
 
 					val al =

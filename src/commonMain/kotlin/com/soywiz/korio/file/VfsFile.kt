@@ -167,8 +167,8 @@ class VfsFile(
 		captureError: Boolean = false,
 		throwOnError: Boolean = true
 	): String {
-		val out = ByteArrayBuilder()
-		val err = ByteArrayBuilder()
+		val out = ByteArrayBuilder2()
+		val err = ByteArrayBuilder2()
 
 		val result = exec(cmdAndArgs, env, object : VfsProcessHandler() {
 			override suspend fun onOut(data: ByteArray) {

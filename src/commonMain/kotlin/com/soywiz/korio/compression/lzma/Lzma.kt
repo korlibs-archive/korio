@@ -12,7 +12,7 @@ object Lzma : CompressionMethod {
 		val properties = input.readBytesExact(5)
 		val decoder = SevenZip.LzmaDecoder()
 		if (!decoder.SetDecoderProperties(properties)) throw Exception("Incorrect stream properties")
-		val outSize = input.readS64_le()
+		val outSize = input.readS64LE()
 		val out = MemorySyncStreamToByteArray {
 			if (!decoder.Code(input, this, outSize)) throw Exception("Error in data stream")
 		}
@@ -42,7 +42,7 @@ object Lzma : CompressionMethod {
 			encoder.SetEndMarkerMode(eos)
 			encoder.WriteCoderProperties(this)
 			val fileSize: Long = if (eos) -1 else input.size.toLong()
-			this.write64_le(fileSize)
+			this.write64LE(fileSize)
 			encoder.Code(input.openSync(), this, -1, -1, null)
 		}
 

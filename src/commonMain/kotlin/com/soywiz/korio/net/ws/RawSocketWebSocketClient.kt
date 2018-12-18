@@ -58,12 +58,12 @@ class WsFrame(val data: ByteArray, val type: WsOpcode, val isFinal: Boolean = tr
 			data.size < 126 -> write8(data.size or sizeMask)
 			data.size < 65536 -> {
 				write8(126 or sizeMask)
-				write16_be(data.size)
+				write16BE(data.size)
 			}
 			else -> {
 				write8(127 or sizeMask)
-				write32_be(0)
-				write32_be(data.size)
+				write32BE(0)
+				write32BE(data.size)
 			}
 		}
 
@@ -191,11 +191,11 @@ class RawSocketWebSocketClient(
 		val isMasked = b1.extract(7)
 
 		val length = when (partialLength) {
-			126 -> client.readU16_be()
+			126 -> client.readU16BE()
 			127 -> {
-				val tmp = client.readS32_be()
+				val tmp = client.readS32BE()
 				if(tmp != 0) error("message too long")
-				client.readS32_be()
+				client.readS32BE()
 			}
 			else -> partialLength
 		}

@@ -8,7 +8,7 @@ import kotlin.math.*
 //@Deprecated("", replaceWith = ReplaceWith("ByteArrayBuilder"))
 //typealias OptByteBuffer = ByteArrayBuilder
 
-class ByteArrayBuilder() {
+class ByteArrayBuilder2() {
 	private val chunks = arrayListOf<ByteArray>()
 	private val small = Small()
 
@@ -41,7 +41,7 @@ class ByteArrayBuilder() {
 		chunks += achunk
 	}
 
-	fun append(buffer: ByteArrayBuilder) {
+	fun append(buffer: ByteArrayBuilder2) {
 		flush()
 		chunks += buffer.chunks
 	}
@@ -49,7 +49,7 @@ class ByteArrayBuilder() {
 	fun append(chunk: ByteArray) = append(chunk, 0, chunk.size)
 	fun append(v: Byte) = small.append(v)
 
-	operator fun plusAssign(v: ByteArrayBuilder) = append(v)
+	operator fun plusAssign(v: ByteArrayBuilder2) = append(v)
 	operator fun plusAssign(v: ByteArray) = append(v)
 	operator fun plusAssign(v: Byte) = append(v)
 

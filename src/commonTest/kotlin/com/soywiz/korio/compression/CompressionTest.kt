@@ -12,7 +12,7 @@ class CompressionTest {
 		val data =
 			Base64.decode("H4sIAAAAAAAAA+3SsREAEBSD4WcFm2ACTID9dxGFxgDcub/4mjQpEmdmDuYPKwsSJT3qz1KkXu7fWZMu4/IGr78AAAAAAD+a6ywcnAAQAAA=")
 		val res = data.uncompress(GZIP)
-		val res2 = res.readIntArray_le(0, 4096 / 4)
+		val res2 = res.readIntArrayLE(0, 4096 / 4)
 		assertEquals(
 			"" +
 					"1111111111111111111111111111111111111111111111111111111111111111111818181814950511111111111111111111111111818181816566671111111" +

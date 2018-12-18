@@ -59,7 +59,7 @@ class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 	fun consumeUpTo(len: Int): ByteArray = ByteArray(len).run { this.copyOf(consume(this, 0, len)) }
 
 	fun consumeUntil(end: Byte, including: Boolean = true): ByteArray {
-		val out = ByteArrayBuilder()
+		val out = ByteArrayBuilder2()
 		while (true) {
 			ensureCurrentBuffer()
 			if (availableInCurrent <= 0) break // no more data!

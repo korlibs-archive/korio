@@ -146,7 +146,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		}
 
 		suspend fun readRawBody(maxSize: Int = 0x1000): ByteArray = suspendCoroutine { c ->
-			val out = ByteArrayBuilder()
+			val out = ByteArrayBuilder2()
 			launchImmediately(c.context) {
 				handler {
 					if (out.size + it.size > maxSize) {
@@ -267,7 +267,7 @@ class FakeRequest(
 	val body: ByteArray = EMPTY_BYTE_ARRAY,
 	requestConfig: HttpServer.RequestConfig
 ) : HttpServer.Request(method, uri, headers, requestConfig) {
-	private val buf = ByteArrayBuilder()
+	private val buf = ByteArrayBuilder2()
 	var outputHeaders: Http.Headers = Http.Headers()
 	var outputStatusCode: Int = 0
 	var outputStatusMessage: String = ""

@@ -29,7 +29,7 @@ suspend fun CompressionMethod.compress(
 }
 
 suspend fun CompressionMethod.uncompress(data: ByteArray): ByteArray {
-	val buffer = ByteArrayBuffer(4096)
+	val buffer = ByteArrayBuilder(4096)
 	val s = MemorySyncStream(buffer)
 	uncompress(data.openAsync(), s.toAsync())
 	//println("CompressionMethod.uncompress.pre")

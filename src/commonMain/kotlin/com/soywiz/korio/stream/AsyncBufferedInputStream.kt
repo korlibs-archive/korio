@@ -20,7 +20,7 @@ class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int =
 	}
 
 	suspend fun readBufferedUntil(end: Byte, including: Boolean = true, limit: Int = 0x1000): ByteArray {
-		val out = ByteArrayBuilder()
+		val out = ByteArrayBuilder2()
 		while (true) {
 			require()
 			val chunk = buf.consumeUntil(end, including, limit = limit)

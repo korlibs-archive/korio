@@ -177,7 +177,7 @@ object SevenZip {
 				params.Command == CommandLine.kEncode || params.Command == CommandLine.kDecode -> {
 					val inFile = params.InFile.uniVfs.readAll()
 
-					val ba = ByteArrayBuffer()
+					val ba = ByteArrayBuilder()
 
 					val inStream = inFile.openSync()
 					val outStream = MemorySyncStream(ba)

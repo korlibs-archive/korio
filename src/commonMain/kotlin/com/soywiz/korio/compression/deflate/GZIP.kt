@@ -22,13 +22,13 @@ open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
 		val fname = s.sreadBit()
 		val fcomment = s.sreadBit()
 		val reserved = s.readBits(3)
-		val mtime = s.su32_le()
+		val mtime = s.su32LE()
 		val xfl = s.su8()
 		val os = s.su8()
-		val extra = if (fextra) s.abytes(s.su16_le()) else byteArrayOf()
+		val extra = if (fextra) s.abytes(s.su16LE()) else byteArrayOf()
 		val name = if (fname) s.strz() else null
 		val comment = if (fcomment) s.strz() else null
-		val crc16 = if (fhcrc) s.su16_le() else 0
+		val crc16 = if (fhcrc) s.su16LE() else 0
 		var chash = CRC32.INITIAL
 		var csize = 0
 		Deflate.uncompress(s, object : AsyncOutputStream by o {
@@ -39,8 +39,8 @@ open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
 			}
 		})
 		s.prepareBigChunk()
-		val crc32 = s.su32_le()
-		val size = s.su32_le()
+		val crc32 = s.su32LE()
+		val size = s.su32LE()
 		if (checkCrc) {
 			if (chash != crc32) invalidOp("CRC32 doesn't match ${chash.hex} != ${crc32.hex}")
 			if (csize != size) invalidOp("Size doesn't match ${csize.hex} != ${size.hex}")
@@ -56,7 +56,7 @@ open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
 		o.write8(139) // MAGIC[1]
 		o.write8(8) // METHOD=8 (deflate)
 		o.write8(0) // Presence bits
-		o.write32_le(0) // Time
+		o.write32LE(0) // Time
 		o.write8(0) // xfl
 		o.write8(0) // os
 
@@ -72,7 +72,7 @@ open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
 				return read
 			}
 		}, o, context)
-		o.write32_le(crc32)
-		o.write32_le(size)
+		o.write32LE(crc32)
+		o.write32LE(size)
 	}
 }

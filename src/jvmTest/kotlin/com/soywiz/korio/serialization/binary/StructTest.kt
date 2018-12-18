@@ -48,8 +48,8 @@ class StructTest {
 	@Test
 	fun name() {
 		val mem = MemorySyncStream()
-		mem.write32_le(7)
-		mem.write32_be(77)
+		mem.write32LE(7)
+		mem.write32BE(77)
 		mem.position = 0
 		val demo = mem.readStruct<Demo>()
 		assertEquals(7, demo.a)
@@ -57,8 +57,8 @@ class StructTest {
 		mem.writeStruct(demo)
 		assertEquals(16, mem.length)
 		mem.position = 8
-		assertEquals(7, mem.readS32_le())
-		assertEquals(77, mem.readS32_be())
+		assertEquals(7, mem.readS32LE())
+		assertEquals(77, mem.readS32BE())
 	}
 
 	@Test
@@ -67,9 +67,9 @@ class StructTest {
 		mem.writeStruct(Composed(1, Demo(2, 3)))
 		assertEquals(12, mem.position)
 		mem.position = 0
-		assertEquals(1, mem.readS32_le())
-		assertEquals(2, mem.readS32_le())
-		assertEquals(3, mem.readS32_be())
+		assertEquals(1, mem.readS32LE())
+		assertEquals(2, mem.readS32LE())
+		assertEquals(3, mem.readS32BE())
 	}
 
 	@Test

@@ -63,11 +63,13 @@ suspend fun CompressAsyncStream(
 }
 
 class LimitedOutputStream : AsyncOutputStream {
-	class Task(val slice: ByteArraySlice) {
+	private data class ByteArraySlice(val data: ByteArray, val position: Int, val length: Int)
+
+	private class Task(val slice: ByteArraySlice) {
 		val count = CompletableDeferred<Int>(Job())
 	}
 
-	val queue = ProduceConsumer<Task>()
+	private val queue = ProduceConsumer<Task>()
 
 	override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
 		//println("write: $len")

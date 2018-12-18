@@ -26,7 +26,7 @@ object ZLib : CompressionMethod {
 
 		var dictid = 0
 		if (hasDict) {
-			dictid = s.su32_le()
+			dictid = s.su32LE()
 			TODO("Unsupported custom dictionaries (Provided DICTID=$dictid)")
 		}
 		//println("ZLib.uncompress[2]")
@@ -47,7 +47,7 @@ object ZLib : CompressionMethod {
 		//println("ZLib.uncompress[3]")
 
 		s.prepareBigChunk()
-		val adler32 = s.su32_be()
+		val adler32 = s.su32BE()
 		//println("Zlib.uncompress.available[1]:" + s.available())
 		if (chash != adler32) invalidOp("Adler32 doesn't match ${chash.hex} != ${adler32.hex}")
 		//println("ZLib.uncompress[4]")
@@ -88,6 +88,6 @@ object ZLib : CompressionMethod {
 				return read
 			}
 		}, o)
-		o.write32_be(chash)
+		o.write32BE(chash)
 	}
 }

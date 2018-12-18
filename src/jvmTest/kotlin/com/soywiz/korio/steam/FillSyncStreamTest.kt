@@ -8,7 +8,7 @@ class FillSyncStreamTest {
 	fun name() {
 		assertEquals(0, FillSyncStream(0).readS8())
 		assertEquals(-1, FillSyncStream(0xFF).readS8())
-		assertEquals(-1, FillSyncStream(0xFF).readS16_le())
-		assertEquals(-1, FillSyncStream(0xFF).readS16_be())
+		assertEquals(-1, FillSyncStream(0xFF).readS16LE())
+		assertEquals(-1, FillSyncStream(0xFF).readS16BE())
 	}
 }

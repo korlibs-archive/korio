@@ -67,9 +67,9 @@ open class BitReader(val s: AsyncInputWithLengthStream) {
 	fun sbytes(count: Int): ByteArray = sbytes(count, ByteArray(count))
 	fun sbytes(count: Int, out: ByteArray): ByteArray = discardBits().sbytes_noalign(count, out)
 	fun su8(): Int = discardBits()._su8()
-	fun su16_le(): Int = sbytes(2, temp).readU16_le(0)
-	fun su32_le(): Int = sbytes(4, temp).readS32_le(0)
-	fun su32_be(): Int = sbytes(4, temp).readS32_be(0)
+	fun su16LE(): Int = sbytes(2, temp).readU16LE(0)
+	fun su32LE(): Int = sbytes(4, temp).readS32LE(0)
+	fun su32BE(): Int = sbytes(4, temp).readS32BE(0)
 
 	private val temp = ByteArray(4)
 	suspend fun abytes(count: Int, out: ByteArray = ByteArray(count)) = prepareBytesUpTo(count).sbytes(count, out)

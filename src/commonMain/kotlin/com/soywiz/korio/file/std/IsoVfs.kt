@@ -171,11 +171,11 @@ object ISO {
 		}
 	}
 
-	fun SyncStream.readLongArray_le(count: Int): LongArray = (0 until count).map { readS64_le() }.toLongArray()
+	fun SyncStream.readLongArrayLE(count: Int): LongArray = (0 until count).map { readS64LE() }.toLongArray()
 
-	fun SyncStream.readU32_le_be(): Int {
-		val le = readS32_le()
-		readS32_be()
+	fun SyncStream.readU32_leBE(): Int {
+		val le = readS32LE()
+		readS32BE()
 		return le
 	}
 
@@ -184,9 +184,9 @@ object ISO {
 		return readStringz(len, CHARSET)
 	}
 
-	fun SyncStream.readU16_le_be(): Int {
-		val le = readS16_le()
-		readS16_be()
+	fun SyncStream.readU16_leBE(): Int {
+		val le = readS16LE()
+		readS16BE()
 		return le
 	}
 
@@ -226,14 +226,14 @@ object ISO {
 		}
 
 		constructor(s: SyncStream) : this(
-			tagId = TagId(s.readU16_le()),
-			descVersion = s.readU16_le(),
+			tagId = TagId(s.readU16LE()),
+			descVersion = s.readU16LE(),
 			tagChecksum = s.readU8(),
 			reserved = s.readU8(),
-			tagSerialNumber = s.readU16_le(),
-			descriptorCRC = s.readU16_le(),
-			descriptorCRCLength = s.readU16_le(),
-			tagLocation = s.readS32_le()
+			tagSerialNumber = s.readU16LE(),
+			descriptorCRC = s.readU16LE(),
+			descriptorCRCLength = s.readU16LE(),
+			tagLocation = s.readS32LE()
 		)
 	}
 
@@ -242,8 +242,8 @@ object ISO {
 		val location: Int
 	) {
 		constructor(s: SyncStream) : this(
-			length = s.readS32_le(),
-			location = s.readS32_le()
+			length = s.readS32LE(),
+			location = s.readS32LE()
 		)
 	}
 
@@ -294,8 +294,8 @@ object ISO {
 		val microseconds: Int
 	) {
 		constructor(s: SyncStream) : this(
-			typeAndTimezone = s.readS16_le(),
-			year = s.readS16_le(),
+			typeAndTimezone = s.readS16LE(),
+			year = s.readS16LE(),
 			month = s.readU8(),
 			day = s.readU8(),
 			hour = s.readU8(),
@@ -332,15 +332,15 @@ object ISO {
 	) {
 		constructor(s: SyncStream) : this(
 			descriptorTag = UdfDescriptorTag(s),
-			volumeDescriptorSequenceNumber = s.readS32_le(),
-			primaryVolumeDescriptorNumber = s.readS32_le(),
+			volumeDescriptorSequenceNumber = s.readS32LE(),
+			primaryVolumeDescriptorNumber = s.readS32LE(),
 			volumeId = s.readUdfDString(32),
-			volumeSequenceNumber = s.readU16_le(),
-			maximumVolumeSequenceNumber = s.readU16_le(),
-			interchangeLevel = s.readU16_le(),
-			maximumInterchangeLevel = s.readU16_le(),
-			characterSetList = s.readS32_le(),
-			maximumCharacterSetList = s.readS32_le(),
+			volumeSequenceNumber = s.readU16LE(),
+			maximumVolumeSequenceNumber = s.readU16LE(),
+			interchangeLevel = s.readU16LE(),
+			maximumInterchangeLevel = s.readU16LE(),
+			characterSetList = s.readS32LE(),
+			maximumCharacterSetList = s.readS32LE(),
 			volumeSetIdentifier = s.readUdfDString(128),
 			descriptorCharacterSet = UdfCharspec(s),
 			explanatoryCharacterSet = UdfCharspec(s),
@@ -350,8 +350,8 @@ object ISO {
 			recordingDateandTime = UdfTimestamp(s),
 			implementationIdentifier = UdfEntityId(s),
 			implementationUse = s.readBytesExact(64),
-			predecessorVolumeDescriptorSequenceLocation = s.readS32_le(),
-			flags = s.readU16_le()
+			predecessorVolumeDescriptorSequenceLocation = s.readS32LE(),
+			flags = s.readU16LE()
 		)
 	}
 
@@ -394,17 +394,17 @@ object ISO {
 			pad1 = s.readU8(),
 			systemId = s.readStringz(0x20, CHARSET),
 			volumeId = s.readStringz(0x20, CHARSET),
-			pad2 = s.readS64_le(),
-			volumeSpaceSize = s.readU32_le_be(),
-			pad3 = s.readLongArray_le(4),
-			volumeSetSize = s.readU16_le_be(),
-			volumeSequenceNumber = s.readU16_le_be(),
-			logicalBlockSize = s.readU16_le_be(),
-			pathTableSize = s.readU32_le_be(),
-			typeLPathTable = s.readS32_le(),
-			optType1PathTable = s.readS32_le(),
-			typeMPathTable = s.readS32_le(),
-			optTypeMPathTable = s.readS32_le(),
+			pad2 = s.readS64LE(),
+			volumeSpaceSize = s.readU32_leBE(),
+			pad3 = s.readLongArrayLE(4),
+			volumeSetSize = s.readU16_leBE(),
+			volumeSequenceNumber = s.readU16_leBE(),
+			logicalBlockSize = s.readU16_leBE(),
+			pathTableSize = s.readU32_leBE(),
+			typeLPathTable = s.readS32LE(),
+			optType1PathTable = s.readS32LE(),
+			typeMPathTable = s.readS32LE(),
+			optTypeMPathTable = s.readS32LE(),
 			rootDirectoryRecord = DirectoryRecord(s)!!,
 			volumeSetId = s.readStringz(0x80, CHARSET),
 			publisherId = s.readStringz(0x80, CHARSET),
@@ -515,13 +515,13 @@ object ISO {
 					val dr = DirectoryRecord(
 						length = length,
 						extendedAttributeLength = s.readU8(),
-						extent = s.readU32_le_be(),
-						size = s.readU32_le_be(),
+						extent = s.readU32_leBE(),
+						size = s.readU32_leBE(),
 						date = DateStruct(s),
 						flags = s.readU8(),
 						fileUnitSize = s.readU8(),
 						interleave = s.readU8(),
-						volumeSequenceNumber = s.readU16_le_be(),
+						volumeSequenceNumber = s.readU16_leBE(),
 						rawName = s.readTextWithLength()
 					)
 
@@ -536,15 +536,15 @@ object ISO {
 
 fun SyncStream.readUdfDString(bytes: Int): String {
 	val ss = readStream(bytes)
-	val count = ss.readU16_le() / 2
+	val count = ss.readU16LE() / 2
 	//println("readUdfDString($bytes, $count)")
-	return ss.readUtf16_le(count)
+	return ss.readUtf16LE(count)
 }
 
-fun SyncStream.readUtf16_le(count: Int): String {
+fun SyncStream.readUtf16LE(count: Int): String {
 	var s = ""
 	for (n in 0 until count) {
-		s += readS16_le().toChar()
+		s += readS16LE().toChar()
 		//println("S($count): $s")
 	}
 	return s

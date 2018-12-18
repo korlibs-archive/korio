@@ -51,7 +51,7 @@ abstract class AsyncHash {
 				crc32 = com.soywiz.korio.crypto.CRC32.update(crc32, temp, 0, read)
 			}
 			val out = ByteArray(4)
-			out.write32_le(0, crc32)
+			out.write32LE(0, crc32)
 			return out
 		}
 	}

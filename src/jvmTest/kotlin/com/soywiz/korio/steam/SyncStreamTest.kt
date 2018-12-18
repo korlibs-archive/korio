@@ -8,46 +8,45 @@ import kotlin.test.*
 class SyncStreamTest {
 	@Test
 	fun name() {
-		val buffer = ByteArrayBuffer()
+		val buffer = ByteArrayBuilder()
 		val out = MemorySyncStream(buffer)
 		assertEquals(0L, out.position)
 		assertEquals(0L, out.length)
 		out.write8(0x01)
 		out.write8(0x02)
-		out.write16_le(0x0304)
+		out.write16LE(0x0304)
 		assertEquals(4L, out.position)
 		assertEquals(4L, out.length)
 		out.position = 0L
 		assertEquals(0L, out.position)
 		assertEquals(4L, out.length)
-		assertEquals(0x0102, out.readU16_be())
-		assertEquals(0x0304, out.readU16_le())
+		assertEquals(0x0102, out.readU16BE())
+		assertEquals(0x0304, out.readU16LE())
 		assertEquals(4096, buffer.data.size)
 		assertEquals(4, buffer.toByteArray().size)
-		assertEquals(4, buffer.toByteArraySlice().length)
 	}
 
 	@Test
 	fun testArrays() = suspendTest {
 		val out = MemorySyncStream()
-		for (n in 0 until 6) out.write32_le(n * n)
+		for (n in 0 until 6) out.write32LE(n * n)
 		out.position = 0L
 		assertEquals(
-			"[0, 1, 4, 9, 16, 25]", out.readIntArray_le(6).toList().toString()
+			"[0, 1, 4, 9, 16, 25]", out.readIntArrayLE(6).toList().toString()
 		)
 		out.position = 0L
-		out.writeIntArray_le(intArrayOf(-1, -2, -3, -4, -5, -6, -7, -8))
+		out.writeIntArrayLE(intArrayOf(-1, -2, -3, -4, -5, -6, -7, -8))
 		out.position = 0L
 		assertEquals(
 			"[-1, -2, -3, -4, -5, -6, -7, -8]",
-			out.readIntArray_le(8).toList().toString()
+			out.readIntArrayLE(8).toList().toString()
 		)
 	}
 
 	@Test
 	fun test2() = suspendTest {
 		val out = MemorySyncStream()
-		out.write16_be(0x1234)
+		out.write16BE(0x1234)
 		val bb = out.toByteArray()
 		assertEquals(byteArrayOf(0x12, 0x34).toList(), bb.toList())
 	}

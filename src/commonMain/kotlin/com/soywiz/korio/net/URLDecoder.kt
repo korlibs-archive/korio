@@ -5,7 +5,7 @@ import com.soywiz.korio.stream.*
 
 object URLDecoder {
 	fun decode(s: String, enc: String): String {
-		val bos = ByteArrayBuilder()
+		val bos = ByteArrayBuilder2()
 		val len = s.length
 		var n = 0
 		while (n < len) {

@@ -25,35 +25,31 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 	fun readU8() = ba[offset++].toInt() and 0xFF
 
 	// 16 bits
-	fun readS16_le() = increment(2) { ba.readS16_le(offset) }
+	fun readS16LE() = increment(2) { ba.readS16LE(offset) }
 
-	fun readS16_be() = increment(2) { ba.readS16_be(offset) }
-	fun readU16_le() = increment(2) { ba.readU16_le(offset) }
-	fun readU16_be() = increment(2) { ba.readU16_be(offset) }
+	fun readS16BE() = increment(2) { ba.readS16BE(offset) }
+	fun readU16LE() = increment(2) { ba.readU16LE(offset) }
+	fun readU16BE() = increment(2) { ba.readU16BE(offset) }
 
 	// 24 bits
-	fun readS24_le() = increment(3) { ba.readS24_le(offset) }
-
-	fun readS24_be() = increment(3) { ba.readS24_be(offset) }
-	fun readU24_le() = increment(3) { ba.readU24_le(offset) }
-	fun readU24_be() = increment(3) { ba.readU24_be(offset) }
+	fun readS24LE() = increment(3) { ba.readS24LE(offset) }
+	fun readS24BE() = increment(3) { ba.readS24BE(offset) }
+	fun readU24LE() = increment(3) { ba.readU24LE(offset) }
+	fun readU24BE() = increment(3) { ba.readU24BE(offset) }
 
 	// 32 bits
-	fun readS32_le() = increment(4) { ba.readS32_le(offset) }
-
-	fun readS32_be() = increment(4) { ba.readS32_be(offset) }
-	fun readU32_le() = increment(4) { ba.readU32_le(offset) }
-	fun readU32_be() = increment(4) { ba.readU32_be(offset) }
+	fun readS32LE() = increment(4) { ba.readS32LE(offset) }
+	fun readS32BE() = increment(4) { ba.readS32BE(offset) }
+	fun readU32LE() = increment(4) { ba.readU32LE(offset) }
+	fun readU32BE() = increment(4) { ba.readU32BE(offset) }
 
 	// 32 bits FLOAT
-	fun readF32_le() = increment(4) { ba.readF32_le(offset) }
-
-	fun readF32_be() = increment(4) { ba.readF32_be(offset) }
+	fun readF32LE() = increment(4) { ba.readF32LE(offset) }
+	fun readF32BE() = increment(4) { ba.readF32BE(offset) }
 
 	// 64 bits FLOAT
-	fun readF64_le() = increment(8) { ba.readF64_le(offset) }
-
-	fun readF64_be() = increment(8) { ba.readF64_be(offset) }
+	fun readF64LE() = increment(8) { ba.readF64LE(offset) }
+	fun readF64BE() = increment(8) { ba.readF64BE(offset) }
 
 	// Bytes
 	fun readBytes(count: Int) = increment(count) { ba.readByteArray(offset, count) }
@@ -61,24 +57,24 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 	fun readUBytes(count: Int): UByteArray = readBytes(count).asUByteArray()
 
 	// Arrays
-	fun readShortArray_le(count: Int): ShortArray = increment(count * 2) { ba.readShortArray_le(offset, count) }
+	fun readShortArrayLE(count: Int): ShortArray = increment(count * 2) { ba.readShortArrayLE(offset, count) }
 
-	fun readShortArray_be(count: Int): ShortArray = increment(count * 2) { ba.readShortArray_be(offset, count) }
+	fun readShortArrayBE(count: Int): ShortArray = increment(count * 2) { ba.readShortArrayBE(offset, count) }
 
-	fun readCharArray_le(count: Int): CharArray = increment(count * 2) { ba.readCharArray_le(offset, count) }
-	fun readCharArray_be(count: Int): CharArray = increment(count * 2) { ba.readCharArray_be(offset, count) }
+	fun readCharArrayLE(count: Int): CharArray = increment(count * 2) { ba.readCharArrayLE(offset, count) }
+	fun readCharArrayBE(count: Int): CharArray = increment(count * 2) { ba.readCharArrayBE(offset, count) }
 
-	fun readIntArray_le(count: Int): IntArray = increment(count * 4) { ba.readIntArray_le(offset, count) }
-	fun readIntArray_be(count: Int): IntArray = increment(count * 4) { ba.readIntArray_be(offset, count) }
+	fun readIntArrayLE(count: Int): IntArray = increment(count * 4) { ba.readIntArrayLE(offset, count) }
+	fun readIntArrayBE(count: Int): IntArray = increment(count * 4) { ba.readIntArrayBE(offset, count) }
 
-	fun readLongArray_le(count: Int): LongArray = increment(count * 8) { ba.readLongArray_le(offset, count) }
-	fun readLongArray_be(count: Int): LongArray = increment(count * 8) { ba.readLongArray_be(offset, count) }
+	fun readLongArrayLE(count: Int): LongArray = increment(count * 8) { ba.readLongArrayLE(offset, count) }
+	fun readLongArrayBE(count: Int): LongArray = increment(count * 8) { ba.readLongArrayBE(offset, count) }
 
-	fun readFloatArray_le(count: Int): FloatArray = increment(count * 4) { ba.readFloatArray_le(offset, count) }
-	fun readFloatArray_be(count: Int): FloatArray = increment(count * 4) { ba.readFloatArray_be(offset, count) }
+	fun readFloatArrayLE(count: Int): FloatArray = increment(count * 4) { ba.readFloatArrayLE(offset, count) }
+	fun readFloatArrayBE(count: Int): FloatArray = increment(count * 4) { ba.readFloatArrayBE(offset, count) }
 
-	fun readDoubleArray_le(count: Int): DoubleArray = increment(count * 8) { ba.readDoubleArray_le(offset, count) }
-	fun readDoubleArray_be(count: Int): DoubleArray = increment(count * 8) { ba.readDoubleArray_be(offset, count) }
+	fun readDoubleArrayLE(count: Int): DoubleArray = increment(count * 8) { ba.readDoubleArrayLE(offset, count) }
+	fun readDoubleArrayBE(count: Int): DoubleArray = increment(count * 8) { ba.readDoubleArrayBE(offset, count) }
 
 	// Variable Length
 	fun readU_VL(): Int {

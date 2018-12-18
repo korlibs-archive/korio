@@ -16,8 +16,8 @@ open class Deflate(val windowBits: Int) : CompressionMethod {
 			val available = i.getAvailable()
 			val chunkSize = min(available, 0xFFFFL).toInt()
 			o.write8(if (chunkSize >= available) 1 else 0)
-			o.write16_le(chunkSize)
-			o.write16_le(chunkSize.inv())
+			o.write16LE(chunkSize)
+			o.write16LE(chunkSize.inv())
 			//for (n in 0 until chunkSize) o.write8(i.readU8())
 			o.writeBytes(i.readBytesExact(chunkSize))
 		}
@@ -45,8 +45,8 @@ open class Deflate(val windowBits: Int) : CompressionMethod {
 				//println("uncompress[2]")
 				reader.discardBits()
 				if (reader.requirePrepare) reader.prepareBigChunk()
-				val len = reader.su16_le()
-				val nlen = reader.su16_le()
+				val len = reader.su16LE()
+				val nlen = reader.su16LE()
 				val nnlen = nlen.inv() and 0xFFFF
 				if (len != nnlen) error("Invalid deflate stream: len($len) != ~nlen($nnlen) :: nlen=$nlen")
 				val bytes = reader.abytes(len)
@@ -176,7 +176,7 @@ open class Deflate(val windowBits: Int) : CompressionMethod {
 
 class SlidingWindowWithOutput(val sliding: SlidingWindow, val out: AsyncOutputStream) {
 	// @TODO: Optimize with buffering and copying
-	val bab = ByteArrayBuffer(8 * 1024)
+	val bab = ByteArrayBuilder(8 * 1024)
 
 	val output get() = bab.size
 	val mustFlush get() = bab.size >= 4 * 1024
@@ -202,7 +202,7 @@ class SlidingWindowWithOutput(val sliding: SlidingWindow, val out: AsyncOutputSt
 	fun putOut(byte: Byte) {
 		//println("BYTE: $byte")
 		bab.append(byte)
-		sliding.put(byte.toUnsigned())
+		sliding.put(byte.unsigned)
 	}
 
 	suspend fun flush(finish: Boolean = false) {

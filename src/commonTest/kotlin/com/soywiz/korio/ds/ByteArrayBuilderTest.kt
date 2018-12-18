@@ -7,7 +7,7 @@ import kotlin.test.*
 class ByteArrayBuilderTest {
 	@Test
 	fun name() {
-		val bb = ByteArrayBuilder()
+		val bb = ByteArrayBuilder2()
 		bb.append(byteArrayOf(1))
 		bb.append(byteArrayOf(2, 3))
 		bb.append(4)
