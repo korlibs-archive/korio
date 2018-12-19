@@ -9,6 +9,7 @@ import com.soywiz.korio.compression.deflate.*
 import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.crypto.*
 import com.soywiz.korio.file.*
+import com.soywiz.korio.internal.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import kotlin.collections.component1
@@ -231,12 +232,12 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 }
 
 private class DosFileDateTime(var dosTime: Int, var dosDate: Int) {
-	val seconds: Int get() = 2 * dosTime.getBits(0, 5)
-	val minutes: Int get() = dosTime.getBits(5, 6)
-	val hours: Int get() = dosTime.getBits(11, 5)
-	val day: Int get() = dosDate.getBits(0, 5)
-	val month1: Int get() = dosDate.getBits(5, 4)
-	val fullYear: Int get() = 1980 + dosDate.getBits(9, 7)
+	val seconds: Int get() = 2 * dosTime.extract(0, 5)
+	val minutes: Int get() = dosTime.extract(5, 6)
+	val hours: Int get() = dosTime.extract(11, 5)
+	val day: Int get() = dosDate.extract(0, 5)
+	val month1: Int get() = dosDate.extract(5, 4)
+	val fullYear: Int get() = 1980 + dosDate.extract(9, 7)
 
 	init {
 		//println("DosFileDateTime: $fullYear-$month1-$day $hours-$minutes-$seconds")

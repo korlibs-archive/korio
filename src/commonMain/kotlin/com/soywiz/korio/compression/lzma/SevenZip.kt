@@ -3,6 +3,7 @@ package com.soywiz.korio.compression.lzma
 import com.soywiz.kmem.*
 import com.soywiz.korio.*
 import com.soywiz.korio.file.std.*
+import com.soywiz.korio.internal.*
 import com.soywiz.korio.stream.*
 import kotlin.jvm.*
 import kotlin.math.*
