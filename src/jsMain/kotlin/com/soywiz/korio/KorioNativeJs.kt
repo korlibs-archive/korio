@@ -123,8 +123,7 @@ actual object KorioNative {
 			else -> {
 				val href = document.location?.href ?: "."
 				val url = if (href.endsWith("/")) href else href.substringBeforeLast('/')
-				//println("href: $href")
-				//println("url: $url")
+				//println("localVfs.url: href=$href, url=$url")
 				UrlVfs(url)[path]
 			}
 		}
@@ -213,7 +212,7 @@ actual object KorioNative {
 		}
 	}
 
-	actual val ResourcesVfs: VfsFile by lazy { applicationVfs() }
+	actual val ResourcesVfs: VfsFile by lazy { applicationVfs().jail() }
 
 	actual fun enterDebugger() {
 		js("debugger;")

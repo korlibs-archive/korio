@@ -78,7 +78,7 @@ actual object KorioNative {
 	actual fun userHomeVfs(): VfsFile = localVfs(cwd)
 	actual fun tempVfs(): VfsFile = localVfs(tmpdir)
 	actual fun localVfs(path: String): VfsFile = LocalVfsNative()[path]
-	actual val ResourcesVfs: VfsFile get() = applicationDataVfs()
+	actual val ResourcesVfs: VfsFile get() = applicationDataVfs().jail()
 
 	actual val File_separatorChar: Char get() = '/'
 

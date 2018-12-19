@@ -123,7 +123,7 @@ actual object KorioNative {
 	actual fun tempVfs(): VfsFile = localVfs(tmpdir)
 	actual fun localVfs(path: String): VfsFile = LocalVfsJvm()[path]
 
-	actual val ResourcesVfs: VfsFile by lazy { ResourcesVfsProviderJvm()().root }
+	actual val ResourcesVfs: VfsFile by lazy { ResourcesVfsProviderJvm()().root.jail() }
 
 	val tmpdir: String get() = System.getProperty("java.io.tmpdir")
 

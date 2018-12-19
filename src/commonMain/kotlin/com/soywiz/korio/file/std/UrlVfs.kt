@@ -13,10 +13,19 @@ fun UrlVfs(url: String, client: HttpClient = createHttpClient()): VfsFile = UrlV
 fun UrlVfs(url: URI, client: HttpClient = createHttpClient()): VfsFile =
 	UrlVfs(url.copy(path = "", query = null).fullUri, Unit, client)[url.path]
 
+fun UrlVfsJailed(url: String, client: HttpClient = createHttpClient()): VfsFile = UrlVfsJailed(URI(url), client)
+
+fun UrlVfsJailed(url: URI, client: HttpClient = createHttpClient()): VfsFile =
+	UrlVfs(url.fullUri, Unit, client)[url.path]
+
 class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHttpClient()) : Vfs() {
 	override val absolutePath: String = url
 
-	fun getFullUrl(path: String) = url.trim('/') + '/' + path.trim('/')
+	fun getFullUrl(path: String): String {
+		val result = url.trim('/') + '/' + path.trim('/')
+		//println("UrlVfs.getFullUrl: url=$url, path=$path, result=$result")
+		return result
+	}
 
 	//suspend override fun open(path: String, mode: VfsOpenMode): AsyncStream {
 	//	return if (mode.write) {
