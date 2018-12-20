@@ -257,7 +257,26 @@ data class VfsStat(
 	val lastAccessTime: DateTime = modifiedTime,
 	val extraInfo: Any? = null,
 	val id: String? = null
-) : Path by file
+) : Path by file {
+	fun toString(showFile: Boolean): String = "VfsStat(" + ArrayList<String>(16).also { al ->
+		if (showFile) al.add("file=$file") else al.add("file=${file.absolutePath}")
+		al.add("exists=$exists")
+		al.add("isDirectory=$isDirectory")
+		al.add("size=$size")
+		al.add("device=$device")
+		al.add("inode=$inode")
+		al.add("mode=$mode")
+		al.add("owner=$owner")
+		al.add("group=$group")
+		al.add("createTime=$createTime")
+		al.add("modifiedTime=$modifiedTime")
+		al.add("lastAccessTime=$lastAccessTime")
+		al.add("extraInfo=$extraInfo")
+		al.add("id=$id")
+	}.joinToString(", ") + ")"
+
+	override fun toString(): String = toString(showFile = true)
+}
 
 //val VfsStat.createLocalDate: LocalDateTime get() = LocalDateTime.ofEpochSecond(createTime / 1000L, ((createTime % 1_000L) * 1_000_000L).toInt(), ZoneOffset.UTC)
 //val VfsStat.modifiedLocalDate: LocalDateTime get() = LocalDateTime.ofEpochSecond(modifiedTime / 1000L, ((modifiedTime % 1_000L) * 1_000_000L).toInt(), ZoneOffset.UTC)

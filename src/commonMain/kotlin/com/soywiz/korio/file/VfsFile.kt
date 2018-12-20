@@ -2,6 +2,7 @@
 
 package com.soywiz.korio.file
 
+import com.soywiz.kds.*
 import com.soywiz.klock.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.error.*
@@ -14,7 +15,7 @@ import kotlin.coroutines.*
 class VfsFile(
 	val vfs: Vfs,
 	val path: String
-) : VfsNamed(path), AsyncInputOpenable, SuspendingSuspendSequence<VfsFile> {
+) : VfsNamed(path), AsyncInputOpenable, SuspendingSuspendSequence<VfsFile>, Extra by Extra.Mixin() {
 	val parent: VfsFile get() = VfsFile(vfs, folder)
 	val root: VfsFile get() = vfs.root
 	val absolutePath: String get() = vfs.getAbsolutePath(path)
