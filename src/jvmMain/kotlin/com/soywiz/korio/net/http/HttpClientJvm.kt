@@ -4,6 +4,7 @@ import com.soywiz.klock.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.*
 import com.soywiz.korio.async.*
+import com.soywiz.korio.atomic.*
 import com.soywiz.korio.error.*
 import com.soywiz.korio.stream.*
 import kotlinx.coroutines.*

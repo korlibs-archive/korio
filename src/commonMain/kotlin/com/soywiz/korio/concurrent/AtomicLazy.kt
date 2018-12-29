@@ -1,13 +1,13 @@
 package com.soywiz.korio.concurrent
 
-import kotlinx.atomicfu.*
+import com.soywiz.korio.atomic.*
 
 internal class AtomicLazyImpl<out T>(initializer: () -> T) : Lazy<T> {
 	private object UNINITIALIZED
 	private object INITIALIZING
 
-	private val initializer_ = atomic<Function0<T>?>(initializer)
-	private val value_ = atomic<Any?>(UNINITIALIZED)
+	private val initializer_ = korAtomic<Function0<T>?>(initializer)
+	private val value_ = korAtomic<Any?>(UNINITIALIZED)
 
 	override val value: T
 		get() {
