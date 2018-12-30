@@ -3,7 +3,6 @@ package com.soywiz.korio.net.http
 import com.soywiz.kds.*
 import com.soywiz.korio.*
 import com.soywiz.korio.async.*
-import com.soywiz.korio.compat.*
 import com.soywiz.korio.error.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
@@ -293,7 +292,7 @@ class FakeRequest(
 	}
 
 	override suspend fun _write(data: ByteArray, offset: Int, size: Int) {
-		log += "_write(${data.copyOfRangeCompat(offset, offset + size).toString(UTF8)})"
+		log += "_write(${data.copyOfRange(offset, offset + size).toString(UTF8)})"
 		buf.append(data, offset, size)
 	}
 

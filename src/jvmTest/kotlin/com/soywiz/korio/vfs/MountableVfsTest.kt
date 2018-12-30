@@ -9,12 +9,12 @@ import kotlin.test.*
 class MountableVfsTest {
 	@Test
 	fun testMountable() = suspendTest {
-		val root = MountableVfs({
+		val root = MountableVfs {
 			mount("/zip/demo2", ResourcesVfs["hello.zip"].openAsZip())
 			mount("/zip", ResourcesVfs["hello.zip"].openAsZip())
 			mount("/zip/demo", ResourcesVfs["hello.zip"].openAsZip())
 			mount("/iso", ResourcesVfs["isotest.iso"].openAsIso())
-		})
+		}
 		assertEquals("HELLO WORLD!", root["/zip/hello/world.txt"].readString())
 		assertEquals("HELLO WORLD!", root["/zip/demo/hello/world.txt"].readString())
 		assertEquals("HELLO WORLD!", root["/zip/demo2/hello/world.txt"].readString())

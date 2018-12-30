@@ -2,7 +2,6 @@ package com.soywiz.korio.stream
 
 import com.soywiz.kds.*
 import com.soywiz.kmem.*
-import com.soywiz.korio.compat.*
 import com.soywiz.korio.concurrent.*
 import com.soywiz.korio.lang.Semaphore
 import com.soywiz.korio.util.*
@@ -79,7 +78,7 @@ class SyncProduceConsumerByteBuffer : SyncOutputStream, SyncInputStream {
 		}
 
 	override fun write(buffer: ByteArray, offset: Int, len: Int) {
-		produce(buffer.copyOfRangeCompat(offset, offset + len))
+		produce(buffer.copyOfRange(offset, offset + len))
 	}
 
 	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {

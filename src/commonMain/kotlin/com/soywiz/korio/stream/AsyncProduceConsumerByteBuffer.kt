@@ -3,7 +3,6 @@ package com.soywiz.korio.stream
 import com.soywiz.kds.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
-import com.soywiz.korio.compat.*
 import com.soywiz.korio.util.*
 import kotlin.math.*
 
@@ -74,7 +73,7 @@ class AsyncProduceConsumerByteBuffer : AsyncOutputStream, AsyncInputStream {
 	}
 
 	override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
-		produce(buffer.copyOfRangeCompat(offset, offset + len))
+		produce(buffer.copyOfRange(offset, offset + len))
 	}
 
 	override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {

@@ -4,7 +4,6 @@ import com.soywiz.klock.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.*
 import com.soywiz.korio.async.*
-import com.soywiz.korio.compat.*
 import com.soywiz.korio.compression.deflate.*
 import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.crypto.*
@@ -66,7 +65,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 
 	if (pk_endIndex < 0) throw IllegalArgumentException("Not a zip file")
 
-	val data = endBytes.copyOfRangeCompat(pk_endIndex, endBytes.size).openSync()
+	val data = endBytes.copyOfRange(pk_endIndex, endBytes.size).openSync()
 
 	val files = LinkedHashMap<String, ZipEntry2>()
 	val filesPerFolder = LinkedHashMap<String, MutableMap<String, ZipEntry2>>()

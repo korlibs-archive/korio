@@ -2,8 +2,6 @@ package com.soywiz.korio.async
 
 import com.soywiz.kds.*
 import com.soywiz.kmem.*
-import com.soywiz.korio.*
-import com.soywiz.korio.compat.*
 import com.soywiz.korio.concurrent.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
@@ -96,7 +94,7 @@ fun Consumer<ByteArray>.toAsyncInputStream() = AsyncConsumerStream(this)
 
 class AsyncProducerStream(val producer: Producer<ByteArray>) : AsyncOutputStream {
 	override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
-		producer.produce(buffer.copyOfRangeCompat(offset, offset + len))
+		producer.produce(buffer.copyOfRange(offset, offset + len))
 	}
 
 	override suspend fun close() {

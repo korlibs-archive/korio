@@ -1,8 +1,6 @@
 package com.soywiz.korio
 
-import com.soywiz.kds.*
 import com.soywiz.korio.async.*
-import com.soywiz.korio.compat.*
 import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.deflate.*
 import com.soywiz.korio.crypto.*
@@ -183,7 +181,7 @@ actual object KorioNative {
 
 		// @TODO: Optimize this!
 		actual suspend fun update(data: ByteArray, offset: Int, size: Int): Unit =
-			update(data.copyOfRangeCompat(offset, offset + size))
+			update(data.copyOfRange(offset, offset + size))
 
 		suspend fun update(data: ByteArray): Unit = hash.update(data)
 		// @TODO: Optimize: Can return ByteArray directly?
@@ -199,7 +197,7 @@ actual object KorioNative {
 		}
 		val hmac = require("crypto").createHmac(hname, key)
 		actual suspend fun update(data: ByteArray, offset: Int, size: Int): Unit =
-			update(data.copyOfRangeCompat(offset, offset + size))
+			update(data.copyOfRange(offset, offset + size))
 
 		suspend fun update(data: ByteArray): Unit = hmac.update(data)
 		actual suspend fun finalize(): ByteArray = Hex.decode(hmac.digest("hex"))
