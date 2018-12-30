@@ -16,7 +16,7 @@ import kotlin.reflect.*
 abstract class Vfs {
 	protected open val absolutePath: String = ""
 
-	open fun getAbsolutePath(path: String) = VfsUtil.lightCombine(absolutePath, path)
+	open fun getAbsolutePath(path: String) = absolutePath.pathInfo.lightCombine(path.pathInfo).fullPath
 
 	//val root = VfsFile(this, "")
 	val root get() = VfsFile(this, "")

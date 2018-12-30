@@ -1,6 +1,5 @@
 package com.soywiz.korio.util
 
-import com.soywiz.kds.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.error.*
 import java.lang.reflect.*
@@ -47,8 +46,8 @@ object DynamicJvm {
 			val clazz = instance::class.java
 			val dmethods = clazz.declaredMethods
 			val getterName = "get${key.capitalize()}"
-			val getter = ignoreErrors { dmethods.firstOrNull { it.name == getterName } }
-			val method = ignoreErrors { dmethods.firstOrNull { it.name == key } }
+			val getter = runIgnoringExceptions { dmethods.firstOrNull { it.name == getterName } }
+			val method = runIgnoringExceptions { dmethods.firstOrNull { it.name == key } }
 
 			if (getter != null) {
 				getter.isAccessible = true
@@ -83,8 +82,8 @@ object DynamicJvm {
 			val clazz = instance::class.java
 			val dmethods = clazz.declaredMethods
 			val getterName = "get${key.capitalize()}"
-			val getter = ignoreErrors { dmethods.firstOrNull { it.name == getterName } }
-			val method = ignoreErrors { dmethods.firstOrNull { it.name == key } }
+			val getter = runIgnoringExceptions { dmethods.firstOrNull { it.name == getterName } }
+			val method = runIgnoringExceptions { dmethods.firstOrNull { it.name == key } }
 
 			if (getter != null) {
 				getter.isAccessible = true

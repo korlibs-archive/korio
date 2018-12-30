@@ -1,4 +1,4 @@
-package com.soywiz.korio.atomic
+package com.soywiz.korio.concurrent.atomic
 
 actual fun <T> korAtomic(initial: T): KorAtomicRef<T> = KorAtomicRef(initial)
 actual fun korAtomic(initial: Boolean): KorAtomicBoolean = KorAtomicBoolean(initial)

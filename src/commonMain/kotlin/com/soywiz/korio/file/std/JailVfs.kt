@@ -3,12 +3,12 @@ package com.soywiz.korio.file.std
 import com.soywiz.korio.file.*
 
 fun JailVfs(jailRoot: VfsFile): VfsFile = object : Vfs.Proxy() {
-	val baseJail = VfsUtil.normalize(jailRoot.path)
+	val baseJail = jailRoot.pathInfo.normalize()
 
-	override suspend fun access(path: String): VfsFile = jailRoot[VfsUtil.normalize(path).trim('/')]
+	override suspend fun access(path: String): VfsFile = jailRoot[path.pathInfo.normalize().trim('/')]
 
 	override suspend fun VfsFile.transform(): VfsFile {
-		val outPath = VfsUtil.normalize(this.path)
+		val outPath = this.path.pathInfo.normalize()
 		if (!outPath.startsWith(baseJail)) throw UnsupportedOperationException("Jail not base root : ${this.path} | $baseJail")
 		return file(outPath.substring(baseJail.length))
 	}

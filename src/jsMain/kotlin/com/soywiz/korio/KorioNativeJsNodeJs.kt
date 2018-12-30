@@ -252,7 +252,7 @@ class NodeJsLocalVfs : LocalVfs() {
 	interface FD
 
 	private fun getFullPath(path: String): String {
-		return VfsUtil.normalize(path)
+		return path.pathInfo.normalize()
 	}
 
 	override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean = suspendCoroutine { c ->

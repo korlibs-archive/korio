@@ -1,7 +1,8 @@
 package com.soywiz.korio.net
 
 import com.soywiz.korio.async.*
-import com.soywiz.korio.atomic.*
+import com.soywiz.korio.concurrent.atomic.*
+import com.soywiz.korio.concurrent.atomic.*
 import kotlinx.coroutines.*
 import java.io.*
 import java.net.*

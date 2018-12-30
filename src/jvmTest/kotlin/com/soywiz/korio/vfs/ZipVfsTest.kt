@@ -87,7 +87,7 @@ class ZipVfsTest {
 
 		assertEquals(
 			"[/hello, /hello/compressedWorld.txt, /hello/world.txt]",
-			helloZip.listRecursive().toList().map { it.fullname }.toString()
+			helloZip.listRecursive().toList().map { it.fullName }.toString()
 		)
 
 		println(helloZip.stat())

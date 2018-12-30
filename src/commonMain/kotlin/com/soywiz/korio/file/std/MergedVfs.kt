@@ -34,13 +34,13 @@ open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
 	override suspend fun list(path: String): SuspendingSequence<VfsFile> = asyncGenerate {
 		val emitted = LinkedHashSet<String>()
 		for (vfs in vfsList) {
-			val items = ignoreErrors { vfs[path].list() } ?: continue
+			val items = runIgnoringExceptions { vfs[path].list() } ?: continue
 
 			try {
 				for (v in items) {
-					if (v.basename !in emitted) {
-						emitted += v.basename
-						yield(file("$path/${v.basename}"))
+					if (v.baseName !in emitted) {
+						emitted += v.baseName
+						yield(file("$path/${v.baseName}"))
 					}
 				}
 			} catch (e: Throwable) {

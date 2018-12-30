@@ -8,11 +8,11 @@ class PathInfoTest {
 	fun name() {
 		PathInfo("/test/hello.TxT").apply {
 			assertEquals("/test/hello.TxT", fullPath)
-			assertEquals("/test/hello", pathWithoutExtension)
-			assertEquals("/test/hello", fullnameWithoutCompoundExtension)
+			assertEquals("/test/hello", fullPathWithoutExtension)
+			assertEquals("/test/hello", fullNameWithoutCompoundExtension)
 			assertEquals("/test", folder)
-			assertEquals("hello.TxT", basename)
-			assertEquals("hello", basenameWithoutExtension)
+			assertEquals("hello.TxT", baseName)
+			assertEquals("hello", baseNameWithoutExtension)
 			assertEquals("TxT", extension)
 			assertEquals("txt", extensionLC)
 		}
@@ -22,11 +22,11 @@ class PathInfoTest {
 	fun name2() {
 		PathInfo("C:\\dev\\test\\hello.TxT").apply {
 			assertEquals("C:\\dev\\test\\hello.TxT", fullPath)
-			assertEquals("C:\\dev\\test\\hello", pathWithoutExtension)
-			assertEquals("C:\\dev\\test\\hello", fullnameWithoutCompoundExtension)
+			assertEquals("C:\\dev\\test\\hello", fullPathWithoutExtension)
+			assertEquals("C:\\dev\\test\\hello", fullNameWithoutCompoundExtension)
 			assertEquals("C:\\dev\\test", folder)
-			assertEquals("hello.TxT", basename)
-			assertEquals("hello", basenameWithoutExtension)
+			assertEquals("hello.TxT", baseName)
+			assertEquals("hello", baseNameWithoutExtension)
 			assertEquals("TxT", extension)
 			assertEquals("txt", extensionLC)
 		}
@@ -36,11 +36,11 @@ class PathInfoTest {
 	fun name3() {
 		PathInfo("C:\\dev\\test\\hello").apply {
 			assertEquals("C:\\dev\\test\\hello", fullPath)
-			assertEquals("C:\\dev\\test\\hello", pathWithoutExtension)
-			assertEquals("C:\\dev\\test\\hello", fullnameWithoutCompoundExtension)
+			assertEquals("C:\\dev\\test\\hello", fullPathWithoutExtension)
+			assertEquals("C:\\dev\\test\\hello", fullNameWithoutCompoundExtension)
 			assertEquals("C:\\dev\\test", folder)
-			assertEquals("hello", basename)
-			assertEquals("hello", basenameWithoutExtension)
+			assertEquals("hello", baseName)
+			assertEquals("hello", baseNameWithoutExtension)
 			assertEquals("", extension)
 			assertEquals("", extensionLC)
 		}
@@ -50,13 +50,13 @@ class PathInfoTest {
 	fun name4() {
 		PathInfo("C:\\dev\\test\\hello.Voice.Wav").apply {
 			assertEquals("C:\\dev\\test\\hello.Voice.Wav", fullPath)
-			assertEquals("C:\\dev\\test\\hello.Voice", fullnameWithoutExtension)
-			assertEquals("C:\\dev\\test\\hello", pathWithoutExtension)
-			assertEquals("C:\\dev\\test\\hello", fullnameWithoutCompoundExtension)
+			assertEquals("C:\\dev\\test\\hello.Voice", fullNameWithoutExtension)
+			assertEquals("C:\\dev\\test\\hello", fullPathWithoutExtension)
+			assertEquals("C:\\dev\\test\\hello", fullNameWithoutCompoundExtension)
 			assertEquals("C:\\dev\\test", folder)
-			assertEquals("hello.Voice.Wav", basename)
-			assertEquals("hello.Voice", basenameWithoutExtension)
-			assertEquals("hello", basenameWithoutCompoundExtension)
+			assertEquals("hello.Voice.Wav", baseName)
+			assertEquals("hello.Voice", baseNameWithoutExtension)
+			assertEquals("hello", baseNameWithoutCompoundExtension)
 			assertEquals("Wav", extension)
 			assertEquals("wav", extensionLC)
 			assertEquals("Voice.Wav", compoundExtension)
@@ -68,13 +68,13 @@ class PathInfoTest {
 	fun name5() {
 		PathInfo("C:\\dev\\test.demo\\hello.Voice.Wav").apply {
 			assertEquals("C:\\dev\\test.demo\\hello.Voice.Wav", fullPath)
-			assertEquals("C:\\dev\\test.demo\\hello.Voice", fullnameWithoutExtension)
-			assertEquals("C:\\dev\\test.demo\\hello", pathWithoutExtension)
-			assertEquals("C:\\dev\\test.demo\\hello", fullnameWithoutCompoundExtension)
+			assertEquals("C:\\dev\\test.demo\\hello.Voice", fullNameWithoutExtension)
+			assertEquals("C:\\dev\\test.demo\\hello", fullPathWithoutExtension)
+			assertEquals("C:\\dev\\test.demo\\hello", fullNameWithoutCompoundExtension)
 			assertEquals("C:\\dev\\test.demo", folder)
-			assertEquals("hello.Voice.Wav", basename)
-			assertEquals("hello.Voice", basenameWithoutExtension)
-			assertEquals("hello", basenameWithoutCompoundExtension)
+			assertEquals("hello.Voice.Wav", baseName)
+			assertEquals("hello.Voice", baseNameWithoutExtension)
+			assertEquals("hello", baseNameWithoutCompoundExtension)
 			assertEquals("Wav", extension)
 			assertEquals("wav", extensionLC)
 			assertEquals("Voice.Wav", compoundExtension)
@@ -91,10 +91,10 @@ class PathInfoTest {
 
 	@Test
 	fun basenameWithExtension() {
-		assertEquals("c.jpg", PathInfo("a/b/c.txt").basenameWithExtension("jpg"))
-		assertEquals("c.jpg", PathInfo("a/b/c").basenameWithExtension("jpg"))
-		assertEquals("c", PathInfo("a/b/c.txt").basenameWithExtension(""))
-		assertEquals("c", PathInfo("a/b/c").basenameWithExtension(""))
+		assertEquals("c.jpg", PathInfo("a/b/c.txt").baseNameWithExtension("jpg"))
+		assertEquals("c.jpg", PathInfo("a/b/c").baseNameWithExtension("jpg"))
+		assertEquals("c", PathInfo("a/b/c.txt").baseNameWithExtension(""))
+		assertEquals("c", PathInfo("a/b/c").baseNameWithExtension(""))
 	}
 
 	@Test

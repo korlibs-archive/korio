@@ -20,9 +20,6 @@ actual typealias IOException = java.io.IOException
 actual typealias EOFException = java.io.EOFException
 actual typealias FileNotFoundException = java.io.FileNotFoundException
 
-actual typealias RuntimeException = java.lang.RuntimeException
-actual typealias IllegalStateException = java.lang.IllegalStateException
-
 actual class Semaphore actual constructor(initial: Int) {
 	val jsema = java.util.concurrent.Semaphore(initial)
 	//var initial: Int

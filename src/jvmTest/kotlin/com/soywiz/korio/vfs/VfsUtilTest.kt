@@ -6,25 +6,27 @@ import kotlin.test.*
 class VfsUtilTest {
 	@Test
 	fun combine() {
-		assertEquals("c:/test/hello", VfsUtil.combine("""c:\test\demo""", """..\.\hello"""))
-		assertEquals("d:/lol", VfsUtil.combine("""c:\test\demo""", """d:\lol"""))
-		assertEquals("http://hello/world", VfsUtil.combine("""""", """http://hello/world"""))
-		assertEquals("http://hello/demo", VfsUtil.combine("""http://hello/world""", """../demo"""))
-		assertEquals("mailto:demo@demo.com", VfsUtil.combine("""http://hello/world""", """mailto:demo@demo.com"""))
+		assertEquals("c:/test/hello", """c:\test\demo""".pathInfo.combine("""..\.\hello""".pathInfo).fullPath)
+		assertEquals("d:/lol", """c:\test\demo""".pathInfo.combine("""d:\lol""".pathInfo).fullPath)
+		assertEquals("http://hello/world", """""".pathInfo.combine("""http://hello/world""".pathInfo).fullPath)
+		assertEquals("http://hello/demo", """http://hello/world""".pathInfo.combine("""../demo""".pathInfo).fullPath)
+		assertEquals("mailto:demo@demo.com",
+			"""http://hello/world""".pathInfo.combine("""mailto:demo@demo.com""".pathInfo).fullPath
+		)
 	}
 
 	@Test
 	fun isAbsolute() {
 		// Absolute
-		assertTrue(VfsUtil.isAbsolute("""C:\.\.\hello"""))
-		assertTrue(VfsUtil.isAbsolute("""/test"""))
-		assertTrue(VfsUtil.isAbsolute("""http://hello"""))
-		assertTrue(VfsUtil.isAbsolute("""ftp://hello"""))
-		assertTrue(VfsUtil.isAbsolute("""mailto:demo@demo.com"""))
+		assertTrue("""C:\.\.\hello""".pathInfo.isAbsolute())
+		assertTrue("""/test""".pathInfo.isAbsolute())
+		assertTrue("""http://hello""".pathInfo.isAbsolute())
+		assertTrue("""ftp://hello""".pathInfo.isAbsolute())
+		assertTrue("""mailto:demo@demo.com""".pathInfo.isAbsolute())
 
 		// Relative
-		assertFalse(VfsUtil.isAbsolute("""..\.\hello"""))
-		assertFalse(VfsUtil.isAbsolute("""ftp//hello"""))
-		assertFalse(VfsUtil.isAbsolute("""ftp//hello:world"""))
+		assertFalse("""..\.\hello""".pathInfo.isAbsolute())
+		assertFalse("""ftp//hello""".pathInfo.isAbsolute())
+		assertFalse("""ftp//hello:world""".pathInfo.isAbsolute())
 	}
 }

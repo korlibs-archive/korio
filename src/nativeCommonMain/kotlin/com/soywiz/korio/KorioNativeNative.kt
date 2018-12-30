@@ -27,9 +27,6 @@ actual open class IOException actual constructor(msg: String) : Exception(msg)
 actual open class EOFException actual constructor(msg: String) : IOException(msg)
 actual open class FileNotFoundException actual constructor(msg: String) : IOException(msg)
 
-actual open class RuntimeException actual constructor(msg: String) : Exception(msg)
-actual open class IllegalStateException actual constructor(msg: String) : RuntimeException(msg)
-
 actual class Semaphore actual constructor(initial: Int) {
 	actual fun acquire(): Unit = Unit
 	actual fun release(): Unit = Unit

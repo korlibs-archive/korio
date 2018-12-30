@@ -2,7 +2,6 @@
 
 package com.soywiz.korio.file.std
 
-import com.soywiz.kds.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
@@ -12,7 +11,7 @@ fun MemoryVfs(items: Map<String, AsyncStream> = LinkedHashMap(), caseSensitive: 
 	for ((path, stream) in items) {
 		val info = PathInfo(path)
 		val folderNode = vfs.rootNode.access(info.folder, createFolders = true)
-		val fileNode = folderNode.createChild(info.basename, isDirectory = false)
+		val fileNode = folderNode.createChild(info.baseName, isDirectory = false)
 		fileNode.stream = stream
 	}
 	return vfs.root

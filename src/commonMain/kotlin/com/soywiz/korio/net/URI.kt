@@ -114,11 +114,10 @@ data class URI private constructor(
 			access.startsWith("/") -> URI(base).copy(path = access).fullUri
 			else -> URI(base).run {
 				copy(
-					path = "/" + VfsUtil.normalize(
-						this.path.substringBeforeLast(
-							'/'
-						) + "/" + access
-					).trimStart('/')
+					path = "/" + (this.path.substringBeforeLast(
+						'/'
+					) + "/" + access
+							).pathInfo.normalize().trimStart('/')
 				).fullUri
 			}
 		}

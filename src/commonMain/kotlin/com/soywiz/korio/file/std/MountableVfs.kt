@@ -11,7 +11,7 @@ suspend fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile {
 
 		override fun mount(folder: String, file: VfsFile) = this.apply {
 			unmountInternal(folder)
-			mounts += VfsUtil.normalize(folder) to file
+			mounts += folder.pathInfo.normalize() to file
 			resort()
 		}
 
@@ -21,7 +21,7 @@ suspend fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile {
 		}
 
 		private fun unmountInternal(folder: String) {
-			mounts.removeAll { it.first == VfsUtil.normalize(folder) }
+			mounts.removeAll { it.first == folder.pathInfo.normalize() }
 		}
 
 		private fun resort() {
@@ -29,7 +29,7 @@ suspend fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile {
 		}
 
 		override suspend fun access(path: String): VfsFile {
-			val rpath = VfsUtil.normalize(path)
+			val rpath = path.pathInfo.normalize()
 			for ((base, file) in mounts) {
 				//println("$base/$file")
 				if (rpath.startsWith(base)) return file[rpath.substring(base.length)]

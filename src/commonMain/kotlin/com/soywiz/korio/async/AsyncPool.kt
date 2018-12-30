@@ -1,6 +1,6 @@
 package com.soywiz.korio.async
 
-import com.soywiz.korio.atomic.*
+import com.soywiz.korio.concurrent.atomic.*
 
 class AsyncPool<T>(val maxItems: Int = Int.MAX_VALUE, val create: suspend () -> T) {
 	var createdItems = korAtomic(0)

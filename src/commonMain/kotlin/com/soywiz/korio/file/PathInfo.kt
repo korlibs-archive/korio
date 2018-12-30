@@ -1,170 +1,212 @@
 package com.soywiz.korio.file
 
+import com.soywiz.korio.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
 
 // @TODO: inline classes. Once done PathInfoExt won't be required to do clean allocation-free stuff.
-class PathInfo(override val fullPath: String) : Path
+inline class PathInfo(val fullPath: String)
 
 val String.pathInfo get() = PathInfo(this)
 
-// @TODO: Kotlin 1.3 inline classes
-object PathInfoExt {
-	/**
-	 * /path\to/file.ext -> /path/to/file.ext
-	 */
-	val String.fullpathNormalized: String get() = this.replace('\\', '/')
+/**
+ * /path\to/file.ext -> /path/to/file.ext
+ */
+val PathInfo.fullPathNormalized: String get() = fullPath.replace('\\', '/')
 
-	/**
-	 * /path\to/file.ext -> /path/to
-	 */
-	val String.folder: String get() = this.substring(0, fullpathNormalized.lastIndexOfOrNull('/') ?: 0)
+/**
+ * /path\to/file.ext -> /path/to
+ */
+val PathInfo.folder: String get() = fullPath.substring(0, fullPathNormalized.lastIndexOfOrNull('/') ?: 0)
 
-	/**
-	 * /path\to/file.ext -> /path/to/
-	 */
-	val String.folderWithSlash: String
-		get() = this.substring(0, fullpathNormalized.lastIndexOfOrNull('/')?.plus(1) ?: 0)
+/**
+ * /path\to/file.ext -> /path/to/
+ */
+val PathInfo.folderWithSlash: String
+	get() = fullPath.substring(0, fullPathNormalized.lastIndexOfOrNull('/')?.plus(1) ?: 0)
 
-	/**
-	 * /path\to/file.ext -> file.ext
-	 */
-	val String.basename: String get() = fullpathNormalized.substringAfterLast('/')
+/**
+ * /path\to/file.ext -> file.ext
+ */
+val PathInfo.baseName: String get() = fullPathNormalized.substringAfterLast('/')
 
-	/**
-	 * /path\to/file.ext -> /path\to/file
-	 */
-	val String.fullPathWithoutExtension: String
-		get() = run {
-			val startIndex = fullpathNormalized.lastIndexOfOrNull('/')?.plus(1) ?: 0
-			this.substring(0, fullpathNormalized.indexOfOrNull('.', startIndex) ?: fullpathNormalized.length)
-		}
-
-	/**
-	 * /path\to/file.ext -> /path\to/file.newext
-	 */
-	fun String.fullPathWithExtension(ext: String): String =
-		if (ext.isEmpty()) fullPathWithoutExtension else "$fullPathWithoutExtension.$ext"
-
-	/**
-	 * /path\to/file.1.ext -> file.1
-	 */
-	val String.basenameWithoutExtension: String get() = basename.substringBeforeLast('.', basename)
-
-	/**
-	 * /path\to/file.1.ext -> file
-	 */
-	val String.basenameWithoutCompoundExtension: String get() = basename.substringBefore('.', basename)
-
-	/**
-	 * /path\to/file.1.ext -> /path\to/file.1
-	 */
-	val String.fullnameWithoutExtension: String get() = "$folderWithSlash$basenameWithoutExtension"
-
-	/**
-	 * /path\to/file.1.ext -> file
-	 */
-	val String.fullnameWithoutCompoundExtension: String get() = "$folderWithSlash$basenameWithoutCompoundExtension"
-
-	/**
-	 * /path\to/file.1.ext -> file.1.newext
-	 */
-	fun String.basenameWithExtension(ext: String): String =
-		if (ext.isEmpty()) basenameWithoutExtension else "$basenameWithoutExtension.$ext"
-
-	/**
-	 * /path\to/file.1.ext -> file.newext
-	 */
-	fun String.basenameWithCompoundExtension(ext: String): String =
-		if (ext.isEmpty()) basenameWithoutCompoundExtension else "$basenameWithoutCompoundExtension.$ext"
-
-	/**
-	 * /path\to/file.1.EXT -> EXT
-	 */
-	val String.extension: String get() = basename.substringAfterLast('.', "")
-
-	/**
-	 * /path\to/file.1.EXT -> ext
-	 */
-	val String.extensionLC: String get() = extension.toLowerCase()
-
-	/**
-	 * /path\to/file.1.EXT -> 1.EXT
-	 */
-	val String.compoundExtension: String get() = basename.substringAfter('.', "")
-
-	/**
-	 * /path\to/file.1.EXT -> 1.ext
-	 */
-	val String.compoundExtensionLC: String get() = compoundExtension.toLowerCase()
-
-	/**
-	 * /path\to/file.1.jpg -> MimeType("image/jpeg", listOf("jpg", "jpeg"))
-	 */
-	val String.mimeTypeByExtension get() = MimeType.getByExtension(extensionLC)
-
-	/**
-	 * /path\to/file.1.ext -> listOf("", "path", "to", "file.1.ext")
-	 */
-	fun String.getPathComponents(): List<String> = fullpathNormalized.split('/')
-
-	/**
-	 * /path\to/file.1.ext -> listOf("/path", "/path/to", "/path/to/file.1.ext")
-	 */
-	fun String.getPathFullComponents(): List<String> {
-		val out = arrayListOf<String>()
-		for (n in fullpathNormalized.indices) {
-			when (fullpathNormalized[n]) {
-				'/', '\\' -> {
-					out += fullpathNormalized.substring(0, n)
-				}
-			}
-		}
-		out += fullpathNormalized
-		return out
+/**
+ * /path\to/file.ext -> /path\to/file
+ */
+val PathInfo.fullPathWithoutExtension: String
+	get() = run {
+		val startIndex = fullPathNormalized.lastIndexOfOrNull('/')?.plus(1) ?: 0
+		fullPath.substring(0, fullPathNormalized.indexOfOrNull('.', startIndex) ?: fullPathNormalized.length)
 	}
 
-	/**
-	 * /path\to/file.1.ext -> /path\to/file.1.ext
-	 */
-	val String.fullName: String get() = this
+/**
+ * /path\to/file.ext -> /path\to/file.newext
+ */
+fun PathInfo.fullPathWithExtension(ext: String): String =
+	if (ext.isEmpty()) fullPathWithoutExtension else "$fullPathWithoutExtension.$ext"
+
+/**
+ * /path\to/file.1.ext -> file.1
+ */
+val PathInfo.baseNameWithoutExtension: String get() = baseName.substringBeforeLast('.',
+	baseName
+)
+
+/**
+ * /path\to/file.1.ext -> file
+ */
+val PathInfo.baseNameWithoutCompoundExtension: String get() = baseName.substringBefore('.',
+	baseName
+)
+
+/**
+ * /path\to/file.1.ext -> /path\to/file.1
+ */
+val PathInfo.fullNameWithoutExtension: String get() = "$folderWithSlash$baseNameWithoutExtension"
+
+/**
+ * /path\to/file.1.ext -> file
+ */
+val PathInfo.fullNameWithoutCompoundExtension: String get() = "$folderWithSlash$baseNameWithoutCompoundExtension"
+
+/**
+ * /path\to/file.1.ext -> file.1.newext
+ */
+fun PathInfo.baseNameWithExtension(ext: String): String =
+	if (ext.isEmpty()) baseNameWithoutExtension else "$baseNameWithoutExtension.$ext"
+
+/**
+ * /path\to/file.1.ext -> file.newext
+ */
+fun PathInfo.baseNameWithCompoundExtension(ext: String): String =
+	if (ext.isEmpty()) baseNameWithoutCompoundExtension else "$baseNameWithoutCompoundExtension.$ext"
+
+/**
+ * /path\to/file.1.EXT -> EXT
+ */
+val PathInfo.extension: String get() = baseName.substringAfterLast('.', "")
+
+/**
+ * /path\to/file.1.EXT -> ext
+ */
+val PathInfo.extensionLC: String get() = extension.toLowerCase()
+
+/**
+ * /path\to/file.1.EXT -> 1.EXT
+ */
+val PathInfo.compoundExtension: String get() = baseName.substringAfter('.', "")
+
+/**
+ * /path\to/file.1.EXT -> 1.ext
+ */
+val PathInfo.compoundExtensionLC: String get() = compoundExtension.toLowerCase()
+
+/**
+ * /path\to/file.1.jpg -> MimeType("image/jpeg", listOf("jpg", "jpeg"))
+ */
+val PathInfo.mimeTypeByExtension get() = MimeType.getByExtension(extensionLC)
+
+/**
+ * /path\to/file.1.ext -> listOf("", "path", "to", "file.1.ext")
+ */
+fun PathInfo.getPathComponents(): List<String> = fullPathNormalized.split('/')
+
+/**
+ * /path\to/file.1.ext -> listOf("/path", "/path/to", "/path/to/file.1.ext")
+ */
+fun PathInfo.getPathFullComponents(): List<String> {
+	val out = arrayListOf<String>()
+	for (n in fullPathNormalized.indices) {
+		when (fullPathNormalized[n]) {
+			'/', '\\' -> {
+				out += fullPathNormalized.substring(0, n)
+			}
+		}
+	}
+	out += fullPathNormalized
+	return out
 }
 
-inline fun <T> PathInfo(callback: PathInfoExt.() -> T): T = callback(PathInfoExt)
+/**
+ * /path\to/file.1.ext -> /path\to/file.1.ext
+ */
+val PathInfo.fullName: String get() = fullPath
 
 interface Path {
-	val fullPath: String
+	val pathInfo: PathInfo
 }
 
-val Path.fullpathNormalized: String get() = PathInfo { fullPath.fullpathNormalized }
-val Path.folder: String get() = PathInfo { fullPath.folder }
-val Path.folderWithSlash: String get() = PathInfo { fullPath.folderWithSlash }
-val Path.basename: String get() = PathInfo { fullPath.basename }
-val Path.pathWithoutExtension: String get() = PathInfo { fullPath.fullPathWithoutExtension }
-fun Path.fullPathWithExtension(ext: String): String =
-	PathInfo { fullPath.fullPathWithExtension(ext) }
+val Path.fullPathNormalized: String get() = pathInfo.fullPathNormalized
+val Path.folder: String get() = pathInfo.folder
+val Path.folderWithSlash: String get() = pathInfo.folderWithSlash
+val Path.baseName: String get() = pathInfo.baseName
+val Path.fullPathWithoutExtension: String get() = pathInfo.fullPathWithoutExtension
+fun Path.fullPathWithExtension(ext: String): String = pathInfo.fullPathWithExtension(ext)
+val Path.fullNameWithoutExtension: String get() = pathInfo.fullNameWithoutExtension
+val Path.baseNameWithoutExtension: String get() = pathInfo.baseNameWithoutExtension
+val Path.fullNameWithoutCompoundExtension: String get() = pathInfo.fullNameWithoutCompoundExtension
+val Path.baseNameWithoutCompoundExtension: String get() = pathInfo.baseNameWithoutCompoundExtension
+fun Path.baseNameWithExtension(ext: String): String = pathInfo.baseNameWithExtension(ext)
+fun Path.baseNameWithCompoundExtension(ext: String): String = pathInfo.baseNameWithCompoundExtension(ext)
+val Path.extension: String get() = pathInfo.extension
+val Path.extensionLC: String get() = pathInfo.extensionLC
+val Path.compoundExtension: String get() = pathInfo.compoundExtension
+val Path.compoundExtensionLC: String get() = pathInfo.compoundExtensionLC
+val Path.mimeTypeByExtension: MimeType get() = pathInfo.mimeTypeByExtension
+fun Path.getPathComponents(): List<String> = pathInfo.getPathComponents()
+fun Path.getPathFullComponents(): List<String> = pathInfo.getPathFullComponents()
+val Path.fullName: String get() = pathInfo.fullPath
 
-val Path.fullnameWithoutExtension: String get() = PathInfo { fullPath.fullnameWithoutExtension }
-val Path.basenameWithoutExtension: String get() = PathInfo { fullPath.basenameWithoutExtension }
-val Path.fullnameWithoutCompoundExtension: String get() = PathInfo { fullPath.fullnameWithoutCompoundExtension }
-val Path.basenameWithoutCompoundExtension: String get() = PathInfo { fullPath.basenameWithoutCompoundExtension }
-fun Path.basenameWithExtension(ext: String): String =
-	PathInfo { fullPath.basenameWithExtension(ext) }
+open class VfsNamed(override val pathInfo: PathInfo) : Path
 
-fun Path.basenameWithCompoundExtension(ext: String): String =
-	PathInfo { fullPath.basenameWithCompoundExtension(ext) }
 
-val Path.extension: String get() = PathInfo { fullPath.extension }
-val Path.extensionLC: String get() = PathInfo { fullPath.extensionLC }
-val Path.compoundExtension: String get() = PathInfo { fullPath.compoundExtension }
-val Path.compoundExtensionLC: String get() = PathInfo { fullPath.compoundExtensionLC }
-val Path.mimeTypeByExtension: MimeType get() = PathInfo { fullPath.mimeTypeByExtension }
-fun Path.getPathComponents(): List<String> =
-	PathInfo { fullPath.getPathComponents() }
+fun PathInfo.parts(): List<String> = fullPath.split('/')
+fun PathInfo.normalize(): String {
+	val path = this.fullPath
+	val schemeIndex = path.indexOf(":")
+	return if (schemeIndex >= 0) {
+		val take = if (path.substring(schemeIndex).startsWith("://")) 3 else 1
+		path.substring(0, schemeIndex + take) + path.substring(schemeIndex + take).pathInfo.normalize()
+	} else {
+		val path2 = path.replace('\\', '/')
+		val out = ArrayList<String>()
+		for (part in path2.split("/")) {
+			when (part) {
+				"", "." -> if (out.isEmpty()) out += "" else Unit
+				".." -> if (out.isNotEmpty()) out.removeAt(out.size - 1)
+				else -> out += part
+			}
+		}
+		out.joinToString("/")
+	}
+}
 
-fun Path.getPathFullComponents(): List<String> =
-	PathInfo { fullPath.getPathFullComponents() }
+fun PathInfo.combine(access: PathInfo): PathInfo {
+	val base = this.fullPath
+	val access = access.fullPath
+	return (if (access.pathInfo.isAbsolute()) access.pathInfo.normalize() else "$base/$access"
+		.pathInfo.normalize()).pathInfo
+}
 
-val Path.fullname: String get() = fullPath
+fun PathInfo.lightCombine(access: PathInfo): PathInfo {
+	val base = this.fullPath
+	val access = access.fullPath
+	val res = if (base.isNotEmpty()) base.trimEnd('/') + "/" + access.trim('/') else access
+	return res.pathInfo
+}
 
-open class VfsNamed(override val fullPath: String) : Path
+fun PathInfo.isAbsolute(): Boolean {
+	val base = this.fullPath
+	if (base.isEmpty()) return false
+	val b = base.replace('\\', '/').substringBefore('/')
+	if (b.isEmpty()) return true
+	if (b.contains(':')) return true
+	return false
+}
+
+fun PathInfo.normalizeAbsolute(): PathInfo {
+	val path = this.fullPath
+	//val res = path.replace('/', File.separatorChar).trim(File.separatorChar)
+	//return if (OS.isUnix) "/$res" else res
+	return PathInfo(path.replace('/', KorioNative.File_separatorChar))
+}

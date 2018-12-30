@@ -1,4 +1,4 @@
-package com.soywiz.korio.atomic
+package com.soywiz.korio.concurrent.atomic
 
 import kotlin.reflect.*
 

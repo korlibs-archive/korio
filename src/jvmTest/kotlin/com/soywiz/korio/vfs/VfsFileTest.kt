@@ -9,7 +9,7 @@ class VfsFileTest {
 	@Test
 	fun name() = suspendTest {
 		val file = MemoryVfs()["C:\\this\\is\\a\\test.txt"]
-		assertEquals("C:/this/is/a", file.parent.fullname)
+		assertEquals("C:/this/is/a", file.parent.fullName)
 	}
 
 	@Test

@@ -4,7 +4,7 @@ import com.soywiz.klock.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.*
 import com.soywiz.korio.async.*
-import com.soywiz.korio.atomic.*
+import com.soywiz.korio.concurrent.atomic.*
 import com.soywiz.korio.error.*
 import com.soywiz.korio.stream.*
 import kotlinx.coroutines.*
@@ -102,7 +102,7 @@ class HttpClientJvm : HttpClient() {
 			val length = pheaders["Content-Length"]?.toLongOrNull()
 
 			launchImmediately(newSingleThreadContext("HttpRequest: $method: $url")) {
-				val syncStream = ignoreErrors { con.inputStream } ?: ignoreErrors { con.errorStream }
+				val syncStream = runIgnoringExceptions { con.inputStream } ?: runIgnoringExceptions { con.errorStream }
 				try {
 					if (syncStream != null) {
 						//val stream = syncStream.toAsync(length).toAsyncStream()
@@ -128,9 +128,9 @@ class HttpClientJvm : HttpClient() {
 						}
 					}
 				} finally {
-					ignoreErrors { syncStream?.close() }
-					ignoreErrors { produceConsumer.close() }
-					ignoreErrors { con.disconnect() }
+					runIgnoringExceptions { syncStream?.close() }
+					runIgnoringExceptions { produceConsumer.close() }
+					runIgnoringExceptions { con.disconnect() }
 					HttpStats.disconnections.incrementAndGet()
 				}
 			}

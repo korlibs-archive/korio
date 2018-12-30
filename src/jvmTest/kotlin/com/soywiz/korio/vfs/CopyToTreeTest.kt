@@ -1,6 +1,5 @@
 package com.soywiz.korio.vfs
 
-import com.soywiz.kds.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.file.std.*
@@ -20,7 +19,7 @@ class CopyToTreeTest {
 		mem.copyToTree(out)
 		assertEquals(
 			"[/root.txt, /hello, /hello/world.txt]",
-			out.listRecursive().map { it.fullname }.toList().toString()
+			out.listRecursive().map { it.fullName }.toList().toString()
 		)
 	}
 }

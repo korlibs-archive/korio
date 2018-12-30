@@ -1,5 +1,6 @@
-package com.soywiz.korio.atomic
+package com.soywiz.korio.concurrent.atomic
 
+import com.soywiz.korio.concurrent.atomic.*
 import java.util.concurrent.atomic.*
 
 actual fun <T> korAtomic(initial: T): KorAtomicRef<T> = object : KorAtomicRef<T>(initial) {

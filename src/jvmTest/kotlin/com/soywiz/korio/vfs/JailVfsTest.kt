@@ -17,7 +17,7 @@ class JailVfsTest {
 
 		assertEquals(
 			"[/hello, /hello/secret.txt, /hello/world, /hello/world/test.txt]",
-			mem.listRecursive().toList().map { it.fullname }.toString()
+			mem.listRecursive().toList().map { it.fullName }.toString()
 		)
 
 		val worldFolder = mem["hello/world"]

@@ -1,6 +1,7 @@
 package com.soywiz.korio.concurrent
 
-import com.soywiz.korio.atomic.*
+import com.soywiz.korio.concurrent.atomic.*
+import com.soywiz.korio.concurrent.atomic.*
 
 internal class AtomicLazyImpl<out T>(initializer: () -> T) : Lazy<T> {
 	private object UNINITIALIZED

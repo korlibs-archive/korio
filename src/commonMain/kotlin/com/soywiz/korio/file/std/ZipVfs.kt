@@ -2,7 +2,6 @@ package com.soywiz.korio.file.std
 
 import com.soywiz.klock.*
 import com.soywiz.kmem.*
-import com.soywiz.korio.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.compression.deflate.*
 import com.soywiz.korio.compression.util.*
@@ -142,7 +141,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 							compressedSize = 0L,
 							uncompressedSize = 0L
 						)
-						folder2[PathInfo(c).basename] = entry2
+						folder2[PathInfo(c).baseName] = entry2
 						files[c] = entry2
 					}
 				}
@@ -299,7 +298,7 @@ private suspend fun addZipFileEntry(s: AsyncStream, entry: VfsFile): ZipEntry {
 	val time = 0
 	val crc32 = entry.hashSync(AsyncHash.CRC32).readS32LE(0)
 
-	val name = entry.fullname.trim('/')
+	val name = entry.fullName.trim('/')
 	val nameBytes = name.toByteArray(UTF8)
 	val extraBytes = byteArrayOf()
 	val compressedSize = size
