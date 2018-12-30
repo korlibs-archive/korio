@@ -15,6 +15,22 @@ class ResourcesVfsProviderJvm {
 
 		return object : Vfs.Decorator(merged.root) {
 			override suspend fun init() {
+				//println("localCurrentDirVfs: $localCurrentDirVfs, ${localCurrentDirVfs.absolutePath}")
+
+				// @TODO: IntelliJ doesn't properly set resources folder for MPP just yet (on gradle works just fine),
+				// @TODO: so at least we try to load resources from sources until this is fixed.
+				for (folder in listOf(
+					localCurrentDirVfs["src/commonMain/resources"],
+					localCurrentDirVfs["src/jvmMain/resources"],
+					localCurrentDirVfs["resources"],
+					localCurrentDirVfs["jvmResources"]
+				)) {
+					if (folder.exists() && folder.isDirectory()) {
+						merged += folder.jail()
+					}
+				}
+
+
 				if (classLoader is URLClassLoader) {
 					for (url in classLoader.urLs) {
 						//println("ResourcesVfsProviderJvm.url: $url")
@@ -30,7 +46,7 @@ class ResourcesVfsProviderJvm {
 							vfs.extension in setOf("jar", "zip") -> {
 								//merged.vfsList += vfs.openAsZip()
 							}
-							else -> merged.vfsList += vfs.jail()
+							else -> merged += vfs.jail()
 						}
 					}
 					//println(merged.options)
@@ -40,10 +56,11 @@ class ResourcesVfsProviderJvm {
 
 				//println("ResourcesVfsProviderJvm:classLoader:$classLoader")
 
-				merged.vfsList += object : Vfs() {
+				merged += object : Vfs() {
 					private fun normalize(path: String): String = path.trim('/')
 
 					private fun getResourceAsStream(npath: String) = classLoader.getResourceAsStream(npath)
+						?: classLoader.getResourceAsStream("/$npath")
 						?: invalidOp("Can't find '$npath' in ResourcesVfsProviderJvm")
 
 					override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream = executeInWorker {
@@ -68,6 +85,8 @@ class ResourcesVfsProviderJvm {
 
 					override fun toString(): String = "ResourcesVfsProviderJvm"
 				}.root
+
+				println("ResourcesVfsProviderJvm: $merged")
 			}
 
 			override fun toString(): String = "ResourcesVfs"

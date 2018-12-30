@@ -5,7 +5,15 @@ import com.soywiz.korio.error.*
 import com.soywiz.korio.file.*
 
 open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
-	val vfsList = ArrayList(vfsList)
+	private val vfsList = ArrayList(vfsList)
+
+	operator fun plusAssign(other: VfsFile) {
+		vfsList += other
+	}
+
+	operator fun minusAssign(other: VfsFile) {
+		vfsList -= other
+	}
 
 	override suspend fun access(path: String): VfsFile {
 		if (vfsList.size == 1) {
@@ -41,5 +49,5 @@ open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
 		}
 	}
 
-	override fun toString(): String = "MergedVfs"
+	override fun toString(): String = "MergedVfs($vfsList)"
 }
