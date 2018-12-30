@@ -8,6 +8,12 @@ interface Disposable {
 
 interface Closeable {
 	fun close(): Unit
+
+	companion object {
+		operator fun invoke(callback: () -> Unit) = object : Closeable {
+			override fun close() = callback()
+		}
+	}
 }
 
 object DummyCloseable : Closeable {

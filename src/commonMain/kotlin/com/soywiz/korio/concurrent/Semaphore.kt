@@ -1,3 +1,3 @@
-package com.soywiz.korio.lang
+package com.soywiz.korio.concurrent
 
 typealias Semaphore = com.soywiz.korio.Semaphore

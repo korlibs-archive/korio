@@ -133,8 +133,7 @@ abstract class Vfs {
 		protected open suspend fun VfsFile.transform(): VfsFile = file(this.path)
 		//suspend protected fun transform2_f(f: VfsFile): VfsFile = transform(f)
 
-		override suspend fun getUnderlyingUnscapedFile(path: String): FinalVfsFile =
-			access(path).transform().toUnscaped()
+		override suspend fun getUnderlyingUnscapedFile(path: String): FinalVfsFile = access(path).transform().toUnscaped()
 
 		protected open suspend fun init() {
 		}

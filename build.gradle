@@ -3,6 +3,8 @@ plugins {
 	id 'com.moowork.node' version '1.2.0'
 }
 
+new File(projectDir, "src/commonMain/kotlin/com/soywiz/korio/KorioVersion.kt").write("package com.soywiz.korio\n\ninternal const val KORIO_VERSION = \"$projectVersion\"")
+
 repositories {
     mavenLocal()
     jcenter()

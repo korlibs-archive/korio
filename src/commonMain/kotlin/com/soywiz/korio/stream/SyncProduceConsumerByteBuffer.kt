@@ -3,7 +3,7 @@ package com.soywiz.korio.stream
 import com.soywiz.kds.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.concurrent.*
-import com.soywiz.korio.lang.Semaphore
+import com.soywiz.korio.concurrent.Semaphore
 import com.soywiz.korio.util.*
 import kotlin.math.*
 
