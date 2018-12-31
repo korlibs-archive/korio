@@ -6,6 +6,7 @@ import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.crypto.*
 import com.soywiz.korio.error.*
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.checksum.*
 
 object ZLib : CompressionMethod {
 	override suspend fun uncompress(i: AsyncInputWithLengthStream, o: AsyncOutputStream) {

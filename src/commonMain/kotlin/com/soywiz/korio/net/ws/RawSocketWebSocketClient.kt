@@ -103,11 +103,11 @@ class RawSocketWebSocketClient(
 			add("Cache-Control: no-cache")
 			add("Upgrade: websocket")
 			if (protocols != null) {
-				add("Sec-WebSocket-Protocol: " + protocols.joinToString(", "))
+				add("Sec-WebSocket-Protocol: ${protocols.joinToString(", ")}")
 			}
 			add("Sec-WebSocket-Version: 13")
 			add("Connection: Upgrade")
-			add("Sec-WebSocket-Key: " + Base64.encode(key.toByteArray()))
+			add("Sec-WebSocket-Key: ${key.toByteArray().toBase64()}")
 			add("Origin: $origin")
 			add("User-Agent: Mozilla/5.0")
 		}.joinToString("\r\n") + "\r\n\n").toByteArray())

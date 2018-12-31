@@ -212,5 +212,5 @@ internal object KorioNativeDefaults {
 }
 
 fun createBase64URLForData(data: ByteArray, contentType: String): String {
-	return "data:$contentType;base64," + Base64.encode(data)
+	return "data:$contentType;base64,${data.toBase64()}"
 }

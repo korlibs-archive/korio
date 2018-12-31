@@ -10,7 +10,7 @@ class CompressionTest {
 	@Test
 	fun name() = suspendTest {
 		val data =
-			Base64.decode("H4sIAAAAAAAAA+3SsREAEBSD4WcFm2ACTID9dxGFxgDcub/4mjQpEmdmDuYPKwsSJT3qz1KkXu7fWZMu4/IGr78AAAAAAD+a6ywcnAAQAAA=")
+			"H4sIAAAAAAAAA+3SsREAEBSD4WcFm2ACTID9dxGFxgDcub/4mjQpEmdmDuYPKwsSJT3qz1KkXu7fWZMu4/IGr78AAAAAAD+a6ywcnAAQAAA=".fromBase64()
 		val res = data.uncompress(GZIP)
 		val res2 = res.readIntArrayLE(0, 4096 / 4)
 		assertEquals(

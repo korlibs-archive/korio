@@ -3,8 +3,7 @@ package com.soywiz.korio.compression.deflate
 import com.soywiz.kmem.*
 import com.soywiz.korio.crypto.*
 import com.soywiz.korio.error.*
-import com.soywiz.korio.stream.*
-import kotlin.math.*
+import com.soywiz.korio.util.checksum.*
 
 object FastDeflate {
 	fun uncompress(input: ByteArray, outputHint: Int, method: String): ByteArray {

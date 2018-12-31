@@ -9,6 +9,7 @@ import com.soywiz.korio.crypto.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.checksum.*
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
@@ -295,8 +296,7 @@ private suspend fun addZipFileEntry(s: AsyncStream, entry: VfsFile): ZipEntry {
 	val compressionMethod = 0 // Store
 	val date = 0
 	val time = 0
-	val crc32 = entry.hashSync(AsyncHash.CRC32).readS32LE(0)
-
+	val crc32 = entry.checksum(CRC32)
 	val name = entry.fullName.trim('/')
 	val nameBytes = name.toByteArray(UTF8)
 	val extraBytes = byteArrayOf()
