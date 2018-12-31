@@ -3,7 +3,6 @@ package com.soywiz.korio.compression.lzma
 import com.soywiz.kmem.*
 import com.soywiz.korio.*
 import com.soywiz.korio.file.std.*
-import com.soywiz.korio.internal.*
 import com.soywiz.korio.stream.*
 import kotlin.jvm.*
 import kotlin.math.*
@@ -3327,3 +3326,7 @@ object LzmaBench {
 		}
 	}
 }
+
+private infix fun Byte.and(mask: Int): Int = this.toInt() and mask
+private infix fun Byte.shl(that: Int): Int = this.toInt() shl that
+private infix fun Byte.shr(that: Int): Int = this.toInt() shr that

@@ -7,7 +7,6 @@ import com.soywiz.korio.compression.deflate.*
 import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.crypto.*
 import com.soywiz.korio.file.*
-import com.soywiz.korio.internal.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import kotlin.collections.component1
@@ -388,4 +387,10 @@ private suspend fun addDirEntry(s: AsyncStream, e: ZipEntry) {
 	s.writeBytes(e.nameBytes)
 	s.writeBytes(e.extraBytes)
 	s.writeBytes(e.commentBytes)
+}
+
+private fun ByteArray.indexOf(other: ByteArray): Int {
+	val full = this
+	for (n in 0 until full.size - other.size) if (other.indices.all { full[n + it] == other[it] }) return n
+	return -1
 }

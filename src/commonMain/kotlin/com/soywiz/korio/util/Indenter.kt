@@ -69,11 +69,11 @@ class Indenter(internal val actions: ArrayList<Action> = arrayListOf<Indenter.Ac
 	fun mark(data: Any) = this.apply { this.actions.add(Action.Marker(data)) }
 
 	fun linedeferred(init: Indenter.() -> Unit): Indenter {
-		this.actions.add(Action.LineDeferred({
+		this.actions.add(Action.LineDeferred {
 			val indenter = Indenter()
 			indenter.init()
 			indenter
-		}))
+		})
 		return this
 	}
 

@@ -1,5 +1,6 @@
 package com.soywiz.korio.net
 
+import com.soywiz.korio.crypto.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
@@ -30,9 +31,12 @@ data class URL private constructor(
 			defaultPort
 		}
 
-	val fullUri: String by lazy {
-		val out = StringBuilder()
-		if (scheme != null) {
+	val fullUrl: String by lazy { toUrlString().toString() }
+
+	val fullUrlWithoutScheme: String by lazy { toUrlString(includeScheme = false).toString() }
+
+	fun toUrlString(includeScheme: Boolean = true, out: StringBuilder = StringBuilder()): StringBuilder {
+		if (includeScheme && scheme != null) {
 			out.append("$scheme:")
 			if (!isOpaque) out.append("//")
 		}
@@ -41,20 +45,20 @@ data class URL private constructor(
 		out.append(path)
 		if (query != null) out.append("?$query")
 		if (fragment != null) out.append("#$fragment")
-		out.toString()
+		return out
 	}
 
 	val isAbsolute get() = (scheme != null)
 
-	override fun toString(): String = fullUri
+	override fun toString(): String = fullUrl
 	fun toComponentString(): String {
-		return "URI(" + listOf(::scheme, ::userInfo, ::host, ::path, ::query, ::fragment)
+		return "URL(" + listOf(::scheme, ::userInfo, ::host, ::path, ::query, ::fragment)
 			.map { it.name to it.get() }
 			.filter { it.second != null }
 			.joinToString(", ") { "${it.first}=${it.second}" } + ")"
 	}
 
-	fun resolve(path: URL): URL = URL(resolve(this.fullUri, path.fullUri))
+	fun resolve(path: URL): URL = URL(resolve(this.fullUrl, path.fullUrl))
 
 	companion object {
 		val DEFAULT_PORT = 0
@@ -72,8 +76,8 @@ data class URL private constructor(
 
 		private val schemeRegex = Regex("\\w+:")
 
-		operator fun invoke(uri: String): URL {
-			val r = StrReader(uri)
+		operator fun invoke(url: String): URL {
+			val r = StrReader(url)
 			val schemeColon = r.tryRegex(schemeRegex)
 			return when {
 				schemeColon != null -> {
@@ -95,7 +99,7 @@ data class URL private constructor(
 					)
 				}
 				else -> {
-					val (nonFragment, fragment) = uri.split("#", limit = 2).run { first() to getOrNull(1) }
+					val (nonFragment, fragment) = url.split("#", limit = 2).run { first() to getOrNull(1) }
 					val (path, query) = nonFragment.split("?", limit = 2).run { first() to getOrNull(1) }
 					URL(
 						opaque = false,
@@ -110,19 +114,12 @@ data class URL private constructor(
 			}
 		}
 
-		fun isAbsolute(uri: String): Boolean = StrReader(uri).tryRegex(schemeRegex) != null
+		fun isAbsolute(url: String): Boolean = StrReader(url).tryRegex(schemeRegex) != null
 
 		fun resolve(base: String, access: String): String = when {
 			isAbsolute(access) -> access
-			access.startsWith("/") -> URL(base).copy(path = access).fullUri
-			else -> URL(base).run {
-				copy(
-					path = "/" + (this.path.substringBeforeLast(
-						'/'
-					) + "/" + access
-							).pathInfo.normalize().trimStart('/')
-				).fullUri
-			}
+			access.startsWith("/") -> URL(base).copy(path = access).fullUrl
+			else -> URL(base).run { copy(path = "/${("${path.substringBeforeLast('/')}/$access").pathInfo.normalize().trimStart('/')}").fullUrl }
 		}
 
 		fun decodeComponent(s: String, charset: Charset = UTF8, formUrlEncoded: Boolean = false): String {
@@ -159,7 +156,7 @@ data class URL private constructor(
 					in 'a'..'z', in 'A'..'Z', in '0'..'9', '-', '_', '.', '*' -> sb.append(cc)
 					else -> {
 						sb.append('%')
-						for (n in 1 downTo 0) sb.append("0123456789ABCDEF"[c.toInt().ushr(n * 4) and 0xF])
+						for (n in 1 downTo 0) sb.append(Hex.DIGITS[c.toInt().ushr(n * 4) and 0xF])
 					}
 				}
 			}

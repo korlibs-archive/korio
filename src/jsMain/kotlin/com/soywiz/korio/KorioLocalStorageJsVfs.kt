@@ -1,5 +1,6 @@
 package com.soywiz.korio
 
+import com.soywiz.korio.file.*
 import com.soywiz.korio.file.std.*
 import org.w3c.dom.*
 import kotlin.browser.*

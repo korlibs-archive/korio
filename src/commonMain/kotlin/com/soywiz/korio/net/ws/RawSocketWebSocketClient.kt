@@ -90,7 +90,7 @@ class RawSocketWebSocketClient(
 	debug: Boolean,
 	val origin: String?,
 	val key: String
-) : WebSocketClient(url.fullUri, protocols, debug) {
+) : WebSocketClient(url.fullUrl, protocols, debug) {
 	private var frameIsBinary = false
 	val host = url.host ?: "127.0.0.1"
 	val port = url.port

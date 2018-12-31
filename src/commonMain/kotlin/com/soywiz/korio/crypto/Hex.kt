@@ -1,11 +1,9 @@
 package com.soywiz.korio.crypto
 
-import kotlin.jvm.*
-
 object Hex {
-	private val DIGITS = "0123456789ABCDEF"
-	private val DIGITS_UPPER = DIGITS.toUpperCase()
-	private val DIGITS_LOWER = DIGITS.toLowerCase()
+	const val DIGITS = "0123456789ABCDEF"
+	val DIGITS_UPPER = DIGITS.toUpperCase()
+	val DIGITS_LOWER = DIGITS.toLowerCase()
 
 	fun decodeChar(c: Char): Int = when (c) {
 		in '0'..'9' -> c - '0'

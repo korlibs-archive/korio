@@ -11,10 +11,139 @@ import com.soywiz.korio.serialization.json.*
 import com.soywiz.korio.stream.*
 import kotlin.math.*
 
-interface SimpleStorage {
-	suspend fun get(key: String): String?
-	suspend fun set(key: String, value: String)
-	suspend fun remove(key: String)
+fun SimpleStorage.toVfs(): VfsFile = MapLikeStorageVfs(this).root
+
+class MapLikeStorageVfs(val storage: SimpleStorage) : Vfs() {
+	private val files = StorageFiles(storage)
+	private var initialized = false
+
+	private suspend fun initOnce() {
+		if (!initialized) {
+			initialized = true
+			// Create root
+			if (!files.hasEntryInfo("/")) {
+				files.setEntryInfo("/", StorageFiles.EntryInfo(isFile = false, size = 0L))
+			}
+		}
+	}
+
+	fun String.normalizePath() = "/" + this.trim('/').replace('\\', '/')
+
+	suspend fun remove(path: String, directory: Boolean): Boolean {
+		initOnce()
+		val npath = path.normalizePath()
+		val entry = files.getEntryInfo(npath) ?: return false
+		return if (entry.isDirectory == directory) {
+			if (directory && entry.children.isNotEmpty()) throw IOException("Directory '$npath' is not empty")
+			files.removeEntryInfo(npath)
+		} else {
+			false
+		}
+	}
+
+	override suspend fun rmdir(path: String): Boolean = remove(path, directory = true)
+	override suspend fun delete(path: String): Boolean = remove(path, directory = false)
+
+	override suspend fun stat(path: String): VfsStat {
+		initOnce()
+		val npath = path.normalizePath()
+		val entry = files.getEntryInfo(npath) ?: return createNonExistsStat(path)
+		return createExistsStat(
+			path,
+			entry.isDirectory,
+			entry.size,
+			createTime = entry.createdTime,
+			modifiedTime = entry.modifiedTime
+		)
+	}
+
+	private suspend fun ensureParentDirectory(nparent: String, npath: String): StorageFiles.EntryInfo {
+		if (!files.hasEntryInfo(nparent)) throw IOException("Parent directory '$nparent' for file '$npath' doesn't exists")
+		val parent = files.getEntryInfo(nparent)!!
+		if (parent.isFile) throw IOException("'$nparent' is a file")
+		return parent
+	}
+
+	override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean {
+		initOnce()
+		val npath = path.normalizePath()
+		val nparent = PathInfo(npath).folder.normalizePath()
+		if (!files.hasEntryInfo(nparent)) mkdir(nparent, attributes) // Create Parents
+		val parent = ensureParentDirectory(nparent, npath)
+		val now = DateTime.now()
+		if (files.hasEntryInfo(npath)) return false
+		files.setEntryInfo(nparent, parent.copy(children = parent.children + npath))
+		files.setEntryInfo(npath, isFile = false, size = 0L, children = listOf(), createdTime = now, modifiedTime = now)
+		return true
+	}
+
+	override suspend fun list(path: String): SuspendingSequence<VfsFile> {
+		initOnce()
+		val npath = path.normalizePath()
+		val entry = files.getEntryInfo(npath) ?: throw IOException("Can't find '$path'")
+		return entry.children.map { VfsFile(this, it) }.toAsync()
+	}
+
+	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
+		initOnce()
+		val npath = path.normalizePath()
+		val nparent = PathInfo(npath).folder.normalizePath()
+		val parent = ensureParentDirectory(nparent, npath)
+
+		if (!files.hasEntryInfo(npath)) {
+			if (!mode.createIfNotExists) throw IOException("File '$npath' doesn't exists")
+			files.setEntryInfo(nparent, parent.copy(children = parent.children + npath))
+		}
+
+		val now = DateTime.now()
+		var info = files.getEntryInfo(npath) ?: StorageFiles.EntryInfo(
+			isFile = true,
+			size = 0L,
+			children = listOf(),
+			createdTime = now,
+			modifiedTime = now
+		)
+		if (info.isDirectory) throw IOException("Can't open a directory")
+
+		return object : AsyncStreamBase() {
+			private suspend fun updateInfo(newInfo: StorageFiles.EntryInfo) {
+				if (info != newInfo) {
+					info = newInfo
+					files.setEntryInfo(npath, info)
+				}
+			}
+
+			override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
+				return files.readData(npath, position, buffer, offset, len)
+			}
+
+			override suspend fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
+				files.writeData(npath, position, buffer, offset, len)
+				updateInfo(info.copy(size = max(info.size, position + len)))
+			}
+
+			override suspend fun setLength(value: Long) {
+				updateInfo(info.copy(size = value))
+			}
+
+			override suspend fun getLength(): Long {
+				return info.size
+			}
+
+			override suspend fun close() {
+			}
+		}.toAsyncStream()
+	}
+
+	override suspend fun touch(path: String, time: DateTime, atime: DateTime) {
+		initOnce()
+		val npath = path.normalizePath()
+		if (files.hasEntryInfo(npath)) {
+			files.setEntryInfo(npath, files.getEntryInfo(npath)!!.copy(modifiedTime = time))
+		}
+	}
+
+	override fun toString(): String = "MapLikeStorageVfs"
 }
 
 private class StorageFiles(val storage: SimpleStorage) {
@@ -128,137 +257,4 @@ private class StorageFiles(val storage: SimpleStorage) {
 		arraycopy(c, inChunk, buffer, offset, read)
 		return read
 	}
-}
-
-class MapLikeStorageVfs(val storage: SimpleStorage) : Vfs() {
-	private val files = StorageFiles(storage)
-	private var initialized = false
-
-	private suspend fun initOnce() {
-		if (!initialized) {
-			initialized = true
-			// Create root
-			if (!files.hasEntryInfo("/")) {
-				files.setEntryInfo("/", StorageFiles.EntryInfo(isFile = false, size = 0L))
-			}
-		}
-	}
-
-	fun String.normalizePath() = "/" + this.trim('/').replace('\\', '/')
-
-	suspend fun remove(path: String, directory: Boolean): Boolean {
-		initOnce()
-		val npath = path.normalizePath()
-		val entry = files.getEntryInfo(npath) ?: return false
-		if (entry.isDirectory == directory) {
-			if (directory && entry.children.isNotEmpty()) throw IOException("Directory '$npath' is not empty")
-			return files.removeEntryInfo(npath)
-		} else {
-			return false
-		}
-	}
-
-	override suspend fun rmdir(path: String): Boolean = remove(path, directory = true)
-	override suspend fun delete(path: String): Boolean = remove(path, directory = false)
-
-	override suspend fun stat(path: String): VfsStat {
-		initOnce()
-		val npath = path.normalizePath()
-		val entry = files.getEntryInfo(npath) ?: return createNonExistsStat(path)
-		return createExistsStat(
-			path,
-			entry.isDirectory,
-			entry.size,
-			createTime = entry.createdTime,
-			modifiedTime = entry.modifiedTime
-		)
-	}
-
-	private suspend fun ensureParentDirectory(nparent: String, npath: String): StorageFiles.EntryInfo {
-		if (!files.hasEntryInfo(nparent)) throw IOException("Parent directory '$nparent' for file '$npath' doesn't exists")
-		val parent = files.getEntryInfo(nparent)!!
-		if (parent.isFile) throw IOException("'$nparent' is a file")
-		return parent
-	}
-
-	override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean {
-		initOnce()
-		val npath = path.normalizePath()
-		val nparent = PathInfo(npath).folder.normalizePath()
-		if (!files.hasEntryInfo(nparent)) mkdir(nparent, attributes) // Create Parents
-		val parent = ensureParentDirectory(nparent, npath)
-		val now = DateTime.now()
-		if (files.hasEntryInfo(npath)) return false
-		files.setEntryInfo(nparent, parent.copy(children = parent.children + npath))
-		files.setEntryInfo(npath, isFile = false, size = 0L, children = listOf(), createdTime = now, modifiedTime = now)
-		return true
-	}
-
-	override suspend fun list(path: String): SuspendingSequence<VfsFile> {
-		initOnce()
-		val npath = path.normalizePath()
-		val entry = files.getEntryInfo(npath) ?: throw IOException("Can't find '$path'")
-		return entry.children.map { VfsFile(this, it) }.toAsync()
-	}
-
-	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
-		initOnce()
-		val npath = path.normalizePath()
-		val nparent = PathInfo(npath).folder.normalizePath()
-		val parent = ensureParentDirectory(nparent, npath)
-
-		if (!files.hasEntryInfo(npath)) {
-			if (!mode.createIfNotExists) throw IOException("File '$npath' doesn't exists")
-			files.setEntryInfo(nparent, parent.copy(children = parent.children + npath))
-		}
-
-		val now = DateTime.now()
-		var info = files.getEntryInfo(npath) ?: StorageFiles.EntryInfo(
-			isFile = true,
-			size = 0L,
-			children = listOf(),
-			createdTime = now,
-			modifiedTime = now
-		)
-		if (info.isDirectory) throw IOException("Can't open a directory")
-
-		return object : AsyncStreamBase() {
-			private suspend fun updateInfo(newInfo: StorageFiles.EntryInfo) {
-				if (info != newInfo) {
-					info = newInfo
-					files.setEntryInfo(npath, info)
-				}
-			}
-
-			override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
-				return files.readData(npath, position, buffer, offset, len)
-			}
-
-			override suspend fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
-				files.writeData(npath, position, buffer, offset, len)
-				updateInfo(info.copy(size = max(info.size, position + len)))
-			}
-
-			override suspend fun setLength(value: Long) {
-				updateInfo(info.copy(size = value))
-			}
-
-			override suspend fun getLength(): Long {
-				return info.size
-			}
-
-			override suspend fun close() {
-			}
-		}.toAsyncStream()
-	}
-
-	override suspend fun touch(path: String, time: DateTime, atime: DateTime) {
-		initOnce()
-		val npath = path.normalizePath()
-		if (files.hasEntryInfo(npath)) {
-			files.setEntryInfo(npath, files.getEntryInfo(npath)!!.copy(modifiedTime = time))
-		}
-	}
-
-	override fun toString(): String = "MapLikeStorageVfs"
 }

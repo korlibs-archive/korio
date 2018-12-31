@@ -1,8 +1,10 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.*
+import com.soywiz.korio.error.*
 import com.soywiz.korio.file.std.*
 import com.soywiz.korio.net.http.*
+import com.soywiz.korio.util.*
 import kotlin.test.*
 
 class UniversalVfsTest {
@@ -39,5 +41,23 @@ class UniversalVfsTest {
 			"[GET, https://google.es/, Headers(), null, GET, https://www.google.es/, Headers((Referer, [https://google.es/])), null]",
 			httpClient.getAndClearLog().toString()
 		)
+	}
+
+	@Test
+	fun testTemporalSet() = suspendTest {
+		var called = false
+		val mem = MemoryVfs()
+		registerUniSchemaTemporarily(UniSchema("mem") {
+			mem[it.fullUrlWithoutScheme]
+		}) {
+			"mem://hello.txt".uniVfs.writeString("HELLO")
+			assertEquals("HELLO", "mem://hello.txt".uniVfs.readString())
+			called = true
+		}
+		assertEquals(true, called)
+
+		expectException<InvalidOperationException> {
+			"mem://hello.txt".uniVfs.readString()
+		}
 	}
 }

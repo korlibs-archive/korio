@@ -25,25 +25,15 @@ class VfsFile(
 
 	// @TODO: Kotlin suspend operator not supported yet!
 	suspend fun set(path: String, content: String) = run { this[path].put(content.toByteArray(UTF8).openAsync()) }
-
 	suspend fun set(path: String, content: ByteArray) = run { this[path].put(content.openAsync()) }
 	suspend fun set(path: String, content: AsyncStream) = run { this[path].writeStream(content) }
 	suspend fun set(path: String, content: VfsFile) = run { this[path].writeFile(content) }
 
-	suspend fun put(content: AsyncInputStream, attributes: List<Vfs.Attribute> = listOf()): Long =
-		vfs.put(this.path, content, attributes)
-
-	suspend fun put(content: AsyncInputStream, vararg attributes: Vfs.Attribute): Long =
-		vfs.put(this.path, content, attributes.toList())
-
-	suspend fun write(data: ByteArray, vararg attributes: Vfs.Attribute): Long =
-		vfs.put(this.path, data, attributes.toList())
-
-	suspend fun writeBytes(data: ByteArray, vararg attributes: Vfs.Attribute): Long =
-		vfs.put(this.path, data, attributes.toList())
-
-	suspend fun writeStream(src: AsyncStream, vararg attributes: Vfs.Attribute): Long =
-		run { put(src, *attributes); src.getLength() }
+	suspend fun put(content: AsyncInputStream, attributes: List<Vfs.Attribute> = listOf()): Long = vfs.put(this.path, content, attributes)
+	suspend fun put(content: AsyncInputStream, vararg attributes: Vfs.Attribute): Long = vfs.put(this.path, content, attributes.toList())
+	suspend fun write(data: ByteArray, vararg attributes: Vfs.Attribute): Long = vfs.put(this.path, data, attributes.toList())
+	suspend fun writeBytes(data: ByteArray, vararg attributes: Vfs.Attribute): Long = vfs.put(this.path, data, attributes.toList())
+	suspend fun writeStream(src: AsyncStream, vararg attributes: Vfs.Attribute): Long = run { put(src, *attributes); src.getLength() }
 
 	suspend fun writeStream(src: AsyncInputStream, vararg attributes: Vfs.Attribute): Long = put(src, *attributes)
 	suspend fun writeFile(file: VfsFile, vararg attributes: Vfs.Attribute): Long = file.copyTo(this, *attributes)
@@ -87,13 +77,11 @@ class VfsFile(
 
 	suspend fun readLines(charset: Charset = UTF8): List<String> = readString(charset).lines()
 	suspend fun writeLines(lines: List<String>, charset: Charset = UTF8) =
-		writeString(lines.joinToString("\n"), charset)
+		writeString(lines.joinToString("\n"), charset = charset)
 
 	suspend fun readString(charset: Charset = UTF8): String = read().toString(charset)
-	suspend fun writeString(data: String, vararg attributes: Vfs.Attribute): Unit =
-		run { write(data.toByteArray(UTF8), *attributes) }
 
-	suspend fun writeString(data: String, charset: Charset, vararg attributes: Vfs.Attribute): Unit =
+	suspend fun writeString(data: String, vararg attributes: Vfs.Attribute, charset: Charset = UTF8): Unit =
 		run { write(data.toByteArray(charset), *attributes) }
 
 	suspend fun readChunk(offset: Long, size: Int): ByteArray = vfs.readChunk(this.path, offset, size)

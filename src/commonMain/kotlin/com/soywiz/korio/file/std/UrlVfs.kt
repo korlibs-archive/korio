@@ -11,12 +11,12 @@ import com.soywiz.korio.util.*
 fun UrlVfs(url: String, client: HttpClient = createHttpClient()): VfsFile = UrlVfs(URL(url), client)
 
 fun UrlVfs(url: URL, client: HttpClient = createHttpClient()): VfsFile =
-	UrlVfs(url.copy(path = "", query = null).fullUri, Unit, client)[url.path]
+	UrlVfs(url.copy(path = "", query = null).fullUrl, Unit, client)[url.path]
 
 fun UrlVfsJailed(url: String, client: HttpClient = createHttpClient()): VfsFile = UrlVfsJailed(URL(url), client)
 
 fun UrlVfsJailed(url: URL, client: HttpClient = createHttpClient()): VfsFile =
-	UrlVfs(url.fullUri, Unit, client)[url.path]
+	UrlVfs(url.fullUrl, Unit, client)[url.path]
 
 class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHttpClient()) : Vfs() {
 	override val absolutePath: String = url

@@ -3,76 +3,76 @@ package com.soywiz.korio.net
 import kotlin.test.*
 
 class URLTest {
-	data class UriInfo(val uri: String, val componentString: String, val isAbsolute: Boolean, val isOpaque: Boolean)
+	data class UrlInfo(val url: String, val componentString: String, val isAbsolute: Boolean, val isOpaque: Boolean)
 
-	val URIS = listOf(
-		UriInfo("", componentString = "URI(path=)", isAbsolute = false, isOpaque = false),
-		UriInfo("hello", componentString = "URI(path=hello)", isAbsolute = false, isOpaque = false),
-		UriInfo("/hello", componentString = "URI(path=/hello)", isAbsolute = false, isOpaque = false),
-		UriInfo(
+	val URLS = listOf(
+		UrlInfo("", componentString = "URL(path=)", isAbsolute = false, isOpaque = false),
+		UrlInfo("hello", componentString = "URL(path=hello)", isAbsolute = false, isOpaque = false),
+		UrlInfo("/hello", componentString = "URL(path=/hello)", isAbsolute = false, isOpaque = false),
+		UrlInfo(
 			"/hello?world",
-			componentString = "URI(path=/hello, query=world)",
+			componentString = "URL(path=/hello, query=world)",
 			isAbsolute = false,
 			isOpaque = false
 		),
-		UriInfo(
+		UrlInfo(
 			"/hello?world?world",
-			componentString = "URI(path=/hello, query=world?world)",
+			componentString = "URL(path=/hello, query=world?world)",
 			isAbsolute = false,
 			isOpaque = false
 		),
-		UriInfo("http://", componentString = "URI(scheme=http, path=)", isAbsolute = true, isOpaque = false),
-		UriInfo(
+		UrlInfo("http://", componentString = "URL(scheme=http, path=)", isAbsolute = true, isOpaque = false),
+		UrlInfo(
 			"http://hello",
-			componentString = "URI(scheme=http, host=hello, path=)",
+			componentString = "URL(scheme=http, host=hello, path=)",
 			isAbsolute = true,
 			isOpaque = false
 		),
-		UriInfo(
+		UrlInfo(
 			"http://hello/",
-			componentString = "URI(scheme=http, host=hello, path=/)",
+			componentString = "URL(scheme=http, host=hello, path=/)",
 			isAbsolute = true,
 			isOpaque = false
 		),
-		UriInfo(
+		UrlInfo(
 			"http://user:pass@hello",
-			componentString = "URI(scheme=http, userInfo=user:pass, host=hello, path=)",
+			componentString = "URL(scheme=http, userInfo=user:pass, host=hello, path=)",
 			isAbsolute = true,
 			isOpaque = false
 		),
-		UriInfo(
+		UrlInfo(
 			"http://user:pass@hello/path",
-			componentString = "URI(scheme=http, userInfo=user:pass, host=hello, path=/path)",
+			componentString = "URL(scheme=http, userInfo=user:pass, host=hello, path=/path)",
 			isAbsolute = true,
 			isOpaque = false
 		),
-		UriInfo(
+		UrlInfo(
 			"http://user:pass@hello/path?query",
-			componentString = "URI(scheme=http, userInfo=user:pass, host=hello, path=/path, query=query)",
+			componentString = "URL(scheme=http, userInfo=user:pass, host=hello, path=/path, query=query)",
 			isAbsolute = true,
 			isOpaque = false
 		),
-		UriInfo(
+		UrlInfo(
 			"http://hello/path",
-			componentString = "URI(scheme=http, host=hello, path=/path)",
+			componentString = "URL(scheme=http, host=hello, path=/path)",
 			isAbsolute = true,
 			isOpaque = false
 		),
-		UriInfo(
+		UrlInfo(
 			"http://hello?query",
-			componentString = "URI(scheme=http, host=hello, path=, query=query)",
+			componentString = "URL(scheme=http, host=hello, path=, query=query)",
 			isAbsolute = true,
 			isOpaque = false
 		),
-		UriInfo(
+		UrlInfo(
 			"mailto:demo@host.com",
-			componentString = "URI(scheme=mailto, userInfo=demo, host=host.com, path=)",
+			componentString = "URL(scheme=mailto, userInfo=demo, host=host.com, path=)",
 			isAbsolute = true,
 			isOpaque = true
 		),
-		UriInfo(
+		UrlInfo(
 			"http://hello?query#hash",
-			componentString = "URI(scheme=http, host=hello, path=, query=query, fragment=hash)",
+			componentString = "URL(scheme=http, host=hello, path=, query=query, fragment=hash)",
 			isAbsolute = true,
 			isOpaque = false
 		)
@@ -80,22 +80,22 @@ class URLTest {
 
 	@Test
 	fun testParsing() {
-		for (uri in URIS) assertEquals(uri.componentString, URL(uri.uri).toComponentString(), uri.uri)
+		for (url in URLS) assertEquals(url.componentString, URL(url.url).toComponentString(), url.url)
 	}
 
 	@Test
 	fun testFullUrl() {
-		for (uri in URIS) assertEquals(uri.uri, URL(uri.uri).fullUri, uri.uri)
+		for (url in URLS) assertEquals(url.url, URL(url.url).fullUrl, url.url)
 	}
 
 	@Test
 	fun testIsAbsolute() {
-		for (uri in URIS) assertEquals(uri.isAbsolute, URL(uri.uri).isAbsolute, uri.uri)
+		for (url in URLS) assertEquals(url.isAbsolute, URL(url.url).isAbsolute, url.url)
 	}
 
 	@Test
 	fun testIsOpaque() {
-		for (uri in URIS) assertEquals(uri.isOpaque, URL(uri.uri).isOpaque, uri.uri)
+		for (url in URLS) assertEquals(url.isOpaque, URL(url.url).isOpaque, url.url)
 	}
 
 	@Test

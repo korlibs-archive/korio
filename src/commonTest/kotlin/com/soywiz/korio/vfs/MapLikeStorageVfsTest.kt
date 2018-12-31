@@ -9,19 +9,16 @@ import kotlin.test.*
 class MapLikeStorageVfsTest {
 	@Test
 	fun name() = suspendTest {
-		val map = LinkedHashMap<String, String>()
-
-		val root = MapLikeStorageVfs(object : SimpleStorage {
+		val root = (object : SimpleStorage {
+			val map = LinkedHashMap<String, String>()
 			override suspend fun get(key: String): String? = map[key]
 			override suspend fun set(key: String, value: String) = run { map[key] = value }
 			override suspend fun remove(key: String): Unit = run { map.remove(key) }
-		}).root
+		}).toVfs()
 
 		assertEquals(listOf(), root.list().toList())
-		println(map)
 		root["demo.txt"].writeBytes("hello".toByteArray())
 		assertEquals(listOf("/demo.txt"), root.list().toList().map { it.fullName })
-		println(map)
 		assertEquals("hello", root["demo.txt"].readString())
 		root["demo"].mkdir()
 		root["demo"].mkdir()
