@@ -1,7 +1,13 @@
 package com.soywiz.korio.net
 
-import com.soywiz.kds.*
 import com.soywiz.korio.file.*
+import kotlin.collections.LinkedHashMap
+import kotlin.collections.List
+import kotlin.collections.listOf
+import kotlin.collections.map
+import kotlin.collections.set
+
+private val MimeType_byExtensions by lazy { LinkedHashMap<String, MimeType>() }
 
 class MimeType(val mime: String, val exts: List<String>) : Vfs.Attribute {
 	companion object {
@@ -15,10 +21,8 @@ class MimeType(val mime: String, val exts: List<String>) : Vfs.Attribute {
 		val TEXT_CSS = MimeType("text/css", listOf("css"))
 		val TEXT_JS = MimeType("application/javascript", listOf("js"))
 
-		private val byExtensions = LinkedHashMap<String, MimeType>()
-
 		fun register(mimeType: MimeType) {
-			for (ext in mimeType.exts) byExtensions[ext] = mimeType
+			for (ext in mimeType.exts) MimeType_byExtensions[ext] = mimeType
 		}
 
 		fun register(vararg mimeTypes: MimeType) {
@@ -49,7 +53,7 @@ class MimeType(val mime: String, val exts: List<String>) : Vfs.Attribute {
 		}
 
 		fun getByExtension(ext: String, default: MimeType = APPLICATION_OCTET_STREAM): MimeType =
-			byExtensions[ext.toLowerCase()] ?: default
+			MimeType_byExtensions[ext.toLowerCase()] ?: default
 	}
 }
 

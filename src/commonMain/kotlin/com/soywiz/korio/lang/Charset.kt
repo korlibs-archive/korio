@@ -122,6 +122,13 @@ val LATIN1 = ISO_8859_1
 val UTF16_LE = UTF16Charset(le = true)
 val UTF16_BE = UTF16Charset(le = false)
 
+object Charsets {
+	val UTF8 get() = com.soywiz.korio.lang.UTF8
+	val LATIN1 get() = com.soywiz.korio.lang.LATIN1
+	val UTF16_LE get() = com.soywiz.korio.lang.UTF16_LE
+	val UTF16_BE get() = com.soywiz.korio.lang.UTF16_BE
+}
+
 fun String.toByteArray(charset: Charset = UTF8): ByteArray {
 	val out = ByteArrayBuilder()
 	charset.encode(out, this)

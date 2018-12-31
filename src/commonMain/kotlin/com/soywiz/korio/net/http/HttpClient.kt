@@ -4,7 +4,6 @@ import com.soywiz.kds.*
 import com.soywiz.korio.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.concurrent.atomic.*
-import com.soywiz.korio.concurrent.atomic.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
 import com.soywiz.korio.serialization.json.*
@@ -74,7 +73,7 @@ abstract class HttpClient protected constructor() {
 		val simulateBrowser: Boolean = false
 	)
 
-	private fun mergeUrls(base: String, append: String): String = URI.resolve(base, append)
+	private fun mergeUrls(base: String, append: String): String = URL.resolve(base, append)
 
 	suspend fun request(
 		method: Http.Method,

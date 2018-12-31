@@ -7,8 +7,8 @@ import com.soywiz.korio.net.*
 object UniversalVfs {
 	operator fun invoke(uri: String, providers: UniSchemaProviders, base: VfsFile? = null): VfsFile {
 		return when {
-			URI.isAbsolute(uri) -> {
-				val uriUri = URI(uri)
+			URL.isAbsolute(uri) -> {
+				val uriUri = URL(uri)
 				val builder = providers.providers[uriUri.scheme]
 				if (builder != null) {
 					builder.provider(uriUri)
@@ -22,7 +22,7 @@ object UniversalVfs {
 	}
 }
 
-class UniSchema(val name: String, val provider: (URI) -> VfsFile)
+class UniSchema(val name: String, val provider: (URL) -> VfsFile)
 
 class UniSchemaProviders(val providers: Map<String, UniSchema>) {
 	constructor(providers: Iterable<UniSchema>) : this(providers.associateBy { it.name })

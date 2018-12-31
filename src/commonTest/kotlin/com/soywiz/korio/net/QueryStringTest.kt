@@ -1,6 +1,5 @@
 package com.soywiz.korio.net
 
-import com.soywiz.kds.*
 import kotlin.test.*
 
 class QueryStringTest {

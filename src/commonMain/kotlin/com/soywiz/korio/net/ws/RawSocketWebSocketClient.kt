@@ -20,14 +20,14 @@ object RawSocketWebSocketClientFactory : WebSocketClientFactory() {
 		wskey: String?,
 		debug: Boolean
 	): WebSocketClient {
-		val uri = URI(url)
+		val uri = URL(url)
 		val secure = when (uri.scheme) {
 			"ws" -> false
 			"wss" -> true
 			else -> error("Unknown ws protocol ${uri.scheme}")
 		}
 		val host = uri.host ?: "127.0.0.1"
-		val port = uri.defaultPort.takeIf { it != URI.DEFAULT_PORT } ?: if (secure) 443 else 80
+		val port = uri.defaultPort.takeIf { it != URL.DEFAULT_PORT } ?: if (secure) 443 else 80
 		val client = AsyncClient(host, port, secure = secure)
 
 		return RawSocketWebSocketClient(
@@ -85,7 +85,7 @@ class WsFrame(val data: ByteArray, val type: WsOpcode, val isFinal: Boolean = tr
 class RawSocketWebSocketClient(
 	val coroutineContext: CoroutineContext,
 	val client: AsyncClient,
-	url: URI,
+	url: URL,
 	protocols: List<String>?,
 	debug: Boolean,
 	val origin: String?,

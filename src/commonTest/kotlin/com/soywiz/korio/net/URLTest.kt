@@ -2,7 +2,7 @@ package com.soywiz.korio.net
 
 import kotlin.test.*
 
-class URITest {
+class URLTest {
 	data class UriInfo(val uri: String, val componentString: String, val isAbsolute: Boolean, val isOpaque: Boolean)
 
 	val URIS = listOf(
@@ -80,32 +80,53 @@ class URITest {
 
 	@Test
 	fun testParsing() {
-		for (uri in URIS) assertEquals(uri.componentString, URI(uri.uri).toComponentString(), uri.uri)
+		for (uri in URIS) assertEquals(uri.componentString, URL(uri.uri).toComponentString(), uri.uri)
 	}
 
 	@Test
 	fun testFullUrl() {
-		for (uri in URIS) assertEquals(uri.uri, URI(uri.uri).fullUri, uri.uri)
+		for (uri in URIS) assertEquals(uri.uri, URL(uri.uri).fullUri, uri.uri)
 	}
 
 	@Test
 	fun testIsAbsolute() {
-		for (uri in URIS) assertEquals(uri.isAbsolute, URI(uri.uri).isAbsolute, uri.uri)
+		for (uri in URIS) assertEquals(uri.isAbsolute, URL(uri.uri).isAbsolute, uri.uri)
 	}
 
 	@Test
 	fun testIsOpaque() {
-		for (uri in URIS) assertEquals(uri.isOpaque, URI(uri.uri).isOpaque, uri.uri)
+		for (uri in URIS) assertEquals(uri.isOpaque, URL(uri.uri).isOpaque, uri.uri)
 	}
 
 	@Test
 	fun testResolve() {
-		assertEquals("https://www.google.es/", URI.resolve("https://google.es/", "https://www.google.es/"))
-		assertEquals("https://google.es/demo", URI.resolve("https://google.es/path", "demo"))
-		assertEquals("https://google.es/path/demo", URI.resolve("https://google.es/path/", "demo"))
-		assertEquals("https://google.es/demo", URI.resolve("https://google.es/path/", "/demo"))
-		assertEquals("https://google.es/test", URI.resolve("https://google.es/path/path2", "../test"))
-		assertEquals("https://google.es/path/test", URI.resolve("https://google.es/path/path2/", "../test"))
-		assertEquals("https://google.es/test", URI.resolve("https://google.es/path/path2/", "../../../test"))
+		assertEquals("https://www.google.es/", URL.resolve("https://google.es/", "https://www.google.es/"))
+		assertEquals("https://google.es/demo", URL.resolve("https://google.es/path", "demo"))
+		assertEquals("https://google.es/path/demo", URL.resolve("https://google.es/path/", "demo"))
+		assertEquals("https://google.es/demo", URL.resolve("https://google.es/path/", "/demo"))
+		assertEquals("https://google.es/test", URL.resolve("https://google.es/path/path2", "../test"))
+		assertEquals("https://google.es/path/test", URL.resolve("https://google.es/path/path2/", "../test"))
+		assertEquals("https://google.es/test", URL.resolve("https://google.es/path/path2/", "../../../test"))
+	}
+
+	@Test
+	fun testEncode() {
+		assertEquals("hello%20world", URL.encodeComponent("hello world"))
+		assertEquals("hello+world", URL.encodeComponent("hello world", formUrlEncoded = true))
+
+		assertEquals("hello%2Bworld", URL.encodeComponent("hello+world"))
+		assertEquals("hello%2Bworld", URL.encodeComponent("hello+world", formUrlEncoded = true))
+
+		assertEquals("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWZ0123456789%20-_.*", URL.encodeComponent("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWZ0123456789 -_.*"))
+		assertEquals("%C3%A1%C3%A9%C3%AD%C3%B3%C3%BA", URL.encodeComponent("áéíóú"))
+	}
+
+	@Test
+	fun testDecode() {
+		assertEquals("hello world", URL.decodeComponent("hello%20world"))
+		assertEquals("hello+world+", URL.decodeComponent("hello+world%2B"))
+		assertEquals("hello world+", URL.decodeComponent("hello+world%2B", formUrlEncoded = true))
+		assertEquals("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWZ0123456789 -_.*", URL.decodeComponent("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWZ0123456789%20-_.*"))
+		assertEquals("áéíóú", URL.decodeComponent("%C3%A1%C3%A9%C3%AD%C3%B3%C3%BA"))
 	}
 }

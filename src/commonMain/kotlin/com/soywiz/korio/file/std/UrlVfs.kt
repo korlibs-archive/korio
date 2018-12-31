@@ -8,14 +8,14 @@ import com.soywiz.korio.net.http.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 
-fun UrlVfs(url: String, client: HttpClient = createHttpClient()): VfsFile = UrlVfs(URI(url), client)
+fun UrlVfs(url: String, client: HttpClient = createHttpClient()): VfsFile = UrlVfs(URL(url), client)
 
-fun UrlVfs(url: URI, client: HttpClient = createHttpClient()): VfsFile =
+fun UrlVfs(url: URL, client: HttpClient = createHttpClient()): VfsFile =
 	UrlVfs(url.copy(path = "", query = null).fullUri, Unit, client)[url.path]
 
-fun UrlVfsJailed(url: String, client: HttpClient = createHttpClient()): VfsFile = UrlVfsJailed(URI(url), client)
+fun UrlVfsJailed(url: String, client: HttpClient = createHttpClient()): VfsFile = UrlVfsJailed(URL(url), client)
 
-fun UrlVfsJailed(url: URI, client: HttpClient = createHttpClient()): VfsFile =
+fun UrlVfsJailed(url: URL, client: HttpClient = createHttpClient()): VfsFile =
 	UrlVfs(url.fullUri, Unit, client)[url.path]
 
 class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHttpClient()) : Vfs() {

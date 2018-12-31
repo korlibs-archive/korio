@@ -117,7 +117,7 @@ fun HttpClient.endpoint(endpoint: String): HttpClientEndpoint {
 			content: AsyncStream?,
 			config: HttpClient.RequestConfig
 		): HttpClient.Response {
-			val resolvedUrl = URI.resolve(endpoint, "/" + path.trimStart('/')).toString()
+			val resolvedUrl = URL.resolve(endpoint, "/" + path.trimStart('/')).toString()
 			return client.request(method, resolvedUrl, headers, content, config)
 		}
 	}

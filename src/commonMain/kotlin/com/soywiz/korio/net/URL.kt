@@ -1,9 +1,11 @@
 package com.soywiz.korio.net
 
 import com.soywiz.korio.file.*
+import com.soywiz.korio.lang.*
+import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 
-data class URI private constructor(
+data class URL private constructor(
 	val isOpaque: Boolean,
 	val scheme: String?,
 	val userInfo: String?,
@@ -17,15 +19,16 @@ data class URI private constructor(
 	val password: String? get() = userInfo?.substringAfter(':')
 	val isHierarchical get() = !isOpaque
 
-	val port: Int get() = if (defaultPort == DEFAULT_PORT) {
-		when (scheme) {
-			"http", "ws" -> 80
-			"https", "wss" -> 443
-			else -> -1
+	val port: Int
+		get() = if (defaultPort == DEFAULT_PORT) {
+			when (scheme) {
+				"http", "ws" -> 80
+				"https", "wss" -> 443
+				else -> -1
+			}
+		} else {
+			defaultPort
 		}
-	} else {
-		defaultPort
-	}
 
 	val fullUri: String by lazy {
 		val out = StringBuilder()
@@ -51,7 +54,7 @@ data class URI private constructor(
 			.joinToString(", ") { "${it.first}=${it.second}" } + ")"
 	}
 
-	fun resolve(path: URI): URI = URI(resolve(this.fullUri, path.fullUri))
+	fun resolve(path: URL): URL = URL(resolve(this.fullUri, path.fullUri))
 
 	companion object {
 		val DEFAULT_PORT = 0
@@ -65,11 +68,11 @@ data class URI private constructor(
 			fragment: String?,
 			opaque: Boolean = false,
 			port: Int = DEFAULT_PORT
-		): URI = URI(opaque, scheme, userInfo, host, path, query, fragment, port)
+		): URL = URL(opaque, scheme, userInfo, host, path, query, fragment, port)
 
 		private val schemeRegex = Regex("\\w+:")
 
-		operator fun invoke(uri: String): URI {
+		operator fun invoke(uri: String): URL {
 			val r = StrReader(uri)
 			val schemeColon = r.tryRegex(schemeRegex)
 			return when {
@@ -81,7 +84,7 @@ data class URI private constructor(
 					val (nonQuery, query) = nonFragment.split('?', limit = 2).run { first() to getOrNull(1) }
 					val (authority, path) = nonQuery.split('/', limit = 2).run { first() to getOrNull(1) }
 					val (host, userInfo) = authority.split('@', limit = 2).reversed().run { first() to getOrNull(1) }
-					URI(
+					URL(
 						opaque = !isHierarchical,
 						scheme = scheme,
 						userInfo = userInfo,
@@ -94,7 +97,7 @@ data class URI private constructor(
 				else -> {
 					val (nonFragment, fragment) = uri.split("#", limit = 2).run { first() to getOrNull(1) }
 					val (path, query) = nonFragment.split("?", limit = 2).run { first() to getOrNull(1) }
-					URI(
+					URL(
 						opaque = false,
 						scheme = null,
 						userInfo = null,
@@ -111,8 +114,8 @@ data class URI private constructor(
 
 		fun resolve(base: String, access: String): String = when {
 			isAbsolute(access) -> access
-			access.startsWith("/") -> URI(base).copy(path = access).fullUri
-			else -> URI(base).run {
+			access.startsWith("/") -> URL(base).copy(path = access).fullUri
+			else -> URL(base).run {
 				copy(
 					path = "/" + (this.path.substringBeforeLast(
 						'/'
@@ -120,6 +123,47 @@ data class URI private constructor(
 							).pathInfo.normalize().trimStart('/')
 				).fullUri
 			}
+		}
+
+		fun decodeComponent(s: String, charset: Charset = UTF8, formUrlEncoded: Boolean = false): String {
+			val bos = ByteArrayBuilder2()
+			val len = s.length
+			var n = 0
+			while (n < len) {
+				val c = s[n]
+				when (c) {
+					'%' -> {
+						bos.append(s.substr(n + 1, 2).toInt(16).toByte())
+						n += 2
+					}
+					'+' -> if (formUrlEncoded) {
+						bos.append(' '.toInt().toByte())
+					} else {
+						bos.append('+'.toInt().toByte())
+					}
+					else -> bos.append(c.toByte())
+				}
+				n++
+			}
+			return bos.toByteArray().toString(charset)
+		}
+
+		fun encodeComponent(s: String, charset: Charset = UTF8, formUrlEncoded: Boolean = false): String {
+			val sb = StringBuilder(s.length)
+			val data = s.toByteArray(charset)
+			//for (byte c : data) System.out.printf("%02X\n", c & 0xFF);
+			for (c in data) {
+				val cc = c.toChar()
+				when (cc) {
+					' ' -> if (formUrlEncoded) sb.append("+") else sb.append("%20")
+					in 'a'..'z', in 'A'..'Z', in '0'..'9', '-', '_', '.', '*' -> sb.append(cc)
+					else -> {
+						sb.append('%')
+						for (n in 1 downTo 0) sb.append("0123456789ABCDEF"[c.toInt().ushr(n * 4) and 0xF])
+					}
+				}
+			}
+			return sb.toString()
 		}
 	}
 }
