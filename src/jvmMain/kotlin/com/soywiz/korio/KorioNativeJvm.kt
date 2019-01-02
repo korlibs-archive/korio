@@ -20,14 +20,6 @@ actual typealias IOException = java.io.IOException
 actual typealias EOFException = java.io.EOFException
 actual typealias FileNotFoundException = java.io.FileNotFoundException
 
-actual class Semaphore actual constructor(initial: Int) {
-	val jsema = java.util.concurrent.Semaphore(initial)
-	//var initial: Int
-	actual fun acquire() = jsema.acquire()
-
-	actual fun release() = jsema.release()
-}
-
 val currentThreadId: Long get() = KorioNative.currentThreadId
 
 actual object KorioNative {
@@ -39,17 +31,6 @@ actual object KorioNative {
 
 	actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit) =
 		runBlocking(context) { callback() }
-
-	actual abstract class NativeThreadLocal<T> {
-		actual abstract fun initialValue(): T
-
-		val jthreadLocal = object : java.lang.ThreadLocal<T>() {
-			override fun initialValue(): T = this@NativeThreadLocal.initialValue()
-		}
-
-		actual fun get(): T = jthreadLocal.get()
-		actual fun set(value: T) = jthreadLocal.set(value)
-	}
 
 	actual val systemLanguageStrings get() = listOf(Locale.getDefault().isO3Language)
 
@@ -75,7 +56,6 @@ actual object KorioNative {
 
 	actual fun Thread_sleep(time: Long) = Thread.sleep(time)
 
-	actual val asyncSocketFactory: AsyncSocketFactory by lazy { JvmAsyncSocketFactory() }
 	actual val websockets: WebSocketClientFactory get() = com.soywiz.korio.net.ws.RawSocketWebSocketClientFactory
 	actual val File_separatorChar: Char by lazy { File.separatorChar }
 

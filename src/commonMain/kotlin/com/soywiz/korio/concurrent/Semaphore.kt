@@ -1,3 +1,8 @@
 package com.soywiz.korio.concurrent
 
-typealias Semaphore = com.soywiz.korio.Semaphore
+expect class Semaphore(initial: Int) {
+	//var initial: Int
+	fun acquire()
+
+	fun release()
+}

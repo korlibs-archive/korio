@@ -20,20 +20,7 @@ expect open class IOException(msg: String) : Exception
 expect open class EOFException(msg: String) : IOException
 expect open class FileNotFoundException(msg: String) : IOException
 
-expect class Semaphore(initial: Int) {
-	//var initial: Int
-	fun acquire()
-
-	fun release()
-}
-
 expect object KorioNative {
-	abstract class NativeThreadLocal<T>() {
-		abstract fun initialValue(): T
-		fun get(): T
-		fun set(value: T): Unit
-	}
-
 	fun getClassSimpleName(clazz: KClass<*>): String
 
 	fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit)
@@ -64,8 +51,6 @@ expect object KorioNative {
 	fun tempVfs(): VfsFile
 
 	fun Thread_sleep(time: Long): Unit
-
-	val asyncSocketFactory: AsyncSocketFactory
 
 	val httpFactory: HttpFactory
 
@@ -105,7 +90,7 @@ internal object KorioNativeDefaults {
 
 			override suspend fun listenInternal(port: Int, host: String) {
 				val context = coroutineContext
-				val socket = KorioNative.asyncSocketFactory.createServer(port, host)
+				val socket = createTcpServer(port, host)
 				actualPort = socket.port
 				val close = socket.listen { client ->
 					while (true) {

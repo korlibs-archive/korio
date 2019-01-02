@@ -1,6 +1,5 @@
-package com.soywiz.korio
+package com.soywiz.korio.net
 
-import com.soywiz.korio.net.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.*
 import platform.posix.*

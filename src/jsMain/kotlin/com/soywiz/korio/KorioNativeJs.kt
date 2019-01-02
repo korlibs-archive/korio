@@ -53,13 +53,6 @@ val global: GlobalScope  = globalDynamic
 external val process: dynamic // node.js
 external val navigator: dynamic // browser
 
-actual class Semaphore actual constructor(initial: Int) {
-	//var initial: Int
-	actual fun acquire() = Unit
-
-	actual fun release() = Unit
-}
-
 //val isNodeJs by lazy { jsTypeOf(window) === "undefined" }
 
 val isNodeJs by lazy { js("(typeof process === 'object' && typeof require === 'function')").unsafeCast<Boolean>() }
@@ -92,13 +85,6 @@ actual object KorioNative {
 				}
 			})
 		}
-	}
-
-	actual abstract class NativeThreadLocal<T> {
-		actual abstract fun initialValue(): T
-		private var value = initialValue()
-		actual fun get(): T = value
-		actual fun set(value: T) = run { this.value = value }
 	}
 
 	actual val platformName: String
@@ -159,14 +145,6 @@ actual object KorioNative {
 	}
 
 	actual val File_separatorChar: Char = '/'
-
-	actual val asyncSocketFactory: AsyncSocketFactory by lazy {
-		object : AsyncSocketFactory() {
-			override suspend fun createClient(secure: Boolean): AsyncClient = NodeJsAsyncClient()
-			override suspend fun createServer(port: Int, host: String, backlog: Int, secure: Boolean): AsyncServer =
-				NodeJsAsyncServer().init(port, host, backlog)
-		}
-	}
 
 	actual val websockets: WebSocketClientFactory by lazy { JsWebSocketClientFactory() }
 

@@ -10,19 +10,18 @@ import com.soywiz.korio.util.*
 import kotlinx.coroutines.coroutineScope
 import kotlin.coroutines.*
 
-val asyncSocketFactory: AsyncSocketFactory get() = KorioNative.asyncSocketFactory
-
 val ANY_PORT = 0
-
-suspend fun createTcpClient(host: String, port: Int, secure: Boolean = false): AsyncClient = asyncSocketFactory.createClient(secure).apply { connect(host, port) }
-
-suspend fun createTcpClient(secure: Boolean = false): AsyncClient = asyncSocketFactory.createClient(secure)
-suspend fun createTcpServer(port: Int = ANY_PORT, host: String = "127.0.0.1", backlog: Int = 511, secure: Boolean = false): AsyncServer = asyncSocketFactory.createServer(port, host, backlog, secure)
 
 abstract class AsyncSocketFactory {
 	abstract suspend fun createClient(secure: Boolean = false): AsyncClient
 	abstract suspend fun createServer(port: Int, host: String = "127.0.0.1", backlog: Int = 511, secure: Boolean = false): AsyncServer
 }
+
+expect val asyncSocketFactory: AsyncSocketFactory
+
+suspend fun createTcpClient(host: String, port: Int, secure: Boolean = false): AsyncClient = asyncSocketFactory.createClient(secure).apply { connect(host, port) }
+suspend fun createTcpClient(secure: Boolean = false): AsyncClient = asyncSocketFactory.createClient(secure)
+suspend fun createTcpServer(port: Int = ANY_PORT, host: String = "127.0.0.1", backlog: Int = 511, secure: Boolean = false): AsyncServer = asyncSocketFactory.createServer(port, host, backlog, secure)
 
 interface AsyncClient : AsyncInputStream, AsyncOutputStream, AsyncCloseable {
 	suspend fun connect(host: String, port: Int)

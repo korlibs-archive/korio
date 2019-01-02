@@ -2,7 +2,6 @@ package com.soywiz.korio.net
 
 import com.soywiz.korio.async.*
 import com.soywiz.korio.concurrent.atomic.*
-import com.soywiz.korio.concurrent.atomic.*
 import kotlinx.coroutines.*
 import java.io.*
 import java.net.*
@@ -11,10 +10,12 @@ import java.nio.channels.*
 import java.nio.channels.CompletionHandler
 import kotlin.coroutines.*
 
-class JvmAsyncSocketFactory : AsyncSocketFactory() {
-	override suspend fun createClient(secure: Boolean): AsyncClient = JvmAsyncClient()
-	override suspend fun createServer(port: Int, host: String, backlog: Int, secure: Boolean): AsyncServer =
-		JvmAsyncServer(port, host, backlog).apply { init() }
+actual val asyncSocketFactory: AsyncSocketFactory by lazy {
+	object : AsyncSocketFactory() {
+		override suspend fun createClient(secure: Boolean): AsyncClient = JvmAsyncClient()
+		override suspend fun createServer(port: Int, host: String, backlog: Int, secure: Boolean): AsyncServer =
+			JvmAsyncServer(port, host, backlog).apply { init() }
+	}
 }
 
 //private val newPool by lazy { Executors.newFixedThreadPool(1) }
@@ -108,7 +109,7 @@ class JvmAsyncServer(override val requestPort: Int, override val host: String, o
 	override suspend fun accept(): AsyncClient = suspendCoroutine { c ->
 		val ctx = c.context
 
-		ssc.accept(kotlin.Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
+		ssc.accept(Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
 			override fun completed(result: AsynchronousSocketChannel, attachment: Unit) {
 				launchImmediately(ctx) {
 					c.resume(JvmAsyncClient(result))

@@ -15,9 +15,7 @@ object QueryString {
 		return out
 	}
 
-	fun encode(map: Map<String, List<String>>): String {
-		return encode(*map.flatMap { (key, value) -> value.map { key to it } }.toTypedArray())
-	}
+	fun encode(map: Map<String, List<String>>): String = encode(*map.flatMap { (key, value) -> value.map { key to it } }.toTypedArray())
 
 	fun encode(vararg items: Pair<String, String>): String {
 		val parts = arrayListOf<String>()

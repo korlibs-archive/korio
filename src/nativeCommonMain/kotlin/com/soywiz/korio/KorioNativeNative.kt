@@ -27,21 +27,9 @@ actual open class IOException actual constructor(msg: String) : Exception(msg)
 actual open class EOFException actual constructor(msg: String) : IOException(msg)
 actual open class FileNotFoundException actual constructor(msg: String) : IOException(msg)
 
-actual class Semaphore actual constructor(initial: Int) {
-	actual fun acquire(): Unit = Unit
-	actual fun release(): Unit = Unit
-}
-
 actual object KorioNative {
 	actual val currentThreadId: Long get() = -1L // @TODO
 	actual fun getClassSimpleName(clazz: KClass<*>): String = clazz.simpleName ?: "unknown"
-
-	actual abstract class NativeThreadLocal<T> {
-		actual abstract fun initialValue(): T
-		private var value = initialValue()
-		actual fun get(): T = value
-		actual fun set(value: T) = run { this.value = value }
-	}
 
 	actual val platformName: String get() = "native"
 	actual val rawOsName: String = com.soywiz.korio.TARGET_INFO
@@ -86,7 +74,6 @@ actual object KorioNative {
 	actual fun compress(input: ByteArray, outputHint: Int, method: String, level: Int): ByteArray =
 		zlibDeflate(input, outputHint, level)
 
-	actual val asyncSocketFactory: AsyncSocketFactory get() = NativeAsyncSocketFactory
 	actual val websockets: WebSocketClientFactory get() = com.soywiz.korio.net.ws.RawSocketWebSocketClientFactory
 	actual val systemLanguageStrings: List<String> get() = listOf("english")
 
