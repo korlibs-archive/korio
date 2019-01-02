@@ -7,49 +7,55 @@ import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import com.soywiz.korio.util.checksum.*
 
-val GZIP = GZIPBase(true)
-val GZIPNoCrc = GZIPBase(false)
+object GZIP : GZIPBase(true)
+object GZIPNoCrc : GZIPBase(false)
 
 open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
-	override suspend fun uncompress(i: AsyncInputStreamWithLength, o: AsyncOutputStream) {
-		val s = BitReader(i)
-		s.prepareBigChunk()
-		if (s.su8() != 31 || s.su8() != 139) error("Not a GZIP file")
-		val method = s.su8()
+	override suspend fun uncompress(reader: BitReader, out: AsyncOutputStream) {
+		val r = reader
+		r.prepareBigChunkIfRequired()
+		if (r.su8() != 31 || r.su8() != 139) error("Not a GZIP file")
+		val method = r.su8()
 		if (method != 8) error("Just supported deflate in GZIP")
-		val ftext = s.sreadBit()
-		val fhcrc = s.sreadBit()
-		val fextra = s.sreadBit()
-		val fname = s.sreadBit()
-		val fcomment = s.sreadBit()
-		val reserved = s.readBits(3)
-		val mtime = s.su32LE()
-		val xfl = s.su8()
-		val os = s.su8()
-		val extra = if (fextra) s.abytes(s.su16LE()) else byteArrayOf()
-		val name = if (fname) s.strz() else null
-		val comment = if (fcomment) s.strz() else null
-		val crc16 = if (fhcrc) s.su16LE() else 0
-		var chash = CRC32.initialValue
+		val ftext = r.sreadBit()
+		val fhcrc = r.sreadBit()
+		val fextra = r.sreadBit()
+		val fname = r.sreadBit()
+		val fcomment = r.sreadBit()
+		val reserved = r.readBits(3)
+		val mtime = r.su32LE()
+		val xfl = r.su8()
+		val os = r.su8()
+		val extra = if (fextra) r.abytes(r.su16LE()) else byteArrayOf()
+		val name = if (fname) r.strz() else null
+		val comment = if (fcomment) r.strz() else null
+		val crc16 = if (fhcrc) r.su16LE() else 0
+		var ccrc32 = CRC32.initialValue
 		var csize = 0
-		Deflate.uncompress(s, object : AsyncOutputStream by o {
+		Deflate.uncompress(r, object : AsyncOutputStream by out {
 			override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
-				chash = CRC32.update(chash, buffer, offset, len)
-				csize += len
-				o.write(buffer, offset, len)
+				if (len > 0) {
+					//val oldCrc32 = ccrc32
+					ccrc32 = CRC32.update(ccrc32, buffer, offset, len)
+					csize += len
+
+					//val chunk = buffer.sliceArray(offset until offset + len)
+					//println("DECOMPRESS:" + chunk.toList() + " sum=${chunk.toList().sum()} oldCrc32=$oldCrc32, crc32=$ccrc32 [offset=$offset, len=$len]")
+					out.write(buffer, offset, len)
+				}
 			}
 		})
-		s.prepareBigChunk()
-		val crc32 = s.su32LE()
-		val size = s.su32LE()
-		if (checkCrc) {
-			if (chash != crc32) invalidOp("CRC32 doesn't match ${chash.hex} != ${crc32.hex}")
-			if (csize != size) invalidOp("Size doesn't match ${csize.hex} != ${size.hex}")
+		r.prepareBigChunkIfRequired()
+		val crc32 = r.su32LE()
+		val size = r.su32LE()
+		//println("COMPRESS: crc32=$crc32, size=$size, ccrc32=$ccrc32, csize=$csize")
+		if (checkCrc && (csize != size || ccrc32 != crc32)) {
+			invalidOp("Size doesn't match SIZE(${csize.hex} != ${size.hex}) || CRC32(${ccrc32.hex} != ${crc32.hex})")
 		}
 	}
 
 	override suspend fun compress(
-		i: AsyncInputStreamWithLength,
+		i: BitReader,
 		o: AsyncOutputStream,
 		context: CompressionContext
 	) {
@@ -63,17 +69,21 @@ open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
 
 		var size = 0
 		var crc32 = CRC32.initialValue
-		Deflate.compress(object : AsyncInputStreamWithLength by i {
+		Deflate.compress(BitReader(object : AsyncInputStreamWithLength by i {
 			override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 				val read = i.read(buffer, offset, len)
 				if (read > 0) {
-					crc32 = CRC32.update(crc32, buffer, offset, len)
+					//val oldCrc32 = crc32
+					crc32 = CRC32.update(crc32, buffer, offset, read)
+					//val chunk = buffer.sliceArray(offset until offset + read)
+					//println("COMPRESS:" + chunk.toList() + " sum=${chunk.toList().sum()} oldCrc32=$oldCrc32, crc32=$crc32 [offset=$offset, read=$read]")
 					size += read
 				}
 				return read
 			}
-		}, o, context)
+		}), o, context)
 		o.write32LE(crc32)
 		o.write32LE(size)
+		//println("COMPRESS: crc32=$crc32, size=$size")
 	}
 }

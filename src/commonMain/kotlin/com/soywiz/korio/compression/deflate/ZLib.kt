@@ -9,12 +9,13 @@ import com.soywiz.korio.util.*
 import com.soywiz.korio.util.checksum.*
 
 object ZLib : CompressionMethod {
-	override suspend fun uncompress(i: AsyncInputStreamWithLength, o: AsyncOutputStream) {
-		val s = BitReader(i)
+	override suspend fun uncompress(reader: BitReader, out: AsyncOutputStream) {
+		val r =reader
+		val o = out
 		//println("Zlib.uncompress.available[0]:" + s.available())
-		s.prepareBigChunk()
-		val cmf = s.su8()
-		val flg = s.su8()
+		r.prepareBigChunkIfRequired()
+		val cmf = r.su8()
+		val flg = r.su8()
 
 		if ((cmf * 256 + flg) % 31 != 0) error("bad zlib header")
 
@@ -27,18 +28,15 @@ object ZLib : CompressionMethod {
 
 		var dictid = 0
 		if (hasDict) {
-			dictid = s.su32LE()
+			dictid = r.su32LE()
 			TODO("Unsupported custom dictionaries (Provided DICTID=$dictid)")
 		}
 		//println("ZLib.uncompress[2]")
 
 		//s.alignbyte()
 		var chash = Adler32.initialValue
-		Deflate(windowBits).uncompress(s, object : AsyncOutputStream {
-			override suspend fun close() {
-				o.close()
-			}
-
+		Deflate(windowBits).uncompress(r, object : AsyncOutputStream {
+			override suspend fun close() = o.close()
 			override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
 				o.write(buffer, offset, len)
 				chash = Adler32.update(chash, buffer, offset, len)
@@ -47,26 +45,30 @@ object ZLib : CompressionMethod {
 		})
 		//println("ZLib.uncompress[3]")
 
-		s.prepareBigChunk()
-		val adler32 = s.su32BE()
+		r.prepareBigChunkIfRequired()
+		val adler32 = r.su32BE()
 		//println("Zlib.uncompress.available[1]:" + s.available())
 		if (chash != adler32) invalidOp("Adler32 doesn't match ${chash.hex} != ${adler32.hex}")
 		//println("ZLib.uncompress[4]")
 	}
 
 	override suspend fun compress(
-		i: AsyncInputStreamWithLength,
+		i: BitReader,
 		o: AsyncOutputStream,
 		context: CompressionContext
 	) {
-		//val level = context.level
-		val level = 0
 		val slidingBits = 15
+		val clevel = when {
+			context.level <= 0 -> 0
+			context.level < 6 -> 1
+			context.level < 9 -> 2
+			else -> 3
+		}
 
-		val cmf = 0x8 or ((slidingBits - 8) shl 4) // METHOD=8, BITS=7+8
-		val flg = 0x00 or (level shl 6) // FCHECK=0, HASDICT=0, LEVEL = context.level
+		val cmf = 0x08 or ((slidingBits - 8) shl 4) // METHOD=8, BITS=7+8
+		val flg = 0x00 or (clevel shl 6) // FCHECK=0, HASDICT=0, LEVEL = context.level
 
-		// @TODO: This is a brute-force. Compute with an expression instead
+		// @TODO: This is a brute-force approach. Compute with an expression instead
 		var fcheck = 0
 		for (n in 0 until 32) {
 			if ((cmf * 256 + (flg or n)) % 31 == 0) {
@@ -78,17 +80,17 @@ object ZLib : CompressionMethod {
 		o.write8(cmf)
 		o.write8(flg or fcheck)
 
-		var chash = Adler32.initialValue
-		Deflate(slidingBits).compress(object : AsyncInputStreamWithLength by i {
+		var adler = Adler32.initialValue
+		DeflatePortable(slidingBits).compress(object : AsyncInputStreamWithLength by i {
 			override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 				val read = i.read(buffer, offset, len)
 				if (read > 0) {
-					chash = Adler32.update(chash, buffer, offset, read)
+					adler = Adler32.update(adler, buffer, offset, read)
 					//println("COMPRESS:'" + buffer.sliceArray(offset until (offset + len)).toString(UTF8) + "':${chash.hex32}")
 				}
 				return read
 			}
-		}, o)
-		o.write32BE(chash)
+		}, o, context)
+		o.write32BE(adler)
 	}
 }

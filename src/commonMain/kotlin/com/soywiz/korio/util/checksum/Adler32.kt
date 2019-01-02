@@ -1,7 +1,7 @@
 package com.soywiz.korio.util.checksum
 
 object Adler32 : SimpleChecksum {
-	private val adler_base = 65521
+	private const val BASE = 65521
 
 	override val initialValue = 1
 
@@ -10,8 +10,8 @@ object Adler32 : SimpleChecksum {
 		var s2 = (old ushr 16) and 0xffff
 
 		for (n in offset until offset + len) {
-			s1 = (s1 + (data[n].toInt() and 0xFF)) % adler_base
-			s2 = (s2 + s1) % adler_base
+			s1 = (s1 + (data[n].toInt() and 0xFF)) % BASE
+			s2 = (s2 + s1) % BASE
 		}
 		return (s2 shl 16) or s1
 	}

@@ -38,9 +38,6 @@ expect object KorioNative {
 
 	val File_separatorChar: Char
 
-	fun uncompress(input: ByteArray, outputHint: Int, method: String): ByteArray
-	fun compress(input: ByteArray, outputHint: Int, method: String, level: Int): ByteArray
-
 	fun rootLocalVfs(): VfsFile
 	fun applicationVfs(): VfsFile
 	fun applicationDataVfs(): VfsFile

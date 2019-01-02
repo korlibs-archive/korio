@@ -7,11 +7,21 @@ class ByteArrayDeque(val initialBits: Int = 10) : ByteReader, ByteWriter {
 	private var ring = RingBuffer(initialBits)
 	private val tempBuffer = ByteArray(1024)
 
+	var written: Long = 0; private set
+	var read: Long = 0; private set
 	val availableWrite get() = ring.availableWrite
 	val availableRead get() = ring.availableRead
 
-	override fun writeBytes(bytes: ByteArray, offset: Int, size: Int): Int = ensureWrite(size).ring.writeBytes(bytes, offset, size)
-	override fun readBytes(bytes: ByteArray, offset: Int, size: Int): Int = ring.readBytes(bytes, offset, size)
+	override fun writeBytes(bytes: ByteArray, offset: Int, size: Int): Int {
+		val out = ensureWrite(size).ring.writeBytes(bytes, offset, size)
+		if (out > 0) written += out
+		return out
+	}
+	override fun readBytes(bytes: ByteArray, offset: Int, size: Int): Int {
+		val out = ring.readBytes(bytes, offset, size)
+		if (out > 0) read += out
+		return out
+	}
 	override fun readByte(): Int = ring.readByte()
 	override fun writeByte(v: Int): Boolean = ensureWrite(1).ring.writeByte(v)
 

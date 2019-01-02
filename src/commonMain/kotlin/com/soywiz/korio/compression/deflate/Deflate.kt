@@ -7,9 +7,12 @@ import com.soywiz.korio.compression.util.BitReader
 import com.soywiz.korio.stream.*
 import kotlin.math.*
 
-open class Deflate(val windowBits: Int) : CompressionMethod {
+expect fun Deflate(windowBits: Int): CompressionMethod
+val Deflate: CompressionMethod by lazy { Deflate(15) }
+
+open class DeflatePortable(val windowBits: Int) : CompressionMethod {
 	override suspend fun compress(
-		i: AsyncInputStreamWithLength,
+		i: BitReader,
 		o: AsyncOutputStream,
 		context: CompressionContext
 	) {
@@ -24,14 +27,8 @@ open class Deflate(val windowBits: Int) : CompressionMethod {
 		}
 	}
 
-	override suspend fun uncompress(i: AsyncInputStreamWithLength, o: AsyncOutputStream) {
-		uncompress(BitReader(i), o)
-		//println("uncompress[6]")
-	}
-
-	suspend fun uncompress(reader: BitReader, out: AsyncOutputStream) {
-		val ring = SlidingWindow(windowBits)
-		val sout = SlidingWindowWithOutput(ring, out)
+	override suspend fun uncompress(reader: BitReader, out: AsyncOutputStream) {
+		val sout = SlidingWindowWithOutput(SlidingWindow(windowBits), out)
 		var lastBlock = false
 		val tempTree = HuffmanTree()
 		val tempDist = HuffmanTree()
@@ -123,7 +120,7 @@ open class Deflate(val windowBits: Int) : CompressionMethod {
 
 	fun BitReader.read(tree: HuffmanTree): Int = tree.read(this)
 
-	companion object : Deflate(15) {
+	companion object : DeflatePortable(15) {
 		private val FIXED_TREE: HuffmanTree = HuffmanTree().fromLengths(IntArray(288).apply {
 			for (n in 0..143) this[n] = 8
 			for (n in 144..255) this[n] = 9

@@ -1,13 +1,11 @@
 package com.soywiz.korio.compression.util
 
-import com.soywiz.kds.*
 import com.soywiz.kmem.*
-import com.soywiz.korio.compression.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import kotlin.math.*
 
-open class BitReader(val s: AsyncInputStreamWithLength) {
+open class BitReader(val s: AsyncInputStreamWithLength) : AsyncInputStreamWithLength {
 	@PublishedApi
 	internal var bitdata = 0
 	@PublishedApi
@@ -28,6 +26,10 @@ open class BitReader(val s: AsyncInputStreamWithLength) {
 
 	suspend inline fun prepareBigChunkIfRequired() {
 		if (requirePrepare) prepareBigChunk()
+	}
+
+	fun returnToBuffer(data: ByteArray, offset: Int, size: Int) {
+		sbuffers.writeBytes(data, offset, size)
 	}
 
 	private val tempBA = ByteArray(BIG_CHUNK_SIZE)
@@ -69,18 +71,45 @@ open class BitReader(val s: AsyncInputStreamWithLength) {
 
 	private val temp = ByteArray(4)
 	suspend fun abytes(count: Int, out: ByteArray = ByteArray(count)) = prepareBytesUpTo(count).sbytes(count, out)
-
-	suspend fun strz(): String {
-		return MemorySyncStreamToByteArray {
-			discardBits()
-			while (true) {
-				if (requirePrepare) prepareBigChunk()
-				val c = _su8()
-				if (c == 0) break
-				write8(c)
-			}
-		}.toString(ASCII)
+	override suspend fun read(out: ByteArray, offset: Int, size: Int): Int {
+		return prepareBytesUpTo(size).sbuffers.readBytes(out, offset, size)
 	}
 
+	override suspend fun close() {
+		s.close()
+	}
+
+
+	suspend fun strz(): String = MemorySyncStreamToByteArray {
+		discardBits()
+		while (true) {
+			prepareBigChunkIfRequired()
+			val c = _su8()
+			if (c == 0) break
+			write8(c)
+		}
+	}.toString(ASCII)
+
+	suspend fun copyTo(o: AsyncOutputStream) {
+		while (true) {
+			prepareBigChunkIfRequired()
+			val read = sbuffers.readBytes(tempBA, 0, tempBA.size)
+			if (read <= 0) break
+			o.writeBytes(tempBA, 0, read)
+		}
+	}
+
+	//suspend fun readAll(): ByteArray {
+	//	val temp = ByteArray(sbuffers.availableRead)
+	//	sbuffers.readBytes(temp, 0, sbuffers.availableRead)
+	//	return temp + s.readAll()
+	//}
+//
+	//suspend fun hasAvailable() = s.hasAvailable()
+	//suspend fun getAvailable(): Long = s.getAvailable()
+	//suspend fun readBytesExact(count: Int): ByteArray = abytes(count)
+
+	override suspend fun getPosition(): Long = sbuffers.read
+	override suspend fun getLength(): Long = s.getLength()
 }
 

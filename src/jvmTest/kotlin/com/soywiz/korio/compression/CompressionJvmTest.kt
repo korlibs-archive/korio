@@ -1,7 +1,6 @@
 package com.soywiz.korio.compression
 
 import com.soywiz.kmem.*
-import com.soywiz.korio.async.*
 import com.soywiz.korio.compression.deflate.*
 import com.soywiz.korio.crypto.*
 import com.soywiz.korio.lang.*
@@ -43,10 +42,16 @@ class CompressionJvmTest {
 	}
 
 	@Test
+	fun compressGzipNoCrcSync() = compressSync(GZIPNoCrc)
+
+	@Test
 	fun compressGzipSync() = compressSync(GZIP)
 
 	@Test
 	fun compressZlibSync() = compressSync(ZLib)
+
+	@Test
+	fun compressDeflatePortableSync() = compressSync(DeflatePortable)
 
 	@Test
 	fun compressDeflateSync() = compressSync(Deflate)

@@ -59,14 +59,6 @@ actual object KorioNative {
 	actual val websockets: WebSocketClientFactory get() = com.soywiz.korio.net.ws.RawSocketWebSocketClientFactory
 	actual val File_separatorChar: Char by lazy { File.separatorChar }
 
-	actual fun uncompress(input: ByteArray, outputHint: Int, method: String): ByteArray {
-		return input.uncompress(ZLib)
-	}
-
-	actual fun compress(input: ByteArray, outputHint: Int, method: String, level: Int): ByteArray {
-		return input.compress(ZLib, CompressionContext(level = level))
-	}
-
 	private val absoluteCwd = File(".").absolutePath
 
 	actual fun rootLocalVfs(): VfsFile = localVfs(absoluteCwd)

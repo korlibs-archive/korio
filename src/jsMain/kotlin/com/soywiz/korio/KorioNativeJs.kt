@@ -136,14 +136,6 @@ actual object KorioNative {
 		}
 	}
 
-	actual fun uncompress(input: ByteArray, outputHint: Int, method: String): ByteArray {
-		return input.uncompress(ZLib)
-	}
-
-	actual fun compress(input: ByteArray, outputHint: Int, method: String, level: Int): ByteArray {
-		return input.compress(ZLib, CompressionContext(level = level))
-	}
-
 	actual val File_separatorChar: Char = '/'
 
 	actual val websockets: WebSocketClientFactory by lazy { JsWebSocketClientFactory() }

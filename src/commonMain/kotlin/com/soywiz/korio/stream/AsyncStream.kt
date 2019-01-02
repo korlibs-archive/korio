@@ -59,6 +59,28 @@ interface AsyncPositionLengthStream : AsyncPositionStream, AsyncLengthStream {
 interface AsyncInputStreamWithLength : AsyncInputStream, AsyncGetPositionStream, AsyncGetLengthStream {
 }
 
+fun List<AsyncInputStreamWithLength>.combine(): AsyncInputStreamWithLength {
+	val list = this
+	return object : AsyncInputStreamWithLength {
+		override suspend fun getPosition(): Long = list.map { it.getPosition() }.sum()
+		override suspend fun getLength(): Long = list.map { it.getLength() }.sum()
+
+		override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+			for (i in list) {
+				val read = i.read(buffer, offset, len)
+				if (read > 0) return read
+			}
+			return -1
+		}
+
+		override suspend fun close() {
+			for (i in list) i.close()
+		}
+	}
+}
+
+operator fun AsyncInputStreamWithLength.plus(other: AsyncInputStreamWithLength): AsyncInputStreamWithLength = listOf(this, other).combine()
+
 suspend fun AsyncInputStreamWithLength.getAvailable() = this.getLength() - this.getPosition()
 suspend fun AsyncInputStreamWithLength.hasAvailable() = getAvailable() > 0
 

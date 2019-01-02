@@ -1,25 +1,26 @@
 package com.soywiz.korio.compression.lzma
 
 import com.soywiz.korio.compression.*
+import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.stream.*
 
 /**
  * @TODO: Streaming! (right now loads the whole stream in-memory)
  */
 object Lzma : CompressionMethod {
-	override suspend fun uncompress(i: AsyncInputStreamWithLength, o: AsyncOutputStream) {
-		val input = i.readAll().openSync()
+	override suspend fun uncompress(reader: BitReader, out: AsyncOutputStream) {
+		val input = reader.readAll().openSync()
 		val properties = input.readBytesExact(5)
 		val decoder = SevenZip.LzmaDecoder()
 		if (!decoder.SetDecoderProperties(properties)) throw Exception("Incorrect stream properties")
 		val outSize = input.readS64LE()
-		val out = MemorySyncStreamToByteArray {
+
+		out.writeBytes(MemorySyncStreamToByteArray {
 			if (!decoder.Code(input, this, outSize)) throw Exception("Error in data stream")
-		}
-		o.writeBytes(out)
+		})
 	}
 
-	override suspend fun compress(i: AsyncInputStreamWithLength, o: AsyncOutputStream, context: CompressionContext) {
+	override suspend fun compress(i: BitReader, o: AsyncOutputStream, context: CompressionContext) {
 		val algorithm = 2
 		val matchFinder = 1
 		val dictionarySize = 1 shl 23
@@ -32,6 +33,7 @@ object Lzma : CompressionMethod {
 		val input = i.readAll()
 
 		val out = MemorySyncStreamToByteArray {
+			val output = this
 			val encoder = SevenZip.LzmaEncoder()
 			if (!encoder.SetAlgorithm(algorithm)) throw Exception("Incorrect compression mode")
 			if (!encoder.SetDictionarySize(dictionarySize))
@@ -43,7 +45,7 @@ object Lzma : CompressionMethod {
 			encoder.WriteCoderProperties(this)
 			val fileSize: Long = if (eos) -1 else input.size.toLong()
 			this.write64LE(fileSize)
-			encoder.Code(input.openSync(), this, -1, -1, null)
+			encoder.Code(input.openSync(), output, -1, -1, null)
 		}
 
 		o.writeBytes(out)

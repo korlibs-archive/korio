@@ -194,7 +194,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 					else -> {
 						val compressed = UncompressAsyncStream(
 							when (entry.compressionMethod) {
-								8 -> Deflate
+								8 -> DeflatePortable
 								else -> TODO("Not implemented zip method ${entry.compressionMethod}")
 							}, compressedData, uncompressedSize.toLong()
 						).readAll()

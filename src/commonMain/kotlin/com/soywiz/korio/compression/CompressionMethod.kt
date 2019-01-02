@@ -1,12 +1,9 @@
 package com.soywiz.korio.compression
 
-import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
+import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.error.*
 import com.soywiz.korio.stream.*
-import kotlinx.coroutines.channels.*
-import kotlin.coroutines.*
-import kotlin.math.*
 
 open class CompressionContext(var level: Int = 6) {
 	var name: String? = null
@@ -14,18 +11,21 @@ open class CompressionContext(var level: Int = 6) {
 }
 
 interface CompressionMethod {
-	suspend fun uncompress(i: AsyncInputStreamWithLength, o: AsyncOutputStream): Unit = unsupported()
+	suspend fun uncompress(reader: BitReader, out: AsyncOutputStream): Unit = unsupported()
 	suspend fun compress(
-		i: AsyncInputStreamWithLength,
+		i: BitReader,
 		o: AsyncOutputStream,
 		context: CompressionContext = CompressionContext()
 	): Unit = unsupported()
 
 	object Uncompressed : CompressionMethod {
-		override suspend fun uncompress(i: AsyncInputStreamWithLength, o: AsyncOutputStream): Unit = run { i.copyTo(o) }
-		override suspend fun compress(i: AsyncInputStreamWithLength, o: AsyncOutputStream, context: CompressionContext): Unit = run { i.copyTo(o) }
+		override suspend fun uncompress(reader: BitReader, out: AsyncOutputStream): Unit = run { reader.copyTo(out) }
+		override suspend fun compress(i: BitReader, o: AsyncOutputStream, context: CompressionContext): Unit = run { i.copyTo(o) }
 	}
 }
+
+suspend fun CompressionMethod.uncompress(i: AsyncInputStreamWithLength, o: AsyncOutputStream): Unit = uncompress(BitReader(i), o)
+suspend fun CompressionMethod.compress(i: AsyncInputStreamWithLength, o: AsyncOutputStream, context: CompressionContext = CompressionContext()): Unit = compress(BitReader(i), o, context)
 
 suspend fun CompressionMethod.uncompressStream(input: AsyncInputStreamWithLength): AsyncInputStream = asyncStreamWriter { output -> uncompress(input, output) }
 suspend fun CompressionMethod.compressStream(input: AsyncInputStreamWithLength): AsyncInputStream = asyncStreamWriter { output -> compress(input, output) }

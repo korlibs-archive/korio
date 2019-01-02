@@ -3166,7 +3166,7 @@ object LzmaBench {
 				if (size == 0)
 					return
 				val numReadBytes = _stream!!.read(_bufferBase!!, _bufferOffset + _streamPos, size)
-				if (numReadBytes == -1) {
+				if (numReadBytes <= 0) {
 					_posLimit = _streamPos
 					val pointerToPostion = _bufferOffset + _posLimit
 					if (pointerToPostion > _pointerToLastSafePosition)

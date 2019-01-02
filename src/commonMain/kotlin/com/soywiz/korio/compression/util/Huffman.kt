@@ -7,6 +7,8 @@ class HuffmanTree {
 		private const val INVALID_VALUE = -1
 		private const val NIL = 1023
 		private const val FAST_BITS = 9
+		private const val MAX_LEN = 16
+		private const val MAX_CODES = 288
 
 		//private const val ENABLE_EXPERIMENTAL_FAST_READ = true
 		//private const val ENABLE_EXPERIMENTAL_FAST_READ = false
@@ -50,14 +52,12 @@ class HuffmanTree {
 	private inline val Int.left get() = this@HuffmanTree.left[this]
 	private inline val Int.right get() = this@HuffmanTree.right[this]
 
-	private val MAX_LEN = 16
 	private val COUNTS = IntArray(MAX_LEN + 1)
 	private val OFFSETS = IntArray(MAX_LEN + 1)
 	private val COFFSET = IntArray(MAX_LEN + 1)
-	private val CODES = IntArray(288)
-
-	private val ENCODED_VAL = IntArray(288)
-	private val ENCODED_LEN = ByteArray(288)
+	private val CODES = IntArray(MAX_CODES)
+	private val ENCODED_VAL = IntArray(MAX_CODES)
+	private val ENCODED_LEN = ByteArray(MAX_CODES)
 
 	fun fromLengths(codeLengths: IntArray, start: Int = 0, end: Int = codeLengths.size): HuffmanTree {
 		var oldOffset = 0

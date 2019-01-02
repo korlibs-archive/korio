@@ -191,6 +191,7 @@ class MemorySyncStreamBase(var data: ByteArrayBuilder) : SyncStreamBase() {
 	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 		checkPosition(position)
 		val ipos = position.toInt()
+		//if (position !in 0 until ilength) return -1
 		if (position !in 0 until ilength) return 0
 		val end = min(this.ilength, ipos + len)
 		val actualLen = max((end - ipos), 0)
