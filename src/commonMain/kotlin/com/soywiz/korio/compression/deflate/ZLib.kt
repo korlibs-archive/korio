@@ -2,7 +2,6 @@ package com.soywiz.korio.compression.deflate
 
 import com.soywiz.kmem.*
 import com.soywiz.korio.compression.*
-import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.compression.util.BitReader
 import com.soywiz.korio.error.*
 import com.soywiz.korio.stream.*
@@ -10,7 +9,7 @@ import com.soywiz.korio.util.*
 import com.soywiz.korio.util.checksum.*
 
 object ZLib : CompressionMethod {
-	override suspend fun uncompress(i: AsyncInputWithLengthStream, o: AsyncOutputStream) {
+	override suspend fun uncompress(i: AsyncInputStreamWithLength, o: AsyncOutputStream) {
 		val s = BitReader(i)
 		//println("Zlib.uncompress.available[0]:" + s.available())
 		s.prepareBigChunk()
@@ -56,7 +55,7 @@ object ZLib : CompressionMethod {
 	}
 
 	override suspend fun compress(
-		i: AsyncInputWithLengthStream,
+		i: AsyncInputStreamWithLength,
 		o: AsyncOutputStream,
 		context: CompressionContext
 	) {
@@ -80,7 +79,7 @@ object ZLib : CompressionMethod {
 		o.write8(flg or fcheck)
 
 		var chash = Adler32.initialValue
-		Deflate(slidingBits).compress(object : AsyncInputWithLengthStream by i {
+		Deflate(slidingBits).compress(object : AsyncInputStreamWithLength by i {
 			override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 				val read = i.read(buffer, offset, len)
 				if (read > 0) {

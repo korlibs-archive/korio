@@ -6,11 +6,15 @@ import com.soywiz.kds.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.*
 import com.soywiz.korio.async.*
+import com.soywiz.korio.compression.*
+import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.error.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.file.std.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.util.*
+import kotlinx.coroutines.channels.*
+import kotlin.coroutines.*
 import kotlin.math.*
 
 //interface SmallTemp {
@@ -52,11 +56,11 @@ interface AsyncLengthStream : AsyncGetLengthStream {
 interface AsyncPositionLengthStream : AsyncPositionStream, AsyncLengthStream {
 }
 
-interface AsyncInputWithLengthStream : AsyncInputStream, AsyncGetPositionStream, AsyncGetLengthStream {
+interface AsyncInputStreamWithLength : AsyncInputStream, AsyncGetPositionStream, AsyncGetLengthStream {
 }
 
-suspend fun AsyncInputWithLengthStream.getAvailable() = this.getLength() - this.getPosition()
-suspend fun AsyncInputWithLengthStream.hasAvailable() = getAvailable() > 0
+suspend fun AsyncInputStreamWithLength.getAvailable() = this.getLength() - this.getPosition()
+suspend fun AsyncInputStreamWithLength.hasAvailable() = getAvailable() > 0
 
 interface AsyncRAInputStream {
 	suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int
@@ -127,7 +131,7 @@ suspend fun AsyncStreamBase.readBytes(position: Long, count: Int): ByteArray {
 fun AsyncStreamBase.toAsyncStream(position: Long = 0L): AsyncStream = AsyncStream(this, position)
 
 class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : Extra by Extra.Mixin(), AsyncInputStream,
-	AsyncInputWithLengthStream, AsyncOutputStream, AsyncPositionLengthStream, AsyncCloseable {
+	AsyncInputStreamWithLength, AsyncOutputStream, AsyncPositionLengthStream, AsyncCloseable {
 	// NOTE: Sharing queue would hang writing on hang read
 	//private val ioQueue = AsyncThread()
 	//private val readQueue = ioQueue
@@ -685,7 +689,7 @@ suspend fun AsyncInputStream.readLine(eol: Char = '\n', charset: Charset = UTF8)
 }
 
 
-fun SyncInputStream.toAsyncInputStream() = object : AsyncInputWithLengthStream {
+fun SyncInputStream.toAsyncInputStream() = object : AsyncInputStreamWithLength {
 	val sync = this@toAsyncInputStream
 
 	override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int = sync.read(buffer, offset, len)
@@ -767,4 +771,87 @@ class MemoryAsyncStreamBase(var data: com.soywiz.kmem.ByteArrayBuilder) : AsyncS
 	override suspend fun close() = Unit
 
 	override fun toString(): String = "MemoryAsyncStreamBase(${data.size})"
+}
+
+// @TODO: Optimize to not clone ByteArray. Use a ByteArrayDeque?
+/*
+suspend fun asyncStreamWriter(process: suspend (out: AsyncOutputStream) -> Unit): AsyncInputStream {
+	val channel = Channel<ByteArray>()
+
+	launchImmediately(coroutineContext) {
+		try {
+			process(object : AsyncOutputStream {
+				override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
+					if (len > 0) {
+						channel.send(buffer.copyOfRange(offset, offset + len))
+					}
+				}
+
+				override suspend fun close() {
+					channel.send(ByteArray(0))
+				}
+			})
+		} finally {
+			channel.send(ByteArray(0))
+		}
+	}
+
+	return object : AsyncInputStream {
+		override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+			if (len <= 0) return len
+			val data = channel.receive()
+			if (data.isEmpty()) return -1
+			val copied = min(len, data.size)
+			arraycopy(data, 0, buffer, offset, copied)
+			return copied
+		}
+
+		override suspend fun close() {
+		}
+	}
+}
+*/
+
+suspend fun asyncStreamWriter(bufferSize: Int = 1024, process: suspend (out: AsyncOutputStream) -> Unit): AsyncInputStream {
+	val notifyRead = Channel<Unit>(Channel.CONFLATED)
+	val notifyWrite = Channel<Unit>(Channel.CONFLATED)
+	val temp = ByteArrayDeque(ilog2(bufferSize) + 1)
+	var completed = false
+
+	val job = launchImmediately(coroutineContext) {
+		try {
+			process(object : AsyncOutputStream {
+				override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
+					if (len <= 0) return
+					while (temp.availableRead > bufferSize) {
+						notifyRead.receive()
+					}
+					temp.writeBytes(buffer, offset, len)
+					notifyWrite.send(Unit)
+				}
+
+				override suspend fun close() {
+					completed = true
+					notifyWrite.send(Unit)
+				}
+			})
+		} finally {
+			completed = true
+			notifyWrite.send(Unit)
+		}
+	}
+
+	return object : AsyncInputStream {
+		override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+			if (len <= 0) return len
+			notifyRead.send(Unit)
+			while (!completed && temp.availableRead == 0) notifyWrite.receive()
+			if (completed && temp.availableRead == 0) return -1
+			return temp.readBytes(buffer, offset, len)
+		}
+
+		override suspend fun close() {
+			job.cancel()
+		}
+	}
 }

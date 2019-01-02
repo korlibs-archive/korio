@@ -1,7 +1,6 @@
 package com.soywiz.korio.compression.deflate
 
 import com.soywiz.korio.compression.*
-import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.compression.util.BitReader
 import com.soywiz.korio.error.*
 import com.soywiz.korio.stream.*
@@ -12,7 +11,7 @@ val GZIP = GZIPBase(true)
 val GZIPNoCrc = GZIPBase(false)
 
 open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
-	override suspend fun uncompress(i: AsyncInputWithLengthStream, o: AsyncOutputStream) {
+	override suspend fun uncompress(i: AsyncInputStreamWithLength, o: AsyncOutputStream) {
 		val s = BitReader(i)
 		s.prepareBigChunk()
 		if (s.su8() != 31 || s.su8() != 139) error("Not a GZIP file")
@@ -50,7 +49,7 @@ open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
 	}
 
 	override suspend fun compress(
-		i: AsyncInputWithLengthStream,
+		i: AsyncInputStreamWithLength,
 		o: AsyncOutputStream,
 		context: CompressionContext
 	) {
@@ -64,7 +63,7 @@ open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
 
 		var size = 0
 		var crc32 = CRC32.initialValue
-		Deflate.compress(object : AsyncInputWithLengthStream by i {
+		Deflate.compress(object : AsyncInputStreamWithLength by i {
 			override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 				val read = i.read(buffer, offset, len)
 				if (read > 0) {

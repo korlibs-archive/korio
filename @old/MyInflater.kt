@@ -1,6 +1,7 @@
 package com.soywiz.korio.compression
 
 import com.soywiz.kmem.*
+import com.soywiz.korio.util.checksum.*
 import kotlin.math.*
 
 open class MyDeflate(val windowBits: Int) : MyNewCompressionMethod {
@@ -10,7 +11,150 @@ open class MyDeflate(val windowBits: Int) : MyNewCompressionMethod {
 	companion object : MyDeflate(15)
 }
 
-class MyInflater(val windowBits: Int) : StreamProcessor {
+/*
+@RestrictsSuspension
+class StreamGenerator {
+	var reachedEnd: Boolean = false
+	val input: ByteArrayDeque = ByteArrayDeque()
+	val bits: BitReader = BitReader(input)
+	val output: ByteArrayDeque = ByteArrayDeque()
+
+	suspend fun ensureBytes(count: Int = 32) {
+		while (!reachedEnd && input.availableRead < count) {
+			yield(StreamProcessor.Status.NEED_INPUT)
+		}
+	}
+
+	val processor = object : StreamProcessor {
+		override val availableInput: Int get() = input.availableRead
+		override val availableOutput: Int get() = output.availableWrite
+
+		override fun addInput(data: ByteArray, offset: Int, len: Int): Int = input.writeBytes(data, offset, len)
+		override fun readOutput(data: ByteArray, offset: Int, len: Int): Int = output.readBytes(data, offset, len)
+
+		override fun inputEod() {
+			reachedEnd = true
+		}
+
+		override fun reset() {
+			input.clear()
+			output.clear()
+			bits.discardBits()
+			reachedEnd = false
+		}
+
+		override fun process(): StreamProcessor.Status {
+			TODO("not implemented") //To change body of created functions use File | Settings | File Templates.
+		}
+	}
+}
+
+fun createStreamProcessor(callback: suspend StreamGenerator.() -> Unit): StreamProcessor {
+	val genreator = StreamGenerator()
+	callback(genreator)
+	return genreator.processor
+}
+
+fun inflater() = createStreamProcessor {
+	ensureBytes()
+}
+*/
+
+abstract class SuspendStreamProcessor : StreamProcessor {
+	private lateinit var sequence: Iterator<StreamProcessor.Status>
+	protected var reachedEnd: Boolean = false
+	protected val input: ByteArrayDeque = ByteArrayDeque()
+	protected val bits: BitReader = BitReader(input)
+	protected val output: ByteArrayDeque = ByteArrayDeque()
+
+	override val availableInput: Int get() = input.availableWrite
+	override val availableOutput: Int get() = output.availableRead
+
+	override fun reset() {
+		input.clear()
+		output.clear()
+		bits.discardBits()
+		reachedEnd = false
+		sequence = internalProcess().iterator()
+	}
+
+	override fun addInput(data: ByteArray, offset: Int, len: Int): Int = input.writeBytes(data, offset, len)
+	override fun inputEod() = run { reachedEnd = true }
+	override fun readOutput(data: ByteArray, offset: Int, len: Int): Int = output.readBytes(data, offset, len)
+
+	override fun process(): StreamProcessor.Status {
+		//println("process[0]")
+		return if (sequence.hasNext()) {
+			//println("process[1]")
+			sequence.next()
+		} else {
+			//println("process[2]")
+			StreamProcessor.Status.FINISHED
+		}
+	}
+
+	protected suspend inline fun SequenceScope<StreamProcessor.Status>.ensureBytes(count: Int = 32) {
+		while (!reachedEnd && input.availableRead < count) {
+			yield(StreamProcessor.Status.NEED_INPUT)
+		}
+	}
+
+	protected suspend fun SequenceScope<StreamProcessor.Status>.read(other: SuspendStreamProcessor) {
+		bits.discardBits()
+	}
+
+	abstract fun internalProcess(): Sequence<StreamProcessor.Status>
+}
+
+/*
+open class MyGzip() : MyNewCompressionMethod {
+	override fun createCompresor(): StreamProcessor = TODO()
+	override fun createDecompresor(): StreamProcessor = MyGzipInflater()
+
+	companion object : MyGzip()
+}
+
+class MyGzipInflater : SuspendStreamProcessor() {
+	override fun internalProcess(): Sequence<StreamProcessor.Status> = sequence {
+		val s = bits
+		if (s.u8() != 31 || s.u8() != 139) error("Not a GZIP file")
+		val method = s.u8()
+		if (method != 8) error("Just supported deflate in GZIP")
+		val ftext = s.bit()
+		val fhcrc = s.bit()
+		val fextra = s.bit()
+		val fname = s.bit()
+		val fcomment = s.bit()
+		val reserved = s.bits(3)
+		val mtime = s.u32LE()
+		val xfl = s.u8()
+		val os = s.u8()
+		val extra = if (fextra) s.abytes(s.su16LE()) else byteArrayOf()
+		val name = if (fname) s.strz() else null
+		val comment = if (fcomment) s.strz() else null
+		val crc16 = if (fhcrc) s.su16LE() else 0
+		var chash = CRC32.initialValue
+		var csize = 0
+		Deflate.uncompress(s, object : AsyncOutputStream by o {
+			override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
+				chash = CRC32.update(chash, buffer, offset, len)
+				csize += len
+				o.write(buffer, offset, len)
+			}
+		})
+		s.prepareBigChunk()
+		val crc32 = s.su32LE()
+		val size = s.su32LE()
+		if (checkCrc) {
+			if (chash != crc32) invalidOp("CRC32 doesn't match ${chash.hex} != ${crc32.hex}")
+			if (csize != size) invalidOp("Size doesn't match ${csize.hex} != ${size.hex}")
+		}
+		read(MyInflater(15))
+	}
+}
+*/
+
+class MyInflater(val windowBits: Int) : SuspendStreamProcessor() {
 	companion object {
 		private val FIXED_TREE: HuffmanTree = HuffmanTree().fromLengths(IntArray(288).apply {
 			for (n in 0..143) this[n] = 8
@@ -42,51 +186,14 @@ class MyInflater(val windowBits: Int) : StreamProcessor {
 		private val HCLENPOS = intArrayOf(16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15)
 	}
 
-	private lateinit var sequence: Iterator<StreamProcessor.Status>
-	private var reachedEnd: Boolean = false
-	private val input: ByteArrayDeque = ByteArrayDeque()
-	private val bits: BitReader = BitReader(input)
-	private val output: ByteArrayDeque = ByteArrayDeque()
-	private val ring: SlidingWindowWithOutput = SlidingWindowWithOutput(windowBits, output)
-
-	override val availableInput: Int get() = input.availableWrite
-	override val availableOutput: Int get() = output.availableRead
+	private val ring: MyInflater.SlidingWindowWithOutput = MyInflater.SlidingWindowWithOutput(windowBits, output)
 
 	override fun reset() {
-		input.clear()
-		output.clear()
-		bits.discardBits()
 		ring.clear()
-		reachedEnd = false
-		sequence = internalProcess().iterator()
+		super.reset()
 	}
 
-	init {
-		reset()
-	}
-
-	override fun addInput(data: ByteArray, offset: Int, len: Int): Int = input.writeBytes(data, offset, len)
-	override fun inputEod() = run { reachedEnd = true }
-	override fun readOutput(data: ByteArray, offset: Int, len: Int): Int = output.readBytes(data, offset, len)
-
-	override fun process(): StreamProcessor.Status {
-		//println("process[0]")
-		return if (sequence.hasNext()) {
-			//println("process[1]")
-			sequence.next()
-		} else {
-			//println("process[2]")
-			StreamProcessor.Status.FINISHED
-		}
-	}
-
-	private suspend inline fun SequenceScope<StreamProcessor.Status>.ensureBytes(count: Int = 32) {
-		while (!reachedEnd && input.availableRead < count) {
-			yield(StreamProcessor.Status.NEED_INPUT)
-		}
-	}
-
-	private fun internalProcess(): Sequence<StreamProcessor.Status> = sequence {
+	override fun internalProcess(): Sequence<StreamProcessor.Status> = sequence {
 		val temp = ByteArray(1024)
 		val codeLenCodeLen = IntArray(20)
 		val lengths = IntArray(350)

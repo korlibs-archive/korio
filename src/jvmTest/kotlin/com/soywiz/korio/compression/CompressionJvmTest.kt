@@ -22,7 +22,7 @@ class CompressionJvmTest {
 			"111111111111111111111111111111"
 
 	@Test
-	fun gzipAsync() = suspendTest {
+	fun gzip() {
 		val data = compressedData
 		val res = data.uncompress(GZIPNoCrc)
 		val res2 = res.readIntArrayLE(0, 4096 / 4)
@@ -35,9 +35,9 @@ class CompressionJvmTest {
 	}
 
 	@Test
-	fun gzipSync() {
+	fun gzip2() {
 		val data = compressedData
-		val res = data.syncUncompress(GZIPNoCrc)
+		val res = data.uncompress(GZIPNoCrc)
 		val res2 = res.readIntArrayLE(0, 4096 / 4)
 		assertEquals(expectedData, res2.toList().joinToString(""))
 	}
@@ -54,8 +54,8 @@ class CompressionJvmTest {
 	fun compressSync(method: CompressionMethod) {
 		val str = "HELLO HELLO HELLO!"
 		val uncompressed = str.toByteArray(UTF8)
-		val compressed = uncompressed.syncCompress(method)
-		val decompressed = compressed.syncUncompress(method)
+		val compressed = uncompressed.compress(method)
+		val decompressed = compressed.uncompress(method)
 		assertEquals(decompressed.toString(UTF8), str, "With $method")
 	}
 }

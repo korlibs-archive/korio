@@ -2,10 +2,12 @@ package com.soywiz.korio.compression.util
 
 import com.soywiz.kds.*
 import com.soywiz.kmem.*
+import com.soywiz.korio.compression.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
+import kotlin.math.*
 
-open class BitReader(val s: AsyncInputWithLengthStream) {
+open class BitReader(val s: AsyncInputStreamWithLength) {
 	@PublishedApi
 	internal var bitdata = 0
 	@PublishedApi
@@ -17,20 +19,23 @@ open class BitReader(val s: AsyncInputWithLengthStream) {
 		return this
 	}
 
-	var syncSize = 0; private set
-	private val sbuffers = Deque<ByteArray>()
-	private var cbuffer = byteArrayOf()
-	private var cbufferPos = 0
+	private val sbuffers = ByteArrayDeque()
 
-	val requirePrepare get() = syncSize < 32 * 1024
+	val BIG_CHUNK_SIZE = 8 * 1024
+	val requirePrepare get() = sbuffers.availableRead < BIG_CHUNK_SIZE
 
-	suspend fun prepareBigChunk(): BitReader = prepareBytesUpTo(32 * 1024)
+	suspend fun prepareBigChunk(): BitReader = prepareBytesUpTo(BIG_CHUNK_SIZE)
 
+	suspend inline fun prepareBigChunkIfRequired() {
+		if (requirePrepare) prepareBigChunk()
+	}
+
+	private val tempBA = ByteArray(BIG_CHUNK_SIZE)
 	suspend fun prepareBytesUpTo(expectedBytes: Int): BitReader {
-		if (syncSize < expectedBytes) {
-			val sbuffer = s.readBytesUpTo(expectedBytes)
-			sbuffers += sbuffer
-			syncSize += sbuffer.size
+		while (sbuffers.availableRead < expectedBytes) {
+			val read = s.read(tempBA, 0, min(tempBA.size, expectedBytes))
+			if (read <= 0) break // No more data
+			sbuffers.writeBytes(tempBA, 0, read)
 		}
 		return this
 	}
@@ -48,16 +53,7 @@ open class BitReader(val s: AsyncInputWithLengthStream) {
 
 	fun sreadBit(): Boolean = readBits(1) != 0
 
-	private fun _su8(): Int {
-		while (cbufferPos >= cbuffer.size) {
-			if (sbuffers.isEmpty()) error("sbuffer is empty!")
-			val ba = sbuffers.removeFirst()
-			cbuffer = ba
-			cbufferPos = 0
-		}
-		syncSize--
-		return cbuffer.readU8(cbufferPos++)
-	}
+	private fun _su8(): Int = sbuffers.readByte()
 
 	fun sbytes_noalign(count: Int, out: ByteArray): ByteArray {
 		for (n in 0 until count) out[n] = _su8().toByte()
@@ -75,7 +71,7 @@ open class BitReader(val s: AsyncInputWithLengthStream) {
 	suspend fun abytes(count: Int, out: ByteArray = ByteArray(count)) = prepareBytesUpTo(count).sbytes(count, out)
 
 	suspend fun strz(): String {
-		return MemorySyncStreamToByteArraySuspend {
+		return MemorySyncStreamToByteArray {
 			discardBits()
 			while (true) {
 				if (requirePrepare) prepareBigChunk()

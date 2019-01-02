@@ -4,77 +4,45 @@ import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.error.*
 import com.soywiz.korio.stream.*
+import kotlinx.coroutines.channels.*
+import kotlin.coroutines.*
+import kotlin.math.*
 
-class CompressionContext(var level: Int = 6) {
+open class CompressionContext(var level: Int = 6) {
 	var name: String? = null
 	var custom: Any? = null
 }
 
 interface CompressionMethod {
-	suspend fun uncompress(i: AsyncInputWithLengthStream, o: AsyncOutputStream): Unit = unsupported()
+	suspend fun uncompress(i: AsyncInputStreamWithLength, o: AsyncOutputStream): Unit = unsupported()
 	suspend fun compress(
-		i: AsyncInputWithLengthStream,
+		i: AsyncInputStreamWithLength,
 		o: AsyncOutputStream,
-		context: CompressionContext = CompressionContext(level = 6)
+		context: CompressionContext = CompressionContext()
 	): Unit = unsupported()
-}
 
-suspend fun CompressionMethod.compress(
-	data: ByteArray,
-	context: CompressionContext = CompressionContext(level = 6)
-): ByteArray {
-	return MemorySyncStreamToByteArraySuspend {
-		compress(data.openAsync(), this.toAsync(), context)
+	object Uncompressed : CompressionMethod {
+		override suspend fun uncompress(i: AsyncInputStreamWithLength, o: AsyncOutputStream): Unit = run { i.copyTo(o) }
+		override suspend fun compress(i: AsyncInputStreamWithLength, o: AsyncOutputStream, context: CompressionContext): Unit = run { i.copyTo(o) }
 	}
 }
 
-suspend fun CompressionMethod.uncompress(data: ByteArray): ByteArray {
-	val buffer = ByteArrayBuilder(4096)
-	val s = MemorySyncStream(buffer)
-	uncompress(data.openAsync(), s.toAsync())
-	//println("CompressionMethod.uncompress.pre")
-	val out = buffer.toByteArray()
-	//println("CompressionMethod.uncompress.out:$out")
-	return out
-	// @TODO: Doesn't work on Kotlin-JS?
-	//return MemorySyncStreamToByteArray {
-	//	uncompress(data.openAsync(), this.toAsync())
-	//}
+suspend fun CompressionMethod.uncompressStream(input: AsyncInputStreamWithLength): AsyncInputStream = asyncStreamWriter { output -> uncompress(input, output) }
+suspend fun CompressionMethod.compressStream(input: AsyncInputStreamWithLength): AsyncInputStream = asyncStreamWriter { output -> compress(input, output) }
+
+fun CompressionMethod.uncompress(i: SyncInputStream, o: SyncOutputStream) {
+	runBlockingNoSuspensions {
+		this@uncompress.uncompress(i.toAsyncInputStream(), o.toAsyncOutputStream())
+	}
 }
 
-suspend fun CompressionMethod.uncompressTo(data: ByteArray, out: AsyncOutputStream): AsyncOutputStream {
-	uncompress(data.openAsync(), out)
-	return out
+fun CompressionMethod.compress(i: SyncInputStream, o: SyncOutputStream, context: CompressionContext = CompressionContext()) {
+	runBlockingNoSuspensions {
+		this@compress.compress(i.toAsyncInputStream(), o.toAsyncOutputStream(), context)
+	}
 }
 
+fun ByteArray.uncompress(method: CompressionMethod): ByteArray = MemorySyncStreamToByteArray { method.uncompress(this@uncompress.openSync(), this) }
+fun ByteArray.compress(method: CompressionMethod, context: CompressionContext = CompressionContext()): ByteArray =
+	MemorySyncStreamToByteArray { method.compress(this@compress.openSync(), this, context) }
 
-object Uncompressed : CompressionMethod {
-	override suspend fun uncompress(i: AsyncInputWithLengthStream, o: AsyncOutputStream): Unit = run { i.copyTo(o) }
-	override suspend fun compress(
-		i: AsyncInputWithLengthStream,
-		o: AsyncOutputStream,
-		context: CompressionContext
-	): Unit = run { i.copyTo(o) }
-}
-
-suspend fun ByteArray.uncompress(method: CompressionMethod): ByteArray = method.uncompress(this)
-suspend fun ByteArray.compress(
-	method: CompressionMethod,
-	context: CompressionContext = CompressionContext()
-): ByteArray = method.compress(this, context)
-
-fun ByteArray.syncUncompress(method: CompressionMethod): ByteArray = runBlockingNoSuspensions {
-	val out = method.uncompress(this)
-//	println("ByteArray.syncUncompress: $out")
-	out
-}
-
-fun ByteArray.syncCompress(method: CompressionMethod, context: CompressionContext = CompressionContext()): ByteArray =
-	runBlockingNoSuspensions { method.compress(this, context) }
-
-fun CompressionMethod.syncUncompress(i: SyncInputStream, o: SyncOutputStream) = runBlockingNoSuspensions {
-	//println("CompressionMethod.syncUncompress[0]")
-	uncompress(i.toAsyncInputStream(), o.toAsyncOutputStream())
-	//println("CompressionMethod.syncUncompress[1]")
-	//Unit // @TODO: kotlin-js kotlin.js BUG. Passing undefined to the coroutine without this!
-}

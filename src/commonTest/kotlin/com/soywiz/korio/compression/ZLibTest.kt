@@ -7,7 +7,7 @@ import kotlin.test.*
 
 class ZLibTest {
 	@Test
-	fun name() = suspendTest {
+	fun name() {
 		val data = ByteArray(0x20_000)
 		for (n in 0 until data.size) {
 			val m = (n * 77) and 0xFF
@@ -18,14 +18,14 @@ class ZLibTest {
 			}
 			data[n] = v.toByte()
 		}
-		val compressedData = ZLib.compress(data)
-		val uncompressedData = ZLib.uncompress(compressedData)
+		val compressedData = data.compress(ZLib)
+		val uncompressedData = compressedData.uncompress(ZLib)
 		assertEquals(data.size, uncompressedData.size)
 		for (n in 0 until data.size) assertEquals(data[n], uncompressedData[n])
 	}
 
 	@Test
-	fun name2() = suspendTest {
+	fun name2() {
 		val data = ByteArray(0x20_000)
 		for (n in 0 until data.size) {
 			val m = (n * 77) and 0xFF
@@ -36,7 +36,7 @@ class ZLibTest {
 			}
 			data[n] = v.toByte()
 		}
-		val compressedData = ZLib.compress(data)
+		val compressedData = data.compress(ZLib)
 		val uncompressedData = KorioNative.uncompress(compressedData, data.size, "zlib")
 		assertEquals(data.size, uncompressedData.size)
 		for (n in 0 until data.size) assertEquals(data[n], uncompressedData[n])

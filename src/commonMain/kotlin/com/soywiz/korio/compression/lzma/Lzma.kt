@@ -7,7 +7,7 @@ import com.soywiz.korio.stream.*
  * @TODO: Streaming! (right now loads the whole stream in-memory)
  */
 object Lzma : CompressionMethod {
-	override suspend fun uncompress(i: AsyncInputWithLengthStream, o: AsyncOutputStream) {
+	override suspend fun uncompress(i: AsyncInputStreamWithLength, o: AsyncOutputStream) {
 		val input = i.readAll().openSync()
 		val properties = input.readBytesExact(5)
 		val decoder = SevenZip.LzmaDecoder()
@@ -19,7 +19,7 @@ object Lzma : CompressionMethod {
 		o.writeBytes(out)
 	}
 
-	override suspend fun compress(i: AsyncInputWithLengthStream, o: AsyncOutputStream, context: CompressionContext) {
+	override suspend fun compress(i: AsyncInputStreamWithLength, o: AsyncOutputStream, context: CompressionContext) {
 		val algorithm = 2
 		val matchFinder = 1
 		val dictionarySize = 1 shl 23

@@ -1,58 +1,151 @@
 package com.soywiz.korio.compression.util
 
-// @TODO: Optimize for instance reusal and to not require one node per item, but using arrays
-class HuffmanTree(val root: Node, val symbolLimit: Int) {
-	class Node(val value: Int, val len: Int, val left: Node?, val right: Node?) {
-		val isLeaf get() = this.len != 0
+import com.soywiz.kmem.*
 
-		companion object {
-			fun leaf(value: Int, len: Int) = Node(value, len, null, null)
-			fun int(left: Node, right: Node) = Node(-1, 0, left, right)
-		}
-	}
-
-	data class Result(var value: Int, var bitcode: Int, var bitcount: Int)
-
-	fun sreadOne(reader: BitReader, out: Result = Result(0, 0, 0)): Result {
-		//console.log('-------------');
-		var node: Node? = this.root
-		var bitcount = 0
-		var bitcode = 0
-		do {
-			val bbit = reader.readBits(1)
-			val bit = (bbit != 0)
-			bitcode = bitcode or (bbit shl bitcount)
-			bitcount++
-			//console.log('bit', bit);
-			node = if (bit) node!!.right else node!!.left
-			//console.info(node);
-		} while (node != null && node.len == 0)
-		if (node == null) error("NODE = NULL")
-		return out.apply {
-			this.value = node.value
-			this.bitcode = bitcode
-			this.bitcount = bitcount
-		}
-	}
-
-	inline fun sreadOneValue(reader: BitReader, tempResult: Result) = sreadOne(reader, tempResult).value
-
+class HuffmanTree {
 	companion object {
-		fun fromLengths(codeLengths: IntArray): HuffmanTree {
-			var nodes = arrayListOf<Node>()
-			for (i in (codeLengths.max() ?: 0) downTo 1) {
-				val newNodes = arrayListOf<Node>()
-				for (j in 0 until codeLengths.size) if (codeLengths[j] == i) newNodes.add(
-					Node.leaf(j, i)
-				)
-				for (j in 0 until nodes.size step 2) newNodes.add(
-					Node.int(nodes[j], nodes[j + 1])
-				)
-				nodes = newNodes
-				if (nodes.size % 2 != 0) error("This canonical code does not represent a Huffman code tree: ${nodes.size}")
-			}
-			if (nodes.size != 2) error("This canonical code does not represent a Huffman code tree")
-			return HuffmanTree(Node.int(nodes[0], nodes[1]), codeLengths.size)
+		private const val INVALID_VALUE = -1
+		private const val NIL = 1023
+		private const val FAST_BITS = 9
+
+		//private const val ENABLE_EXPERIMENTAL_FAST_READ = true
+		//private const val ENABLE_EXPERIMENTAL_FAST_READ = false
+	}
+
+	private val value = IntArray(1024)
+	private val left = IntArray(1024)
+	private val right = IntArray(1024)
+
+	private var nodeOffset = 0
+	private var root: Int = NIL
+	private var ncodes: Int = 0
+
+	// Low half-word contains the value, High half-word contains the len
+	//val FAST_INFO = IntArray(1 shl FAST_BITS) { INVALID_VALUE }
+
+	fun read(reader: BitReader): Int {
+		var node = this.root
+		do {
+			node = if (reader.sreadBit()) node.right else node.left
+		} while (node != NIL && node.value == INVALID_VALUE)
+		return node.value
+	}
+
+	private fun resetAlloc() {
+		nodeOffset = 0
+	}
+
+	private fun alloc(value: Int, left: Int, right: Int): Int {
+		return (nodeOffset++).apply {
+			this@HuffmanTree.value[this] = value
+			this@HuffmanTree.left[this] = left
+			this@HuffmanTree.right[this] = right
 		}
 	}
+
+	private fun allocLeaf(value: Int): Int = alloc(value, NIL, NIL)
+	private fun allocNode(left: Int, right: Int): Int = alloc(INVALID_VALUE, left, right)
+
+	private inline val Int.value get() = this@HuffmanTree.value[this]
+	private inline val Int.left get() = this@HuffmanTree.left[this]
+	private inline val Int.right get() = this@HuffmanTree.right[this]
+
+	private val MAX_LEN = 16
+	private val COUNTS = IntArray(MAX_LEN + 1)
+	private val OFFSETS = IntArray(MAX_LEN + 1)
+	private val COFFSET = IntArray(MAX_LEN + 1)
+	private val CODES = IntArray(288)
+
+	private val ENCODED_VAL = IntArray(288)
+	private val ENCODED_LEN = ByteArray(288)
+
+	fun fromLengths(codeLengths: IntArray, start: Int = 0, end: Int = codeLengths.size): HuffmanTree {
+		var oldOffset = 0
+		var oldCount = 0
+		val ncodes = end - start
+
+		resetAlloc()
+
+		COUNTS.fill(0)
+
+		// Compute the count of codes per length
+		for (n in start until end) {
+			val codeLen = codeLengths[n]
+			if (codeLen !in 0..MAX_LEN) error("Invalid HuffmanTree.codeLengths $codeLen")
+			COUNTS[codeLen]++
+		}
+
+		// Compute the disposition using the counts per length
+		var currentOffset = 0
+		for (n in 0 until MAX_LEN) {
+			val count = COUNTS[n]
+			OFFSETS[n] = currentOffset
+			COFFSET[n] = currentOffset
+			currentOffset += count
+		}
+
+		// Place elements in the computed disposition
+		for (n in start until end) {
+			val codeLen = codeLengths[n]
+			CODES[COFFSET[codeLen]++] = n - start
+		}
+
+		for (i in MAX_LEN downTo 1) {
+			val newOffset = nodeOffset
+
+			val OFFSET = OFFSETS[i]
+			val SIZE = COUNTS[i]
+			for (j in 0 until SIZE) allocLeaf(CODES[OFFSET + j])
+			for (j in 0 until oldCount step 2) allocNode(oldOffset + j, oldOffset + j + 1)
+
+			oldOffset = newOffset
+			oldCount = SIZE + oldCount / 2
+			if (oldCount % 2 != 0) error("This canonical code does not represent a Huffman code tree: $oldCount")
+		}
+		if (oldCount != 2) error("This canonical code does not represent a Huffman code tree")
+
+		this.root = allocNode(nodeOffset - 2, nodeOffset - 1)
+		this.ncodes = ncodes
+
+		//if (ENABLE_EXPERIMENTAL_FAST_READ) {
+		//	computeFastLookup()
+		//}
+
+		return this
+	}
+
+	//private fun computeFastLookup() {
+	//	ENCODED_LEN.fill(0)
+	//	FAST_INFO.fill(INVALID_VALUE)
+	//	computeEncodedValues(root, 0, 0)
+	//	//println("--------------------")
+	//	for (n in 0 until ncodes) {
+	//		val enc = ENCODED_VAL[n]
+	//		val bits = ENCODED_LEN[n].toInt()
+	//		check((enc and 0xFFFF) == enc)
+	//		check((bits and 0xFF) == bits)
+	//		if (bits in 1..FAST_BITS) {
+	//			val remainingBits = FAST_BITS - bits
+	//			val repeat = 1 shl remainingBits
+	//			val info = enc or (bits shl 16)
+//
+	//			//println("n=$n  : enc=$enc : bits=$bits, repeat=$repeat")
+//
+	//			for (j in 0 until repeat) {
+	//				FAST_INFO[enc or (j shl bits)] = info
+	//			}
+	//		}
+	//	}
+	//	//for (fv in FAST_INFO) check(fv != INVALID_VALUE)
+	//}
+	//private fun computeEncodedValues(node: Int, encoded: Int, encodedBits: Int) {
+	//	if (node.value == INVALID_VALUE) {
+	//		computeEncodedValues(node.left, encoded, encodedBits + 1)
+	//		computeEncodedValues(node.right, encoded or (1 shl encodedBits), encodedBits + 1)
+	//	} else {
+	//		val nvalue = node.value
+	//		ENCODED_VAL[nvalue] = encoded
+	//		ENCODED_LEN[nvalue] = encodedBits.toByte()
+	//	}
+	//}
 }

@@ -10,12 +10,12 @@ import kotlin.coroutines.*
 import kotlin.math.*
 
 class CompressionAlgoAsyncStream internal constructor(
-	val i: AsyncInputWithLengthStream,
+	val i: AsyncInputStreamWithLength,
 	val method: CompressionMethod,
 	val uncompressedSize: Long? = null,
 	val compressing: Boolean = false
 ) :
-	AsyncInputWithLengthStream {
+	AsyncInputStreamWithLength {
 
 	val los = LimitedOutputStream()
 	private var pos = 0L
@@ -45,9 +45,9 @@ class CompressionAlgoAsyncStream internal constructor(
 
 suspend fun UncompressAsyncStream(
 	mode: CompressionMethod,
-	i: AsyncInputWithLengthStream,
+	i: AsyncInputStreamWithLength,
 	uncompressedSize: Long? = null
-): AsyncInputWithLengthStream {
+): AsyncInputStreamWithLength {
 	return CompressionAlgoAsyncStream(i, mode, uncompressedSize, compressing = false).apply {
 		init()
 	}
@@ -55,8 +55,8 @@ suspend fun UncompressAsyncStream(
 
 suspend fun CompressAsyncStream(
 	mode: CompressionMethod,
-	i: AsyncInputWithLengthStream
-): AsyncInputWithLengthStream {
+	i: AsyncInputStreamWithLength
+): AsyncInputStreamWithLength {
 	return CompressionAlgoAsyncStream(i, mode, compressing = true).apply {
 		init()
 	}
