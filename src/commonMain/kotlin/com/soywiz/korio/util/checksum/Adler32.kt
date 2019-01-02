@@ -3,7 +3,7 @@ package com.soywiz.korio.util.checksum
 object Adler32 : SimpleChecksum {
 	private val adler_base = 65521
 
-	override val INITIAL = 1
+	override val initialValue = 1
 
 	override fun update(old: Int, data: ByteArray, offset: Int, len: Int): Int {
 		var s1 = (old ushr 0) and 0xffff

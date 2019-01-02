@@ -19,18 +19,10 @@ data class Xml(
 	val allNodeChildren get() = allChildren.filter { it.isNode }
 
 	companion object {
-		fun Tag(tagName: String, attributes: Map<String, Any?>, children: List<Xml>): Xml {
-			val att = attributes.filter { it.value != null }.map { it.key to it.value.toString() }.toMap()
-			return Xml(Xml.Type.NODE, tagName, att, children, "")
-		}
-
-		fun Text(text: String): Xml {
-			return Xml(Xml.Type.TEXT, "_text_", LinkedHashMap(), listOf(), text)
-		}
-
-		fun Comment(text: String): Xml {
-			return Xml(Xml.Type.COMMENT, "_comment_", LinkedHashMap(), listOf(), text)
-		}
+		fun Tag(tagName: String, attributes: Map<String, Any?>, children: List<Xml>): Xml =
+			Xml(Xml.Type.NODE, tagName, attributes.filter { it.value != null }.map { it.key to it.value.toString() }.toMap(), children, "")
+		fun Text(text: String): Xml = Xml(Xml.Type.TEXT, "_text_", LinkedHashMap(), listOf(), text)
+		fun Comment(text: String): Xml = Xml(Xml.Type.COMMENT, "_comment_", LinkedHashMap(), listOf(), text)
 
 		//operator fun invoke(@Language("xml") str: String): Xml = parse(str)
 

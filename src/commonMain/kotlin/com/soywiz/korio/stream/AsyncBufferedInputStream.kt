@@ -14,7 +14,7 @@ class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int =
 		}
 	}
 
-	suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+	override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		require()
 		return buf.consume(buffer, offset, len)
 	}
@@ -34,7 +34,7 @@ class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int =
 	suspend fun readUntil(end: Byte, including: Boolean = true, limit: Int = 0x1000): ByteArray =
 		readBufferedUntil(end, including, limit)
 
-	suspend override fun close() {
+	override suspend fun close() {
 		base.close()
 	}
 }

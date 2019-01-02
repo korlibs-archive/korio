@@ -2,6 +2,7 @@ package com.soywiz.korio.compression.deflate
 
 import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.util.*
+import com.soywiz.korio.compression.util.BitReader
 import com.soywiz.korio.error.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
@@ -30,7 +31,7 @@ open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
 		val name = if (fname) s.strz() else null
 		val comment = if (fcomment) s.strz() else null
 		val crc16 = if (fhcrc) s.su16LE() else 0
-		var chash = CRC32.INITIAL
+		var chash = CRC32.initialValue
 		var csize = 0
 		Deflate.uncompress(s, object : AsyncOutputStream by o {
 			override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
@@ -62,7 +63,7 @@ open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
 		o.write8(0) // os
 
 		var size = 0
-		var crc32 = CRC32.INITIAL
+		var crc32 = CRC32.initialValue
 		Deflate.compress(object : AsyncInputWithLengthStream by i {
 			override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 				val read = i.read(buffer, offset, len)

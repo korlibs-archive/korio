@@ -1,7 +1,13 @@
 package com.soywiz.korio.async
 
-import com.soywiz.klock.TimeSpan
-import kotlinx.coroutines.CoroutineScope
+import com.soywiz.klock.*
+import kotlinx.coroutines.*
+import kotlin.coroutines.*
 
-public suspend fun <T> withTimeout(time: TimeSpan, block: suspend CoroutineScope.() -> T): T =
-	kotlinx.coroutines.withTimeout(time.millisecondsLong, block)
+suspend fun <T> withTimeout(time: TimeSpan, block: suspend CoroutineScope.() -> T): T {
+	return if (time == TimeSpan.NULL) {
+		block(CoroutineScope(coroutineContext))
+	} else {
+		kotlinx.coroutines.withTimeout(time.millisecondsLong, block)
+	}
+}

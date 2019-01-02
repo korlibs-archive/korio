@@ -64,25 +64,21 @@ class SuspendingIteratorCoroutine<T>(
 		nextStep!!.resume(Unit)
 	}
 
-	override suspend fun hasNext(): Boolean {
-		when (state) {
-			State.INITIAL -> return computeHasNext()
-			State.COMPUTED -> return true
-			State.DONE -> return false
-			else -> throw IllegalStateException("Recursive dependency detected -- already computing next")
-		}
+	override suspend fun hasNext(): Boolean = when (state) {
+		State.INITIAL -> computeHasNext()
+		State.COMPUTED -> true
+		State.DONE -> false
+		else -> throw IllegalStateException("Recursive dependency detected -- already computing next")
 	}
 
-	override suspend fun next(): T {
-		when (state) {
-			State.INITIAL -> return computeNext()
-			State.COMPUTED -> {
-				state = State.INITIAL
-				return nextValue as T
-			}
-			State.DONE -> throw NoSuchElementException()
-			else -> throw IllegalStateException("Recursive dependency detected -- already computing next")
+	override suspend fun next(): T = when (state) {
+		State.INITIAL -> computeNext()
+		State.COMPUTED -> {
+			state = State.INITIAL
+			nextValue as T
 		}
+		State.DONE -> throw NoSuchElementException()
+		else -> throw IllegalStateException("Recursive dependency detected -- already computing next")
 	}
 
 	@Suppress("UNCHECKED_CAST")

@@ -65,7 +65,7 @@ object FastDeflate {
 			TODO("Unsupported custom dictionaries (Provided DICTID=$dictid)")
 		}
 		val out = uncompress(windowBits, s, expectedOutSize = expectedOutSize).toByteArray()
-		val chash = Adler32.update(Adler32.INITIAL, out, 0, out.size)
+		val chash = Adler32.update(Adler32.initialValue, out, 0, out.size)
 		s.discardBits()
 		val adler32 = s.u32be()
 		if (chash != adler32) invalidOp("Adler32 doesn't match ${chash.hex} != ${adler32.hex}")
@@ -106,7 +106,40 @@ object FastDeflate {
 				} else {
 					tree = dynTree
 					dist = dynDist
-					readDynamicTree(reader, temp, tree, dist)
+					val l = tree
+					val r = dist
+					val hlit = reader.bits(5) + 257
+					val hdist = reader.bits(5) + 1
+					val hclen = reader.bits(4) + 4
+					val codeLenCodeLen = IntArray(19)
+					for (i in 0 until hclen) codeLenCodeLen[HCLENPOS[i]] = reader.bits(3)
+					//console.info(codeLenCodeLen);
+					val codeLen = temp.codeLen.fromLengths(codeLenCodeLen)
+					val lengths = IntArray(hlit + hdist)
+					var n = 0
+					val hlithdist = hlit + hdist
+					while (n < hlithdist) {
+						val value = codeLen.read(reader)
+						if (value !in 0..18) error("Invalid dynamic tree")
+
+						val len = when (value) {
+							16 -> reader.bits(2) + 3
+							17 -> reader.bits(3) + 3
+							18 -> reader.bits(7) + 11
+							else -> 1
+						}
+						val vv = when (value) {
+							16 -> lengths[n - 1]
+							17 -> 0
+							18 -> 0
+							else -> value
+						}
+
+						lengths.fill(vv, n, n + len)
+						n += len
+					}
+					l.fromLengths(lengths, 0, hlit)
+					r.fromLengths(lengths, hlit, lengths.size)
 				}
 				while (true) {
 					val value = tree.read(reader)
@@ -125,41 +158,6 @@ object FastDeflate {
 				}
 			}
 		}
-	}
-
-	private fun readDynamicTree(reader: BitReader, temp: TempState, l: HuffmanTree, r: HuffmanTree) {
-		val hlit = reader.bits(5) + 257
-		val hdist = reader.bits(5) + 1
-		val hclen = reader.bits(4) + 4
-		val codeLenCodeLen = IntArray(19)
-		for (i in 0 until hclen) codeLenCodeLen[HCLENPOS[i]] = reader.bits(3)
-		//console.info(codeLenCodeLen);
-		val codeLen = temp.codeLen.fromLengths(codeLenCodeLen)
-		val lengths = IntArray(hlit + hdist)
-		var n = 0
-		val hlithdist = hlit + hdist
-		while (n < hlithdist) {
-			val value = codeLen.read(reader)
-			if (value !in 0..18) error("Invalid dynamic tree")
-
-			val len = when (value) {
-				16 -> reader.bits(2) + 3
-				17 -> reader.bits(3) + 3
-				18 -> reader.bits(7) + 11
-				else -> 1
-			}
-			val vv = when (value) {
-				16 -> lengths[n - 1]
-				17 -> 0
-				18 -> 0
-				else -> value
-			}
-
-			lengths.fill(vv, n, n + len)
-			n += len
-		}
-		l.fromLengths(lengths, 0, hlit)
-		r.fromLengths(lengths, hlit, lengths.size)
 	}
 
 	class TempState {

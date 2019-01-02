@@ -4,23 +4,16 @@ import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 
 interface SimpleChecksum {
-	val INITIAL: Int
+	val initialValue: Int
 	fun update(old: Int, data: ByteArray, offset: Int = 0, len: Int = data.size - offset): Int
-
-	companion object {
-		val DUMMY = object : SimpleChecksum {
-			override val INITIAL: Int = 0
-			override fun update(old: Int, data: ByteArray, offset: Int, len: Int): Int = 0
-		}
-	}
 }
 
-fun SimpleChecksum.compute(data: ByteArray, offset: Int = 0, len: Int = data.size - offset) = update(INITIAL, data, offset, len)
+fun SimpleChecksum.compute(data: ByteArray, offset: Int = 0, len: Int = data.size - offset) = update(initialValue, data, offset, len)
 
 fun ByteArray.checksum(checksum: SimpleChecksum): Int = checksum.compute(this)
 
 fun SyncInputStream.checksum(checksum: SimpleChecksum): Int {
-	var value = checksum.INITIAL
+	var value = checksum.initialValue
 	val temp = ByteArray(1024)
 
 	while (true) {
@@ -33,7 +26,7 @@ fun SyncInputStream.checksum(checksum: SimpleChecksum): Int {
 }
 
 suspend fun AsyncInputStream.checksum(checksum: SimpleChecksum): Int {
-	var value = checksum.INITIAL
+	var value = checksum.initialValue
 	val temp = ByteArray(1024)
 
 	while (true) {

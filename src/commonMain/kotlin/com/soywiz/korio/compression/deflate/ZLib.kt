@@ -3,6 +3,7 @@ package com.soywiz.korio.compression.deflate
 import com.soywiz.kmem.*
 import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.util.*
+import com.soywiz.korio.compression.util.BitReader
 import com.soywiz.korio.error.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
@@ -33,7 +34,7 @@ object ZLib : CompressionMethod {
 		//println("ZLib.uncompress[2]")
 
 		//s.alignbyte()
-		var chash = Adler32.INITIAL
+		var chash = Adler32.initialValue
 		Deflate(windowBits).uncompress(s, object : AsyncOutputStream {
 			override suspend fun close() {
 				o.close()
@@ -78,7 +79,7 @@ object ZLib : CompressionMethod {
 		o.write8(cmf)
 		o.write8(flg or fcheck)
 
-		var chash = Adler32.INITIAL
+		var chash = Adler32.initialValue
 		Deflate(slidingBits).compress(object : AsyncInputWithLengthStream by i {
 			override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 				val read = i.read(buffer, offset, len)
