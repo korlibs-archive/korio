@@ -30,17 +30,12 @@ actual class Semaphore actual constructor(initial: Int) {
 
 val currentThreadId: Long get() = KorioNative.currentThreadId
 
-
 actual object KorioNative {
 	actual val currentThreadId: Long get() = Thread.currentThread().id
 
 	actual fun getClassSimpleName(clazz: KClass<*>): String = clazz.java.simpleName
 
-	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T {
-		return withContext(newSingleThreadContext("worker")) {
-			callback()
-		}
-	}
+	internal val workerContext by lazy { newSingleThreadContext("worker") }
 
 	actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit) =
 		runBlocking(context) { callback() }
@@ -76,23 +71,6 @@ actual object KorioNative {
 			override fun createClient(): HttpClient = HttpClientJvm()
 			override fun createServer(): HttpServer = KorioNativeDefaults.createServer()
 		}
-	}
-
-	actual class SimplerMessageDigest actual constructor(name: String) {
-		val md = MessageDigest.getInstance(name)
-
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int) =
-			executeInWorker { md.update(data, offset, size) }
-
-		actual suspend fun digest(): ByteArray = executeInWorker { md.digest() }
-	}
-
-	actual class SimplerMac actual constructor(name: String, key: ByteArray) {
-		val mac = Mac.getInstance(name).apply { init(SecretKeySpec(key, name)) }
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int) =
-			executeInWorker { mac.update(data, offset, size) }
-
-		actual suspend fun finalize(): ByteArray = executeInWorker { mac.doFinal() }
 	}
 
 	actual fun Thread_sleep(time: Long) = Thread.sleep(time)
@@ -196,3 +174,5 @@ class JvmWebSocketClientFactory : WebSocketClientFactory() {
 	}
 }
 */
+
+suspend fun <T> executeInWorkerJVM(callback: suspend () -> T): T = withContext(KorioNative.workerContext) { callback() }

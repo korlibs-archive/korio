@@ -1,4 +1,4 @@
-package com.soywiz.korio.crypto
+package com.soywiz.korio.util
 
 object Hex {
 	const val DIGITS = "0123456789ABCDEF"

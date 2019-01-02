@@ -574,13 +574,13 @@ class SyncAsyncStreamBase(val sync: SyncStreamBase) : AsyncStreamBase() {
 
 class SyncAsyncStreamBaseInWorker(val sync: SyncStreamBase) : AsyncStreamBase() {
 	override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int =
-		executeInWorker { sync.read(position, buffer, offset, len) }
+		sync.read(position, buffer, offset, len)
 
 	override suspend fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) =
-		executeInWorker { sync.write(position, buffer, offset, len) }
+		sync.write(position, buffer, offset, len)
 
-	override suspend fun setLength(value: Long) = executeInWorker { sync.length = value }
-	override suspend fun getLength(): Long = executeInWorker { sync.length }
+	override suspend fun setLength(value: Long) = run { sync.length = value }
+	override suspend fun getLength(): Long = sync.length
 }
 
 suspend fun AsyncOutputStream.writeStream(source: AsyncInputStream): Long = source.copyTo(this)

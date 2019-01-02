@@ -1,6 +1,5 @@
 package com.soywiz.korio.net
 
-import com.soywiz.korio.crypto.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*

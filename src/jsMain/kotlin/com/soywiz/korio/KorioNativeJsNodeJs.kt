@@ -26,7 +26,7 @@ fun ByteArray.asUint8Array(): Uint8Array {
 
 fun ByteArray.toNodeJsBuffer(): NodeJsBuffer = this.asUint8Array().unsafeCast<NodeJsBuffer>()
 fun ByteArray.toNodeJsBuffer(offset: Int, size: Int): NodeJsBuffer =
-	global.Buffer.from(this, offset, size).unsafeCast<NodeJsBuffer>()
+	global.asDynamic().Buffer.from(this, offset, size).unsafeCast<NodeJsBuffer>()
 
 class HttpClientNodeJs : HttpClient() {
 	override suspend fun requestInternal(
@@ -63,7 +63,7 @@ class HttpClientNodeJs : HttpClient() {
 			val body = jsEmptyArray()
 			res.on("data") { d -> body.push(d) }
 			res.on("end") {
-				val r = global.Buffer.concat(body)
+				val r = global.asDynamic().Buffer.concat(body)
 				val u8array = Int8Array(r.unsafeCast<ArrayBuffer>())
 				val out = ByteArray(u8array.length)
 				for (n in 0 until u8array.length) out[n] = u8array[n]

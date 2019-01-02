@@ -36,8 +36,6 @@ expect object KorioNative {
 
 	fun getClassSimpleName(clazz: KClass<*>): String
 
-	suspend fun <T> executeInWorker(callback: suspend () -> T): T
-
 	fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit)
 
 	val currentThreadId: Long
@@ -73,16 +71,6 @@ expect object KorioNative {
 
 	fun printStackTrace(e: Throwable)
 	fun enterDebugger()
-
-	class SimplerMessageDigest(name: String) {
-		suspend fun update(data: ByteArray, offset: Int, size: Int): Unit
-		suspend fun digest(): ByteArray
-	}
-
-	class SimplerMac(name: String, key: ByteArray) {
-		suspend fun update(data: ByteArray, offset: Int, size: Int)
-		suspend fun finalize(): ByteArray
-	}
 
 	fun getenv(key: String): String?
 	fun suspendTest(callback: suspend () -> Unit)

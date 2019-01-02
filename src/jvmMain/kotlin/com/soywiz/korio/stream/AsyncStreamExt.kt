@@ -8,8 +8,8 @@ fun InputStream.toAsync(length: Long? = null): AsyncInputStream {
 	val syncIS = this
 	if (length != null) {
 		return object : AsyncInputStream, AsyncLengthStream {
-			override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker {
-				syncIS.read(buffer, offset, len)
+			override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+				return syncIS.read(buffer, offset, len)
 			}
 
 			override suspend fun close() = syncIS.close()
@@ -21,8 +21,8 @@ fun InputStream.toAsync(length: Long? = null): AsyncInputStream {
 		}
 	} else {
 		return object : AsyncInputStream {
-			override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int = executeInWorker {
-				syncIS.read(buffer, offset, len)
+			override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+				return syncIS.read(buffer, offset, len)
 			}
 
 			override suspend fun close() {

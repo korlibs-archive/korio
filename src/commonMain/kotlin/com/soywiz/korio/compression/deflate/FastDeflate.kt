@@ -1,8 +1,8 @@
 package com.soywiz.korio.compression.deflate
 
 import com.soywiz.kmem.*
-import com.soywiz.korio.crypto.*
 import com.soywiz.korio.error.*
+import com.soywiz.korio.util.*
 import com.soywiz.korio.util.checksum.*
 
 object FastDeflate {

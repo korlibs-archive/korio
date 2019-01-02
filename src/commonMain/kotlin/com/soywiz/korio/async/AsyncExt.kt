@@ -158,9 +158,6 @@ class TestCoroutineDispatcher(val frameTime: Int = 16) :
 	}
 }
 
-suspend fun <T> executeInNewThread(task: suspend () -> T): T = KorioNative.executeInWorker(task)
-suspend fun <T> executeInWorker(task: suspend () -> T): T = KorioNative.executeInWorker(task)
-
 fun suspendTest(callback: suspend () -> Unit) = KorioNative.suspendTest { callback() }
 
 fun suspendTest(context: CoroutineContext, callback: suspend () -> Unit) =

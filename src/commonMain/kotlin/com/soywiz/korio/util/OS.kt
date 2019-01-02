@@ -18,6 +18,11 @@ object OS {
 
 	val isBrowserJs = isJs && !isNodejs
 
+	val isJsBrowser get() = isJs && platformNameLC == "web.js"
+	val isJsNodeJs get() = isJs && platformNameLC == "node.js"
+	val isJsWorker get() = isJs && platformNameLC == "worker.js"
+	val isJsShell get() = isJs && platformNameLC == "shell.js"
+
 	inline val isJs get() = Platform.isJs
 	inline val isNative get() = Platform.isNative
 	inline val isJvm get() = Platform.isJvm

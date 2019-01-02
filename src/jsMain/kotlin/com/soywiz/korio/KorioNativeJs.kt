@@ -3,10 +3,10 @@ package com.soywiz.korio
 import com.soywiz.korio.async.*
 import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.deflate.*
-import com.soywiz.korio.crypto.*
 import com.soywiz.korio.error.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.file.std.*
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
 import com.soywiz.korio.net.http.*
 import com.soywiz.korio.net.ws.*
@@ -16,6 +16,8 @@ import kotlinx.coroutines.*
 import org.khronos.webgl.*
 import org.khronos.webgl.set
 import org.w3c.dom.*
+import org.w3c.dom.events.*
+import org.w3c.performance.*
 import org.w3c.xhr.*
 import kotlin.browser.*
 import kotlin.collections.set
@@ -34,7 +36,20 @@ actual open class IOException actual constructor(msg: String) : Exception(msg)
 actual open class EOFException actual constructor(msg: String) : IOException(msg)
 actual open class FileNotFoundException actual constructor(msg: String) : IOException(msg)
 
-val global = js("(typeof global !== 'undefined') ? global : window")
+val jsbaseUrl by lazy {
+	val href = document.location?.href ?: "."
+	if (href.endsWith("/")) href else href.substringBeforeLast('/')
+
+}
+
+abstract external class GlobalScope : EventTarget, WindowOrWorkerGlobalScope, GlobalPerformance {
+	fun postMessage(message: dynamic, targetOrigin: dynamic = definedExternally, transfer: dynamic = definedExternally)
+	fun requestAnimationFrame(callback: (Double) -> Unit): Int
+	fun cancelAnimationFrame(handle: Int): Unit
+}
+
+val globalDynamic: dynamic = js("(typeof global !== 'undefined') ? global : self")
+val global: GlobalScope  = globalDynamic
 external val process: dynamic // node.js
 external val navigator: dynamic // browser
 
@@ -45,17 +60,20 @@ actual class Semaphore actual constructor(initial: Int) {
 	actual fun release() = Unit
 }
 
-val isNodeJs by lazy { jsTypeOf(window) === "undefined" }
+//val isNodeJs by lazy { jsTypeOf(window) === "undefined" }
+
+val isNodeJs by lazy { js("(typeof process === 'object' && typeof require === 'function')").unsafeCast<Boolean>() }
+val isWeb by lazy { js("(typeof window === 'object')").unsafeCast<Boolean>() }
+val isWorker by lazy { js("(typeof importScripts === 'function')").unsafeCast<Boolean>() }
+val isShell get() = !isWeb && !isNodeJs && !isWorker
+
+fun HTMLCollection.toList(): List<Element?> = (0 until length).map { this[it] }
+fun <T : Element> HTMLCollection.toTypedList(): List<T> = (0 until length).map { this[it].unsafeCast<T>() }
 
 actual object KorioNative {
 	actual val currentThreadId: Long = 1L
 
 	actual fun getClassSimpleName(clazz: KClass<*>): String = clazz.simpleName ?: "unknown"
-
-	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T {
-		// @TODO: Use JS worker
-		return callback()
-	}
 
 	actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit): dynamic {
 		//callback.startCoroutine(EmptyContinuation(context))
@@ -85,7 +103,10 @@ actual object KorioNative {
 
 	actual val platformName: String
 		get() = when {
+			isWeb -> "web.js"
 			isNodeJs -> "node.js"
+			isWorker -> "worker.js"
+			isShell -> "shell.js"
 			else -> "js"
 		}
 
@@ -98,7 +119,7 @@ actual object KorioNative {
 		if (isNodeJs) {
 			require("crypto").randomFillSync(Uint8Array(data.unsafeCast<Array<Byte>>()))
 		} else {
-			global.crypto.getRandomValues(data)
+			global.asDynamic().crypto.getRandomValues(data)
 		}
 	}
 
@@ -116,10 +137,8 @@ actual object KorioNative {
 		return when {
 			isNodeJs -> NodeJsLocalVfs()[path]
 			else -> {
-				val href = document.location?.href ?: "."
-				val url = if (href.endsWith("/")) href else href.substringBeforeLast('/')
 				//println("localVfs.url: href=$href, url=$url")
-				UrlVfs(url)[path]
+				UrlVfs(jsbaseUrl)[path]
 			}
 		}
 	}
@@ -166,39 +185,6 @@ actual object KorioNative {
 	}
 
 	actual fun Thread_sleep(time: Long) {}
-
-	actual class SimplerMessageDigest actual constructor(name: String) {
-		val nname = name.toLowerCase().replace("-", "")
-		val hname: String = when (nname) {
-			"hmacsha256", "sha256" -> "sha256"
-			else -> invalidOp("Unsupported message digest '$name'")
-		}
-
-		val hash = require("crypto").createHash(hname)
-
-		// @TODO: Optimize this!
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int): Unit =
-			update(data.copyOfRange(offset, offset + size))
-
-		suspend fun update(data: ByteArray): Unit = hash.update(data)
-		// @TODO: Optimize: Can return ByteArray directly?
-		actual suspend fun digest(): ByteArray = Hex.decode(hash.digest("hex"))
-	}
-
-	actual class SimplerMac actual constructor(name: String, key: ByteArray) {
-		val nname = name.toLowerCase().replace("-", "")
-		val hname = when (nname) {
-			"hmacsha256", "sha256" -> "sha256"
-			"hmacsha1", "sha1" -> "sha1"
-			else -> invalidOp("Unsupported hmac '$name'")
-		}
-		val hmac = require("crypto").createHmac(hname, key)
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int): Unit =
-			update(data.copyOfRange(offset, offset + size))
-
-		suspend fun update(data: ByteArray): Unit = hmac.update(data)
-		actual suspend fun finalize(): ByteArray = Hex.decode(hmac.digest("hex"))
-	}
 
 	actual val httpFactory: HttpFactory by lazy {
 		object : HttpFactory {

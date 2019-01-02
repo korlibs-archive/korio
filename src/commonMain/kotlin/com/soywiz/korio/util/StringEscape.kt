@@ -72,6 +72,9 @@ fun String.unescape(): String {
 fun String?.uquote(): String = if (this != null) "\"${this.uescape()}\"" else "null"
 fun String?.quote(): String = if (this != null) "\"${this.escape()}\"" else "null"
 
+val String?.quoted: String get() = this.quote()
+val String.unquoted: String get() = this.unquote()
+
 fun String.isQuoted(): Boolean = this.startsWith('"') && this.endsWith('"')
 
 fun String.unquote(): String = if (isQuoted()) {

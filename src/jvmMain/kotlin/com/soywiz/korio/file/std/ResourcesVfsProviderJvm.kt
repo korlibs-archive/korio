@@ -63,13 +63,13 @@ class ResourcesVfsProviderJvm {
 						?: classLoader.getResourceAsStream("/$npath")
 						?: invalidOp("Can't find '$npath' in ResourcesVfsProviderJvm")
 
-					override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream = executeInWorker {
+					override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
 						val npath = normalize(path)
 						//println("ResourcesVfsProviderJvm:open: $path")
-						MemorySyncStream(getResourceAsStream(npath).readBytes()).toAsync()
+						return MemorySyncStream(getResourceAsStream(npath).readBytes()).toAsync()
 					}
 
-					override suspend fun stat(path: String): VfsStat = executeInWorker {
+					override suspend fun stat(path: String): VfsStat = run {
 						val npath = normalize(path)
 						//println("ResourcesVfsProviderJvm:stat: $npath")
 						try {

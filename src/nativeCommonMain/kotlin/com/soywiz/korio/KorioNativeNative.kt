@@ -90,21 +90,8 @@ actual object KorioNative {
 	actual val websockets: WebSocketClientFactory get() = com.soywiz.korio.net.ws.RawSocketWebSocketClientFactory
 	actual val systemLanguageStrings: List<String> get() = listOf("english")
 
-	// @TODO
-	actual suspend fun <T> executeInWorker(callback: suspend () -> T): T = callback()
-
 	actual fun Thread_sleep(time: Long): Unit {
 		platform.posix.usleep((time * 1000L).toUInt())
-	}
-
-	actual class SimplerMessageDigest actual constructor(name: String) {
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int): Unit = TODO()
-		actual suspend fun digest(): ByteArray = TODO()
-	}
-
-	actual class SimplerMac actual constructor(name: String, key: ByteArray) {
-		actual suspend fun update(data: ByteArray, offset: Int, size: Int): Unit = TODO()
-		actual suspend fun finalize(): ByteArray = TODO()
 	}
 
 	actual val httpFactory: HttpFactory = object : HttpFactory {
@@ -144,7 +131,7 @@ class LocalVfsNative : LocalVfs() {
 
 	override suspend fun exec(
 		path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler
-	): Int = executeInWorker {
+	): Int = run {
 		TODO("LocalVfsNative.exec")
 	}
 
@@ -209,12 +196,12 @@ class LocalVfsNative : LocalVfs() {
 		}.toAsyncStream()
 	}
 
-	override suspend fun setSize(path: String, size: Long): Unit = executeInWorker {
+	override suspend fun setSize(path: String, size: Long): Unit = run {
 		platform.posix.truncate(resolve(path), size.convert())
 		Unit
 	}
 
-	override suspend fun stat(path: String): VfsStat = executeInWorker {
+	override suspend fun stat(path: String): VfsStat = run {
 		val rpath = resolve(path)
 		val result = memScoped {
 			val s = alloc<stat>()
@@ -229,7 +216,7 @@ class LocalVfsNative : LocalVfs() {
 		result
 	}
 
-	override suspend fun list(path: String): SuspendingSequence<VfsFile> = executeInWorker {
+	override suspend fun list(path: String): SuspendingSequence<VfsFile> = run {
 		val dir = opendir(resolve(path))
 		val out = ArrayList<VfsFile>()
 		if (dir != null) {
@@ -243,24 +230,24 @@ class LocalVfsNative : LocalVfs() {
 		SuspendingSequence(out)
 	}
 
-	override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean = executeInWorker {
+	override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean = run {
 		com.soywiz.korio.doMkdir(resolve(path), "0777".toInt(8).convert()) == 0
 	}
 
-	override suspend fun touch(path: String, time: DateTime, atime: DateTime): Unit = executeInWorker {
+	override suspend fun touch(path: String, time: DateTime, atime: DateTime): Unit = run {
 		// @TODO:
 		println("TODO:LocalVfsNative.touch")
 	}
 
-	override suspend fun delete(path: String): Boolean = executeInWorker {
+	override suspend fun delete(path: String): Boolean = run {
 		platform.posix.unlink(resolve(path)) == 0
 	}
 
-	override suspend fun rmdir(path: String): Boolean = executeInWorker {
+	override suspend fun rmdir(path: String): Boolean = run {
 		platform.posix.rmdir(resolve(path)) == 0
 	}
 
-	override suspend fun rename(src: String, dst: String): Boolean = executeInWorker {
+	override suspend fun rename(src: String, dst: String): Boolean = run {
 		platform.posix.rename(resolve(src), resolve(dst)) == 0
 	}
 

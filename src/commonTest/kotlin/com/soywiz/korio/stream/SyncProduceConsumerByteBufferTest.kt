@@ -1,6 +1,6 @@
 package com.soywiz.korio.stream
 
-import com.soywiz.korio.crypto.*
+import com.soywiz.korio.util.*
 import kotlin.test.*
 
 class SyncProduceConsumerByteBufferTest {

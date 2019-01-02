@@ -13,7 +13,6 @@ import java.security.*
 import java.security.cert.*
 import javax.net.ssl.*
 
-
 class HttpClientJvm : HttpClient() {
 	companion object {
 		var lastId = 0
@@ -36,7 +35,7 @@ class HttpClientJvm : HttpClient() {
 		headers: Http.Headers,
 		content: AsyncStream?
 	): Response {
-		val result = executeInWorker {
+		val result = executeInWorkerJVM {
 			val requestId = lastRequestId++
 			val id = "request[$clientId,$requestId]"
 

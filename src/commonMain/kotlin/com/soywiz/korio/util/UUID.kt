@@ -4,7 +4,6 @@ import com.soywiz.kmem.UByteArrayInt
 import com.soywiz.kmem.asByteArray
 import com.soywiz.kmem.asUByteArrayInt
 import com.soywiz.korio.KorioNative
-import com.soywiz.korio.crypto.Hex
 import com.soywiz.korio.error.invalidArg
 import com.soywiz.korio.lang.format
 
