@@ -2,7 +2,7 @@ package com.soywiz.korio.compression.util
 
 import com.soywiz.kmem.*
 
-class HuffmanTree {
+internal class HuffmanTree {
 	companion object {
 		private const val INVALID_VALUE = -1
 		private const val NIL = 1023

@@ -3,6 +3,7 @@ package com.soywiz.korio.file.std
 import com.soywiz.klock.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
+import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.deflate.*
 import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.file.*
@@ -192,12 +193,11 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 				when (entry.compressionMethod) {
 					0 -> compressedData
 					else -> {
-						val compressed = UncompressAsyncStream(
-							when (entry.compressionMethod) {
-								8 -> DeflatePortable
-								else -> TODO("Not implemented zip method ${entry.compressionMethod}")
-							}, compressedData, uncompressedSize.toLong()
-						).readAll()
+						val method = when (entry.compressionMethod) {
+							8 -> Deflate
+							else -> TODO("Not implemented zip method ${entry.compressionMethod}")
+						}
+						val compressed = compressedData.uncompressed(method).readAll()
 
 						if (crc != 0) {
 							val computedCrc = CRC32.compute(compressed)

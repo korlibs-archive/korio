@@ -118,7 +118,53 @@ open class DeflatePortable(val windowBits: Int) : CompressionMethod {
 		//println("uncompress[5]")
 	}
 
-	fun BitReader.read(tree: HuffmanTree): Int = tree.read(this)
+	private fun BitReader.read(tree: HuffmanTree): Int = tree.read(this)
+
+	internal class SlidingWindowWithOutput(val sliding: SlidingWindow, val out: AsyncOutputStream) {
+		// @TODO: Optimize with buffering and copying
+		val bab = ByteArrayBuilder(8 * 1024)
+
+		val output get() = bab.size
+		val mustFlush get() = bab.size >= 4 * 1024
+
+		fun getPutCopyOut(distance: Int, length: Int) {
+			//print("LZ: distance=$distance, length=$length   :: ")
+			for (n in 0 until length) {
+				val v = sliding.getPut(distance)
+				bab.append(v.toByte())
+				//print("$v,")
+			}
+			//println()
+		}
+
+		fun putOut(bytes: ByteArray, offset: Int, len: Int) {
+			//print("BYTES: $len ::")
+			bab.append(bytes, offset, len)
+			sliding.putBytes(bytes, offset, len)
+			//for (n in 0 until len) print("${bytes[offset + n].toUnsigned()},")
+			//println()
+		}
+
+		fun putOut(byte: Byte) {
+			//println("BYTE: $byte")
+			bab.append(byte)
+			sliding.put(byte.unsigned)
+		}
+
+		suspend fun flush(finish: Boolean = false) {
+			if (finish || mustFlush) {
+				//print("FLUSH[$finish][${bab.size}]")
+				//for (n in 0 until bab.size) print("${bab.data[n]},")
+				//println()
+				out.write(bab.data, 0, bab.size)
+				bab.clear()
+			}
+		}
+
+		suspend inline fun flushIfRequired(finish: Boolean = false) {
+			if (finish || mustFlush) flush(finish)
+		}
+	}
 
 	companion object : DeflatePortable(15) {
 		private val FIXED_TREE: HuffmanTree = HuffmanTree().fromLengths(IntArray(288).apply {
@@ -149,51 +195,5 @@ open class DeflatePortable(val windowBits: Int) : CompressionMethod {
 		)
 
 		private val HCLENPOS = intArrayOf(16, 17, 18, 0, 8, 7, 9, 6, 10, 5, 11, 4, 12, 3, 13, 2, 14, 1, 15)
-	}
-}
-
-class SlidingWindowWithOutput(val sliding: SlidingWindow, val out: AsyncOutputStream) {
-	// @TODO: Optimize with buffering and copying
-	val bab = ByteArrayBuilder(8 * 1024)
-
-	val output get() = bab.size
-	val mustFlush get() = bab.size >= 4 * 1024
-
-	fun getPutCopyOut(distance: Int, length: Int) {
-		//print("LZ: distance=$distance, length=$length   :: ")
-		for (n in 0 until length) {
-			val v = sliding.getPut(distance)
-			bab.append(v.toByte())
-			//print("$v,")
-		}
-		//println()
-	}
-
-	fun putOut(bytes: ByteArray, offset: Int, len: Int) {
-		//print("BYTES: $len ::")
-		bab.append(bytes, offset, len)
-		sliding.putBytes(bytes, offset, len)
-		//for (n in 0 until len) print("${bytes[offset + n].toUnsigned()},")
-		//println()
-	}
-
-	fun putOut(byte: Byte) {
-		//println("BYTE: $byte")
-		bab.append(byte)
-		sliding.put(byte.unsigned)
-	}
-
-	suspend fun flush(finish: Boolean = false) {
-		if (finish || mustFlush) {
-			//print("FLUSH[$finish][${bab.size}]")
-			//for (n in 0 until bab.size) print("${bab.data[n]},")
-			//println()
-			out.write(bab.data, 0, bab.size)
-			bab.clear()
-		}
-	}
-
-	suspend inline fun flushIfRequired(finish: Boolean = false) {
-		if (finish || mustFlush) flush(finish)
 	}
 }

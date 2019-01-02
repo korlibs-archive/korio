@@ -2,7 +2,7 @@ package com.soywiz.korio.compression.util
 
 import com.soywiz.kmem.*
 
-class SlidingWindow(val nbits: Int) {
+internal class SlidingWindow(val nbits: Int) {
 	val data = ByteArray(1 shl nbits)
 	val mask = data.size - 1
 	var pos = 0

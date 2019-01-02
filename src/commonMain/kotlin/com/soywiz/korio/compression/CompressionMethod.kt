@@ -28,7 +28,7 @@ suspend fun CompressionMethod.uncompress(i: AsyncInputStreamWithLength, o: Async
 suspend fun CompressionMethod.compress(i: AsyncInputStreamWithLength, o: AsyncOutputStream, context: CompressionContext = CompressionContext()): Unit = compress(BitReader(i), o, context)
 
 suspend fun CompressionMethod.uncompressStream(input: AsyncInputStreamWithLength): AsyncInputStream = asyncStreamWriter { output -> uncompress(input, output) }
-suspend fun CompressionMethod.compressStream(input: AsyncInputStreamWithLength): AsyncInputStream = asyncStreamWriter { output -> compress(input, output) }
+suspend fun CompressionMethod.compressStream(input: AsyncInputStreamWithLength, context: CompressionContext = CompressionContext()): AsyncInputStream = asyncStreamWriter { output -> compress(input, output, context) }
 
 fun CompressionMethod.uncompress(i: SyncInputStream, o: SyncOutputStream) {
 	runBlockingNoSuspensions {
@@ -46,3 +46,5 @@ fun ByteArray.uncompress(method: CompressionMethod): ByteArray = MemorySyncStrea
 fun ByteArray.compress(method: CompressionMethod, context: CompressionContext = CompressionContext()): ByteArray =
 	MemorySyncStreamToByteArray { method.compress(this@compress.openSync(), this, context) }
 
+suspend fun AsyncInputStreamWithLength.uncompressed(method: CompressionMethod): AsyncInputStream = method.uncompressStream(this)
+suspend fun AsyncInputStreamWithLength.compressed(method: CompressionMethod, context: CompressionContext = CompressionContext()): AsyncInputStream = method.compressStream(this, context)

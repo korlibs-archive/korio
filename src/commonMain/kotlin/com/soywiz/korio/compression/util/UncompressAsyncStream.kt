@@ -9,7 +9,7 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.math.*
 
-class CompressionAlgoAsyncStream internal constructor(
+internal class CompressionAlgoAsyncStream internal constructor(
 	val i: AsyncInputStreamWithLength,
 	val method: CompressionMethod,
 	val uncompressedSize: Long? = null,
@@ -43,7 +43,7 @@ class CompressionAlgoAsyncStream internal constructor(
 	}
 }
 
-suspend fun UncompressAsyncStream(
+internal suspend fun UncompressAsyncStream(
 	mode: CompressionMethod,
 	i: AsyncInputStreamWithLength,
 	uncompressedSize: Long? = null

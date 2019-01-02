@@ -3,7 +3,7 @@ package com.soywiz.korio.compression.util
 import com.soywiz.kmem.*
 import kotlin.math.*
 
-class ByteArrayDeque(val initialBits: Int = 10) : ByteReader, ByteWriter {
+internal class ByteArrayDeque(val initialBits: Int = 10) : ByteReader, ByteWriter {
 	private var ring = RingBuffer(initialBits)
 	private val tempBuffer = ByteArray(1024)
 
@@ -44,7 +44,7 @@ class ByteArrayDeque(val initialBits: Int = 10) : ByteReader, ByteWriter {
 	}
 }
 
-class RingBuffer(val bits: Int) : ByteReader, ByteWriter {
+internal class RingBuffer(val bits: Int) : ByteReader, ByteWriter {
 	val totalSize = 1 shl bits
 	private val mask = totalSize - 1
 	private val buffer = ByteArray(totalSize)

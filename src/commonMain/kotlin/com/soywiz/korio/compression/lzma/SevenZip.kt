@@ -4,247 +4,18 @@ import com.soywiz.kmem.*
 import com.soywiz.korio.*
 import com.soywiz.korio.file.std.*
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.checksum.*
 import kotlin.jvm.*
 import kotlin.math.*
 
 object SevenZip {
 
-	object LzmaAlone {
-		class CommandLine {
-
-			var Command = -1
-			var NumBenchmarkPasses = 10
-
-			var DictionarySize = 1 shl 23
-			var DictionarySizeIsDefined = false
-
-			var Lc = 3
-			var Lp = 0
-			var Pb = 2
-
-			var Fb = 128
-			var FbIsDefined = false
-
-			var Eos = false
-
-			var Algorithm = 2
-			var MatchFinder = 1
-
-			var InFile: String = ""
-			var OutFile: String = ""
-
-			fun String.parseInt() = this.toInt()
-
-			internal fun ParseSwitch(s: String): Boolean {
-				if (s.startsWith("d")) {
-					DictionarySize = 1 shl s.substring(1).parseInt()
-					DictionarySizeIsDefined = true
-				} else if (s.startsWith("fb")) {
-					Fb = s.substring(2).parseInt()
-					FbIsDefined = true
-				} else if (s.startsWith("a"))
-					Algorithm = s.substring(1).parseInt()
-				else if (s.startsWith("lc"))
-					Lc = s.substring(2).parseInt()
-				else if (s.startsWith("lp"))
-					Lp = s.substring(2).parseInt()
-				else if (s.startsWith("pb"))
-					Pb = s.substring(2).parseInt()
-				else if (s.startsWith("eos"))
-					Eos = true
-				else if (s.startsWith("mf")) {
-					val mfs = s.substring(2)
-					if (mfs == "bt2")
-						MatchFinder = 0
-					else if (mfs == "bt4")
-						MatchFinder = 1
-					else if (mfs == "bt4b")
-						MatchFinder = 2
-					else
-						return false
-				} else
-					return false
-				return true
-			}
-
-			fun Parse(args: Array<String>): Boolean {
-				var pos = 0
-				var switchMode = true
-				for (i in args.indices) {
-					val s = args[i]
-					if (s.length == 0)
-						return false
-					if (switchMode) {
-						if (s.compareTo("--") == 0) {
-							switchMode = false
-							continue
-						}
-						if (s[0] == '-') {
-							val sw = s.substring(1).toLowerCase()
-							if (sw.length == 0)
-								return false
-							try {
-								if (!ParseSwitch(sw))
-									return false
-							} catch (e: NumberFormatException) {
-								return false
-							}
-
-							continue
-						}
-					}
-					if (pos == 0) {
-						if (s.equals("e", ignoreCase = true))
-							Command = kEncode
-						else if (s.equals("d", ignoreCase = true))
-							Command = kDecode
-						else if (s.equals("b", ignoreCase = true))
-							Command =
-									kBenchmak
-						else
-							return false
-					} else if (pos == 1) {
-						if (Command == kBenchmak) {
-							try {
-								NumBenchmarkPasses = s.parseInt()
-								if (NumBenchmarkPasses < 1)
-									return false
-							} catch (e: NumberFormatException) {
-								return false
-							}
-
-						} else
-							InFile = s
-					} else if (pos == 2)
-						OutFile = s
-					else
-						return false
-					pos++
-					continue
-				}
-				return true
-			}
-
-			companion object {
-				val kEncode = 0
-				val kDecode = 1
-				val kBenchmak = 2
-			}
-		}
-
-
-		internal fun PrintHelp() {
-			println(
-				"\nUsage:  LZMA <e|d> [<switches>...] inputFile outputFile\n" +
-						"  e: encode file\n" +
-						"  d: decode file\n" +
-						"  b: Benchmark\n" +
-						"<Switches>\n" +
-						// "  -a{N}:  set compression mode - [0, 1], default: 1 (max)\n" +
-						"  -d{N}:  set dictionary - [0,28], default: 23 (8MB)\n" +
-						"  -fb{N}: set number of fast bytes - [5, 273], default: 128\n" +
-						"  -lc{N}: set number of literal context bits - [0, 8], default: 3\n" +
-						"  -lp{N}: set number of literal pos bits - [0, 4], default: 0\n" +
-						"  -pb{N}: set number of pos bits - [0, 4], default: 2\n" +
-						"  -mf{MF_ID}: set Match Finder: [bt2, bt4], default: bt4\n" +
-						"  -eos:   write End Of Stream marker\n"
-			)
-		}
-
-		@JvmStatic
-		fun main(args: Array<String>): Unit = Korio {
-			println("\nLZMA (Kotlin) 4.61  2008-11-23\n")
-
-			if (args.size < 1) {
-				PrintHelp()
-				return@Korio
-			}
-
-			val params = CommandLine()
-			if (!params.Parse(args)) {
-				println("\nIncorrect command")
-				return@Korio
-			}
-
-			when {
-				params.Command == CommandLine.kBenchmak -> {
-					var dictionary = 1 shl 21
-					if (params.DictionarySizeIsDefined) dictionary = params.DictionarySize
-					if (params.MatchFinder > 1) throw Exception("Unsupported match finder")
-					TODO()
-					//com.soywiz.korio.compression.lzma.SevenZip.LzmaBench.LzmaBenchmark(params.NumBenchmarkPasses, dictionary)
-				}
-				params.Command == CommandLine.kEncode || params.Command == CommandLine.kDecode -> {
-					val inFile = params.InFile.uniVfs.readAll()
-
-					val ba = ByteArrayBuilder()
-
-					val inStream = inFile.openSync()
-					val outStream = MemorySyncStream(ba)
-
-					var eos = false
-					if (params.Eos)
-						eos = true
-					if (params.Command == CommandLine.kEncode) {
-						val encoder = LzmaEncoder()
-						if (!encoder.SetAlgorithm(params.Algorithm)) throw Exception("Incorrect compression mode")
-						if (!encoder.SetDictionarySize(params.DictionarySize))
-							throw Exception("Incorrect dictionary size")
-						if (!encoder.SetNumFastBytes(params.Fb)) throw Exception("Incorrect -fb value")
-						if (!encoder.SetMatchFinder(params.MatchFinder)) throw Exception("Incorrect -mf value")
-						if (!encoder.SetLcLpPb(
-								params.Lc,
-								params.Lp,
-								params.Pb
-							)
-						) throw Exception("Incorrect -lc or -lp or -pb value")
-						encoder.SetEndMarkerMode(eos)
-						encoder.WriteCoderProperties(outStream)
-						val fileSize: Long = if (eos) -1 else inFile.size.toLong()
-						for (i in 0..7)
-							outStream.write8(fileSize.ushr(8 * i).toInt() and 0xFF)
-						encoder.Code(inStream, outStream, -1, -1, null)
-					} else {
-						val propertiesSize = 5
-						val properties = ByteArray(propertiesSize)
-						if (inStream.read(properties, 0, propertiesSize) != propertiesSize)
-							throw Exception("input .lzma file is too short")
-						val decoder = LzmaDecoder()
-						if (!decoder.SetDecoderProperties(properties))
-							throw Exception("Incorrect stream properties")
-						var outSize: Long = 0
-						for (i in 0..7) {
-							val v = inStream.read()
-							if (v < 0) throw Exception("Can't read stream size")
-							outSize = outSize or (v.toLong() shl 8 * i)
-						}
-						if (!decoder.Code(inStream, outStream, outSize))
-							throw Exception("Error in data stream")
-					}
-
-					params.OutFile.uniVfs.writeBytes(ba.toByteArray())
-
-					outStream.flush()
-					outStream.close()
-					inStream.close()
-				}
-				else -> throw Exception("Incorrect command")
-			}
-			return@Korio
-		}
-	}
-
 	interface ICodeProgress {
 		fun SetProgress(inSize: Long, outSize: Long)
 	}
 
-
 	class BitTreeEncoder(internal var NumBitLevels: Int) {
-		internal var Models: ShortArray
-
-		init {
-			Models = ShortArray(1 shl NumBitLevels)
-		}
+		internal val Models: ShortArray = ShortArray(1 shl NumBitLevels)
 
 		fun Init() {
 			RangeDecoder.InitBitModels(Models)
@@ -342,11 +113,7 @@ object SevenZip {
 	}
 
 	class BitTreeDecoder(internal var NumBitLevels: Int) {
-		internal var Models: ShortArray
-
-		init {
-			Models = ShortArray(1 shl NumBitLevels)
-		}
+		internal val Models: ShortArray = ShortArray(1 shl NumBitLevels)
 
 		fun Init() {
 			RangeDecoder.InitBitModels(Models)
@@ -454,11 +221,11 @@ object SevenZip {
 		}
 
 		companion object {
-			internal val kTopMask = ((1 shl 24) - 1).inv()
+			internal const val kTopMask = ((1 shl 24) - 1).inv()
 
-			internal val kNumBitModelTotalBits = 11
-			internal val kBitModelTotal = 1 shl kNumBitModelTotalBits
-			internal val kNumMoveBits = 5
+			internal const val kNumBitModelTotalBits = 11
+			internal const val kBitModelTotal = 1 shl kNumBitModelTotalBits
+			internal const val kNumMoveBits = 5
 
 			fun InitBitModels(probs: ShortArray) {
 				for (i in probs.indices)
@@ -555,15 +322,13 @@ object SevenZip {
 		}
 
 		companion object {
-			internal val kTopMask = ((1 shl 24) - 1).inv()
+			internal const val kTopMask = ((1 shl 24) - 1).inv()
 
-			internal val kNumBitModelTotalBits = 11
-			internal val kBitModelTotal = 1 shl kNumBitModelTotalBits
-			internal val kNumMoveBits = 5
-
-
-			internal val kNumMoveReducingBits = 2
-			val kNumBitPriceShiftBits = 6
+			internal const val kNumBitModelTotalBits = 11
+			internal const val kBitModelTotal = 1 shl kNumBitModelTotalBits
+			internal const val kNumMoveBits = 5
+			internal const val kNumMoveReducingBits = 2
+			const val kNumBitPriceShiftBits = 6
 
 			fun InitBitModels(probs: ShortArray) {
 				for (i in probs.indices)
@@ -607,416 +372,45 @@ object SevenZip {
 		}
 	}
 
-
-/*
-object LzmaBench {
-	internal val kAdditionalSize = 1 shl 21
-	internal val kCompressedAdditionalSize = 1 shl 10
-	internal val kSubBits = 8
-
-	internal class CRandomGenerator {
-		var A1: Int = 0
-		var A2: Int = 0
-
-		init {
-			Init()
-		}
-
-		fun Init() {
-			A1 = 362436069
-			A2 = 521288629
-		}
-
-		fun GetRnd(): Int {
-			A1 = 36969 * (A1 and 0xffff) + A1.ushr(16)
-			A2 = 18000 * (A2 and 0xffff) + A2.ushr(16)
-			return ((A1) shl 16) xor (A2)
-		}
-	}
-
-	internal class CBitRandomGenerator {
-		var RG = CRandomGenerator()
-		var Value: Int = 0
-		var NumBits: Int = 0
-		fun Init() {
-			Value = 0
-			NumBits = 0
-		}
-
-		fun GetRnd(numBits: Int): Int {
-			var numBits = numBits
-			var result: Int
-			if (NumBits > numBits) {
-				result = Value and (1 shl numBits) - 1
-				Value = Value ushr numBits
-				NumBits -= numBits
-				return result
-			}
-			numBits -= NumBits
-			result = Value shl numBits
-			Value = RG.GetRnd()
-			result = result or (Value and (1 shl numBits) - 1)
-			Value = Value ushr numBits
-			NumBits = 32 - numBits
-			return result
-		}
-	}
-
-	internal class CBenchRandomGenerator {
-		var RG = CBitRandomGenerator()
-		var Pos: Int = 0
-		var Rep0: Int = 0
-
-		var BufferSize: Int = 0
-		var Buffer: ByteArray? = null
-		fun Set(bufferSize: Int) {
-			Buffer = ByteArray(bufferSize)
-			Pos = 0
-			BufferSize = bufferSize
-		}
-
-		fun GetRndBit(): Int {
-			return RG.GetRnd(1)
-		}
-
-		fun GetLogRandBits(numBits: Int): Int {
-			val len = RG.GetRnd(numBits)
-			return RG.GetRnd(len)
-		}
-
-		fun GetOffset(): Int {
-			return if (GetRndBit() == 0) GetLogRandBits(4) else GetLogRandBits(4) shl 10 or RG.GetRnd(10)
-		}
-
-		fun GetLen1(): Int {
-			return RG.GetRnd(1 + RG.GetRnd(2))
-		}
-
-		fun GetLen2(): Int {
-			return RG.GetRnd(2 + RG.GetRnd(2))
-		}
-
-		fun Generate() {
-			RG.Init()
-			Rep0 = 1
-			while (Pos < BufferSize) {
-				if (GetRndBit() == 0 || Pos < 1)
-					Buffer!![Pos++] = RG.GetRnd(8).toByte()
-				else {
-					val len: Int
-					if (RG.GetRnd(3) == 0)
-						len = 1 + GetLen1()
-					else {
-						do
-							Rep0 = GetOffset()
-						while (Rep0 >= Pos)
-						Rep0++
-						len = 2 + GetLen2()
-					}
-					var i = 0
-					while (i < len && Pos < BufferSize) {
-						Buffer!![Pos] = Buffer!![Pos - Rep0]
-						i++
-						Pos++
-					}
-				}
-			}
-		}
-	}
-
-	internal class CrcOutStream : SyncOutputStream() {
-		var CRC = CRC()
-
-		fun Init() {
-			CRC.Init()
-		}
-
-		fun GetDigest(): Int {
-			return CRC.GetDigest()
-		}
-
-		override fun write(b: ByteArray) {
-			CRC.Update(b)
-		}
-
-		override fun write(b: ByteArray, off: Int, len: Int) {
-			CRC.Update(b, off, len)
-		}
-
-		override fun write(b: Int) {
-			CRC.UpdateByte(b)
-		}
-	}
-
-	internal class MyOutputStream(var _buffer: ByteArray) : SyncOutputStream() {
-		var _size: Int = 0
-		var _pos: Int = 0
-
-		init {
-			_size = _buffer.size
-		}
-
-		fun reset() {
-			_pos = 0
-		}
-
-		override fun write(b: Int) {
-			if (_pos >= _size)
-				throw IOException("Error")
-			_buffer[_pos++] = b.toByte()
-		}
-
-		fun size(): Int {
-			return _pos
-		}
-	}
-
-	internal class MyInputStream(var _buffer: ByteArray, var _size: Int) : SyncInputStream() {
-		var _pos: Int = 0
-
-		override fun reset() {
-			_pos = 0
-		}
-
-		override fun read(): Int {
-			return if (_pos >= _size) -1 else _buffer[_pos++] and 0xFF
-		}
-	}
-
-	internal class CProgressInfo : ICodeProgress {
-		var ApprovedStart: Long = 0
-		var InSize: Long = 0
-		var Time: Long = 0
-		fun Init() {
-			InSize = 0
-		}
-
-		override fun SetProgress(inSize: Long, outSize: Long) {
-			if (inSize >= ApprovedStart && InSize == 0L) {
-				Time = Klock.currentTimeMillis()
-				InSize = inSize
-			}
-		}
-	}
-
-	internal fun GetLogSize(size: Int): Int {
-		for (i in kSubBits..31)
-			for (j in 0 until (1 shl kSubBits))
-				if (size <= (1 shl i) + (j shl i - kSubBits))
-					return (i shl kSubBits) + j
-		return 32 shl kSubBits
-	}
-
-	internal fun MyMultDiv64(value: Long, elapsedTime: Long): Long {
-		var freq: Long = 1000 // ms
-		var elTime = elapsedTime
-		while (freq > 1000000) {
-			freq = freq ushr 1
-			elTime = elTime ushr 1
-		}
-		if (elTime == 0L)
-			elTime = 1
-		return value * freq / elTime
-	}
-
-	internal fun GetCompressRating(dictionarySize: Int, elapsedTime: Long, size: Long): Long {
-		val t = (GetLogSize(dictionarySize) - (18 shl kSubBits)).toLong()
-		val numCommandsForOne = 1060 + (t * t * 10 shr 2 * kSubBits)
-		val numCommands = size * numCommandsForOne
-		return MyMultDiv64(numCommands, elapsedTime)
-	}
-
-	internal fun GetDecompressRating(elapsedTime: Long, outSize: Long, inSize: Long): Long {
-		val numCommands = inSize * 220 + outSize * 20
-		return MyMultDiv64(numCommands, elapsedTime)
-	}
-
-	internal fun GetTotalRating(
-		dictionarySize: Int,
-		elapsedTimeEn: Long, sizeEn: Long,
-		elapsedTimeDe: Long,
-		inSizeDe: Long, outSizeDe: Long
-	): Long {
-		return (GetCompressRating(dictionarySize, elapsedTimeEn, sizeEn) + GetDecompressRating(
-			elapsedTimeDe,
-			inSizeDe,
-			outSizeDe
-		)) / 2
-	}
-
-	internal fun PrintValue(v: Long) {
-		var s = ""
-		s += v
-		var i = 0
-		while (i + s.length < 6) {
-			print(" ")
-			i++
-		}
-		print(s)
-	}
-
-	internal fun PrintRating(rating: Long) {
-		PrintValue(rating / 1000000)
-		print(" MIPS")
-	}
-
-	internal fun PrintResults(
-		dictionarySize: Int,
-		elapsedTime: Long,
-		size: Long,
-		decompressMode: Boolean, secondSize: Long
-	) {
-		val speed = MyMultDiv64(size, elapsedTime)
-		PrintValue(speed / 1024)
-		print(" KB/s  ")
-		val rating: Long
-		if (decompressMode)
-			rating = GetDecompressRating(elapsedTime, size, secondSize)
-		else
-			rating = GetCompressRating(dictionarySize, elapsedTime, size)
-		PrintRating(rating)
-	}
-
-	fun LzmaBenchmark(numIterations: Int, dictionarySize: Int): Int {
-		if (numIterations <= 0)
-			return 0
-		if (dictionarySize < 1 shl 18) {
-			println("\nError: dictionary size for benchmark must be >= 18 (256 KB)")
-			return 1
-		}
-		print("\n       Compressing                Decompressing\n\n")
-
-		val encoder = com.soywiz.korio.compression.lzma.SevenZip.Compression.LZMA.Encoder()
-		val decoder = com.soywiz.korio.compression.lzma.SevenZip.Compression.LZMA.Decoder()
-
-		if (!encoder.SetDictionarySize(dictionarySize))
-			throw Exception("Incorrect dictionary size")
-
-		val kBufferSize = dictionarySize + kAdditionalSize
-		val kCompressedBufferSize = kBufferSize / 2 + kCompressedAdditionalSize
-
-		val propStream = ByteArrayOutputStream()
-		encoder.WriteCoderProperties(propStream)
-		val propArray = propStream.toByteArray()
-		decoder.SetDecoderProperties(propArray)
-
-		val rg = CBenchRandomGenerator()
-
-		rg.Set(kBufferSize)
-		rg.Generate()
-		val crc = CRC()
-		crc.Init()
-		crc.Update(rg.Buffer, 0, rg.BufferSize)
-
-		val progressInfo = CProgressInfo()
-		progressInfo.ApprovedStart = dictionarySize.toLong()
-
-		var totalBenchSize: Long = 0
-		var totalEncodeTime: Long = 0
-		var totalDecodeTime: Long = 0
-		var totalCompressedSize: Long = 0
-
-		val inStream = MyInputStream(rg.Buffer, rg.BufferSize)
-
-		val compressedBuffer = ByteArray(kCompressedBufferSize)
-		val compressedStream = MyOutputStream(compressedBuffer)
-		val crcOutStream = CrcOutStream()
-		var inputCompressedStream: MyInputStream? = null
-		var compressedSize = 0
-		for (i in 0 until numIterations) {
-			progressInfo.Init()
-			inStream.reset()
-			compressedStream.reset()
-			encoder.Code(inStream, compressedStream, -1, -1, progressInfo)
-			val encodeTime = Klock.currentTimeMillis() - progressInfo.Time
-
-			if (i == 0) {
-				compressedSize = compressedStream.size()
-				inputCompressedStream = MyInputStream(compressedBuffer, compressedSize)
-			} else if (compressedSize != compressedStream.size())
-				throw Exception("Encoding error")
-
-			if (progressInfo.InSize == 0L)
-				throw Exception("Internal ERROR 1282")
-
-			var decodeTime: Long = 0
-			for (j in 0..1) {
-				inputCompressedStream!!.reset()
-				crcOutStream.Init()
-
-				val outSize = kBufferSize.toLong()
-				val startTime = Klock.currentTimeMillis()
-				if (!decoder.Code(inputCompressedStream, crcOutStream, outSize))
-					throw Exception("Decoding Error")
-				decodeTime = Klock.currentTimeMillis() - startTime
-				if (crcOutStream.GetDigest() != crc.GetDigest())
-					throw Exception("CRC Error")
-			}
-			val benchSize = kBufferSize - progressInfo.InSize
-			PrintResults(dictionarySize, encodeTime, benchSize, false, 0)
-			print("     ")
-			PrintResults(dictionarySize, decodeTime, kBufferSize.toLong(), true, compressedSize.toLong())
-			println()
-
-			totalBenchSize += benchSize
-			totalEncodeTime += encodeTime
-			totalDecodeTime += decodeTime
-			totalCompressedSize += compressedSize.toLong()
-		}
-		println("---------------------------------------------------")
-		PrintResults(dictionarySize, totalEncodeTime, totalBenchSize, false, 0)
-		print("     ")
-		PrintResults(
-			dictionarySize, totalDecodeTime,
-			kBufferSize * numIterations.toLong(), true, totalCompressedSize
-		)
-		println("    Average")
-		return 0
-	}
-}
-*/
-
-
 	object LzmaBase {
-		val kNumRepDistances = 4
-		val kNumStates = 12
+		const val kNumRepDistances = 4
+		const val kNumStates = 12
 
-		val kNumPosSlotBits = 6
-		val kDicLogSizeMin = 0
+		const val kNumPosSlotBits = 6
+		const val kDicLogSizeMin = 0
 		// public static final int kDicLogSizeMax = 28;
 		// public static final int kDistTableSizeMax = kDicLogSizeMax * 2;
 
-		val kNumLenToPosStatesBits = 2 // it's for speed optimization
-		val kNumLenToPosStates = 1 shl kNumLenToPosStatesBits
+		const val kNumLenToPosStatesBits = 2 // it's for speed optimization
+		const val kNumLenToPosStates = 1 shl kNumLenToPosStatesBits
 
-		val kMatchMinLen = 2
+		const val kMatchMinLen = 2
 
-		val kNumAlignBits = 4
-		val kAlignTableSize = 1 shl kNumAlignBits
-		val kAlignMask = kAlignTableSize - 1
+		const val kNumAlignBits = 4
+		const val kAlignTableSize = 1 shl kNumAlignBits
+		const val kAlignMask = kAlignTableSize - 1
 
-		val kStartPosModelIndex = 4
-		val kEndPosModelIndex = 14
-		val kNumPosModels = kEndPosModelIndex - kStartPosModelIndex
+		const val kStartPosModelIndex = 4
+		const val kEndPosModelIndex = 14
+		const val kNumPosModels = kEndPosModelIndex - kStartPosModelIndex
 
-		val kNumFullDistances = 1 shl kEndPosModelIndex / 2
+		const val kNumFullDistances = 1 shl kEndPosModelIndex / 2
 
-		val kNumLitPosStatesBitsEncodingMax = 4
-		val kNumLitContextBitsMax = 8
+		const val kNumLitPosStatesBitsEncodingMax = 4
+		const val kNumLitContextBitsMax = 8
 
-		val kNumPosStatesBitsMax = 4
-		val kNumPosStatesMax = 1 shl kNumPosStatesBitsMax
-		val kNumPosStatesBitsEncodingMax = 4
-		val kNumPosStatesEncodingMax = 1 shl kNumPosStatesBitsEncodingMax
+		const val kNumPosStatesBitsMax = 4
+		const val kNumPosStatesMax = 1 shl kNumPosStatesBitsMax
+		const val kNumPosStatesBitsEncodingMax = 4
+		const val kNumPosStatesEncodingMax = 1 shl kNumPosStatesBitsEncodingMax
 
-		val kNumLowLenBits = 3
-		val kNumMidLenBits = 3
-		val kNumHighLenBits = 8
-		val kNumLowLenSymbols = 1 shl kNumLowLenBits
-		val kNumMidLenSymbols = 1 shl kNumMidLenBits
-		val kNumLenSymbols = kNumLowLenSymbols + kNumMidLenSymbols +
-				(1 shl kNumHighLenBits)
-		val kMatchMaxLen = kMatchMinLen + kNumLenSymbols - 1
+		const val kNumLowLenBits = 3
+		const val kNumMidLenBits = 3
+		const val kNumHighLenBits = 8
+		const val kNumLowLenSymbols = 1 shl kNumLowLenBits
+		const val kNumMidLenSymbols = 1 shl kNumMidLenBits
+		const val kNumLenSymbols = kNumLowLenSymbols + kNumMidLenSymbols + (1 shl kNumHighLenBits)
+		const val kMatchMaxLen = kMatchMinLen + kNumLenSymbols - 1
 
 		fun StateInit(): Int = 0
 
@@ -1213,34 +607,17 @@ object LzmaBench {
 		internal fun Init() {
 			m_OutWindow.Init(false)
 
-			RangeDecoder.InitBitModels(
-				m_IsMatchDecoders
-			)
-			RangeDecoder.InitBitModels(
-				m_IsRep0LongDecoders
-			)
-			RangeDecoder.InitBitModels(
-				m_IsRepDecoders
-			)
-			RangeDecoder.InitBitModels(
-				m_IsRepG0Decoders
-			)
-			RangeDecoder.InitBitModels(
-				m_IsRepG1Decoders
-			)
-			RangeDecoder.InitBitModels(
-				m_IsRepG2Decoders
-			)
-			RangeDecoder.InitBitModels(
-				m_PosDecoders
-			)
+			RangeDecoder.InitBitModels(m_IsMatchDecoders)
+			RangeDecoder.InitBitModels(m_IsRep0LongDecoders)
+			RangeDecoder.InitBitModels(m_IsRepDecoders)
+			RangeDecoder.InitBitModels(m_IsRepG0Decoders)
+			RangeDecoder.InitBitModels(m_IsRepG1Decoders)
+			RangeDecoder.InitBitModels(m_IsRepG2Decoders)
+			RangeDecoder.InitBitModels(m_PosDecoders)
 
 			m_LiteralDecoder.Init()
-			var i: Int
-			i = 0
-			while (i < LzmaBase.kNumLenToPosStates) {
+			for (i in 0 until LzmaBase.kNumLenToPosStates) {
 				m_PosSlotDecoder[i]!!.Init()
-				i++
 			}
 			m_LenDecoder.Init()
 			m_RepLenDecoder.Init()
@@ -2773,17 +2150,16 @@ object LzmaBench {
 				return if (pos < 1 shl 27) g_FastPos[pos shr 16] + 32 else g_FastPos[pos shr 26] + 52
 			}
 
-			internal val kDefaultDictionaryLogSize = 22
-			internal val kNumFastBytesDefault = 0x20
+			internal const val kDefaultDictionaryLogSize = 22
+			internal const val kNumFastBytesDefault = 0x20
 
-			val kNumLenSpecSymbols = LzmaBase.kNumLowLenSymbols + LzmaBase.kNumMidLenSymbols
+			const val kNumLenSpecSymbols = LzmaBase.kNumLowLenSymbols + LzmaBase.kNumMidLenSymbols
 
-			internal val kNumOpts = 1 shl 12
+			internal const val kNumOpts = 1 shl 12
 
 			val kPropSize = 5
 		}
 	}
-
 
 	class LzBinTree : LzInWindow() {
 		internal var _cyclicBufferPos: Int = 0
@@ -3109,22 +2485,15 @@ object LzmaBench {
 		}
 
 		companion object {
-			internal val kHash2Size = 1 shl 10
-			internal val kHash3Size = 1 shl 16
-			internal val kBT2HashSize = 1 shl 16
-			internal val kStartMaxLen = 1
-			internal val kHash3Offset =
-				kHash2Size
-			internal val kEmptyHashValue = 0
-			internal val kMaxValForNormalize = (1 shl 30) - 1
+			internal const val kHash2Size = 1 shl 10
+			internal const val kHash3Size = 1 shl 16
+			internal const val kBT2HashSize = 1 shl 16
+			internal const val kStartMaxLen = 1
+			internal const val kHash3Offset = kHash2Size
+			internal const val kEmptyHashValue = 0
+			internal const val kMaxValForNormalize = (1 shl 30) - 1
 
-			private val CrcTable = IntArray(256).apply {
-				for (i in 0..255) {
-					var r = i
-					for (j in 0..7) r = if (r and 1 != 0) r.ushr(1) xor -0x12477ce0 else r ushr 1
-					this[i] = r
-				}
-			}
+			private val CrcTable = CRC32.TABLE
 		}
 	}
 
