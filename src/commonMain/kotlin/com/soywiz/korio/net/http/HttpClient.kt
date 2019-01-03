@@ -330,10 +330,10 @@ interface HttpFactory {
 
 class ProxiedHttpFactory(var parent: HttpFactory) : HttpFactory by parent
 
-internal expect val httpFactory: HttpFactory
-
-val _defaultHttpFactory: ProxiedHttpFactory by lazy { ProxiedHttpFactory(httpFactory) }
+internal val _defaultHttpFactory: ProxiedHttpFactory by lazy { ProxiedHttpFactory(httpFactory) }
 val defaultHttpFactory: HttpFactory get() = _defaultHttpFactory
+
+internal expect val httpFactory: HttpFactory
 
 fun setDefaultHttpFactory(factory: HttpFactory) {
 	_defaultHttpFactory.parent = factory
