@@ -310,59 +310,34 @@ fun SyncInputStream.readBytes(len: Int): ByteArray {
 fun SyncOutputStream.writeBytes(data: ByteArray): Unit = write(data, 0, data.size)
 fun SyncOutputStream.writeBytes(data: ByteArray, position: Int, length: Int): Unit = write(data, position, length)
 
-val smallTemp by threadLocal { ByteArray(16) }
-
-fun SyncInputStream.read(): Int {
-	val count = read(smallTemp, 0, 1)
-	return if (count < 0) -1 else smallTemp[0].toInt() and 0xFF
-}
-
 val SyncStream.eof: Boolean get () = this.available <= 0L
-private fun SyncInputStream.readSmallTempExact(count: Int): ByteArray {
-	val t = smallTemp
-	readExact(t, 0, count)
-	return t
-}
 
-private fun SyncInputStream.readTempExact(count: Int): ByteArray {
-	val temp = BYTES_TEMP
-	return temp.apply { readExact(temp, 0, count) }
-}
+fun SyncInputStream.readU8(): Int = read()
+fun SyncInputStream.readS8(): Int = read().toByte().toInt()
 
-private fun SyncInputStream.readTemp(count: Int): ByteArray {
-	val temp = BYTES_TEMP
-	return temp.apply { read(temp, 0, count) }
-}
+fun SyncInputStream.readU16LE(): Int = (readU8()) or (readU8() shl 8)
+fun SyncInputStream.readU24LE(): Int = (readU8()) or (readU8() shl 8) or (readU8() shl 16)
+fun SyncInputStream.readU32LE(): Long = ((readU8()) or (readU8() shl 8) or (readU8() shl 16) or (readU8() shl 24)).toLong() and 0xFFFFFFFFL
 
-fun SyncInputStream.fastReadU8(): Int = this.read() and 0xFF
-fun SyncInputStream.fastReadS8(): Int = this.read().toByte().toInt()
+fun SyncInputStream.readS16LE(): Int = readU16LE().signExtend(16)
+fun SyncInputStream.readS24LE(): Int = readU24LE().signExtend(24)
+fun SyncInputStream.readS32LE(): Int = (readU8()) or (readU8() shl 8) or (readU8() shl 16) or (readU8() shl 24)
+fun SyncInputStream.readS64LE(): Long = readU32LE() or (readU32LE() shl 32)
 
-fun SyncInputStream.readU8(): Int = readSmallTempExact(1).readU8(0)
-fun SyncInputStream.readS8(): Int = readSmallTempExact(1).readS8(0)
+fun SyncInputStream.readF32LE(): Float = readS32LE().reinterpretAsFloat()
+fun SyncInputStream.readF64LE(): Double = readS64LE().reinterpretAsDouble()
 
-fun SyncInputStream.readU16LE(): Int = readSmallTempExact(2).readU16LE(0)
-fun SyncInputStream.readU24LE(): Int = readSmallTempExact(3).readU24LE(0)
-fun SyncInputStream.readU32LE(): Long = readSmallTempExact(4).readU32LE(0)
+fun SyncInputStream.readU16BE(): Int = (readU8() shl 8) or (readU8())
+fun SyncInputStream.readU24BE(): Int = (readU8() shl 16) or (readU8() shl 8) or (readU8())
+fun SyncInputStream.readU32BE(): Long = ((readU8() shl 24) or (readU8() shl 16) or (readU8() shl 8) or (readU8())).toLong() and 0xFFFFFFFFL
 
-fun SyncInputStream.readS16LE(): Int = readSmallTempExact(2).readS16LE(0)
-fun SyncInputStream.readS24LE(): Int = readSmallTempExact(3).readS24LE(0)
-fun SyncInputStream.readS32LE(): Int = readSmallTempExact(4).readS32LE(0)
-fun SyncInputStream.readS64LE(): Long = readSmallTempExact(8).readS64LE(0)
+fun SyncInputStream.readS16BE(): Int = readU16BE().signExtend(16)
+fun SyncInputStream.readS24BE(): Int = readU24BE().signExtend(24)
+fun SyncInputStream.readS32BE(): Int = (readU8() shl 24) or (readU8() shl 16) or (readU8() shl 8) or (readU8())
+fun SyncInputStream.readS64BE(): Long = (readU32BE() shl 32) or (readU32BE())
 
-fun SyncInputStream.readF32LE(): Float = readSmallTempExact(4).readF32LE(0)
-fun SyncInputStream.readF64LE(): Double = readSmallTempExact(8).readF64LE(0)
-
-fun SyncInputStream.readU16BE(): Int = readSmallTempExact(2).readU16BE(0)
-fun SyncInputStream.readU24BE(): Int = readSmallTempExact(3).readU24BE(0)
-fun SyncInputStream.readU32BE(): Long = readSmallTempExact(4).readU32BE(0)
-
-fun SyncInputStream.readS16BE(): Int = readSmallTempExact(2).readS16BE(0)
-fun SyncInputStream.readS24BE(): Int = readSmallTempExact(3).readS24BE(0)
-fun SyncInputStream.readS32BE(): Int = readSmallTempExact(4).readS32BE(0)
-fun SyncInputStream.readS64BE(): Long = readSmallTempExact(8).readS64BE(0)
-
-fun SyncInputStream.readF32BE(): Float = readSmallTempExact(4).readF32BE(0)
-fun SyncInputStream.readF64BE(): Double = readSmallTempExact(8).readF64BE(0)
+fun SyncInputStream.readF32BE(): Float = readS32BE().reinterpretAsFloat()
+fun SyncInputStream.readF64BE(): Double = readS64BE().reinterpretAsDouble()
 
 fun SyncStream.readAvailable(): ByteArray = readBytes(available.toInt())
 fun SyncStream.readAll(): ByteArray = readBytes(available.toInt())
@@ -387,23 +362,23 @@ fun SyncInputStream.readFloatArrayBE(count: Int): FloatArray = readBytesExact(co
 fun SyncInputStream.readDoubleArrayLE(count: Int): DoubleArray = readBytesExact(count * 8).readDoubleArrayLE(0, count)
 fun SyncInputStream.readDoubleArrayBE(count: Int): DoubleArray = readBytesExact(count * 8).readDoubleArrayBE(0, count)
 
-fun SyncOutputStream.write8(v: Int): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.write8(0, v) }, 0, 1)
+fun SyncOutputStream.write8(v: Int): Unit = write(v)
 
-fun SyncOutputStream.write16LE(v: Int): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.write16LE(0, v) }, 0, 2)
-fun SyncOutputStream.write24LE(v: Int): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.write24LE(0, v) }, 0, 3)
-fun SyncOutputStream.write32LE(v: Int): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.write32LE(0, v) }, 0, 4)
-fun SyncOutputStream.write32LE(v: Long): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.write32LE(0, v) }, 0, 4)
-fun SyncOutputStream.write64LE(v: Long): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.write64LE(0, v) }, 0, 8)
-fun SyncOutputStream.writeF32LE(v: Float): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.writeF32LE(0, v) }, 0, 4)
-fun SyncOutputStream.writeF64LE(v: Double): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.writeF64LE(0, v) }, 0, 8)
+fun SyncOutputStream.write16LE(v: Int): Unit = run { write8(v and 0xFF); write8((v ushr 8) and 0xFF) }
+fun SyncOutputStream.write24LE(v: Int): Unit = run { write8(v and 0xFF); write8((v ushr 8) and 0xFF); write8((v ushr 16) and 0xFF) }
+fun SyncOutputStream.write32LE(v: Int): Unit = run { write8(v and 0xFF); write8((v ushr 8) and 0xFF); write8((v ushr 16) and 0xFF); write8((v ushr 24) and 0xFF) }
+fun SyncOutputStream.write32LE(v: Long): Unit = write32LE(v.toInt())
+fun SyncOutputStream.write64LE(v: Long): Unit = run { write32LE(v.toInt()); write32LE((v ushr 32).toInt()) }
+fun SyncOutputStream.writeF32LE(v: Float): Unit = write32LE(v.reinterpretAsInt())
+fun SyncOutputStream.writeF64LE(v: Double): Unit = write64LE(v.reinterpretAsLong())
 
-fun SyncOutputStream.write16BE(v: Int): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.write16BE(0, v) }, 0, 2)
-fun SyncOutputStream.write24BE(v: Int): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.write24BE(0, v) }, 0, 3)
-fun SyncOutputStream.write32BE(v: Int): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.write32BE(0, v) }, 0, 4)
-fun SyncOutputStream.write32BE(v: Long): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.write32BE(0, v) }, 0, 4)
-fun SyncOutputStream.write64BE(v: Long): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.write64BE(0, v) }, 0, 8)
-fun SyncOutputStream.writeF32BE(v: Float): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.writeF32BE(0, v) }, 0, 4)
-fun SyncOutputStream.writeF64BE(v: Double): Unit = write(BYTES_TEMP.apply { BYTES_TEMP.writeF64BE(0, v) }, 0, 8)
+fun SyncOutputStream.write16BE(v: Int): Unit = run { write8((v ushr 8) and 0xFF); write8(v and 0xFF) }
+fun SyncOutputStream.write24BE(v: Int): Unit = run { write8((v ushr 16) and 0xFF); write8((v ushr 8) and 0xFF); write8(v and 0xFF) }
+fun SyncOutputStream.write32BE(v: Int): Unit = run { write8((v ushr 24) and 0xFF); write8((v ushr 16) and 0xFF); write8((v ushr 8) and 0xFF); write8(v and 0xFF) }
+fun SyncOutputStream.write32BE(v: Long): Unit = write32BE(v.toInt())
+fun SyncOutputStream.write64BE(v: Long): Unit = run { write32BE((v ushr 32).toInt()); write32BE(v.toInt()) }
+fun SyncOutputStream.writeF32BE(v: Float): Unit = write32BE(v.reinterpretAsInt())
+fun SyncOutputStream.writeF64BE(v: Double): Unit = write64BE(v.reinterpretAsLong())
 
 fun SyncStreamBase.toSyncStream(position: Long = 0L) = SyncStream(this, position)
 
