@@ -4,6 +4,8 @@ import com.soywiz.korio.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
 
+expect val File_separatorChar: Char
+
 // @TODO: inline classes. Once done PathInfoExt won't be required to do clean allocation-free stuff.
 inline class PathInfo(val fullPath: String)
 
@@ -208,5 +210,5 @@ fun PathInfo.normalizeAbsolute(): PathInfo {
 	val path = this.fullPath
 	//val res = path.replace('/', File.separatorChar).trim(File.separatorChar)
 	//return if (OS.isUnix) "/$res" else res
-	return PathInfo(path.replace('/', KorioNative.File_separatorChar))
+	return PathInfo(path.replace('/', File_separatorChar))
 }

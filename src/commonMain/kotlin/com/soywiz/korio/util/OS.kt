@@ -1,12 +1,10 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.*
-
 object OS {
-	val rawName = KorioNative.rawOsName
+	val rawName = PlatformInfo.rawOsName
 	val rawNameLC = rawName.toLowerCase()
 
-	val platformName = KorioNative.platformName
+	val platformName = PlatformInfo.platformName
 	val platformNameLC = platformName.toLowerCase()
 
 	val isWindows = rawNameLC.contains("win")

@@ -80,28 +80,6 @@ actual object KorioNative {
 		}
 	}
 
-	actual val platformName: String
-		get() = when {
-			isWeb -> "web.js"
-			isNodeJs -> "node.js"
-			isWorker -> "worker.js"
-			isShell -> "shell.js"
-			else -> "js"
-		}
-
-	actual val rawOsName: String = when {
-		isNodeJs -> process.platform
-		else -> navigator.platform
-	}
-
-	actual fun getRandomValues(data: ByteArray): Unit {
-		if (isNodeJs) {
-			require("crypto").randomFillSync(Uint8Array(data.unsafeCast<Array<Byte>>()))
-		} else {
-			global.asDynamic().crypto.getRandomValues(data)
-		}
-	}
-
 	private val absoluteCwd: String = if (isNodeJs) require("path").resolve(".") else "."
 
 	actual fun rootLocalVfs(): VfsFile = localVfs(absoluteCwd)
@@ -128,8 +106,6 @@ actual object KorioNative {
 			else -> "/tmp"
 		}
 	}
-
-	actual val File_separatorChar: Char = '/'
 
 	actual val websockets: WebSocketClientFactory by lazy { JsWebSocketClientFactory() }
 

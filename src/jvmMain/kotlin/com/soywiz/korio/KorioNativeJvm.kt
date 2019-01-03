@@ -26,14 +26,7 @@ actual object KorioNative {
 
 	actual val systemLanguageStrings get() = listOf(Locale.getDefault().isO3Language)
 
-	actual val platformName: String = "jvm"
-	actual val rawOsName: String by lazy { System.getProperty("os.name") }
-
 	private val secureRandom: SecureRandom by lazy { SecureRandom.getInstanceStrong() }
-
-	actual fun getRandomValues(data: ByteArray): Unit {
-		secureRandom.nextBytes(data)
-	}
 
 	actual val httpFactory: HttpFactory by lazy {
 		object : HttpFactory {
@@ -49,7 +42,6 @@ actual object KorioNative {
 	actual fun Thread_sleep(time: Long) = Thread.sleep(time)
 
 	actual val websockets: WebSocketClientFactory get() = com.soywiz.korio.net.ws.RawSocketWebSocketClientFactory
-	actual val File_separatorChar: Char by lazy { File.separatorChar }
 
 	private val absoluteCwd = File(".").absolutePath
 

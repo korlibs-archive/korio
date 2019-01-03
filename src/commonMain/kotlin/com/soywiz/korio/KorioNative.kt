@@ -23,17 +23,11 @@ expect object KorioNative {
 	fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit)
 
 	val currentThreadId: Long
-	val platformName: String
-	val rawOsName: String
 	val ResourcesVfs: VfsFile
 
 	val websockets: WebSocketClientFactory
 
 	val systemLanguageStrings: List<String>
-
-	fun getRandomValues(data: ByteArray): Unit
-
-	val File_separatorChar: Char
 
 	fun rootLocalVfs(): VfsFile
 	fun applicationVfs(): VfsFile

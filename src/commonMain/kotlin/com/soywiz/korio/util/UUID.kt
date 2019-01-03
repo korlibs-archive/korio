@@ -3,6 +3,7 @@ package com.soywiz.korio.util
 import com.soywiz.kmem.*
 import com.soywiz.korio.*
 import com.soywiz.korio.lang.*
+import kotlin.random.*
 
 @Suppress("EXPERIMENTAL_API_USAGE")
 class UUID(val data: UByteArrayInt) {
@@ -16,8 +17,9 @@ class UUID(val data: UByteArrayInt) {
 			return data
 		}
 
-		fun randomUUID(): UUID = UUID(fix(UByteArrayInt(16).apply {
-			KorioNative.getRandomValues(this.asByteArray())
+		// @TODO: Use SecureRandom from Krypto
+		fun randomUUID(random: Random = Random): UUID = UUID(fix(UByteArrayInt(16).apply {
+			random.nextBytes(this.asByteArray())
 		}, version = 4, variant = 1))
 
 		operator fun invoke(str: String): UUID {

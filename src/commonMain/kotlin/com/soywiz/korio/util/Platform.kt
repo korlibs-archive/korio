@@ -14,3 +14,8 @@ inline val Platform.Companion.CURRENT get() = Platform_current
 inline val Platform.Companion.isJvm get() = Platform_current == Platform.JVM
 inline val Platform.Companion.isJs get() = Platform_current == Platform.JS
 inline val Platform.Companion.isNative get() = Platform_current == Platform.NATIVE
+
+expect object PlatformInfo {
+	val platformName: String
+	val rawOsName: String
+}

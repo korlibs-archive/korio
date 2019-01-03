@@ -30,15 +30,6 @@ actual open class FileNotFoundException actual constructor(msg: String) : IOExce
 actual object KorioNative {
 	actual val currentThreadId: Long get() = -1L // @TODO
 
-	actual val platformName: String get() = "native"
-	actual val rawOsName: String = com.soywiz.korio.TARGET_INFO
-
-	actual fun getRandomValues(data: ByteArray): Unit {
-		for (n in 0 until data.size) {
-			data[n] = platform.posix.rand().toByte()
-		}
-	}
-
 	// @TODO: kotlin-native by lazy/atomicLazy
 	//val tmpdir: String by atomicLazy { getenv("TMPDIR") ?: getenv("TEMP") ?: getenv("TMP") ?: "/tmp" }
 	//
@@ -63,8 +54,6 @@ actual object KorioNative {
 	actual fun tempVfs(): VfsFile = localVfs(tmpdir)
 	actual fun localVfs(path: String): VfsFile = LocalVfsNative()[path]
 	actual val ResourcesVfs: VfsFile get() = applicationDataVfs().jail()
-
-	actual val File_separatorChar: Char get() = '/'
 
 	actual val websockets: WebSocketClientFactory get() = com.soywiz.korio.net.ws.RawSocketWebSocketClientFactory
 	actual val systemLanguageStrings: List<String> get() = listOf("english")
