@@ -1,5 +1,6 @@
 package com.soywiz.korio.compression.util
 
+import com.soywiz.kds.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
@@ -29,7 +30,7 @@ open class BitReader(val s: AsyncInputStreamWithLength) : AsyncInputStreamWithLe
 	}
 
 	fun returnToBuffer(data: ByteArray, offset: Int, size: Int) {
-		sbuffers.writeBytes(data, offset, size)
+		sbuffers.write(data, offset, size)
 	}
 
 	private val tempBA = ByteArray(BIG_CHUNK_SIZE)
@@ -37,7 +38,7 @@ open class BitReader(val s: AsyncInputStreamWithLength) : AsyncInputStreamWithLe
 		while (sbuffers.availableRead < expectedBytes) {
 			val read = s.read(tempBA, 0, min(tempBA.size, expectedBytes))
 			if (read <= 0) break // No more data
-			sbuffers.writeBytes(tempBA, 0, read)
+			sbuffers.write(tempBA, 0, read)
 		}
 		return this
 	}
@@ -71,8 +72,8 @@ open class BitReader(val s: AsyncInputStreamWithLength) : AsyncInputStreamWithLe
 
 	private val temp = ByteArray(4)
 	suspend fun abytes(count: Int, out: ByteArray = ByteArray(count)) = prepareBytesUpTo(count).sbytes(count, out)
-	override suspend fun read(out: ByteArray, offset: Int, size: Int): Int {
-		return prepareBytesUpTo(size).sbuffers.readBytes(out, offset, size)
+	override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+		return prepareBytesUpTo(len).sbuffers.read(buffer, offset, len)
 	}
 
 	override suspend fun close() {
@@ -93,7 +94,7 @@ open class BitReader(val s: AsyncInputStreamWithLength) : AsyncInputStreamWithLe
 	suspend fun copyTo(o: AsyncOutputStream) {
 		while (true) {
 			prepareBigChunkIfRequired()
-			val read = sbuffers.readBytes(tempBA, 0, tempBA.size)
+			val read = sbuffers.read(tempBA, 0, tempBA.size)
 			if (read <= 0) break
 			o.writeBytes(tempBA, 0, read)
 		}

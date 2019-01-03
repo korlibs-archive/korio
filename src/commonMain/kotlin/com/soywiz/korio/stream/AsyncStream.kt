@@ -89,7 +89,7 @@ interface AsyncRAInputStream {
 }
 
 interface AsyncRAOutputStream {
-	suspend fun write(position: Long, buffer: ByteArray, offset: Int, len: Int): Unit
+	suspend fun write(position: Long, buffer: ByteArray, offset: Int, len: Int)
 }
 
 fun AsyncBaseStream.toAsyncStream(): AsyncStream {
@@ -795,45 +795,6 @@ class MemoryAsyncStreamBase(var data: com.soywiz.kmem.ByteArrayBuilder) : AsyncS
 	override fun toString(): String = "MemoryAsyncStreamBase(${data.size})"
 }
 
-// @TODO: Optimize to not clone ByteArray. Use a ByteArrayDeque?
-/*
-suspend fun asyncStreamWriter(process: suspend (out: AsyncOutputStream) -> Unit): AsyncInputStream {
-	val channel = Channel<ByteArray>()
-
-	launchImmediately(coroutineContext) {
-		try {
-			process(object : AsyncOutputStream {
-				override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
-					if (len > 0) {
-						channel.send(buffer.copyOfRange(offset, offset + len))
-					}
-				}
-
-				override suspend fun close() {
-					channel.send(ByteArray(0))
-				}
-			})
-		} finally {
-			channel.send(ByteArray(0))
-		}
-	}
-
-	return object : AsyncInputStream {
-		override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-			if (len <= 0) return len
-			val data = channel.receive()
-			if (data.isEmpty()) return -1
-			val copied = min(len, data.size)
-			arraycopy(data, 0, buffer, offset, copied)
-			return copied
-		}
-
-		override suspend fun close() {
-		}
-	}
-}
-*/
-
 suspend fun asyncStreamWriter(bufferSize: Int = 1024, process: suspend (out: AsyncOutputStream) -> Unit): AsyncInputStream {
 	val notifyRead = Channel<Unit>(Channel.CONFLATED)
 	val notifyWrite = Channel<Unit>(Channel.CONFLATED)
@@ -848,7 +809,7 @@ suspend fun asyncStreamWriter(bufferSize: Int = 1024, process: suspend (out: Asy
 					while (temp.availableRead > bufferSize) {
 						notifyRead.receive()
 					}
-					temp.writeBytes(buffer, offset, len)
+					temp.write(buffer, offset, len)
 					notifyWrite.send(Unit)
 				}
 
@@ -869,7 +830,7 @@ suspend fun asyncStreamWriter(bufferSize: Int = 1024, process: suspend (out: Asy
 			notifyRead.send(Unit)
 			while (!completed && temp.availableRead == 0) notifyWrite.receive()
 			if (completed && temp.availableRead == 0) return -1
-			return temp.readBytes(buffer, offset, len)
+			return temp.read(buffer, offset, len)
 		}
 
 		override suspend fun close() {
