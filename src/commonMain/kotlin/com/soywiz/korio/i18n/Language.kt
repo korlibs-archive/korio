@@ -21,11 +21,7 @@ enum class Language(val iso6391: String, val iso6392: String) {
 	;
 
 	companion object {
-		val BY_ID = (
-				(values().map { it.name.toLowerCase() to it } +
-						values().map { it.iso6391 to it } +
-						values().map { it.iso6392 to it })
-				).toMap()
+		val BY_ID = ((values().map { it.name.toLowerCase() to it } + values().map { it.iso6391 to it } + values().map { it.iso6392 to it })).toMap()
 
 
 		operator fun get(id: String): Language? = BY_ID[id]

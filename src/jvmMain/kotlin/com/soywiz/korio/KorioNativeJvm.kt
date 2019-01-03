@@ -25,8 +25,6 @@ val currentThreadId: Long get() = KorioNative.currentThreadId
 actual object KorioNative {
 	actual val currentThreadId: Long get() = Thread.currentThread().id
 
-	actual fun getClassSimpleName(clazz: KClass<*>): String = clazz.java.simpleName
-
 	internal val workerContext by lazy { newSingleThreadContext("worker") }
 
 	actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit) =

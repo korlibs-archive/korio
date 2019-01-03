@@ -29,7 +29,6 @@ actual open class FileNotFoundException actual constructor(msg: String) : IOExce
 
 actual object KorioNative {
 	actual val currentThreadId: Long get() = -1L // @TODO
-	actual fun getClassSimpleName(clazz: KClass<*>): String = clazz.simpleName ?: "unknown"
 
 	actual val platformName: String get() = "native"
 	actual val rawOsName: String = com.soywiz.korio.TARGET_INFO

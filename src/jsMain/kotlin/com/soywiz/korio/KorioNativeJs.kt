@@ -66,8 +66,6 @@ fun <T : Element> HTMLCollection.toTypedList(): List<T> = (0 until length).map {
 actual object KorioNative {
 	actual val currentThreadId: Long = 1L
 
-	actual fun getClassSimpleName(clazz: KClass<*>): String = clazz.simpleName ?: "unknown"
-
 	actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit): dynamic {
 		//callback.startCoroutine(EmptyContinuation(context))
 		return kotlin.js.Promise<dynamic> { resolve, reject ->
@@ -148,7 +146,7 @@ actual object KorioNative {
 		} else {
 			//console.log("window.navigator.languages", window.navigator.languages)
 			//console.log("window.navigator.languages", window.navigator.languages.toList())
-			window.navigator.languages.toList()
+			window.navigator.languages.asList()
 			//val langs = window.navigator.languages
 			//(0 until langs.size).map { "" + langs[it] + "-" }
 		}
@@ -158,7 +156,7 @@ actual object KorioNative {
 
 	actual val httpFactory: HttpFactory by lazy {
 		object : HttpFactory {
-			override fun createClient(): HttpClient = if (OS.isNodejs) HttpClientNodeJs() else HttpClientBrowserJs()
+			override fun createClient(): HttpClient = if (OS.isJsNodeJs) HttpClientNodeJs() else HttpClientBrowserJs()
 			override fun createServer(): HttpServer = HttpSeverNodeJs()
 		}
 	}
@@ -179,7 +177,7 @@ actual object KorioNative {
 	}
 
 	actual fun getenv(key: String): String? {
-		if (OS.isNodejs) {
+		if (OS.isJsNodeJs) {
 			return process.env[key]
 		} else {
 			val qs = QueryString.decode((document.location?.search ?: "").trimStart('?'))

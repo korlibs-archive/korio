@@ -21,8 +21,6 @@ expect open class EOFException(msg: String) : IOException
 expect open class FileNotFoundException(msg: String) : IOException
 
 expect object KorioNative {
-	fun getClassSimpleName(clazz: KClass<*>): String
-
 	fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit)
 
 	val currentThreadId: Long

@@ -14,16 +14,14 @@ object OS {
 	val isPosix = !isWindows
 	val isLinux = rawNameLC.contains("nix") || rawNameLC.contains("nux") || rawNameLC.contains("aix")
 	val isMac = rawNameLC.contains("mac")
-	val isNodejs = (platformNameLC.contains("node.js"))
 
-	val isBrowserJs = isJs && !isNodejs
+	val isJs = Platform.isJs
+	val isNative = Platform.isNative
+	val isJvm = Platform.isJvm
 
-	val isJsBrowser get() = isJs && platformNameLC == "web.js"
-	val isJsNodeJs get() = isJs && platformNameLC == "node.js"
-	val isJsWorker get() = isJs && platformNameLC == "worker.js"
-	val isJsShell get() = isJs && platformNameLC == "shell.js"
-
-	inline val isJs get() = Platform.isJs
-	inline val isNative get() = Platform.isNative
-	inline val isJvm get() = Platform.isJvm
+	val isJsShell = platformNameLC == "shell.js"
+	val isJsNodeJs = platformNameLC == "node.js"
+	val isJsBrowser = platformNameLC == "web.js"
+	val isJsWorker = platformNameLC == "worker.js"
+	val isJsBrowserOrWorker = isJsBrowser || isJsWorker
 }
