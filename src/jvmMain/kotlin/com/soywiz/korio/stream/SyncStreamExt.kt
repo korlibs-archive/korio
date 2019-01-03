@@ -1,5 +1,6 @@
 package com.soywiz.korio.stream
 
+import com.soywiz.kmem.*
 import com.soywiz.korio.concurrent.*
 import java.io.*
 
@@ -28,9 +29,16 @@ fun File.openSync(mode: String = "r"): SyncStream = FileSyncStreamBase(this, mod
 
 fun InputStream.toSyncStream(): SyncInputStream {
 	val iss = this
+	val tempByte = ByteArray(1)
 	return object : SyncInputStream {
 		override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 			return iss.read(buffer, offset, len)
+		}
+
+		override fun read(): Int {
+			val size = read(tempByte, 0, 1)
+			if (size <= 0) return -1
+			return tempByte[0].unsigned
 		}
 	}
 }

@@ -10,10 +10,12 @@ import kotlin.math.*
 
 interface SyncInputStream : OptionalCloseable {
 	fun read(buffer: ByteArray, offset: Int, len: Int): Int
+	fun read(): Int
 }
 
 interface SyncOutputStream : OptionalCloseable {
 	fun write(buffer: ByteArray, offset: Int, len: Int): Unit
+	fun write(byte: Int)
 }
 
 fun SyncOutputStream.flush() {
@@ -57,17 +59,29 @@ open class SyncStreamBase : Closeable, SyncRAInputStream, SyncRAOutputStream, Sy
 	override fun close() = Unit
 }
 
-class SyncStream(val base: SyncStreamBase, override var position: Long = 0L) : Extra by Extra.Mixin(), Closeable,
-	SyncInputStream, SyncPositionStream, SyncOutputStream, SyncLengthStream {
+class SyncStream(val base: SyncStreamBase, override var position: Long = 0L) : Extra by Extra.Mixin(), Closeable, SyncInputStream, SyncPositionStream, SyncOutputStream, SyncLengthStream {
+	private val smallTemp = base.smallTemp
+
 	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		val read = base.read(position, buffer, offset, len)
 		position += read
 		return read
 	}
 
+	override fun read(): Int {
+		val size = read(base.smallTemp, 0, 1)
+		if (size <= 0) return -1
+		return smallTemp[0].unsigned
+	}
+
 	override fun write(buffer: ByteArray, offset: Int, len: Int): Unit {
 		base.write(position, buffer, offset, len)
 		position += len
+	}
+
+	override fun write(byte: Int) {
+		smallTemp[0] = byte.toByte()
+		write(smallTemp, 0, 1)
 	}
 
 	override var length: Long
@@ -400,6 +414,7 @@ fun ByteArray.openAsync(mode: String = "r"): AsyncStream =
 //MemoryAsyncStreamBase(ByteArrayBuffer(this, allowGrow = false)).toAsyncStream(0L)
 	MemoryAsyncStreamBase(ByteArrayBuilder(this, allowGrow = true)).toAsyncStream(0L)
 
+fun String.openSync(charset: Charset = UTF8): SyncStream = toByteArray(charset).openSync("r")
 fun String.openAsync(charset: Charset = UTF8): AsyncStream = toByteArray(charset).openSync("r").toAsync()
 
 fun SyncOutputStream.writeStream(source: SyncInputStream): Unit = source.copyTo(this)

@@ -1,38 +1,43 @@
 package com.soywiz.korio.stream
 
+import com.soywiz.kds.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.lang.*
 
 class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int = 0x2000) : AsyncInputStream {
-	private val buf = SyncProduceConsumerByteBuffer()
+	private val buf = ByteArrayDeque()
 
 	private val queue = AsyncThread()
+	private val temp = ByteArray(bufferSize)
 
 	suspend fun require(len: Int = 1) = queue {
-		while (buf.available < len) {
-			buf.produce(base.readBytesUpToFirst(bufferSize))
+		while (buf.availableRead < len) {
+			val read = base.read(temp, 0, temp.size)
+			if (read <= 0) break
+			buf.write(temp, 0, read)
 		}
 	}
 
 	override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		require()
-		return buf.consume(buffer, offset, len)
+		return buf.read(buffer, offset, len)
 	}
 
-	suspend fun readBufferedUntil(end: Byte, including: Boolean = true, limit: Int = 0x1000): ByteArray {
+	suspend fun readUntil(end: Byte, including: Boolean = true, limit: Int = 0x1000): ByteArray {
 		val out = ByteArrayBuilder2()
 		while (true) {
 			require()
-			val chunk = buf.consumeUntil(end, including, limit = limit)
+			val byteInt = buf.readByte()
+			if (byteInt < 0) break
+			val byte = byteInt.toByte()
 			//println("chunk: $chunk, ${chunk.size}")
-			out.append(chunk)
-			if (chunk.isNotEmpty() && chunk.last() == end) break
+			if (including || byte != end) {
+				out.append(byte)
+			}
+			if (byte == end || out.size >= limit) break
 		}
 		return out.toByteArray()
 	}
-
-	suspend fun readUntil(end: Byte, including: Boolean = true, limit: Int = 0x1000): ByteArray =
-		readBufferedUntil(end, including, limit)
 
 	override suspend fun close() {
 		base.close()
@@ -40,7 +45,8 @@ class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int =
 }
 
 suspend fun AsyncBufferedInputStream.readBufferedLine(limit: Int = 0x1000, charset: Charset = UTF8) =
-	readBufferedUntil('\n'.toByte(), including = false, limit = limit).toString(charset)
+	readUntil('\n'.toByte(), including = false, limit = limit).toString(charset)
 
 fun AsyncInputStream.toBuffered(bufferSize: Int = 0x2000): AsyncBufferedInputStream =
 	AsyncBufferedInputStream(this, bufferSize)
+

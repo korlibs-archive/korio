@@ -7,7 +7,7 @@ import kotlin.math.*
 //@Deprecated("", replaceWith = ReplaceWith("ByteArrayBuilder"))
 //typealias OptByteBuffer = ByteArrayBuilder
 
-class ByteArrayBuilder2() {
+internal class ByteArrayBuilder2() {
 	private val chunks = arrayListOf<ByteArray>()
 	private val small = Small()
 

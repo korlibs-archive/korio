@@ -1,6 +1,6 @@
 package com.soywiz.korio.util
 
-class Indenter(internal val actions: ArrayList<Action> = arrayListOf<Indenter.Action>()) {
+class Indenter(internal val actions: ArrayList<Action> = arrayListOf()) {
 	object INDENTS {
 		private val INDENTS: Array<String> = Array(1024) { "" }.apply {
 			val indent = StringBuilder()

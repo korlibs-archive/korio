@@ -6,14 +6,11 @@ import com.soywiz.kds.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.*
 import com.soywiz.korio.async.*
-import com.soywiz.korio.compression.*
-import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.error.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.file.std.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.util.*
-import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 import kotlin.math.*
 
@@ -796,41 +793,27 @@ class MemoryAsyncStreamBase(var data: com.soywiz.kmem.ByteArrayBuilder) : AsyncS
 }
 
 suspend fun asyncStreamWriter(bufferSize: Int = 1024, process: suspend (out: AsyncOutputStream) -> Unit): AsyncInputStream {
-	val notifyRead = Channel<Unit>(Channel.CONFLATED)
-	val notifyWrite = Channel<Unit>(Channel.CONFLATED)
-	val temp = ByteArrayDeque(ilog2(bufferSize) + 1)
-	var completed = false
+	val deque = AsyncByteArrayDeque(bufferSize)
 
 	val job = launchImmediately(coroutineContext) {
 		try {
 			process(object : AsyncOutputStream {
 				override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
-					if (len <= 0) return
-					while (temp.availableRead > bufferSize) {
-						notifyRead.receive()
-					}
-					temp.write(buffer, offset, len)
-					notifyWrite.send(Unit)
+					deque.write(buffer, offset, len)
 				}
 
 				override suspend fun close() {
-					completed = true
-					notifyWrite.send(Unit)
+					deque.close()
 				}
 			})
 		} finally {
-			completed = true
-			notifyWrite.send(Unit)
+			deque.close()
 		}
 	}
 
 	return object : AsyncInputStream {
 		override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-			if (len <= 0) return len
-			notifyRead.send(Unit)
-			while (!completed && temp.availableRead == 0) notifyWrite.receive()
-			if (completed && temp.availableRead == 0) return -1
-			return temp.read(buffer, offset, len)
+			return deque.read(buffer, offset, len)
 		}
 
 		override suspend fun close() {

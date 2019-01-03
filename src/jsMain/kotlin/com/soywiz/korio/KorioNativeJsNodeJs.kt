@@ -1,6 +1,5 @@
 package com.soywiz.korio
 
-import com.soywiz.kds.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.file.std.*
@@ -186,20 +185,23 @@ class HttpSeverNodeJs : HttpServer() {
 	}
 }
 
-
-class NodeJsAsyncClient : AsyncClient {
+class NodeJsAsyncClient(val coroutineContext: CoroutineContext) : AsyncClient {
 	private val net = require("net")
 	private var connection: dynamic = null
-	private val input = AsyncProduceConsumerByteBuffer()
+	private val input = AsyncByteArrayDeque()
 
 	override var connected: Boolean = false; private set
+	private val task = AsyncQueue().withContext(coroutineContext)
 
 	override suspend fun connect(host: String, port: Int): Unit = suspendCoroutine { c ->
 		connection = net.createConnection(port, host) {
 			connected = true
 			connection?.pause()
 			connection?.on("data") { it ->
-				input.produce(it.unsafeCast<ByteArray>())
+				val bytes = it.unsafeCast<ByteArray>().copyOf()
+				task {
+					input.write(bytes)
+				}
 			}
 			c.resume(Unit)
 		}

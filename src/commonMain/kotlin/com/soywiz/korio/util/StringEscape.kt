@@ -1,6 +1,6 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.lang.*
+import com.soywiz.kmem.*
 
 fun String.escape(): String {
 	val out = StringBuilder()
@@ -12,7 +12,11 @@ fun String.escape(): String {
 			'\n' -> out.append("\\n")
 			'\r' -> out.append("\\r")
 			'\t' -> out.append("\\t")
-			in '\u0000'..'\u001f' -> out.append("\\x" + "%02x".format(c.toInt()))
+			in '\u0000'..'\u001f' -> {
+				out.append("\\x")
+				out.append(Hex.encodeCharLower(c.toInt().extract(4, 4)))
+				out.append(Hex.encodeCharLower(c.toInt().extract(0, 4)))
+			}
 			else -> out.append(c)
 		}
 	}
@@ -32,7 +36,11 @@ fun String.uescape(): String {
 			else -> if (c.isPrintable()) {
 				out.append(c)
 			} else {
-				out.append("\\u" + "%04x".format(c.toInt()))
+				out.append("\\u")
+				out.append(Hex.encodeCharLower(c.toInt().extract(12, 4)))
+				out.append(Hex.encodeCharLower(c.toInt().extract(8, 4)))
+				out.append(Hex.encodeCharLower(c.toInt().extract(4, 4)))
+				out.append(Hex.encodeCharLower(c.toInt().extract(0, 4)))
 			}
 		}
 	}
@@ -72,13 +80,9 @@ fun String.unescape(): String {
 fun String?.uquote(): String = if (this != null) "\"${this.uescape()}\"" else "null"
 fun String?.quote(): String = if (this != null) "\"${this.escape()}\"" else "null"
 
+fun String.isQuoted(): Boolean = this.startsWith('"') && this.endsWith('"')
+fun String.unquote(): String = if (isQuoted()) this.substring(1, this.length - 1).unescape() else this
+
 val String?.quoted: String get() = this.quote()
 val String.unquoted: String get() = this.unquote()
 
-fun String.isQuoted(): Boolean = this.startsWith('"') && this.endsWith('"')
-
-fun String.unquote(): String = if (isQuoted()) {
-	this.substring(1, this.length - 1).unescape()
-} else {
-	this
-}
