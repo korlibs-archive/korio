@@ -63,10 +63,6 @@ actual object KorioNative {
 	actual fun getenv(key: String): String? {
 		return System.getenv(key)
 	}
-
-	actual fun suspendTest(callback: suspend () -> Unit): Unit {
-		runBlocking { callback() }
-	}
 }
 
 /*

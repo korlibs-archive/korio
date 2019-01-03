@@ -45,7 +45,6 @@ expect object KorioNative {
 	fun enterDebugger()
 
 	fun getenv(key: String): String?
-	fun suspendTest(callback: suspend () -> Unit)
 }
 
 internal object KorioNativeDefaults {

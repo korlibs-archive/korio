@@ -157,10 +157,8 @@ class TestCoroutineDispatcher(val frameTime: Int = 16) :
 	}
 }
 
-fun suspendTest(callback: suspend () -> Unit) = KorioNative.suspendTest { callback() }
-
-fun suspendTest(context: CoroutineContext, callback: suspend () -> Unit) =
-	KorioNative.suspendTest { withContext(context) { callback() } }
+expect fun suspendTest(callback: suspend () -> Unit)
+fun suspendTest(context: CoroutineContext, callback: suspend () -> Unit) = suspendTest { withContext(context) { callback() } }
 
 // @TODO: Kotlin.JS bug!
 //fun suspendTestExceptJs(callback: suspend () -> Unit) = suspendTest {

@@ -147,24 +147,6 @@ actual object KorioNative {
 			return envs[key.toUpperCase()]
 		}
 	}
-
-	//actual fun suspendTest(callback: suspend () -> Unit): dynamic = promise { callback() }
-	actual fun suspendTest(callback: suspend () -> Unit): dynamic {
-		return kotlin.js.Promise<dynamic> { resolve, reject ->
-			callback.startCoroutine(object : Continuation<Unit> {
-				override val context: CoroutineContext = KorioDefaultDispatcher
-				override fun resumeWith(result: Result<Unit>) {
-					val exception = result.exceptionOrNull()
-					if (exception != null) {
-						reject(exception)
-					} else {
-						//resolve(undefined)
-						resolve(Unit)
-					}
-				}
-			})
-		}
-	}
 }
 
 private external class Date(time: Double)
