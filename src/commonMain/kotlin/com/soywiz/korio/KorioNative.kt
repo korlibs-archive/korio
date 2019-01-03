@@ -20,14 +20,9 @@ expect open class EOFException(msg: String) : IOException
 expect open class FileNotFoundException(msg: String) : IOException
 
 expect object KorioNative {
-	fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit)
-
-	val currentThreadId: Long
 	val ResourcesVfs: VfsFile
 
 	val websockets: WebSocketClientFactory
-
-	val systemLanguageStrings: List<String>
 
 	fun rootLocalVfs(): VfsFile
 	fun applicationVfs(): VfsFile

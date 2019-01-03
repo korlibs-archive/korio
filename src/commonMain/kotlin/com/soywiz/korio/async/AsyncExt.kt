@@ -231,3 +231,5 @@ fun <T> asyncImmediately(context: CoroutineContext, callback: suspend () -> T) =
 	CoroutineScope(context).asyncImmediately(callback)
 
 fun <T> asyncAsap(context: CoroutineContext, callback: suspend () -> T) = CoroutineScope(context).asyncAsap(callback)
+
+expect fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit)

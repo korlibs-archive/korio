@@ -1,7 +1,9 @@
-package com.soywiz.korio.i18n
+package com.soywiz.korio.util.i18n
 
 import com.soywiz.korio.*
 import com.soywiz.korio.concurrent.atomic.*
+
+internal expect val systemLanguageStrings: List<String>
 
 // https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
 enum class Language(val iso6391: String, val iso6392: String) {
@@ -26,7 +28,7 @@ enum class Language(val iso6391: String, val iso6392: String) {
 		//operator fun invoke(id: String): Language? = BY_ID[id]
 
 		val SYSTEM_LANGS =
-			KorioNative.systemLanguageStrings.map {
+			systemLanguageStrings.map {
 				// @TODO: kotlin-js bug ?. :: TypeError: item.split(...).firstOrNull is not a function
 				// @TODO: Kotlin seems to be calling native's JS String.split wrongly and returning an Array instead of a List, this `KorioNative.systemLanguageStrings = comes from window.navigator.languages.toList()`
 				//val parts = it?.split("-")

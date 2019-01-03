@@ -59,27 +59,6 @@ fun HTMLCollection.toList(): List<Element?> = (0 until length).map { this[it] }
 fun <T : Element> HTMLCollection.toTypedList(): List<T> = (0 until length).map { this[it].unsafeCast<T>() }
 
 actual object KorioNative {
-	actual val currentThreadId: Long = 1L
-
-	actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit): dynamic {
-		//callback.startCoroutine(EmptyContinuation(context))
-		return kotlin.js.Promise<dynamic> { resolve, reject ->
-			callback.startCoroutine(object : Continuation<Unit> {
-				override val context: CoroutineContext = context
-
-				override fun resumeWith(result: Result<Unit>) {
-					val exception = result.exceptionOrNull()
-					if (exception != null) {
-						reject(exception)
-					} else {
-						//resolve(undefined)
-						resolve(Unit)
-					}
-				}
-			})
-		}
-	}
-
 	private val absoluteCwd: String = if (isNodeJs) require("path").resolve(".") else "."
 
 	actual fun rootLocalVfs(): VfsFile = localVfs(absoluteCwd)
@@ -108,20 +87,6 @@ actual object KorioNative {
 	}
 
 	actual val websockets: WebSocketClientFactory by lazy { JsWebSocketClientFactory() }
-
-	// @NOTE: Important to keep return value or it will believe that this is a List<dynamic>
-	actual val systemLanguageStrings: List<String> by lazy {
-		if (isNodeJs) {
-			val env = process.env
-			listOf<String>(env.LANG ?: env.LANGUAGE ?: env.LC_ALL ?: env.LC_MESSAGES ?: "english")
-		} else {
-			//console.log("window.navigator.languages", window.navigator.languages)
-			//console.log("window.navigator.languages", window.navigator.languages.toList())
-			window.navigator.languages.asList()
-			//val langs = window.navigator.languages
-			//(0 until langs.size).map { "" + langs[it] + "-" }
-		}
-	}
 
 	actual fun Thread_sleep(time: Long) {}
 

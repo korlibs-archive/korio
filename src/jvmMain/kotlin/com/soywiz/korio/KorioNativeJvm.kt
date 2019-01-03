@@ -14,17 +14,8 @@ actual typealias IOException = java.io.IOException
 actual typealias EOFException = java.io.EOFException
 actual typealias FileNotFoundException = java.io.FileNotFoundException
 
-val currentThreadId: Long get() = KorioNative.currentThreadId
-
 actual object KorioNative {
-	actual val currentThreadId: Long get() = Thread.currentThread().id
-
 	internal val workerContext by lazy { newSingleThreadContext("worker") }
-
-	actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit) =
-		runBlocking(context) { callback() }
-
-	actual val systemLanguageStrings get() = listOf(Locale.getDefault().isO3Language)
 
 	private val secureRandom: SecureRandom by lazy { SecureRandom.getInstanceStrong() }
 

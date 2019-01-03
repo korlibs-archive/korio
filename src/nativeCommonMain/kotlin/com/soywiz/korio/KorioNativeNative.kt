@@ -28,8 +28,6 @@ actual open class EOFException actual constructor(msg: String) : IOException(msg
 actual open class FileNotFoundException actual constructor(msg: String) : IOException(msg)
 
 actual object KorioNative {
-	actual val currentThreadId: Long get() = -1L // @TODO
-
 	// @TODO: kotlin-native by lazy/atomicLazy
 	//val tmpdir: String by atomicLazy { getenv("TMPDIR") ?: getenv("TEMP") ?: getenv("TMP") ?: "/tmp" }
 	//
@@ -56,7 +54,6 @@ actual object KorioNative {
 	actual val ResourcesVfs: VfsFile get() = applicationDataVfs().jail()
 
 	actual val websockets: WebSocketClientFactory get() = com.soywiz.korio.net.ws.RawSocketWebSocketClientFactory
-	actual val systemLanguageStrings: List<String> get() = listOf("english")
 
 	actual fun Thread_sleep(time: Long): Unit {
 		platform.posix.usleep((time * 1000L).toUInt())
@@ -72,9 +69,6 @@ actual object KorioNative {
 	}
 
 	actual fun getenv(key: String): String? = platform.posix.getenv(key)?.toKString()
-
-	//actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit) = runBlocking(context) { callback() }
-	actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit) = runBlocking { callback() }
 }
 
 class NativeHttpClient : HttpClient() {
