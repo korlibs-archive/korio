@@ -18,4 +18,12 @@ class HttpClientTest {
 			httpClient.getAndClearLog().toString()
 		)
 	}
+
+	@Test
+	@Ignore
+	fun testConnection() = suspendTest {
+		val request = HttpClient().request(Http.Method.GET, "http://google.com/")
+		assertEquals(301, request.status)
+		assertEquals("Moved Permanently", request.statusText)
+	}
 }

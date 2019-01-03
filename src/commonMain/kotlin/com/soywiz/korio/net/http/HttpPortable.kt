@@ -8,8 +8,62 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.math.*
 
-internal object HttpServerPortable {
-	fun create(): HttpServer {
+internal object HttpPortable {
+	fun createClient(): HttpClient {
+		return object : HttpClient() {
+			override suspend fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
+				val url = URL(url)
+				val secure = url.scheme == "https"
+				//println("HTTP CLIENT: host=${url.host}, port=${url.port}, secure=$secure")
+				val client = createTcpClient(url.host!!, url.port, secure)
+				val rheaders = headers + Http.Headers(
+					"Host" to url.host,
+					"User-Agent" to "Mozilla/5.0 Korio/1.0.0 (KHTML, like Gecko) Chrome/71.0 Safari/537.0",
+					"Accept-Language" to "en-us",
+					"Accept-Encoding" to "gzip, deflate",
+					"Connection" to "Close"
+				)
+				val rheaders2 = if (content != null) {
+					rheaders + Http.Headers("Content-Length" to content.getLength().toString())
+				} else {
+					rheaders
+				}
+				client.writeString("$method ${url.pathWithQuery} HTTP/1.1\n")
+				for (header in rheaders2) {
+					client.writeString("${header.first}: ${header.second}\n")
+				}
+				client.writeString("\n")
+				content?.copyTo(client)
+
+				//println("SENT RESPONSE")
+
+				val firstLine = client.readLine()
+				val responseInfo = Regex("HTTP/1.\\d+ (\\d+) (.*)").find(firstLine) ?: error("Invalid HTTP response $firstLine")
+
+				//println("FIRST LINE: $firstLine")
+
+				val responseCode = responseInfo.groupValues[1].toInt()
+				val responseMessage = responseInfo.groupValues[2]
+
+				val headers = arrayListOf<String>()
+				while (true) {
+					val line = client.readLine().trim()
+					//println("line: $line")
+					if (line.isEmpty()) break
+					headers += line
+				}
+
+				val responseHeaders = Http.Headers(headers.map {
+					val parts = it.split(':', limit = 2)
+					parts.getOrElse(0) { "" } to parts.getOrElse(1) { "" }
+				})
+
+				return Response(responseCode, responseMessage, responseHeaders, client)
+			}
+		}
+	}
+
+	fun createServer(): HttpServer {
 		val HeaderRegex = Regex("^(\\w+)\\s+(.*)\\s+(HTTP/1.[01])$")
 
 		return object : HttpServer() {

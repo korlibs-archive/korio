@@ -11,14 +11,18 @@ abstract class LocalVfs : Vfs() {
 	override fun toString(): String = "LocalVfs"
 }
 
-val resourcesVfs: VfsFile by lazy { ResourcesVfs }
-val rootLocalVfs: VfsFile by lazy { KorioNative.rootLocalVfs() }
-val applicationVfs: VfsFile by lazy { KorioNative.applicationVfs() }
-val cacheVfs: VfsFile by lazy { KorioNative.cacheVfs() }
-val externalStorageVfs: VfsFile by lazy { KorioNative.externalStorageVfs() }
-val userHomeVfs: VfsFile by lazy { KorioNative.userHomeVfs() }
+expect val ResourcesVfs: VfsFile
+expect val rootLocalVfs: VfsFile
+expect val applicationVfs: VfsFile
+expect val applicationDataVfs: VfsFile
+expect val cacheVfs: VfsFile
+expect val externalStorageVfs: VfsFile
+expect val userHomeVfs: VfsFile
+expect val tempVfs: VfsFile
+
+expect fun localVfs(path: String): VfsFile
+
 val localCurrentDirVfs: VfsFile by lazy { ApplicationVfs() }
-val tempVfs: VfsFile by lazy { KorioNative.tempVfs() }
 
 // Deprecated
 fun RootLocalVfs(): VfsFile = rootLocalVfs
@@ -30,5 +34,5 @@ fun UserHomeVfs(): VfsFile = userHomeVfs
 fun LocalCurrentDirVfs(): VfsFile = localCurrentDirVfs
 fun TempVfs(): VfsFile = tempVfs
 
-fun LocalVfs(base: String): VfsFile = KorioNative.localVfs(base)
+fun LocalVfs(base: String): VfsFile = localVfs(base)
 fun JailedLocalVfs(base: String): VfsFile = LocalVfs(base).jail()

@@ -35,6 +35,14 @@ data class URL private constructor(
 
 	val fullUrlWithoutScheme: String by lazy { toUrlString(includeScheme = false).toString() }
 
+	val pathWithQuery: String by lazy {
+		if (query != null) {
+			"$path?$query"
+		} else {
+			path
+		}
+	}
+
 	fun toUrlString(includeScheme: Boolean = true, out: StringBuilder = StringBuilder()): StringBuilder {
 		if (includeScheme && scheme != null) {
 			out.append("$scheme:")

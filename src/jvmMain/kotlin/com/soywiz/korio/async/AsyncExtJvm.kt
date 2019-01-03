@@ -16,3 +16,7 @@ actual fun suspendTest(callback: suspend () -> Unit) {
 
 actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit) =
 	runBlocking(context) { callback() }
+
+internal val workerContext by lazy { newSingleThreadContext("worker") }
+
+suspend fun <T> executeInWorkerJVM(callback: suspend () -> T): T = withContext(workerContext) { callback() }

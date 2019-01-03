@@ -46,37 +46,6 @@ val isShell get() = !isWeb && !isNodeJs && !isWorker
 fun HTMLCollection.toList(): List<Element?> = (0 until length).map { this[it] }
 fun <T : Element> HTMLCollection.toTypedList(): List<T> = (0 until length).map { this[it].unsafeCast<T>() }
 
-actual object KorioNative {
-	private val absoluteCwd: String = if (isNodeJs) require("path").resolve(".") else "."
-
-	actual fun rootLocalVfs(): VfsFile = localVfs(absoluteCwd)
-	actual fun applicationVfs(): VfsFile = localVfs(absoluteCwd)
-	actual fun applicationDataVfs(): VfsFile = jsLocalStorageVfs.root
-	actual fun cacheVfs(): VfsFile = MemoryVfs()
-	actual fun externalStorageVfs(): VfsFile = localVfs(absoluteCwd)
-	actual fun userHomeVfs(): VfsFile = localVfs(absoluteCwd)
-	actual fun tempVfs(): VfsFile = localVfs(tmpdir)
-
-	actual fun localVfs(path: String): VfsFile {
-		return when {
-			isNodeJs -> NodeJsLocalVfs()[path]
-			else -> {
-				//println("localVfs.url: href=$href, url=$url")
-				UrlVfs(jsbaseUrl)[path]
-			}
-		}
-	}
-
-	val tmpdir: String by lazy {
-		when {
-			isNodeJs -> require("os").tmpdir().unsafeCast<String>()
-			else -> "/tmp"
-		}
-	}
-
-	actual val ResourcesVfs: VfsFile by lazy { applicationVfs().jail() }
-}
-
 private external class Date(time: Double)
 
 fun jsNew(clazz: dynamic): dynamic = js("(new (clazz))()")

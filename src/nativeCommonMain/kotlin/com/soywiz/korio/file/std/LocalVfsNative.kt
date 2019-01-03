@@ -1,4 +1,4 @@
-package com.soywiz.korio
+package com.soywiz.korio.file.std
 
 import com.soywiz.kds.*
 import com.soywiz.klock.*
@@ -24,38 +24,20 @@ import kotlinx.cinterop.*
 import platform.posix.*
 import com.soywiz.korio.lang.Environment
 
-actual object KorioNative {
-	// @TODO: kotlin-native by lazy/atomicLazy
-	//val tmpdir: String by atomicLazy { getenv("TMPDIR") ?: getenv("TEMP") ?: getenv("TMP") ?: "/tmp" }
-	//
-	//val cwd by atomicLazy {
-	//	memScoped {
-	//		val data = allocArray<ByteVar>(1024)
-	//		getcwd(data, 1024)
-	//		data.toKString()
-	//	}
-	//}
+val tmpdir: String = Environment["TMPDIR"] ?: Environment["TEMP"] ?: Environment["TMP"] ?: "/tmp"
 
-	val tmpdir: String = Environment["TMPDIR"] ?: Environment["TEMP"] ?: Environment["TMP"] ?: "/tmp"
+val cwd: String = com.soywiz.korio.nativeCwd()
 
-	val cwd: String = com.soywiz.korio.nativeCwd()
+actual val ResourcesVfs: VfsFile by lazy { applicationDataVfs.jail() }
+actual val rootLocalVfs: VfsFile by lazy { localVfs(cwd) }
+actual val applicationVfs: VfsFile by lazy { localVfs(cwd) }
+actual val applicationDataVfs: VfsFile by lazy { localVfs(cwd) }
+actual val cacheVfs: VfsFile by lazy { MemoryVfs() }
+actual val externalStorageVfs: VfsFile by lazy { localVfs(cwd) }
+actual val userHomeVfs: VfsFile by lazy { localVfs(cwd) }
+actual val tempVfs: VfsFile by lazy { localVfs(tmpdir) }
 
-	actual fun rootLocalVfs(): VfsFile = localVfs(cwd)
-	actual fun applicationVfs(): VfsFile = localVfs(cwd)
-	actual fun applicationDataVfs(): VfsFile = localVfs(cwd)
-	actual fun cacheVfs(): VfsFile = MemoryVfs()
-	actual fun externalStorageVfs(): VfsFile = localVfs(cwd)
-	actual fun userHomeVfs(): VfsFile = localVfs(cwd)
-	actual fun tempVfs(): VfsFile = localVfs(tmpdir)
-	actual fun localVfs(path: String): VfsFile = LocalVfsNative()[path]
-	actual val ResourcesVfs: VfsFile get() = applicationDataVfs().jail()
-}
-
-class NativeHttpClient : HttpClient() {
-	suspend override fun requestInternal(
-		method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?
-	): Response = TODO()
-}
+actual fun localVfs(path: String): VfsFile = LocalVfsNative()[path]
 
 class LocalVfsNative : LocalVfs() {
 	val that = this
