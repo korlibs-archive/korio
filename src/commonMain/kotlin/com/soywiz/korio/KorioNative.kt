@@ -42,7 +42,6 @@ expect object KorioNative {
 
 	val httpFactory: HttpFactory
 
-	fun printStackTrace(e: Throwable)
 	fun enterDebugger()
 
 	fun getenv(key: String): String?

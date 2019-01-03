@@ -71,10 +71,6 @@ actual object KorioNative {
 		println("enterDebugger")
 	}
 
-	actual fun printStackTrace(e: Throwable): Unit {
-		e.printStackTrace()
-	}
-
 	actual fun getenv(key: String): String? = platform.posix.getenv(key)?.toKString()
 
 	//actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit) = runBlocking(context) { callback() }

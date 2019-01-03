@@ -59,7 +59,6 @@ actual object KorioNative {
 	val tmpdir: String get() = System.getProperty("java.io.tmpdir")
 
 	actual fun enterDebugger() = Unit
-	actual fun printStackTrace(e: Throwable) = e.printStackTrace()
 
 	actual fun getenv(key: String): String? {
 		return System.getenv(key)

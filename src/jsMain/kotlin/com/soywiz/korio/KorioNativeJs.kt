@@ -138,15 +138,6 @@ actual object KorioNative {
 		js("debugger;")
 	}
 
-	actual fun printStackTrace(e: Throwable) {
-		console.error(e.asDynamic())
-		console.error(e.asDynamic().stack)
-
-		// @TODO: Implement in each platform!
-
-		//e.printStackTrace()
-	}
-
 	actual fun getenv(key: String): String? {
 		if (OS.isJsNodeJs) {
 			return process.env[key]

@@ -2,10 +2,8 @@ package com.soywiz.korio.lang
 
 import com.soywiz.korio.*
 
-fun Throwable.printStackTrace() {
-	KorioNative.printStackTrace(this)
-}
+expect fun Throwable.printStackTrace()
 
 fun printStackTrace() {
-	KorioNative.printStackTrace(Exception("printStackTrace"))
+	Exception("printStackTrace").printStackTrace()
 }
