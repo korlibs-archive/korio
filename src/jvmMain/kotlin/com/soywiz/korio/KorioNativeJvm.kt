@@ -15,17 +15,6 @@ actual object KorioNative {
 
 	private val secureRandom: SecureRandom by lazy { SecureRandom.getInstanceStrong() }
 
-	actual val httpFactory: HttpFactory by lazy {
-		object : HttpFactory {
-			init {
-				System.setProperty("http.keepAlive", "false")
-			}
-
-			override fun createClient(): HttpClient = HttpClientJvm()
-			override fun createServer(): HttpServer = KorioNativeDefaults.createServer()
-		}
-	}
-
 	actual fun Thread_sleep(time: Long) = Thread.sleep(time)
 
 	actual val websockets: WebSocketClientFactory get() = com.soywiz.korio.net.ws.RawSocketWebSocketClientFactory

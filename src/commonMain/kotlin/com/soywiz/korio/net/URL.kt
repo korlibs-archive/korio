@@ -1,5 +1,6 @@
 package com.soywiz.korio.net
 
+import com.soywiz.korio.crypto.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
@@ -162,4 +163,8 @@ data class URL private constructor(
 			return sb.toString()
 		}
 	}
+}
+
+fun createBase64URLForData(data: ByteArray, contentType: String): String {
+	return "data:$contentType;base64,${data.toBase64()}"
 }

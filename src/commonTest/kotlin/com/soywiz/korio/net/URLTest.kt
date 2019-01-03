@@ -1,5 +1,6 @@
 package com.soywiz.korio.net
 
+import com.soywiz.korio.lang.*
 import kotlin.test.*
 
 class URLTest {
@@ -128,5 +129,10 @@ class URLTest {
 		assertEquals("hello world+", URL.decodeComponent("hello+world%2B", formUrlEncoded = true))
 		assertEquals("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWZ0123456789 -_.*", URL.decodeComponent("abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWZ0123456789%20-_.*"))
 		assertEquals("áéíóú", URL.decodeComponent("%C3%A1%C3%A9%C3%AD%C3%B3%C3%BA"))
+	}
+
+	@Test
+	fun test() {
+		assertEquals("data:text/plain;base64,aGVsbG8td29ybGQ=", createBase64URLForData("hello-world".toByteArray(), "text/plain"))
 	}
 }

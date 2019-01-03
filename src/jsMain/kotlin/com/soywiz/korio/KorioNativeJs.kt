@@ -78,13 +78,6 @@ actual object KorioNative {
 
 	actual fun Thread_sleep(time: Long) {}
 
-	actual val httpFactory: HttpFactory by lazy {
-		object : HttpFactory {
-			override fun createClient(): HttpClient = if (OS.isJsNodeJs) HttpClientNodeJs() else HttpClientBrowserJs()
-			override fun createServer(): HttpServer = HttpSeverNodeJs()
-		}
-	}
-
 	actual val ResourcesVfs: VfsFile by lazy { applicationVfs().jail() }
 
 	actual fun enterDebugger() {

@@ -55,11 +55,6 @@ actual object KorioNative {
 		platform.posix.usleep((time * 1000L).toUInt())
 	}
 
-	actual val httpFactory: HttpFactory = object : HttpFactory {
-		override fun createClient(): HttpClient = NativeHttpClient()
-		override fun createServer(): HttpServer = KorioNativeDefaults.createServer()
-	}
-
 	actual fun enterDebugger(): Unit {
 		println("enterDebugger")
 	}
