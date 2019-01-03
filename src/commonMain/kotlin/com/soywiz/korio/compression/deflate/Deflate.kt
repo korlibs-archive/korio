@@ -3,7 +3,6 @@ package com.soywiz.korio.compression.deflate
 import com.soywiz.kmem.*
 import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.util.*
-import com.soywiz.korio.compression.util.BitReader
 import com.soywiz.korio.stream.*
 import kotlin.math.*
 

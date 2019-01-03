@@ -1,6 +1,5 @@
 package com.soywiz.korio.serialization.yaml
 
-import com.soywiz.kds.*
 import com.soywiz.korio.serialization.*
 import kotlin.test.*
 

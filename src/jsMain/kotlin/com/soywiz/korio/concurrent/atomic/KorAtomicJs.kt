@@ -1,7 +1,5 @@
 package com.soywiz.korio.concurrent.atomic
 
-import com.soywiz.korio.concurrent.atomic.*
-
 actual fun <T> korAtomic(initial: T): KorAtomicRef<T> =
 	KorAtomicRef(initial)
 actual fun korAtomic(initial: Boolean): KorAtomicBoolean =

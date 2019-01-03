@@ -1,20 +1,14 @@
 package com.soywiz.korio
 
-import com.soywiz.korio.compression.*
-import com.soywiz.korio.compression.deflate.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.file.std.*
-import com.soywiz.korio.net.*
 import com.soywiz.korio.net.http.*
 import com.soywiz.korio.net.ws.*
 import kotlinx.coroutines.*
 import java.io.*
 import java.security.*
 import java.util.*
-import javax.crypto.*
-import javax.crypto.spec.*
 import kotlin.coroutines.*
-import kotlin.reflect.*
 
 actual typealias IOException = java.io.IOException
 actual typealias EOFException = java.io.EOFException

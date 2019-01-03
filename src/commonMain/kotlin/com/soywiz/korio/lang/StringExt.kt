@@ -1,7 +1,6 @@
 package com.soywiz.korio.lang
 
 import com.soywiz.kmem.*
-import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 
 operator fun String.Companion.invoke(arrays: IntArray, offset: Int = 0, size: Int = arrays.size - offset): String {

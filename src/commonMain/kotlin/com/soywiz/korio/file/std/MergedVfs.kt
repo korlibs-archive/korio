@@ -1,8 +1,8 @@
 package com.soywiz.korio.file.std
 
 import com.soywiz.korio.async.*
-import com.soywiz.korio.lang.*
 import com.soywiz.korio.file.*
+import com.soywiz.korio.lang.*
 
 open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
 	private val vfsList = ArrayList(vfsList)

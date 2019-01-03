@@ -1,6 +1,5 @@
 package com.soywiz.korio.serialization.binary
 
-import com.soywiz.kds.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*

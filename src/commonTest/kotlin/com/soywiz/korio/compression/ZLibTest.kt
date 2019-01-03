@@ -1,7 +1,5 @@
 package com.soywiz.korio.compression
 
-import com.soywiz.korio.*
-import com.soywiz.korio.async.*
 import com.soywiz.korio.compression.deflate.*
 import com.soywiz.korio.compression.lzma.*
 import com.soywiz.korio.lang.*

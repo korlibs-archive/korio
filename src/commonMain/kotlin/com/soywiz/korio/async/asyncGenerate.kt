@@ -3,7 +3,6 @@
 package com.soywiz.korio.async
 
 import com.soywiz.kds.*
-import com.soywiz.korio.*
 import com.soywiz.korio.concurrent.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*

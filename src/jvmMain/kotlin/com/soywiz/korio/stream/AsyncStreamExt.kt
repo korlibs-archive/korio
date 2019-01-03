@@ -1,6 +1,5 @@
 package com.soywiz.korio.stream
 
-import com.soywiz.korio.async.*
 import com.soywiz.korio.lang.*
 import java.io.*
 

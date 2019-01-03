@@ -7,10 +7,7 @@ import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
-import kotlinx.coroutines.intrinsics.*
 import kotlin.coroutines.*
-import kotlin.coroutines.intrinsics.createCoroutineUnintercepted
-import kotlin.coroutines.intrinsics.intercepted
 import kotlin.math.*
 
 typealias CancelHandler = Signal<Unit>

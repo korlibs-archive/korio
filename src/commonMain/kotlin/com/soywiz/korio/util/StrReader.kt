@@ -1,9 +1,20 @@
 package com.soywiz.korio.util
 
-import com.soywiz.kds.*
-import com.soywiz.korio.lang.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.json.*
+import kotlin.collections.List
+import kotlin.collections.MutableMap
+import kotlin.collections.arrayListOf
+import kotlin.collections.distinct
+import kotlin.collections.joinToString
+import kotlin.collections.linkedMapOf
+import kotlin.collections.map
+import kotlin.collections.reversed
+import kotlin.collections.set
+import kotlin.collections.sorted
+import kotlin.collections.toCollection
+import kotlin.collections.toList
+import kotlin.collections.toTypedArray
 import kotlin.math.*
 
 class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {

@@ -1,6 +1,5 @@
 package com.soywiz.korio.serialization.xml
 
-import com.soywiz.kds.*
 import kotlin.test.*
 
 class XmlTest {

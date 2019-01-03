@@ -4,7 +4,7 @@ import com.soywiz.korio.async.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
-import kotlin.coroutines.coroutineContext
+import kotlin.coroutines.*
 import kotlin.test.*
 
 class AsyncSocketTest {

@@ -1,8 +1,7 @@
 package com.soywiz.korio.net.http
 
 import com.soywiz.klock.*
-import kotlin.test.Test
-import kotlin.test.assertEquals
+import kotlin.test.*
 
 class HttpDateTest {
 	@Test

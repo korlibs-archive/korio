@@ -1,11 +1,10 @@
 package com.soywiz.korio.async
 
-import com.soywiz.kds.PriorityQueue
-import com.soywiz.klock.TimeSpan
-import com.soywiz.korio.KorioNative
-import com.soywiz.korio.lang.Closeable
-import com.soywiz.korio.lang.printStackTrace
-import com.soywiz.korio.util.OS
+import com.soywiz.kds.*
+import com.soywiz.klock.*
+import com.soywiz.korio.*
+import com.soywiz.korio.lang.*
+import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 

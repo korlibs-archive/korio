@@ -2,8 +2,6 @@ package com.soywiz.korio.i18n
 
 import com.soywiz.korio.*
 import com.soywiz.korio.concurrent.atomic.*
-import com.soywiz.korio.concurrent.*
-import com.soywiz.korio.concurrent.atomic.*
 
 // https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes
 enum class Language(val iso6391: String, val iso6392: String) {

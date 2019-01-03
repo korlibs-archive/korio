@@ -1,10 +1,6 @@
 package com.soywiz.korio.net
 
 import com.soywiz.korio.file.*
-import kotlin.collections.LinkedHashMap
-import kotlin.collections.List
-import kotlin.collections.listOf
-import kotlin.collections.map
 import kotlin.collections.set
 
 private val MimeType_byExtensions by lazy { LinkedHashMap<String, MimeType>() }
