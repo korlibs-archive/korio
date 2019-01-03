@@ -9,3 +9,7 @@ actual fun Throwable.printStackTrace() {
 	console.error(e.asDynamic())
 	console.error(e.asDynamic().stack)
 }
+
+actual fun enterDebugger() {
+	js("debugger;")
+}

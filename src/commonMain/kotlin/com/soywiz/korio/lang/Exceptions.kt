@@ -43,3 +43,5 @@ expect fun Throwable.printStackTrace()
 fun printStackTrace() {
 	Exception("printStackTrace").printStackTrace()
 }
+
+expect fun enterDebugger(): Unit

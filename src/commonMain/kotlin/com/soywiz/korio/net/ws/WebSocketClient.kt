@@ -29,7 +29,7 @@ suspend fun WebSocketClient(
 	debug: Boolean = false
 ) = websockets.create(url, protocols, origin = origin, wskey = wskey, debug = debug)
 
-val websockets: WebSocketClientFactory get() = KorioNative.websockets
+expect val websockets: WebSocketClientFactory
 
 abstract class WebSocketClientFactory {
 	abstract suspend fun create(

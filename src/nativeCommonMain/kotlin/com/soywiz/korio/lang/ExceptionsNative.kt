@@ -7,3 +7,7 @@ actual open class FileNotFoundException actual constructor(msg: String) : IOExce
 actual fun Throwable.printStackTrace() {
 	this.printStackTrace()
 }
+
+actual fun enterDebugger(): Unit {
+	println("enterDebugger")
+}

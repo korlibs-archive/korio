@@ -3,5 +3,5 @@ package com.soywiz.korio.lang
 import com.soywiz.korio.*
 
 object Debugger {
-	fun enterDebugger() = KorioNative.enterDebugger()
+	fun enterDebugger() = com.soywiz.korio.lang.enterDebugger()
 }

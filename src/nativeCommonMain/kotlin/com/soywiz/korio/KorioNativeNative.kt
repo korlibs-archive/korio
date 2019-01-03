@@ -22,6 +22,7 @@ import kotlinx.coroutines.*
 
 import kotlinx.cinterop.*
 import platform.posix.*
+import com.soywiz.korio.lang.Environment
 
 actual object KorioNative {
 	// @TODO: kotlin-native by lazy/atomicLazy
@@ -35,7 +36,7 @@ actual object KorioNative {
 	//	}
 	//}
 
-	val tmpdir: String = getenv("TMPDIR") ?: getenv("TEMP") ?: getenv("TMP") ?: "/tmp"
+	val tmpdir: String = Environment["TMPDIR"] ?: Environment["TEMP"] ?: Environment["TMP"] ?: "/tmp"
 
 	val cwd: String = com.soywiz.korio.nativeCwd()
 
@@ -48,18 +49,6 @@ actual object KorioNative {
 	actual fun tempVfs(): VfsFile = localVfs(tmpdir)
 	actual fun localVfs(path: String): VfsFile = LocalVfsNative()[path]
 	actual val ResourcesVfs: VfsFile get() = applicationDataVfs().jail()
-
-	actual val websockets: WebSocketClientFactory get() = com.soywiz.korio.net.ws.RawSocketWebSocketClientFactory
-
-	actual fun Thread_sleep(time: Long): Unit {
-		platform.posix.usleep((time * 1000L).toUInt())
-	}
-
-	actual fun enterDebugger(): Unit {
-		println("enterDebugger")
-	}
-
-	actual fun getenv(key: String): String? = platform.posix.getenv(key)?.toKString()
 }
 
 class NativeHttpClient : HttpClient() {

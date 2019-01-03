@@ -74,25 +74,7 @@ actual object KorioNative {
 		}
 	}
 
-	actual val websockets: WebSocketClientFactory by lazy { JsWebSocketClientFactory() }
-
-	actual fun Thread_sleep(time: Long) {}
-
 	actual val ResourcesVfs: VfsFile by lazy { applicationVfs().jail() }
-
-	actual fun enterDebugger() {
-		js("debugger;")
-	}
-
-	actual fun getenv(key: String): String? {
-		if (OS.isJsNodeJs) {
-			return process.env[key]
-		} else {
-			val qs = QueryString.decode((document.location?.search ?: "").trimStart('?'))
-			val envs = qs.map { it.key.toUpperCase() to (it.value.firstOrNull() ?: it.key) }.toMap()
-			return envs[key.toUpperCase()]
-		}
-	}
 }
 
 private external class Date(time: Double)

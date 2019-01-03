@@ -7,3 +7,7 @@ actual typealias FileNotFoundException = java.io.FileNotFoundException
 actual fun Throwable.printStackTrace() {
 	this.printStackTrace()
 }
+
+actual fun enterDebugger(): Unit {
+	println("enterDebugger")
+}

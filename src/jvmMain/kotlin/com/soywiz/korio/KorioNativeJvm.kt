@@ -15,10 +15,6 @@ actual object KorioNative {
 
 	private val secureRandom: SecureRandom by lazy { SecureRandom.getInstanceStrong() }
 
-	actual fun Thread_sleep(time: Long) = Thread.sleep(time)
-
-	actual val websockets: WebSocketClientFactory get() = com.soywiz.korio.net.ws.RawSocketWebSocketClientFactory
-
 	private val absoluteCwd = File(".").absolutePath
 
 	actual fun rootLocalVfs(): VfsFile = localVfs(absoluteCwd)
@@ -33,12 +29,6 @@ actual object KorioNative {
 	actual val ResourcesVfs: VfsFile by lazy { ResourcesVfsProviderJvm()().root.jail() }
 
 	val tmpdir: String get() = System.getProperty("java.io.tmpdir")
-
-	actual fun enterDebugger() = Unit
-
-	actual fun getenv(key: String): String? {
-		return System.getenv(key)
-	}
 }
 
 /*
