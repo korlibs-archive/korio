@@ -3,7 +3,7 @@ package com.soywiz.korio.compression.util
 import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.compression.*
-import com.soywiz.korio.error.*
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*

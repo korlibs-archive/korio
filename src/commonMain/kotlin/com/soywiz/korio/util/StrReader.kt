@@ -1,7 +1,7 @@
 package com.soywiz.korio.util
 
 import com.soywiz.kds.*
-import com.soywiz.korio.error.*
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.json.*
 import kotlin.math.*

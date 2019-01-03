@@ -3,7 +3,7 @@ package com.soywiz.korio
 import com.soywiz.korio.async.*
 import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.deflate.*
-import com.soywiz.korio.error.*
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.file.std.*
 import com.soywiz.korio.lang.*

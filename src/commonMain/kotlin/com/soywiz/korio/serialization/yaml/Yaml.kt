@@ -2,7 +2,8 @@ package com.soywiz.korio.serialization.yaml
 
 import com.soywiz.kds.*
 import com.soywiz.korio.*
-import com.soywiz.korio.error.*
+import com.soywiz.korio.lang.*
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.*
 import com.soywiz.korio.util.*
 import kotlin.collections.ArrayList

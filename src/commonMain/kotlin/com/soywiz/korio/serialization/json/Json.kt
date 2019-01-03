@@ -1,7 +1,7 @@
 package com.soywiz.korio.serialization.json
 
 import com.soywiz.korio.*
-import com.soywiz.korio.error.*
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.*
 import com.soywiz.korio.util.*
 import kotlin.collections.set

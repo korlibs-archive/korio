@@ -5,7 +5,7 @@ import com.soywiz.kmem.*
 import com.soywiz.korio.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.concurrent.atomic.*
-import com.soywiz.korio.error.*
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import kotlinx.coroutines.*
 import java.net.*

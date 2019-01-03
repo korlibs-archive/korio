@@ -1,7 +1,7 @@
 package com.soywiz.korio.util
 
 import com.soywiz.korio.async.*
-import com.soywiz.korio.error.*
+import com.soywiz.korio.lang.*
 import java.lang.reflect.*
 import java.lang.reflect.Array
 import java.util.*

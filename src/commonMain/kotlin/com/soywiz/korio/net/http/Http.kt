@@ -2,7 +2,7 @@ package com.soywiz.korio.net.http
 
 import com.soywiz.kds.*
 import com.soywiz.korio.crypto.*
-import com.soywiz.korio.error.*
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
 

@@ -1,7 +1,7 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.korio.async.*
-import com.soywiz.korio.error.*
+import com.soywiz.korio.lang.*
 import java.io.*
 
 fun InputStream.toAsync(length: Long? = null): AsyncInputStream {

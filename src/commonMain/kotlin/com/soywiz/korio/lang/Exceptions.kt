@@ -1,6 +1,4 @@
-package com.soywiz.korio.error
-
-import com.soywiz.korio.lang.*
+package com.soywiz.korio.lang
 
 class InvalidOperationException(str: String = "Invalid Operation") : Exception(str)
 class OutOfBoundsException(index: Int = -1, str: String = "Out Of Bounds") : Exception(str)
@@ -28,11 +26,6 @@ fun unsupported(msg: String): Nothing = throw UnsupportedOperationException(msg)
 fun unsupported(): Nothing = throw UnsupportedOperationException()
 fun invalidArgument(msg: String): Nothing = throw InvalidArgumentException(msg)
 fun unexpected(msg: String): Nothing = throw UnexpectedException(msg)
-
-// Warns
-fun untestedWarn(msg: String): Unit = println("Untested: $msg")
-
-fun noImplWarn(msg: String): Unit = println("Not implemented: $msg")
 
 inline fun <R> runIgnoringExceptions(show: Boolean = false, action: () -> R): R? = try {
 	action()
