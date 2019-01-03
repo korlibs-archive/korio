@@ -10,10 +10,6 @@ import java.security.*
 import java.util.*
 import kotlin.coroutines.*
 
-actual typealias IOException = java.io.IOException
-actual typealias EOFException = java.io.EOFException
-actual typealias FileNotFoundException = java.io.FileNotFoundException
-
 actual object KorioNative {
 	internal val workerContext by lazy { newSingleThreadContext("worker") }
 

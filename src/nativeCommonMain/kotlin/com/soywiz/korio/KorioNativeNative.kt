@@ -23,10 +23,6 @@ import kotlinx.coroutines.*
 import kotlinx.cinterop.*
 import platform.posix.*
 
-actual open class IOException actual constructor(msg: String) : Exception(msg)
-actual open class EOFException actual constructor(msg: String) : IOException(msg)
-actual open class FileNotFoundException actual constructor(msg: String) : IOException(msg)
-
 actual object KorioNative {
 	// @TODO: kotlin-native by lazy/atomicLazy
 	//val tmpdir: String by atomicLazy { getenv("TMPDIR") ?: getenv("TEMP") ?: getenv("TMP") ?: "/tmp" }

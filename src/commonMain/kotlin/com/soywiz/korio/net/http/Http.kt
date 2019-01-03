@@ -54,7 +54,7 @@ interface Http {
 		val msg: String = "Error$statusCode",
 		val statusText: String = HttpStatusMessage.CODES[statusCode] ?: "Error$statusCode",
 		val headers: Http.Headers = Http.Headers()
-	) : com.soywiz.korio.IOException("$statusCode $statusText - $msg") {
+	) : IOException("$statusCode $statusText - $msg") {
 		companion object {
 			fun unauthorizedBasic(realm: String = "Realm", msg: String = "Unauthorized"): Nothing =
 				throw Http.HttpException(

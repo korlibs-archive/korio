@@ -42,7 +42,7 @@ class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHt
 		val response = stat.extraInfo as? HttpClient.Response
 
 		if (!stat.exists) {
-			throw com.soywiz.korio.FileNotFoundException("Unexistant $fullUrl : $response")
+			throw FileNotFoundException("Unexistant $fullUrl : $response")
 		}
 
 		return object : AsyncStreamBase() {

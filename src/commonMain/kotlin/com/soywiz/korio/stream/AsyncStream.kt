@@ -359,7 +359,7 @@ suspend fun AsyncInputStream.readExact(buffer: ByteArray, offset: Int, len: Int)
 	while (remaining > 0) {
 		val read = reader.read(buffer, coffset, remaining)
 		if (read < 0) break
-		if (read == 0) throw com.soywiz.korio.EOFException("Not enough data. Expected=$len, Read=${len - remaining}, Remaining=$remaining")
+		if (read == 0) throw EOFException("Not enough data. Expected=$len, Read=${len - remaining}, Remaining=$remaining")
 		coffset += read
 		remaining -= read
 	}

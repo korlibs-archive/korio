@@ -4,6 +4,7 @@ package com.soywiz.korio.file.std
 
 import com.soywiz.korio.*
 import com.soywiz.korio.file.*
+import com.soywiz.korio.lang.*
 
 suspend fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile {
 	val mount = object : Vfs.Proxy(), Mountable {

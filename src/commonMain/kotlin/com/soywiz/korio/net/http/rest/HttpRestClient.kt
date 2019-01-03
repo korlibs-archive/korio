@@ -1,5 +1,6 @@
 package com.soywiz.korio.net.http.rest
 
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.http.*
 import com.soywiz.korio.serialization.*
 import com.soywiz.korio.serialization.json.*
@@ -21,7 +22,7 @@ class HttpRestClient(val endpoint: HttpClientEndpoint) {
 		//println(stringResult)
 		return try {
 			Json.decode(stringResult) ?: mapOf<String, String>()
-		} catch (e: com.soywiz.korio.IOException) {
+		} catch (e: IOException) {
 			mapOf<String, String>()
 		}
 	}

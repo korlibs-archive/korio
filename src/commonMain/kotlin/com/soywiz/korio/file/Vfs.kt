@@ -238,7 +238,7 @@ open class VfsProcessHandler {
 	open suspend fun onErr(data: ByteArray): Unit = Unit
 }
 
-class VfsProcessException(message: String) : com.soywiz.korio.IOException(message)
+class VfsProcessException(message: String) : IOException(message)
 
 data class VfsStat(
 	val file: VfsFile,

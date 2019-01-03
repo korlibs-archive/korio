@@ -2,6 +2,7 @@ package com.soywiz.korio.net.ws
 
 import com.soywiz.korio.*
 import com.soywiz.korio.async.*
+import com.soywiz.korio.lang.*
 
 abstract class WebSocketClient protected constructor(val url: String, val protocols: List<String>?, DEBUG: Boolean) {
 	val onOpen = Signal<Unit>()
@@ -40,4 +41,4 @@ abstract class WebSocketClientFactory {
 	): WebSocketClient
 }
 
-class WebSocketException(message: String) : com.soywiz.korio.IOException(message)
+class WebSocketException(message: String) : IOException(message)

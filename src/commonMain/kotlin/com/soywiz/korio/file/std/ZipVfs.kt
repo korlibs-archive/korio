@@ -168,8 +168,8 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 		val vfs = this
 
 		override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
-			val entry = files[path.normalizeName()] ?: throw com.soywiz.korio.FileNotFoundException("Path: '$path'")
-			if (entry.isDirectory) throw com.soywiz.korio.IOException("Can't open a zip directory for $mode")
+			val entry = files[path.normalizeName()] ?: throw FileNotFoundException("Path: '$path'")
+			if (entry.isDirectory) throw IOException("Can't open a zip directory for $mode")
 			val base = entry.headerEntry.sliceStart()
 			@Suppress("UNUSED_VARIABLE")
 			return base.run {

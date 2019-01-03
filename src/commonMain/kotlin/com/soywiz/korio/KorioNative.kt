@@ -12,13 +12,6 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.math.*
 
-annotation class Language(val value: String, val prefix: String = "", val suffix: String = "")
-//expect annotation class Language(val value: String, val prefix: String = "", val suffix: String = "")
-
-expect open class IOException(msg: String) : Exception
-expect open class EOFException(msg: String) : IOException
-expect open class FileNotFoundException(msg: String) : IOException
-
 expect object KorioNative {
 	val ResourcesVfs: VfsFile
 

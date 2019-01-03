@@ -26,7 +26,7 @@ data class Xml(
 
 		//operator fun invoke(@Language("xml") str: String): Xml = parse(str)
 
-		fun parse(@Language("xml") str: String): Xml {
+		fun parse(str: String): Xml {
 			try {
 				val stream = XmlStream.parse(str).iterator()
 
@@ -159,6 +159,6 @@ val Iterable<Xml>.allChildren: Iterable<Xml> get() = this.flatMap(Xml::allChildr
 operator fun Iterable<Xml>.get(name: String): Iterable<Xml> = this.children(name)
 fun String.toXml(): Xml = Xml.parse(this)
 
-fun Xml(@Language("xml") str: String): Xml = Xml.parse(str)
+fun Xml(str: String): Xml = Xml.parse(str)
 
 suspend fun VfsFile.readXml(): Xml = Xml(this.readString())
