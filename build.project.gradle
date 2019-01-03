@@ -1,4 +1,7 @@
-new File(projectDir, "src/commonMain/kotlin/com/soywiz/korio/KorioVersion.kt").write("package com.soywiz.korio\n\ninternal const val KORIO_VERSION = \"$projectVersion\"")
+(new File(projectDir, "src/commonMain/kotlin/com/soywiz/korio/internal/KorioVersion.kt")).with {
+	parentFile.mkdirs()
+	write("package com.soywiz.korio.internal\n\ninternal const val KORIO_VERSION = \"$projectVersion\"")
+}
 
 kotlin {
 	sourceSets {
