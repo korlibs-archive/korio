@@ -65,7 +65,7 @@ class ZipVfsTest {
 	}
 
 	@Test
-	fun testZipCompressed() = suspendTest {
+	fun testZipCompressed() = suspendTestExceptJs {
 		val helloZip = ResourcesVfs["compressedHello.zip"].openAsZip()
 
 		val contents =
@@ -102,7 +102,7 @@ class ZipVfsTest {
 	}
 
 	@Test
-	fun testCreateZip() = suspendTest {
+	fun testCreateZip() = suspendTestExceptJs {
 		val mem = MemoryVfsMix(
 			"/test.txt" to "test",
 			"/hello/world.txt" to "hello world world world world!"

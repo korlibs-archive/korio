@@ -3,6 +3,13 @@ plugins {
     id 'com.moowork.node' version '1.2.0'
 }
 
+def dump(obj) {
+	println("${obj.class}: $obj")
+	obj.properties.each { println " - $it.key : ${it.value.class.name}   ->   $it.value" }
+}
+//println("-------------")
+//dump(jsCompilations.test.output)
+
 repositories {
     mavenLocal()
     jcenter()
@@ -105,10 +112,6 @@ task populateNodeModules {
     }
 }
 
-//def dump(obj) { obj.properties.each { println "$it.key : ${it.value.class.name}   ->   $it.value" } }
-//println("-------------")
-//dump(jsCompilations.test.output)
-
 task runMocha(type: NodeTask, dependsOn: [jsCompilations.test.compileKotlinTaskName, installMocha, populateNodeModules]) {
     script = file("$buildDir/node_modules/mocha/bin/mocha")
 	workingDir = file("$buildDir/node_modules")
@@ -147,6 +150,27 @@ task jsTestChrome(type: NodeTask, dependsOn: [jsCompilations.test.compileKotlinT
     script = file("${node.nodeModulesDir}/mocha-headless-chrome/bin/start")
 	args = ['-f', "$buildDir/node_modules/tests.html", "-a", "no-sandbox", "-a", "disable-setuid-sandbox", "-a", "allow-file-access-from-files"]
 	//args = ['-f', "$buildDir/node_modules/tests.html"]
+}
+
+afterEvaluate {
+	//println(macosX64Test.outputDir)
+	//println(macosX64Test)
+	//println(macosX64Test.class)
+
+	for (target in ["macosX64", "linuxX64", "mingwX64"]) {
+		String taskName = "copyResourcesToExecutable_${target}"
+		def targetTestTask = tasks.getByName("${target}Test")
+		tasks.create(name: taskName, type: Copy) {
+			for (sourceSet in kotlin.sourceSets) {
+				from sourceSet.resources
+			}
+			into new File(targetTestTask.inputs.properties.executable).parentFile
+		}
+
+		//println()
+		//dump(linkTestMacosX64.outputs)
+		targetTestTask.dependsOn(taskName)
+	}
 }
 
 // Only run JS tests if not in windows
