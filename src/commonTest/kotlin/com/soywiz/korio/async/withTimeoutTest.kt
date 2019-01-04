@@ -2,12 +2,12 @@ package com.soywiz.korio.async
 
 import com.soywiz.klock.*
 import kotlinx.coroutines.*
-import java.util.concurrent.CancellationException
 import kotlin.test.*
 
 class withTimeoutTest {
 	@Test
-	@Ignore("Flaky")
+	//@Ignore("Flaky")
+	@Ignore // Flaky
 	fun noTimeout() = suspendTest {
 		var out = ""
 		var result = "none"
@@ -32,7 +32,7 @@ class withTimeoutTest {
 	}
 
 	@Test
-	@Ignore("Flaky")
+	@Ignore // Flaky
 	fun simple() = suspendTest {
 		var out = ""
 		try {
@@ -54,7 +54,7 @@ class withTimeoutTest {
 	}
 
 	@Test
-	@Ignore("Flaky")
+	@Ignore // Flaky
 	fun name() = suspendTest {
 		var out = ""
 		try {
@@ -83,7 +83,7 @@ class withTimeoutTest {
 	}
 
 	@Test
-	@Ignore("Flaky")
+	@Ignore // Flaky
 	fun name2() = suspendTest {
 		var out = ""
 		try {

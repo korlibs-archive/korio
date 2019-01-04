@@ -1,10 +1,11 @@
 package com.soywiz.korio.net
 
-import com.soywiz.kds.Deque
+import com.soywiz.kds.*
 import com.soywiz.korio.async.*
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
-import java.util.*
 import kotlin.coroutines.*
 import kotlin.test.*
 

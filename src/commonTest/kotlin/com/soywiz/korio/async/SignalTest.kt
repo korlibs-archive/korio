@@ -1,7 +1,6 @@
 package com.soywiz.korio.async
 
 import kotlinx.coroutines.*
-import java.util.concurrent.CancellationException
 import kotlin.coroutines.*
 import kotlin.test.*
 
@@ -32,7 +31,8 @@ class SignalTest {
 	}
 
 	@Test
-	@Ignore("Flaky")
+	//@Ignore("Flaky")
+	@Ignore // Flaky
 	fun name2() = suspendTest {
 		var out = ""
 		val s = Signal<Int>()
