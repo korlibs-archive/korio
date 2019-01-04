@@ -1,3 +1,6 @@
 package com.soywiz.korio
 
-fun nativeCwd(): String = platform.Foundation.NSBundle.mainBundle.resourcePath ?: "."
+import kotlinx.cinterop.*
+import platform.posix.*
+
+fun nativeCwd(): String = platform.Foundation.NSBundle.mainBundle.resourcePath ?: realpath(".") ?: "."
