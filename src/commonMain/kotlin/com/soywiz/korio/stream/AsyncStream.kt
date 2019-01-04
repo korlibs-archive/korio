@@ -820,3 +820,9 @@ suspend fun asyncStreamWriter(bufferSize: Int = 1024, process: suspend (out: Asy
 		}
 	}
 }
+
+suspend inline fun AsyncOutputStream.writeSync(hintSize: Int = 4096, callback: SyncStream.() -> Unit) {
+	writeBytes(MemorySyncStreamToByteArray(hintSize) {
+		callback()
+	})
+}

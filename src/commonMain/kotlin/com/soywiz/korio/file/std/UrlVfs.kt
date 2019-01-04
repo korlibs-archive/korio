@@ -38,6 +38,11 @@ class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHt
 	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
 		val fullUrl = getFullUrl(path)
 
+		// For file: it is useless to try to get the size and to use ranges. So we just read it completely.
+		if (fullUrl.startsWith("file:")) {
+			return client.readBytes(fullUrl).openAsync()
+		}
+
 		val stat = stat(path)
 		val response = stat.extraInfo as? HttpClient.Response
 
@@ -103,17 +108,36 @@ class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHt
 	}
 
 	override suspend fun stat(path: String): VfsStat {
-		val result = client.request(Http.Method.HEAD, getFullUrl(path))
+		val fullUrl = getFullUrl(path)
 
-		return if (result.success) {
-			createExistsStat(
-				path,
-				isDirectory = true,
-				size = result.headers["content-length"]?.toLongOrNull() ?: 0L,
-				extraInfo = result
-			)
+		if (fullUrl.startsWith("file:")) {
+			// file: protocol won't respond with content-length
+			try {
+				val size = client.readBytes(fullUrl).size.toLong()
+				//println("SIZE FOR $fullUrl -> $size")
+				return createExistsStat(
+					path,
+					isDirectory = false,
+					size = size,
+					extraInfo = null
+				)
+			} catch (e: Throwable) {
+				e.printStackTrace()
+				return createNonExistsStat(path)
+			}
 		} else {
-			createNonExistsStat(path, extraInfo = result)
+			val result = client.request(Http.Method.HEAD, fullUrl)
+
+			return if (result.success) {
+				createExistsStat(
+					path,
+					isDirectory = false,
+					size = result.headers["content-length"]?.toLongOrNull() ?: 0L,
+					extraInfo = result
+				)
+			} else {
+				createNonExistsStat(path, extraInfo = result)
+			}
 		}
 	}
 

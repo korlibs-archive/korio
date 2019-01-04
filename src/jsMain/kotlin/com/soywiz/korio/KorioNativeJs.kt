@@ -96,9 +96,12 @@ class HttpClientBrowserJs : HttpClient() {
 		xhr.responseType = XMLHttpRequestResponseType.ARRAYBUFFER
 
 		xhr.onload = { e ->
-			val u8array = Uint8Array(xhr.response as ArrayBuffer)
-			val out = ByteArray(u8array.length)
-			for (n in out.indices) out[n] = u8array[n]
+			//val u8array = Uint8Array(xhr.response as ArrayBuffer)
+			//val out = ByteArray(u8array.length)
+			//for (n in out.indices) out[n] = u8array[n]
+
+			val out = Int8Array(xhr.response.unsafeCast<ArrayBuffer>()).unsafeCast<ByteArray>()
+
 			//js("debugger;")
 			deferred.complete(
 				Response(
@@ -111,7 +114,7 @@ class HttpClientBrowserJs : HttpClient() {
 		}
 
 		xhr.onerror = { e ->
-			deferred.completeExceptionally(kotlin.RuntimeException("Error ${xhr.status} opening $url"))
+			deferred.completeExceptionally(kotlin.RuntimeException("Error status=${xhr.status},'${xhr.statusText}' opening $url"))
 		}
 
 		for (header in headers) {

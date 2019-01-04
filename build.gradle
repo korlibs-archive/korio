@@ -90,13 +90,17 @@ task populateNodeModules {
     doLast {
         copy {
             from "${node.nodeModulesDir}"
-            from jsCompilations.main.output.allOutputs
+			from jsCompilations.main.output.allOutputs
+			from jsCompilations.test.output.allOutputs
             jsCompilations.test.runtimeDependencyFiles.each {
                 if (it.exists() && !it.isDirectory()) {
                     from zipTree(it.absolutePath).matching { include '*.js' }
                 }
             }
-            into "$buildDir/node_modules"
+			for (sourceSet in kotlin.sourceSets) {
+				from sourceSet.resources
+			}
+			into "$buildDir/node_modules"
         }
     }
 }
@@ -130,16 +134,18 @@ task jsTestChrome(type: NodeTask, dependsOn: [jsCompilations.test.compileKotlinT
             <div id="mocha"></div>
             <script src="mocha/mocha.js"></script>
             <script>
-                requirejs.config({'baseUrl': '.', 'paths': { 'tests': '../classes/kotlin/js/test/${project.name}_test' }});
+                requirejs.config({'baseUrl': '.', 'paths': { 'tests': '${project.name}_test' }});
                 mocha.setup('bdd');
                 require(['tests'], function() { mocha.run(); });
             </script>
             </body>
             </html>
         """)
+
     }
     script = file("${node.nodeModulesDir}/mocha-headless-chrome/bin/start")
-    args = ['-f', "$buildDir/node_modules/tests.html"]
+	args = ['-f', "$buildDir/node_modules/tests.html", "-a", "no-sandbox", "-a", "disable-setuid-sandbox", "-a", "allow-file-access-from-files"]
+	//args = ['-f', "$buildDir/node_modules/tests.html"]
 }
 
 // Only run JS tests if not in windows

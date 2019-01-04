@@ -4,6 +4,7 @@ import com.soywiz.klock.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.file.std.*
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.xml.*
 import com.soywiz.korio.stream.*
 import kotlin.test.*
@@ -77,7 +78,7 @@ class ZipVfsTest {
 
 		assertEquals(
 			contents,
-			helloZip["hello/compressedWorld.txt"].openUse { readAvailable() }.toString(Charsets.UTF_8)
+			helloZip["hello/compressedWorld.txt"].openUse { readAvailable() }.toString(UTF8)
 		)
 
 		assertEquals(
@@ -106,9 +107,12 @@ class ZipVfsTest {
 			"/test.txt" to "test",
 			"/hello/world.txt" to "hello world world world world!"
 		)
+		//println("[1]")
 		val zipBytes = mem.createZipFromTree()
+		//println("[2]")
 		//zipBytes.writeToFile("c:/temp/mytest.zip")
 		val zip = zipBytes.openAsync().openAsZip()
+		//println("[3]")
 		assertEquals(
 			"test",
 			zip["/test.txt"].readString()
