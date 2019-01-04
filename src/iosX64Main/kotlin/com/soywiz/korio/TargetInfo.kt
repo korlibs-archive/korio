@@ -1,3 +1,3 @@
 package com.soywiz.korio
 
-val TARGET_INFO = "iosx64"
+val TARGET_INFO = "iosX64"

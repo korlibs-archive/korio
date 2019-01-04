@@ -1,3 +1,3 @@
 package com.soywiz.korio
 
-val TARGET_INFO = "windows"
+val TARGET_INFO = "windowsX64"

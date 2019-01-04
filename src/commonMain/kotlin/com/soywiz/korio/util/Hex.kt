@@ -52,7 +52,7 @@ object Hex {
 }
 
 val List<String>.unhexIgnoreSpaces get() = joinToString("").unhexIgnoreSpaces
-val String.unhexIgnoreSpaces get() = this.replace(" ", "").unhex
+val String.unhexIgnoreSpaces get() = this.replace(" ", "").replace("\n", "").replace("\r", "").unhex
 val String.unhex get() = Hex.decode(this)
 val ByteArray.hex get() = Hex.encodeLower(this)
 

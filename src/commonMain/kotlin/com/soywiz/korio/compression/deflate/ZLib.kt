@@ -8,7 +8,9 @@ import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import com.soywiz.korio.util.checksum.*
 
-object ZLib : CompressionMethod {
+open class ZLib(val deflater: (windowBits: Int) -> CompressionMethod) : CompressionMethod {
+	companion object : ZLib({ Deflate(it) })
+
 	override suspend fun uncompress(reader: BitReader, out: AsyncOutputStream) {
 		val r =reader
 		val o = out
@@ -35,7 +37,7 @@ object ZLib : CompressionMethod {
 
 		//s.alignbyte()
 		var chash = Adler32.initialValue
-		Deflate(windowBits).uncompress(r, object : AsyncOutputStream {
+		deflater(windowBits).uncompress(r, object : AsyncOutputStream {
 			override suspend fun close() = o.close()
 			override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
 				o.write(buffer, offset, len)
@@ -81,7 +83,7 @@ object ZLib : CompressionMethod {
 		o.write8(flg or fcheck)
 
 		var adler = Adler32.initialValue
-		DeflatePortable(slidingBits).compress(object : AsyncInputStreamWithLength by i {
+		deflater(slidingBits).compress(object : AsyncInputStreamWithLength by i {
 			override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 				val read = i.read(buffer, offset, len)
 				if (read > 0) {

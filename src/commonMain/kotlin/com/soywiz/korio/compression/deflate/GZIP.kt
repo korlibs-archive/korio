@@ -7,10 +7,14 @@ import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import com.soywiz.korio.util.checksum.*
 
-object GZIP : GZIPBase(true)
-object GZIPNoCrc : GZIPBase(false)
+open class GZIP(deflater: () -> CompressionMethod) : GZIPBase(true, deflater) {
+	companion object : GZIP({ Deflate })
+}
+open class GZIPNoCrc(deflater: () -> CompressionMethod) : GZIPBase(false, deflater) {
+	companion object : GZIPNoCrc({ Deflate })
+}
 
-open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
+open class GZIPBase(val checkCrc: Boolean, val deflater: () -> CompressionMethod) : CompressionMethod {
 	override suspend fun uncompress(reader: BitReader, out: AsyncOutputStream) {
 		val r = reader
 		r.prepareBigChunkIfRequired()
@@ -32,7 +36,7 @@ open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
 		val crc16 = if (fhcrc) r.su16LE() else 0
 		var ccrc32 = CRC32.initialValue
 		var csize = 0
-		Deflate.uncompress(r, object : AsyncOutputStream by out {
+		deflater().uncompress(r, object : AsyncOutputStream by out {
 			override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
 				if (len > 0) {
 					//val oldCrc32 = ccrc32
@@ -69,7 +73,7 @@ open class GZIPBase(val checkCrc: Boolean) : CompressionMethod {
 
 		var size = 0
 		var crc32 = CRC32.initialValue
-		Deflate.compress(BitReader(object : AsyncInputStreamWithLength by i {
+		deflater().compress(BitReader(object : AsyncInputStreamWithLength by i {
 			override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 				val read = i.read(buffer, offset, len)
 				if (read > 0) {

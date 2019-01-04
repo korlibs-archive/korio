@@ -1,3 +1,3 @@
 package com.soywiz.korio
 
-val TARGET_INFO = "linux"
+val TARGET_INFO = "linuxX64"

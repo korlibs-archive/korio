@@ -42,9 +42,9 @@ fun CompressionMethod.compress(i: SyncInputStream, o: SyncOutputStream, context:
 	}
 }
 
-fun ByteArray.uncompress(method: CompressionMethod): ByteArray = MemorySyncStreamToByteArray { method.uncompress(this@uncompress.openSync(), this) }
-fun ByteArray.compress(method: CompressionMethod, context: CompressionContext = CompressionContext()): ByteArray =
-	MemorySyncStreamToByteArray { method.compress(this@compress.openSync(), this, context) }
+fun ByteArray.uncompress(method: CompressionMethod, outputSizeHint: Int = this.size * 2): ByteArray = MemorySyncStreamToByteArray(outputSizeHint) { method.uncompress(this@uncompress.openSync(), this) }
+fun ByteArray.compress(method: CompressionMethod, context: CompressionContext = CompressionContext(), outputSizeHint: Int = (this.size * 1.1).toInt()): ByteArray =
+	MemorySyncStreamToByteArray(outputSizeHint) { method.compress(this@compress.openSync(), this, context) }
 
 suspend fun AsyncInputStreamWithLength.uncompressed(method: CompressionMethod): AsyncInputStream = method.uncompressStream(this)
 suspend fun AsyncInputStreamWithLength.compressed(method: CompressionMethod, context: CompressionContext = CompressionContext()): AsyncInputStream = method.compressStream(this, context)
