@@ -111,7 +111,8 @@ task populateNodeModules {
 
 task runMocha(type: NodeTask, dependsOn: [jsCompilations.test.compileKotlinTaskName, installMocha, populateNodeModules]) {
     script = file("$buildDir/node_modules/mocha/bin/mocha")
-    args = ["--timeout", "15000", relativePath("${jsCompilations.test.output.classesDirs.first()}/${project.name}_test.js")]
+	workingDir = file("$buildDir/node_modules")
+    args = ["--timeout", "15000", "${project.name}_test.js"]
 }
 
 task jsInstallMochaHeadlessChrome(type: NpmTask) {
