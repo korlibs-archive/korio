@@ -40,9 +40,7 @@ class VfsFile(
 	suspend fun listNames(): List<String> = list().toList().map { it.baseName }
 
 	suspend fun copyTo(target: AsyncOutputStream) = this.openUse { this.copyTo(target) }
-	suspend fun copyTo(target: VfsFile, vararg attributes: Vfs.Attribute): Long {
-		return this.openInputStream().use { target.writeStream(this, *attributes) }
-	}
+	suspend fun copyTo(target: VfsFile, vararg attributes: Vfs.Attribute): Long = this.openInputStream().use { target.writeStream(this, *attributes) }
 
 	fun withExtension(ext: String): VfsFile =
 		VfsFile(vfs, fullNameWithoutExtension + if (ext.isNotEmpty()) ".$ext" else "")
@@ -57,6 +55,7 @@ class VfsFile(
 	suspend fun openInputStream(): AsyncInputStream = vfs.openInputStream(this.path)
 
 	override suspend fun openRead(): AsyncStream = open(VfsOpenMode.READ)
+
 	suspend inline fun <T> openUse(mode: VfsOpenMode = VfsOpenMode.READ, callback: AsyncStream.() -> T): T = open(mode).use(callback)
 
 	suspend fun readRangeBytes(range: LongRange): ByteArray = vfs.readRange(this.path, range)

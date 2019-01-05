@@ -55,6 +55,7 @@ class LocalVfsNative : LocalVfs() {
 		val rpath = resolve(path)
 		var fd: CPointer<FILE>? = platform.posix.fopen(rpath, mode.cmode)
 		val errno = posix_errno()
+		//if (fd == null || errno != 0) {
 		if (fd == null) {
 			val errstr = strerror(errno)?.toKString()
 			throw FileNotFoundException("Can't open '$rpath' with mode '${mode.cmode}' errno=$errno, errstr=$errstr")
@@ -108,8 +109,9 @@ class LocalVfsNative : LocalVfs() {
 				return platform.posix.ftell(fd).toLong()
 			}
 			override suspend fun close() {
-				checkFd()
-				platform.posix.fclose(fd)
+				if (fd != null) {
+					platform.posix.fclose(fd)
+				}
 				fd = null
 			}
 

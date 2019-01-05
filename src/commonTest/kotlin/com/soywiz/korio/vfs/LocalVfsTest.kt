@@ -53,16 +53,10 @@ class LocalVfsTest {
 	@Test
 	fun openModeRead() = suspendTest {
 		existing1.writeString("hello")
-		val readBytes = existing1.openUse(VfsOpenMode.READ) {
-			val result = readAll()
-			println("result: " + result.size)
-			println("result: " + result.contentToString())
-			result
-		}
-		println("readBytes: " + readBytes.size)
-		println("readBytes: " + readBytes.contentToString())
+		val readBytes = existing1.openUse(VfsOpenMode.READ) { readAll() }
 		assertEquals("hello", readBytes.toString(UTF8))
-		expectException<FileNotFoundException> { unexisting1.open(VfsOpenMode.READ) }
+		expectException<FileNotFoundException> { unexisting1.open(VfsOpenMode.READ).close() }
+		//unexisting1.open(VfsOpenMode.READ).close()
 	}
 
 }

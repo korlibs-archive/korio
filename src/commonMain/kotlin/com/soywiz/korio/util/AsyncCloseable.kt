@@ -1,7 +1,5 @@
 package com.soywiz.korio.util
 
-import com.soywiz.korio.async.*
-
 interface AsyncCloseable {
 	suspend fun close()
 
@@ -12,10 +10,25 @@ interface AsyncCloseable {
 	}
 }
 
+// @TODO: Bug in Kotlin.JS related to inline
+// https://youtrack.jetbrains.com/issue/KT-29120
+//inline suspend fun <T : AsyncCloseable, R> T.use(callback: T.() -> R): R { // FAILS
+//	try {
+//		return callback()
+//	} finally {
+//		close()
+//	}
+//}
+
 suspend inline fun <T : AsyncCloseable, TR> T.use(callback: T.() -> TR): TR {
-	try {
-		return callback(this@use)
-	} finally {
-		close()
+	var error: Throwable? = null
+	val result = try {
+		callback()
+	} catch (e: Throwable) {
+		error = e
+		null
 	}
+	close()
+	if (error != null) throw error
+	return result as TR
 }

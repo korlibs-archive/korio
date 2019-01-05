@@ -326,7 +326,7 @@ class NodeJsLocalVfs : LocalVfs() {
 			VfsOpenMode.WRITE -> "r+"
 			VfsOpenMode.CREATE_OR_TRUNCATE -> "w+"
 			VfsOpenMode.CREATE_NEW -> {
-				if (stat(path).exists) throw FileNotFoundException(path)
+				if (stat(path).exists) throw FileAlreadyExistsException(path)
 				"w+"
 			}
 			VfsOpenMode.CREATE -> "wx+"
@@ -339,8 +339,9 @@ class NodeJsLocalVfs : LocalVfs() {
 	suspend fun _open(path: String, cmode: String): AsyncStream {
 		val file = this.file(path)
 		return suspendCoroutine { cc ->
-			fs.open(getFullPath(path), cmode) { err, fd: FD ->
-				if (err != null) {
+			fs.open(getFullPath(path), cmode) { err: Any?, fd: FD? ->
+				//println("OPENED path=$path, cmode=$cmode, err=$err, fd=$fd")
+				if (err != null || fd == null) {
 					cc.resumeWithException(FileNotFoundException("Can't open '$path' with mode '$cmode': err=$err"))
 				} else {
 					cc.resume(NodeFDStream(file, fs, fd).toAsyncStream())

@@ -4,6 +4,8 @@ expect open class IOException(msg: String) : Exception
 expect open class EOFException(msg: String) : IOException
 expect open class FileNotFoundException(msg: String) : IOException
 
+class FileAlreadyExistsException(msg: String) : IOException(msg)
+
 class InvalidOperationException(str: String = "Invalid Operation") : Exception(str)
 class OutOfBoundsException(index: Int = -1, str: String = "Out Of Bounds") : Exception(str)
 class KeyNotFoundException(str: String = "Key Not Found") : Exception(str)

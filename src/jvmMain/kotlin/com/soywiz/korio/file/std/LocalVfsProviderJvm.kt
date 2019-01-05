@@ -79,54 +79,58 @@ class LocalVfsJvm : LocalVfs() {
 	}
 
 	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
-		val channel = AsynchronousFileChannel.open(
-			resolvePath(path), *when (mode) {
-				VfsOpenMode.READ -> arrayOf(StandardOpenOption.READ)
-				VfsOpenMode.WRITE -> arrayOf(StandardOpenOption.READ, StandardOpenOption.WRITE)
-				VfsOpenMode.APPEND -> arrayOf(
-					StandardOpenOption.READ,
-					StandardOpenOption.WRITE,
-					StandardOpenOption.APPEND
-				)
-				VfsOpenMode.CREATE -> arrayOf(
-					StandardOpenOption.READ,
-					StandardOpenOption.WRITE,
-					StandardOpenOption.CREATE
-				)
-				VfsOpenMode.CREATE_NEW -> arrayOf(
-					StandardOpenOption.READ,
-					StandardOpenOption.WRITE,
-					StandardOpenOption.CREATE_NEW
-				)
-				VfsOpenMode.CREATE_OR_TRUNCATE -> arrayOf(
-					StandardOpenOption.READ,
-					StandardOpenOption.WRITE,
-					StandardOpenOption.CREATE,
-					StandardOpenOption.TRUNCATE_EXISTING
-				)
-			}
-		)
+		try {
+			val channel = AsynchronousFileChannel.open(
+				resolvePath(path), *when (mode) {
+					VfsOpenMode.READ -> arrayOf(StandardOpenOption.READ)
+					VfsOpenMode.WRITE -> arrayOf(StandardOpenOption.READ, StandardOpenOption.WRITE)
+					VfsOpenMode.APPEND -> arrayOf(
+						StandardOpenOption.READ,
+						StandardOpenOption.WRITE,
+						StandardOpenOption.APPEND
+					)
+					VfsOpenMode.CREATE -> arrayOf(
+						StandardOpenOption.READ,
+						StandardOpenOption.WRITE,
+						StandardOpenOption.CREATE
+					)
+					VfsOpenMode.CREATE_NEW -> arrayOf(
+						StandardOpenOption.READ,
+						StandardOpenOption.WRITE,
+						StandardOpenOption.CREATE_NEW
+					)
+					VfsOpenMode.CREATE_OR_TRUNCATE -> arrayOf(
+						StandardOpenOption.READ,
+						StandardOpenOption.WRITE,
+						StandardOpenOption.CREATE,
+						StandardOpenOption.TRUNCATE_EXISTING
+					)
+				}
+			)
 
-		return object : AsyncStreamBase() {
-			override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
-				val bb = ByteBuffer.wrap(buffer, offset, len)
-				return completionHandler<Int> { channel.read(bb, position, Unit, it) }
-			}
+			return object : AsyncStreamBase() {
+				override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
+					val bb = ByteBuffer.wrap(buffer, offset, len)
+					return completionHandler<Int> { channel.read(bb, position, Unit, it) }
+				}
 
-			override suspend fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
-				val bb = ByteBuffer.wrap(buffer, offset, len)
-				completionHandler<Int> { channel.write(bb, position, Unit, it) }
-			}
+				override suspend fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
+					val bb = ByteBuffer.wrap(buffer, offset, len)
+					completionHandler<Int> { channel.write(bb, position, Unit, it) }
+				}
 
-			override suspend fun setLength(value: Long): Unit {
-				channel.truncate(value); Unit
-			}
+				override suspend fun setLength(value: Long): Unit {
+					channel.truncate(value); Unit
+				}
 
-			override suspend fun getLength(): Long = channel.size()
-			override suspend fun close() = channel.close()
+				override suspend fun getLength(): Long = channel.size()
+				override suspend fun close() = channel.close()
 
-			override fun toString(): String = "$that($path)"
-		}.toAsyncStream()
+				override fun toString(): String = "$that($path)"
+			}.toAsyncStream()
+		} catch (e: java.nio.file.NoSuchFileException) {
+			throw FileNotFoundException(e.message)
+		}
 	}
 
 	override suspend fun setSize(path: String, size: Long): Unit = executeIo {
