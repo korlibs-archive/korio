@@ -8,7 +8,7 @@ import kotlin.test.*
 class IsoVfsTest {
 	@Test
 	fun testIso() = suspendTest {
-		val isotestIso = ResourcesVfs["isotest.iso"].openAsIso()
+		val isotestIso = resourcesVfs["isotest.iso"].openAsIso()
 		assertEquals(
 			listOf("/HELLO", "/HELLO/WORLD.TXT"),
 			isotestIso.listRecursive().toList().map { it.fullName }

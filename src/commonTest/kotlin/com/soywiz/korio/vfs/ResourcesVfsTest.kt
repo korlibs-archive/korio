@@ -10,16 +10,16 @@ class ResourcesVfsTest {
 	@Ignore
 	fun name() = suspendTest {
 		println("[A]")
-		val listing = ResourcesVfs["tresfolder"].list()
+		val listing = resourcesVfs["tresfolder"].list()
 		println("[B]")
 
-		for (v in ResourcesVfs["tresfolder"].list().filter { it.extensionLC == "txt" }.toList()) {
+		for (v in resourcesVfs["tresfolder"].list().filter { it.extensionLC == "txt" }.toList()) {
 			println(v)
 		}
 
 		assertEquals(
 			"[a.txt, b.txt]",
-			ResourcesVfs["tresfolder"].list().filter { it.extensionLC == "txt" }.toList().map { it.baseName }.sorted().toString()
+			resourcesVfs["tresfolder"].list().filter { it.extensionLC == "txt" }.toList().map { it.baseName }.sorted().toString()
 		)
 	}
 }

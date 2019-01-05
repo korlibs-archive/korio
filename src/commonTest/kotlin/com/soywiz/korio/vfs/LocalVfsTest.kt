@@ -9,7 +9,7 @@ import com.soywiz.korio.util.*
 import kotlin.test.*
 
 class LocalVfsTest {
-	val temp by lazy { TempVfs() }
+	val temp by lazy { tempVfs }
 
 	@Test
 	fun name() = suspendTest {

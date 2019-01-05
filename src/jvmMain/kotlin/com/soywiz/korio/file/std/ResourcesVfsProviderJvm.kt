@@ -36,7 +36,7 @@ class ResourcesVfsProviderJvm {
 						val urlStr = url.toString()
 						val vfs = when {
 							urlStr.startsWith("http") -> UrlVfs(url)
-							else -> LocalVfs(File(url.toURI()))
+							else -> localVfs(File(url.toURI()))
 						}
 
 						//println(vfs)

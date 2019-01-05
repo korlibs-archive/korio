@@ -10,10 +10,10 @@ class MountableVfsTest {
 	@Test
 	fun testMountable() = suspendTest {
 		val root = MountableVfs {
-			mount("/zip/demo2", ResourcesVfs["hello.zip"].openAsZip())
-			mount("/zip", ResourcesVfs["hello.zip"].openAsZip())
-			mount("/zip/demo", ResourcesVfs["hello.zip"].openAsZip())
-			mount("/iso", ResourcesVfs["isotest.iso"].openAsIso())
+			mount("/zip/demo2", resourcesVfs["hello.zip"].openAsZip())
+			mount("/zip", resourcesVfs["hello.zip"].openAsZip())
+			mount("/zip/demo", resourcesVfs["hello.zip"].openAsZip())
+			mount("/iso", resourcesVfs["isotest.iso"].openAsIso())
 		}
 		assertEquals("HELLO WORLD!", root["/zip/hello/world.txt"].readString())
 		assertEquals("HELLO WORLD!", root["/zip/demo/hello/world.txt"].readString())

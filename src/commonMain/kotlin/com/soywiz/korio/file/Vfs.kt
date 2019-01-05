@@ -282,5 +282,5 @@ val VfsStat.createDate: DateTime get() = createTime
 val VfsStat.modifiedDate: DateTime get() = modifiedTime
 val VfsStat.lastAccessDate: DateTime get() = lastAccessTime
 
-suspend fun ByteArray.writeToFile(path: String) = LocalVfs(path).write(this)
+suspend fun ByteArray.writeToFile(path: String) = localVfs(path).write(this)
 suspend fun ByteArray.writeToFile(file: VfsFile) = file.write(this)
