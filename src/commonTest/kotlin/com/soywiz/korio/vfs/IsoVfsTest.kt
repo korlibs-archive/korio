@@ -8,16 +8,17 @@ import kotlin.test.*
 class IsoVfsTest {
 	@Test
 	fun testIso() = suspendTest {
-		val isotestIso = resourcesVfs["isotest.iso"].openAsIso()
-		assertEquals(
-			listOf("/HELLO", "/HELLO/WORLD.TXT"),
-			isotestIso.listRecursive().toList().map { it.fullName }
-		)
+		resourcesVfs["isotest.iso"].openAsIso { isotestIso ->
+			assertEquals(
+				listOf("/HELLO", "/HELLO/WORLD.TXT"),
+				isotestIso.listRecursive().toList().map { it.fullName }
+			)
 
-		// Case insensitive!
-		assertEquals(
-			"WORLD!",
-			isotestIso["hello"]["world.txt"].readString()
-		)
+			// Case insensitive!
+			assertEquals(
+				"WORLD!",
+				isotestIso["hello"]["world.txt"].readString()
+			)
+		}
 	}
 }

@@ -4,17 +4,27 @@ import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.*
 
 suspend fun IsoVfs(file: VfsFile): VfsFile =
-	ISO.openVfs(file.open(VfsOpenMode.READ))
+	ISO.openVfs(file.open(VfsOpenMode.READ), closeStream = true)
 
-suspend fun IsoVfs(s: AsyncStream): VfsFile = ISO.openVfs(s)
+suspend fun IsoVfs(s: AsyncStream): VfsFile = ISO.openVfs(s, closeStream = false)
 suspend fun AsyncStream.openAsIso() = IsoVfs(this)
 suspend fun VfsFile.openAsIso() = IsoVfs(this)
 
-class IsoVfs(val iso: ISO.IsoFile) : Vfs() {
+suspend fun <R> AsyncStream.openAsIso(callback: suspend (VfsFile) -> R): R = openAsIso().useVfs(callback)
+suspend fun <R> VfsFile.openAsIso(callback: suspend (VfsFile) -> R): R = openAsIso().useVfs(callback)
+
+class IsoVfs(val iso: ISO.IsoFile, val closeStream: Boolean) : Vfs() {
 	val vfs = this
 	val isoFile = iso
+
+	override suspend fun close() {
+		if (closeStream) {
+			iso.reader.close()
+		}
+	}
 
 	fun getVfsStat(file: ISO.IsoFile): VfsStat =
 		createExistsStat(
@@ -53,12 +63,13 @@ object ISO {
 
 	suspend fun read(s: AsyncStream): IsoFile = IsoReader(s).read()
 
-	suspend fun openVfs(s: AsyncStream): VfsFile {
-		val iso = read(s)
-		return IsoVfs(iso).root
-	}
+	suspend fun openVfs(s: AsyncStream, closeStream: Boolean): VfsFile = IsoVfs(read(s), closeStream).root
 
-	class IsoReader(val s: AsyncStream) {
+	class IsoReader(val s: AsyncStream) : AsyncCloseable {
+		override suspend fun close() {
+			s.close()
+		}
+
 		suspend fun getSector(sector: Int, size: Int): AsyncStream =
 			s.sliceWithSize(sector.toLong() * SECTOR_SIZE, size.toLong())
 
@@ -127,7 +138,7 @@ object ISO {
 		}
 	}
 
-	class IsoFile(val reader: IsoReader, val record: DirectoryRecord, val parent: IsoFile?) {
+	class IsoFile(val reader: IsoReader, val record: DirectoryRecord, val parent: IsoFile?)  {
 		val name: String get() = record.name
 		val normalizedName = name.normalizeName()
 		val isDirectory: Boolean get() = record.isDirectory
@@ -533,14 +544,14 @@ object ISO {
 	}
 }
 
-fun SyncStream.readUdfDString(bytes: Int): String {
+private fun SyncStream.readUdfDString(bytes: Int): String {
 	val ss = readStream(bytes)
 	val count = ss.readU16LE() / 2
 	//println("readUdfDString($bytes, $count)")
 	return ss.readUtf16LE(count)
 }
 
-fun SyncStream.readUtf16LE(count: Int): String {
+private fun SyncStream.readUtf16LE(count: Int): String {
 	var s = ""
 	for (n in 0 until count) {
 		s += readS16LE().toChar()

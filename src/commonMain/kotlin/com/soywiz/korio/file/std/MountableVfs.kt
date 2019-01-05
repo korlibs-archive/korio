@@ -6,9 +6,17 @@ import com.soywiz.korio.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 
-suspend fun MountableVfs(callback: suspend Mountable.() -> Unit): VfsFile {
+suspend fun MountableVfs(closeMounts: Boolean = false, callback: suspend Mountable.() -> Unit): VfsFile {
 	val mount = object : Vfs.Proxy(), Mountable {
 		private val mounts = ArrayList<Pair<String, VfsFile>>()
+
+		override suspend fun close() {
+			if (closeMounts) {
+				for (mount in mounts) {
+					mount.second.vfs.close()
+				}
+			}
+		}
 
 		override fun mount(folder: String, file: VfsFile) = this.apply {
 			unmountInternal(folder)

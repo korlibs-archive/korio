@@ -224,3 +224,5 @@ class VfsFile(
 fun VfsFile.toUnscaped() = FinalVfsFile(vfs, this.path)
 fun FinalVfsFile.toFile() = VfsFile(vfs, path)
 data class FinalVfsFile(val vfs: Vfs, val path: String)
+
+suspend inline fun <R> VfsFile.useVfs(callback: suspend (VfsFile) -> R): R = vfs.use { callback(this@useVfs) }
