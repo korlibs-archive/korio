@@ -8,12 +8,12 @@ import kotlin.math.*
 
 interface SyncInputStream : OptionalCloseable {
 	fun read(buffer: ByteArray, offset: Int, len: Int): Int
-	fun read(): Int
+	fun read(): Int = smallBytesPool.alloc2 { if (read(it, 0, 1) > 0) it[0].unsigned else -1 }
 }
 
 interface SyncOutputStream : OptionalCloseable {
 	fun write(buffer: ByteArray, offset: Int, len: Int): Unit
-	fun write(byte: Int)
+	fun write(byte: Int) = smallBytesPool.alloc2 { it[0] = byte.toByte(); write(it, 0, 1) }
 }
 
 fun SyncOutputStream.flush() {

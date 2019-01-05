@@ -90,13 +90,9 @@ fun Producer<ByteArray>.toAsyncOutputStream() = AsyncProducerStream(this)
 fun Consumer<ByteArray>.toAsyncInputStream() = AsyncConsumerStream(this)
 
 class AsyncProducerStream(val producer: Producer<ByteArray>) : AsyncOutputStream {
-	override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
-		producer.produce(buffer.copyOfRange(offset, offset + len))
-	}
-
-	override suspend fun close() {
-		producer.close()
-	}
+	override suspend fun write(buffer: ByteArray, offset: Int, len: Int) = producer.produce(buffer.copyOfRange(offset, offset + len))
+	override suspend fun write(byte: Int) = producer.produce(byteArrayOf(byte.toByte()))
+	override suspend fun close() = producer.close()
 }
 
 class AsyncConsumerStream(val consumer: Consumer<ByteArray>) : AsyncInputStream {
@@ -126,6 +122,12 @@ class AsyncConsumerStream(val consumer: Consumer<ByteArray>) : AsyncInputStream 
 		arraycopy(current, currentPos, buffer, offset, actualRead)
 		currentPos += actualRead
 		return actualRead
+	}
+
+	override suspend fun read(): Int {
+		ensureNonEmptyBuffer()
+		if (eof) return -1
+		return current[currentPos++].unsigned
 	}
 
 	suspend override fun close() {

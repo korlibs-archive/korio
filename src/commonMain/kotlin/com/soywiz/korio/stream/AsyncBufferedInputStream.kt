@@ -23,6 +23,11 @@ class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int =
 		return buf.read(buffer, offset, len)
 	}
 
+	override suspend fun read(): Int {
+		require()
+		return buf.readByte()
+	}
+
 	suspend fun readUntil(end: Byte, including: Boolean = true, limit: Int = 0x1000): ByteArray {
 		val out = ByteArrayBuilder2()
 		while (true) {

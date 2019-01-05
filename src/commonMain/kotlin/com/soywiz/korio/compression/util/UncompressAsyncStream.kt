@@ -9,6 +9,7 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.math.*
 
+/*
 internal class CompressionAlgoAsyncStream internal constructor(
 	val i: AsyncInputStreamWithLength,
 	val method: CompressionMethod,
@@ -100,3 +101,4 @@ class LimitedOutputStream : AsyncOutputStream {
 		return result
 	}
 }
+*/
