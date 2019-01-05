@@ -24,9 +24,9 @@ import kotlinx.cinterop.*
 import platform.posix.*
 import com.soywiz.korio.lang.Environment
 
-val tmpdir: String = Environment["TMPDIR"] ?: Environment["TEMP"] ?: Environment["TMP"] ?: "/tmp"
+val tmpdir: String by lazy { Environment["TMPDIR"] ?: Environment["TEMP"] ?: Environment["TMP"] ?: "/tmp" }
 
-val cwd: String = com.soywiz.korio.nativeCwd()
+val cwd: String by lazy { com.soywiz.korio.nativeCwd() }
 
 actual val ResourcesVfs: VfsFile by lazy { applicationDataVfs.jail() }
 actual val rootLocalVfs: VfsFile by lazy { localVfs(cwd) }

@@ -15,7 +15,7 @@ import kotlin.math.*
 actual fun Deflate(windowBits: Int): CompressionMethod = DeflateNative(windowBits)
 
 fun DeflateNative(windowBits: Int): CompressionMethod = object : CompressionMethod {
-	private val CHUNK = 64 * 1024
+	private const val CHUNK = 64 * 1024
 
 	override suspend fun uncompress(input: BitReader, output: AsyncOutputStream) {
 		memScoped {

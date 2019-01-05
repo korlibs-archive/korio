@@ -312,7 +312,3 @@ object NativeAsyncSocketFactory : AsyncSocketFactory() {
 	}
 }
 */
-
-fun test() {
-	NSProcessInfo.processInfo.environment
-}

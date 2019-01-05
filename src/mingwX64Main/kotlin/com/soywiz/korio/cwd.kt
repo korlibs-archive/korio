@@ -14,8 +14,5 @@ fun getExecutableDirectory(): String = getExecutablePath().substringBeforeLast('
 
 fun nativeCwd(): String = getExecutableDirectory()
 
-fun doMkdir(path: String, attr: Int): Int {
-	return platform.posix.mkdir(path)
-}
-
+fun doMkdir(path: String, attr: Int): Int = platform.posix.mkdir(path)
 fun realpath(path: String): String = path

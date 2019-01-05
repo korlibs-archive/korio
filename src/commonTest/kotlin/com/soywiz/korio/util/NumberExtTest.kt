@@ -1,6 +1,7 @@
 package com.soywiz.korio.util
 
 import com.soywiz.kmem.*
+import com.soywiz.korio.lang.*
 import kotlin.test.*
 
 class NumberExtTest {
