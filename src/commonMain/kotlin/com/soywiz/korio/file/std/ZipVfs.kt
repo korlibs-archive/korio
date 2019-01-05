@@ -239,7 +239,7 @@ private class DosFileDateTime(var dosTime: Int, var dosDate: Int) {
 	val day: Int get() = dosDate.extract(0, 5)
 	val month1: Int get() = dosDate.extract(5, 4)
 	val fullYear: Int get() = 1980 + dosDate.extract(9, 7)
-	val utc: DateTime by lazy { DateTime.createAdjusted(fullYear, month1, day, hours, minutes, seconds) }
+	val utc: DateTime = DateTime.createAdjusted(fullYear, month1, day, hours, minutes, seconds)
 }
 
 suspend fun VfsFile.openAsZip(caseSensitive: Boolean = true): VfsFile = ZipVfs(this.open(VfsOpenMode.READ), this, caseSensitive = caseSensitive, closeStream = true)
