@@ -1,11 +1,12 @@
 package com.soywiz.korio.lang
 
 import kotlinx.cinterop.*
+import platform.posix.*
 
 actual object Environment {
 	private fun getEnvs(): Map<String, String> {
 		val out = LinkedHashMap<String, String>()
-		val env = __environ
+		val env = platform.posix.__environ
 		var n = 0
 		while (true) {
 			val line = env?.get(n++)?.toKString()
