@@ -191,7 +191,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		}
 
 		suspend fun end(data: ByteArray) {
-			replaceHeader("Content-Length", "${data.size}")
+			replaceHeader(Http.Headers.ContentLength, "${data.size}")
 			flushHeaders()
 			_write(data, 0, data.size)
 			end()

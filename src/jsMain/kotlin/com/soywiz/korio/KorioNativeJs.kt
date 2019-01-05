@@ -124,7 +124,7 @@ class HttpClientBrowserJs : HttpClient() {
 		for (header in headers) {
 			val hnname = header.first.toLowerCase().trim()
 			when (hnname) {
-				"connection", "content-length" -> Unit // Refused to set unsafe header
+				"connection", Http.Headers.ContentLength -> Unit // Refused to set unsafe header
 				else -> xhr.setRequestHeader(header.first, header.second)
 			}
 		}

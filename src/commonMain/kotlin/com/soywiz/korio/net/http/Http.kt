@@ -167,6 +167,9 @@ interface Http {
 					if (parts.size >= 2) parts[0].trim() to parts[1].trim() else null
 				}.filterNotNull())
 			}
+
+			val ContentLength = "Content-Length"
+			val ContentType = "Content-Type"
 		}
 	}
 

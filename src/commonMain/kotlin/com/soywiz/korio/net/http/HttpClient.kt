@@ -86,8 +86,8 @@ abstract class HttpClient protected constructor() {
 		val contentLength = content?.getLength() ?: 0L
 		var actualHeaders = headers
 
-		if (content != null && !headers.any { it.first.equals("content-length", ignoreCase = true) }) {
-			actualHeaders = actualHeaders.withReplaceHeaders("content-length" to "$contentLength")
+		if (content != null && !headers.any { it.first.equals(Http.Headers.ContentLength, ignoreCase = true) }) {
+			actualHeaders = actualHeaders.withReplaceHeaders(Http.Headers.ContentLength to "$contentLength")
 		}
 
 		if (config.simulateBrowser) {

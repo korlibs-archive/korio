@@ -24,7 +24,7 @@ internal object HttpPortable {
 					"Connection" to "Close"
 				)
 				val rheaders2 = if (content != null) {
-					rheaders + Http.Headers("Content-Length" to content.getLength().toString())
+					rheaders + Http.Headers(Http.Headers.ContentLength to content.getLength().toString())
 				} else {
 					rheaders
 				}
@@ -112,7 +112,7 @@ internal object HttpPortable {
 						}
 						val headers = Http.Headers(headerList)
 						val keepAlive = headers["connection"]?.toLowerCase() == "keep-alive"
-						val contentLength = headers["content-length"]?.toLongOrNull()
+						val contentLength = headers[Http.Headers.ContentLength]?.toLongOrNull()
 
 						//println("REQ: $method, $url, $headerList")
 

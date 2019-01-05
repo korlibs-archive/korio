@@ -36,46 +36,50 @@ class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHt
 	//}
 
 	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
-		val fullUrl = getFullUrl(path)
+		try {
+			val fullUrl = getFullUrl(path)
 
-		// For file: it is useless to try to get the size and to use ranges. So we just read it completely.
-		if (fullUrl.startsWith("file:")) {
-			return client.readBytes(fullUrl).openAsync()
-		}
-
-		val stat = stat(path)
-		val response = stat.extraInfo as? HttpClient.Response
-
-		if (!stat.exists) {
-			throw FileNotFoundException("Unexistant $fullUrl : $response")
-		}
-
-		return object : AsyncStreamBase() {
-			override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
-				if (len == 0) return 0
-				val res = client.request(
-					Http.Method.GET,
-					fullUrl,
-					Http.Headers(linkedMapOf("range" to "bytes=$position-${position + len - 1}"))
-				)
-				val s = res.content
-				var coffset = offset
-				var pending = len
-				var totalRead = 0
-				while (pending > 0) {
-					val read = s.read(buffer, coffset, pending)
-					if (read < 0 && totalRead == 0) return read
-					if (read <= 0) break
-					pending -= read
-					totalRead += read
-					coffset += read
-				}
-				return totalRead
+			// For file: it is useless to try to get the size and to use ranges. So we just read it completely.
+			if (fullUrl.startsWith("file:")) {
+				return client.readBytes(fullUrl).openAsync()
 			}
 
-			override suspend fun getLength(): Long = stat.size
-		}.toAsyncStream().buffered()
-		//}.toAsyncStream()
+			val stat = stat(path)
+			val response = stat.extraInfo as? HttpClient.Response
+
+			if (!stat.exists) {
+				throw FileNotFoundException("Unexistant $fullUrl : $response")
+			}
+
+			return object : AsyncStreamBase() {
+				override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
+					if (len == 0) return 0
+					val res = client.request(
+						Http.Method.GET,
+						fullUrl,
+						Http.Headers(linkedMapOf("range" to "bytes=$position-${position + len - 1}"))
+					)
+					val s = res.content
+					var coffset = offset
+					var pending = len
+					var totalRead = 0
+					while (pending > 0) {
+						val read = s.read(buffer, coffset, pending)
+						if (read < 0 && totalRead == 0) return read
+						if (read <= 0) break
+						pending -= read
+						totalRead += read
+						coffset += read
+					}
+					return totalRead
+				}
+
+				override suspend fun getLength(): Long = stat.size
+			}.toAsyncStream().buffered()
+			//}.toAsyncStream()
+		} catch (e: RuntimeException) {
+			throw FileNotFoundException(e.message ?: "error")
+		}
 	}
 
 	override suspend fun openInputStream(path: String): AsyncInputStream {
@@ -99,8 +103,8 @@ class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHt
 
 		client.request(
 			Http.Method.PUT, getFullUrl(path), hheaders.withReplaceHeaders(
-				"content-length" to "$contentLength",
-				"content-type" to mimeType.mime
+				Http.Headers.ContentLength to "$contentLength",
+				Http.Headers.ContentType to mimeType.mime
 			), content
 		)
 
@@ -110,12 +114,12 @@ class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHt
 	override suspend fun stat(path: String): VfsStat {
 		val fullUrl = getFullUrl(path)
 
-		if (fullUrl.startsWith("file:")) {
+		return if (fullUrl.startsWith("file:")) {
 			// file: protocol won't respond with content-length
 			try {
 				val size = client.readBytes(fullUrl).size.toLong()
 				//println("SIZE FOR $fullUrl -> $size")
-				return createExistsStat(
+				createExistsStat(
 					path,
 					isDirectory = false,
 					size = size,
@@ -123,16 +127,16 @@ class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHt
 				)
 			} catch (e: Throwable) {
 				e.printStackTrace()
-				return createNonExistsStat(path)
+				createNonExistsStat(path)
 			}
 		} else {
 			val result = client.request(Http.Method.HEAD, fullUrl)
 
-			return if (result.success) {
+			if (result.success) {
 				createExistsStat(
 					path,
 					isDirectory = false,
-					size = result.headers["content-length"]?.toLongOrNull() ?: 0L,
+					size = result.headers[Http.Headers.ContentLength]?.toLongOrNull() ?: 0L,
 					extraInfo = result
 				)
 			} else {

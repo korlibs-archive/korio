@@ -14,7 +14,7 @@ class HttpRestClient(val endpoint: HttpClientEndpoint) {
 			path,
 			content = requestContent?.openAsync(),
 			headers = Http.Headers(
-				"Content-Type" to "application/json"
+				Http.Headers.ContentType to "application/json"
 			)
 		)
 		result.checkErrors()
