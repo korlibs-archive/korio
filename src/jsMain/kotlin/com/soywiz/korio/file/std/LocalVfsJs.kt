@@ -19,7 +19,13 @@ actual val applicationDataVfs: VfsFile by lazy { jsLocalStorageVfs.root }
 actual val cacheVfs: VfsFile by lazy { MemoryVfs() }
 actual val externalStorageVfs: VfsFile by lazy { localVfs(absoluteCwd) }
 actual val userHomeVfs: VfsFile by lazy { localVfs(absoluteCwd) }
-actual val tempVfs: VfsFile by lazy { localVfs(tmpdir) }
+actual val tempVfs: VfsFile by lazy {
+	if (isNodeJs) {
+		localVfs(tmpdir)
+	} else {
+		MemoryVfs()
+	}
+}
 
 actual fun localVfs(path: String): VfsFile {
 	return when {
