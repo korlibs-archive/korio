@@ -20,10 +20,10 @@ class LocalVfsTest {
 		temp["korio.temp3"].writeStream(temp["korio.temp"].open().slice(0 until 3))
 		assertEquals(content, temp["korio.temp2"].readString())
 		assertEquals("HEL", temp["korio.temp3"].readString())
-		assertEquals(true, temp["korio.temp"].delete())
-		assertEquals(true, temp["korio.temp2"].delete())
-		assertEquals(true, temp["korio.temp3"].delete())
-		assertEquals(false, temp["korio.temp3"].delete())
+		assertEquals(true, temp["korio.temp"].delete(), "deleting korio.temp")
+		assertEquals(true, temp["korio.temp2"].delete(), "deleting korio.temp2")
+		assertEquals(true, temp["korio.temp3"].delete(), "deleting korio.temp3")
+		assertEquals(false, temp["korio.temp3"].delete(), "deleting korio.temp3")
 		assertEquals(
 			tempVfs["korio.temp3"].absolutePath.replace('\\', '/'),
 			temp["korio.temp3"].absolutePath
