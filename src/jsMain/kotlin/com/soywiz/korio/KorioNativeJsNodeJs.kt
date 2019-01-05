@@ -355,8 +355,13 @@ class NodeJsLocalVfs : LocalVfs() {
 	override fun toString(): String = "NodeJsLocalVfs"
 }
 
-class NodeFDStream(val file: VfsFile, val fs: dynamic, val fd: NodeJsLocalVfs.FD) : AsyncStreamBase() {
+class NodeFDStream(val file: VfsFile, val fs: dynamic, var fd: NodeJsLocalVfs.FD?) : AsyncStreamBase() {
+	private fun checkFd() {
+		if (fd == null) error("File $file already closed")
+	}
+
 	override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = suspendCoroutine { c ->
+		checkFd()
 		fs.read(fd, buffer.toNodeJsBuffer(), offset, len, position.toDouble()) { err, bytesRead, buf ->
 			if (err != null) {
 				c.resumeWithException(IOException("Error reading from $file :: err=$err"))
@@ -370,6 +375,7 @@ class NodeFDStream(val file: VfsFile, val fs: dynamic, val fd: NodeJsLocalVfs.FD
 	}
 
 	override suspend fun write(position: Long, buffer: ByteArray, offset: Int, len: Int): Unit = suspendCoroutine { c ->
+		checkFd()
 		fs.write(fd, buffer.toNodeJsBuffer(), offset, len, position.toDouble()) { err, bytesWritten, buffer ->
 			if (err != null) {
 				c.resumeWithException(IOException("Error writting to $file :: err=$err"))
@@ -382,6 +388,7 @@ class NodeFDStream(val file: VfsFile, val fs: dynamic, val fd: NodeJsLocalVfs.FD
 	}
 
 	override suspend fun setLength(value: Long): Unit = suspendCoroutine { c ->
+		checkFd()
 		fs.ftruncate(fd, value.toDouble()) { err ->
 			if (err != null) {
 				c.resumeWithException(IOException("Error setting length to $file :: err=$err"))
@@ -394,6 +401,7 @@ class NodeFDStream(val file: VfsFile, val fs: dynamic, val fd: NodeJsLocalVfs.FD
 	}
 
 	override suspend fun getLength(): Long = suspendCoroutine { c ->
+		checkFd()
 		fs.fstat(fd) { err, stats ->
 			if (err != null) {
 				c.resumeWithException(IOException("Error getting length from $file :: err=$err"))
@@ -411,17 +419,20 @@ class NodeFDStream(val file: VfsFile, val fs: dynamic, val fd: NodeJsLocalVfs.FD
 	override suspend fun close(): Unit {
 		//if (closed) error("File already closed")
 		//closed = true
-		return suspendCoroutine { c ->
-			fs.close(fd) { err ->
-				if (err != null) {
-					//c.resumeWithException(IOException("Error closing err=$err"))
-					c.resume(Unit) // Allow to close several times
-				} else {
-					c.resume(Unit)
+		if (fd != null) {
+			return suspendCoroutine { c ->
+				fs.close(fd) { err ->
+					fd = null
+					if (err != null) {
+						//c.resumeWithException(IOException("Error closing err=$err"))
+						c.resume(Unit) // Allow to close several times
+					} else {
+						c.resume(Unit)
+					}
+					Unit
 				}
 				Unit
 			}
-			Unit
 		}
 	}
 }

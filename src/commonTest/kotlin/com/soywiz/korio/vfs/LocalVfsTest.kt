@@ -17,7 +17,7 @@ class LocalVfsTest {
 		temp["korio.temp"].writeString(content)
 		temp["korio.temp2"].writeFile(temp["korio.temp"])
 		temp["korio.temp3"].writeFile(temp["korio.temp"])
-		temp["korio.temp3"].writeStream(temp["korio.temp"].open().slice(0 until 3))
+		temp["korio.temp3"].writeStream(temp["korio.temp"].open().slice(0 until 3, closeParent = true))
 		assertEquals(content, temp["korio.temp2"].readString())
 		assertEquals("HEL", temp["korio.temp3"].readString())
 		assertEquals(true, temp["korio.temp"].delete(), "deleting korio.temp")

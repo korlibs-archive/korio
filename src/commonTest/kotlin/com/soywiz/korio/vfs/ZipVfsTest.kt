@@ -13,92 +13,91 @@ import kotlin.test.*
 class ZipVfsTest {
 	@Test
 	fun testZipUncompressed1() = suspendTest {
-		val helloZip = resourcesVfs["hello.zip"].openAsZip()
-
-		assertEquals(
-			"[VfsStat(file=/hello, exists=true, isDirectory=true, size=0, device=-1, inode=0, mode=511, owner=nobody, group=nobody, createTime=Mon, 26 Dec 2016 00:00:10 UTC, modifiedTime=Thu, 01 Jan 1970 00:00:00 UTC, lastAccessTime=Thu, 01 Jan 1970 00:00:00 UTC, extraInfo=null, id=null)]",
-			helloZip.list().toList().map { it.stat().toString(showFile = false) }.toString()
-		)
+		resourcesVfs["hello.zip"].openAsZip { helloZip ->
+			assertEquals(
+				"[VfsStat(file=/hello, exists=true, isDirectory=true, size=0, device=-1, inode=0, mode=511, owner=nobody, group=nobody, createTime=Mon, 26 Dec 2016 00:00:10 UTC, modifiedTime=Thu, 01 Jan 1970 00:00:00 UTC, lastAccessTime=Thu, 01 Jan 1970 00:00:00 UTC, extraInfo=null, id=null)]",
+				helloZip.list().toList().map { it.stat().toString(showFile = false) }.toString()
+			)
+		}
 	}
 
 	@Test
 	fun testZipUncompressed2() = suspendTest {
-		val helloZip = resourcesVfs["hello.zip"].openAsZip()
-
-		assertEquals(
-			"[VfsStat(file=/hello/world.txt, exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=Mon, 26 Dec 2016 00:00:10 UTC, modifiedTime=Thu, 01 Jan 1970 00:00:00 UTC, lastAccessTime=Thu, 01 Jan 1970 00:00:00 UTC, extraInfo=null, id=null)]",
-			helloZip["hello"].list().toList().map { it.stat().toString(showFile = false) }.toString()
-		)
+		resourcesVfs["hello.zip"].openAsZip { helloZip ->
+			assertEquals(
+				"[VfsStat(file=/hello/world.txt, exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=Mon, 26 Dec 2016 00:00:10 UTC, modifiedTime=Thu, 01 Jan 1970 00:00:00 UTC, lastAccessTime=Thu, 01 Jan 1970 00:00:00 UTC, extraInfo=null, id=null)]",
+				helloZip["hello"].list().toList().map { it.stat().toString(showFile = false) }.toString()
+			)
+		}
 	}
 
 	@Test
 	fun testZipUncompressed3() = suspendTest {
-		val helloZip = resourcesVfs["hello.zip"].openAsZip()
-
-		assertEquals(
-			"VfsStat(file=/hello/world.txt, exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=Mon, 26 Dec 2016 00:00:10 UTC, modifiedTime=Thu, 01 Jan 1970 00:00:00 UTC, lastAccessTime=Thu, 01 Jan 1970 00:00:00 UTC, extraInfo=null, id=null)",
-			helloZip["hello/world.txt"].stat().toString(showFile = false)
-		)
+		resourcesVfs["hello.zip"].openAsZip { helloZip ->
+			assertEquals(
+				"VfsStat(file=/hello/world.txt, exists=true, isDirectory=false, size=12, device=-1, inode=1, mode=511, owner=nobody, group=nobody, createTime=Mon, 26 Dec 2016 00:00:10 UTC, modifiedTime=Thu, 01 Jan 1970 00:00:00 UTC, lastAccessTime=Thu, 01 Jan 1970 00:00:00 UTC, extraInfo=null, id=null)",
+				helloZip["hello/world.txt"].stat().toString(showFile = false)
+			)
+		}
 	}
 
 	@Test
 	fun testZipUncompressed4() = suspendTest {
-		val helloZip = resourcesVfs["hello.zip"].openAsZip()
-
-		assertEquals(
-			"HELLO WORLD!",
-			helloZip["hello/world.txt"].readString()
-		)
+		resourcesVfs["hello.zip"].openAsZip { helloZip ->
+			assertEquals(
+				"HELLO WORLD!",
+				helloZip["hello/world.txt"].readString()
+			)
+		}
 	}
 
 	@Test
 	fun testZipUncompressed5() = suspendTest {
-		val helloZip = resourcesVfs["hello.zip"].openAsZip()
+		resourcesVfs["hello.zip"].openAsZip { helloZip ->
+			val stat = helloZip["hello/world.txt"].stat()
+			val createTime = stat.createTime
 
-		val stat = helloZip["hello/world.txt"].stat()
-		val createTime = stat.createTime
-
-		assertEquals(
-			"2016-12-26 00:00:10",
-			DateFormat("YYYY-MM-dd HH:mm:ss").format(createTime)
-		)
+			assertEquals(
+				"2016-12-26 00:00:10",
+				DateFormat("YYYY-MM-dd HH:mm:ss").format(createTime)
+			)
+		}
 	}
 
 	@Test
 	fun testZipCompressed() = suspendTestExceptJs {
-		val helloZip = resourcesVfs["compressedHello.zip"].openAsZip()
+		resourcesVfs["compressedHello.zip"].openAsZip { helloZip ->
+			val contents =
+				"HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO WORLD!"
 
-		val contents =
-			"HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO HELLO WORLD!"
+			assertEquals(
+				contents,
+				helloZip["hello/compressedWorld.txt"].readString()
+			)
 
-		assertEquals(
-			contents,
-			helloZip["hello/compressedWorld.txt"].readString()
-		)
+			assertEquals(
+				contents,
+				helloZip["hello/compressedWorld.txt"].openUse { readAvailable() }.toString(UTF8)
+			)
 
-		assertEquals(
-			contents,
-			helloZip["hello/compressedWorld.txt"].openUse { readAvailable() }.toString(UTF8)
-		)
+			assertEquals(
+				contents.toByteArray().size.toLong(),
+				helloZip["hello/compressedWorld.txt"].openUse { getLength() }
+			)
 
-		assertEquals(
-			contents.toByteArray().size.toLong(),
-			helloZip["hello/compressedWorld.txt"].openUse { getLength() }
-		)
+			assertEquals(
+				"[/hello, /hello/compressedWorld.txt, /hello/world.txt]",
+				helloZip.listRecursive().toList().map { it.fullName }.toString()
+			)
 
-		assertEquals(
-			"[/hello, /hello/compressedWorld.txt, /hello/world.txt]",
-			helloZip.listRecursive().toList().map { it.fullName }.toString()
-		)
-
-		println(helloZip.stat())
-		assertEquals(true, helloZip.exists())
-		assertEquals(true, helloZip.isDirectory())
-		assertEquals(true, helloZip["/"].isDirectory())
-		val mem = MemoryVfs()
-		helloZip.copyToTree(mem)
-		assertEquals(contents, mem["hello/compressedWorld.txt"].readString())
-
+			println(helloZip.stat())
+			assertEquals(true, helloZip.exists())
+			assertEquals(true, helloZip.isDirectory())
+			assertEquals(true, helloZip["/"].isDirectory())
+			val mem = MemoryVfs()
+			helloZip.copyToTree(mem)
+			assertEquals(contents, mem["hello/compressedWorld.txt"].readString())
+		}
 	}
 
 	@Test
@@ -111,16 +110,17 @@ class ZipVfsTest {
 		val zipBytes = mem.createZipFromTree()
 		//println("[2]")
 		//zipBytes.writeToFile("c:/temp/mytest.zip")
-		val zip = zipBytes.openAsync().openAsZip()
-		//println("[3]")
-		assertEquals(
-			"test",
-			zip["/test.txt"].readString()
-		)
-		assertEquals(
-			"hello world world world world!",
-			zip["/hello/world.txt"].readString()
-		)
+		zipBytes.openAsync().openAsZip { zip ->
+			//println("[3]")
+			assertEquals(
+				"test",
+				zip["/test.txt"].readString()
+			)
+			assertEquals(
+				"hello world world world world!",
+				zip["/hello/world.txt"].readString()
+			)
+		}
 	}
 
 	@Test
@@ -130,22 +130,24 @@ class ZipVfsTest {
 		//UrlVfs("https://github.com/soywiz/korge-tools/releases/download/binaries/rhubarb-lip-sync-1.4.2-win32.zip").copyTo(LocalVfs["c:/temp/file.zip"])
 
 		//val zip = LocalVfs("c:/temp/rhubarb-lip-sync-1.4.2-osx.zip").openAsZip()
-		val zip = localVfs("c:/temp/rhubarb-lip-sync-1.4.2-win32.zip").openAsZip()
-		//zip.copyTo(mem) // IOException
-		zip.copyToTree(mem) // IOException
+		localVfs("c:/temp/rhubarb-lip-sync-1.4.2-win32.zip").openAsZip { zip ->
+			//zip.copyTo(mem) // IOException
+			zip.copyToTree(mem) // IOException
 
-		//assertEquals(
-		//	listOf("/rhubarb-lip-sync-1.4.2-osx"),
-		//	zip.list().map { it.fullname }.toList()
-		//)
-		//val mem = MemoryVfs()
-		//zip.copyToTree(mem)
+			//assertEquals(
+			//	listOf("/rhubarb-lip-sync-1.4.2-osx"),
+			//	zip.list().map { it.fullname }.toList()
+			//)
+			//val mem = MemoryVfs()
+			//zip.copyToTree(mem)
+		}
 	}
 
 	@Test
 	fun testReadChunk() = suspendTest {
-		val zip = resourcesVfs["simple1.fla.zip"].openAsZip()
-		val xml = zip["DOMDocument.xml"].readXml()
-		assertEquals(1, xml.descendants.filter { it.nameLC == "frames" }.count())
+		resourcesVfs["simple1.fla.zip"].openAsZip { zip ->
+			val xml = zip["DOMDocument.xml"].readXml()
+			assertEquals(1, xml.descendants.filter { it.nameLC == "frames" }.count())
+		}
 	}
 }

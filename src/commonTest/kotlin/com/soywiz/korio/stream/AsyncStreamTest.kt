@@ -34,4 +34,26 @@ class AsyncStreamTest {
 		assertTrue(byteArrayOf(1, 2, 3).openSync().toAsync().base is MemoryAsyncStreamBase)
 		assertTrue(byteArrayOf(1, 2, 3).openAsync().base is MemoryAsyncStreamBase)
 	}
+
+	//@Test
+	//fun closeRefCount() = suspendTest {
+	//	val log = arrayListOf<String>()
+//
+	//	val stream = object : AsyncStreamBase() {
+	//		override suspend fun getLength(): Long = 20L
+//
+	//		override suspend fun close() {
+	//			log += "close"
+	//		}
+	//	}.toAsyncStream()
+//
+	//	val a = stream.slice(0 until 10)
+	//	val b = stream.slice(0 until 10)
+//
+	//	assertEquals(listOf<String>(), log)
+	//	a.close()
+	//	assertEquals(listOf<String>(), log)
+	//	b.close()
+	//	assertEquals(listOf("close"), log)
+	//}
 }

@@ -12,7 +12,7 @@ import kotlin.coroutines.*
 import kotlin.math.*
 import kotlin.reflect.*
 
-abstract class Vfs {
+abstract class Vfs : AsyncCloseable {
 	protected open val absolutePath: String = ""
 
 	open fun getAbsolutePath(path: String) = absolutePath.pathInfo.lightCombine(path.pathInfo).fullPath
@@ -25,6 +25,8 @@ abstract class Vfs {
 	operator fun get(path: String) = root[path]
 
 	fun file(path: String) = root[path]
+
+	override suspend fun close(): Unit = Unit
 
 	fun createExistsStat(
 		path: String, isDirectory: Boolean, size: Long, device: Long = -1, inode: Long = -1, mode: Int = 511,

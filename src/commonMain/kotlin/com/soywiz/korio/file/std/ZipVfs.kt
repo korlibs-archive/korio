@@ -16,10 +16,7 @@ import kotlin.collections.set
 import kotlin.coroutines.*
 import kotlin.math.*
 
-suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null): VfsFile =
-	ZipVfs(s, zipFile, caseSensitive = true)
-
-suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Boolean = true): VfsFile {
+suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Boolean = true, closeStream: Boolean = false): VfsFile {
 	//val s = zipFile.open(VfsOpenMode.READ)
 	var endBytes = EMPTY_BYTE_ARRAY
 
@@ -167,6 +164,12 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 	class Impl : Vfs() {
 		val vfs = this
 
+		override suspend fun close() {
+			if (closeStream) {
+				s.close()
+			}
+		}
+
 		override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
 			val entry = files[path.normalizeName()] ?: throw FileNotFoundException("Path: '$path'")
 			if (entry.isDirectory) throw IOException("Can't open a zip directory for $mode")
@@ -236,27 +239,29 @@ private class DosFileDateTime(var dosTime: Int, var dosDate: Int) {
 	val day: Int get() = dosDate.extract(0, 5)
 	val month1: Int get() = dosDate.extract(5, 4)
 	val fullYear: Int get() = 1980 + dosDate.extract(9, 7)
-
-	init {
-		//println("DosFileDateTime: $fullYear-$month1-$day $hours-$minutes-$seconds")
-	}
-
-	val utc: DateTime = DateTime.createAdjusted(fullYear, month1, day, hours, minutes, seconds)
+	val utc: DateTime by lazy { DateTime.createAdjusted(fullYear, month1, day, hours, minutes, seconds) }
 }
 
-suspend fun VfsFile.openAsZip() =
-	ZipVfs(this.open(com.soywiz.korio.file.VfsOpenMode.READ), this)
+suspend fun VfsFile.openAsZip(caseSensitive: Boolean = true): VfsFile = ZipVfs(this.open(VfsOpenMode.READ), this, caseSensitive = caseSensitive, closeStream = true)
+suspend fun AsyncStream.openAsZip(caseSensitive: Boolean = true) = ZipVfs(this, caseSensitive = caseSensitive, closeStream = false)
 
-suspend fun VfsFile.openAsZip(caseSensitive: Boolean) =
-	ZipVfs(
-		this.open(com.soywiz.korio.file.VfsOpenMode.READ),
-		this,
-		caseSensitive = caseSensitive
-	)
+suspend fun <R> VfsFile.openAsZip(caseSensitive: Boolean = true, callback: suspend (VfsFile) -> R): R {
+	val file = openAsZip(caseSensitive)
+	try {
+		return callback(file)
+	} finally {
+		file.vfs.close()
+	}
+}
 
-suspend fun AsyncStream.openAsZip() = ZipVfs(this)
-suspend fun AsyncStream.openAsZip(caseSensitive: Boolean) =
-	ZipVfs(this, caseSensitive = caseSensitive)
+suspend fun <R> AsyncStream.openAsZip(caseSensitive: Boolean = true, callback: suspend (VfsFile) -> R): R {
+	val file = openAsZip(caseSensitive)
+	try {
+		return callback(file)
+	} finally {
+		//file.vfs.close()
+	}
+}
 
 /**
  * @TODO: Kotlin.JS BUG:

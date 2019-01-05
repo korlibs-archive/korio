@@ -132,6 +132,8 @@ fun AsyncBaseStream.toAsyncStream(): AsyncStream {
 }
 
 open class AsyncStreamBase : AsyncCloseable, AsyncRAInputStream, AsyncRAOutputStream, AsyncLengthStream {
+	//var refCount = 0
+
 	override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int =
 		throw UnsupportedOperationException()
 
@@ -195,8 +197,13 @@ suspend fun AsyncPositionLengthStream.eof(): Boolean = this.getAvailable() <= 0L
 class SliceAsyncStreamBase(
 	internal val base: AsyncStreamBase,
 	internal val baseStart: Long,
-	internal val baseEnd: Long
+	internal val baseEnd: Long,
+	internal val closeParent: Boolean
 ) : AsyncStreamBase() {
+	//init {
+	//	base.refCount++
+	//}
+
 	internal val baseLength = baseEnd - baseStart
 
 	private fun clampPosition(position: Long) = position.clamp(baseStart, baseEnd)
@@ -221,7 +228,11 @@ class SliceAsyncStreamBase(
 
 	override suspend fun getLength(): Long = baseLength
 
-	override suspend fun close() = Unit
+	override suspend fun close() {
+		if (closeParent) {
+			base.close()
+		}
+	}
 
 	override fun toString(): String = "SliceAsyncStreamBase($base, $baseStart, $baseEnd)"
 }
@@ -288,16 +299,16 @@ class BufferedStreamBase(val base: AsyncStreamBase, val blockSize: Int = 2048, v
 	override suspend fun close() = base.close()
 }
 
-suspend fun AsyncStream.sliceWithSize(start: Long, length: Long): AsyncStream = sliceWithBounds(start, start + length)
-suspend fun AsyncStream.sliceWithSize(start: Int, length: Int): AsyncStream =
-	sliceWithBounds(start.toLong(), (start + length).toLong())
+suspend fun AsyncStream.sliceWithSize(start: Long, length: Long, closeParent: Boolean = false): AsyncStream = sliceWithBounds(start, start + length, closeParent)
+suspend fun AsyncStream.sliceWithSize(start: Int, length: Int, closeParent: Boolean = false): AsyncStream =
+	sliceWithBounds(start.toLong(), (start + length).toLong(), closeParent)
 
-suspend fun AsyncStream.slice(range: IntRange): AsyncStream =
-	sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1))
+suspend fun AsyncStream.slice(range: IntRange, closeParent: Boolean = false): AsyncStream =
+	sliceWithBounds(range.start.toLong(), (range.endInclusive.toLong() + 1), closeParent)
 
-suspend fun AsyncStream.slice(range: LongRange): AsyncStream = sliceWithBounds(range.start, (range.endInclusive + 1))
+suspend fun AsyncStream.slice(range: LongRange, closeParent: Boolean = false): AsyncStream = sliceWithBounds(range.start, (range.endInclusive + 1), closeParent)
 
-suspend fun AsyncStream.sliceWithBounds(start: Long, end: Long): AsyncStream {
+suspend fun AsyncStream.sliceWithBounds(start: Long, end: Long, closeParent: Boolean = false): AsyncStream {
 	val len = this.getLength()
 	val clampedStart = start.clamp(0, len)
 	val clampedEnd = end.clamp(0, len)
@@ -306,15 +317,16 @@ suspend fun AsyncStream.sliceWithBounds(start: Long, end: Long): AsyncStream {
 		SliceAsyncStreamBase(
 			this.base.base,
 			this.base.baseStart + clampedStart,
-			this.base.baseStart + clampedEnd
+			this.base.baseStart + clampedEnd,
+			closeParent
 		).toAsyncStream()
 	} else {
-		SliceAsyncStreamBase(this.base, clampedStart, clampedEnd).toAsyncStream()
+		SliceAsyncStreamBase(this.base, clampedStart, clampedEnd, closeParent).toAsyncStream()
 	}
 }
 
-suspend fun AsyncStream.sliceStart(start: Long = 0L): AsyncStream = sliceWithBounds(start, this.getLength())
-suspend fun AsyncStream.sliceHere(): AsyncStream = this.sliceWithSize(position, this.getLength())
+suspend fun AsyncStream.sliceStart(start: Long = 0L, closeParent: Boolean = false): AsyncStream = sliceWithBounds(start, this.getLength(), closeParent)
+suspend fun AsyncStream.sliceHere(closeParent: Boolean = false): AsyncStream = this.sliceWithSize(position, this.getLength(), closeParent)
 
 suspend fun AsyncStream.readSlice(length: Long): AsyncStream {
 	val start = getPosition()

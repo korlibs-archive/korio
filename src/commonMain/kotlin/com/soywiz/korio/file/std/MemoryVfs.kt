@@ -30,15 +30,4 @@ fun MemoryVfsMix(
 	}
 }, caseSensitive)
 
-fun MemoryVfsMix(
-	vararg items: Pair<String, Any>,
-	caseSensitive: Boolean = true,
-	charset: Charset = UTF8
-): VfsFile = MemoryVfs(items.map { (key, value) ->
-	key to when (value) {
-		is SyncStream -> value.toAsync()
-		is ByteArray -> value.openAsync()
-		is String -> value.openAsync(charset)
-		else -> value.toString().toByteArray(charset).openAsync()
-	}
-}.toMap(), caseSensitive)
+fun MemoryVfsMix(vararg items: Pair<String, Any>, caseSensitive: Boolean = true, charset: Charset = UTF8): VfsFile = MemoryVfsMix(items.toMap(), caseSensitive, charset)
