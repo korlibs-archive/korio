@@ -1,5 +1,6 @@
 package com.soywiz.korio.lang
 
+import com.soywiz.kds.*
 import com.soywiz.kmem.*
 
 abstract class Charset(val name: String) {
@@ -74,12 +75,14 @@ open class UTC8CharsetBase(name: String) : Charset(name) {
 }
 
 open class SingleByteCharset(name: String, val conv: String) : Charset(name) {
-	// @TODO: Optimize this (IntIntMap)
-	val v = conv.withIndex().map { it.value.toInt() to it.index }.toMap()
+	val v: IntIntMap = IntIntMap().apply {
+		for (n in 0 until conv.length) this[conv[n].toInt()] = n
+	}
 
 	override fun encode(out: ByteArrayBuilder, src: CharSequence, start: Int, end: Int) {
 		for (n in start until end) {
-			out.append(v[src[n].toInt()]?.toByte() ?: '?'.toByte())
+			val c = src[n].toInt()
+			out.append(if (v.contains(c)) v[c].toByte() else '?'.toByte())
 		}
 	}
 
