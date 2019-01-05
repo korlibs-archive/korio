@@ -1,0 +1,25 @@
+package com.soywiz.korio.lang
+
+import kotlinx.cinterop.*
+
+actual object Environment {
+	private fun getEnvs(): Map<String, String> {
+		val out = LinkedHashMap<String, String>()
+		val env = __environ
+		var n = 0
+		while (true) {
+			val line = env?.get(n++)?.toKString()
+			if (line == null || line.isNullOrBlank()) break
+			val parts = line.split('=', limit = 2)
+			out[parts[0]] = parts.getOrElse(1) { parts[0] }
+		}
+		return out
+	}
+
+	private val allEnvs by lazy { getEnvs() }
+	private val allEnvsUpper by lazy { allEnvs.map { it.key.toUpperCase() to it.value } }.toMap()
+
+	//actual operator fun get(key: String): String? = platform.posix.getenv(key)?.toKString()
+	actual operator fun get(key: String): String? = allEnvsUpper[key.toUpperCase()]
+	actual fun getAll() = allEnvs
+}

@@ -1,5 +1,6 @@
 package com.soywiz.korio.lang
 
+/*
 import kotlinx.cinterop.*
 
 actual object Environment {
@@ -7,3 +8,4 @@ actual object Environment {
 		return platform.posix.getenv(key)?.toKString()
 	}
 }
+*/

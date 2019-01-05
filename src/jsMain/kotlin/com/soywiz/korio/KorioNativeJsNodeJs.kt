@@ -258,6 +258,35 @@ class NodeJsLocalVfs : LocalVfs() {
 		return path.pathInfo.normalize()
 	}
 
+
+	//fun String.escapeShellCmd(): String {
+	//	// @TODO: escapeShellArg @TODO: Consider all cases and windows
+	//	return this
+	//}
+	//
+	//fun String.escapeShellArg(): String {
+	//	// @TODO: escapeShellArg @TODO: Consider all cases and windows
+	//	return "'" + this.replace("'", "\'") + "'"
+	//}
+
+	override suspend fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler): Int {
+		val process = require("child_process").spawn(cmdAndArgs.first(), cmdAndArgs.drop(1).toTypedArray(), jsObject(
+			"cwd" to path,
+			"env" to env.toJsObject(),
+			"encoding" to "buffer",
+			"shell" to true
+		))
+
+		val queue = AsyncQueue().withContext(coroutineContext)
+		val exitCodeDeferred = CompletableDeferred<Int>()
+
+		process.stdout.on("data") { data: NodeJsBuffer -> queue { handler.onOut(data.toByteArray()) } }
+		process.stderr.on("data") { data:  NodeJsBuffer -> queue { handler.onErr(data.toByteArray()) } }
+		process.on("close") { code: Int -> exitCodeDeferred.complete(code) }
+
+		return exitCodeDeferred.await()
+	}
+
 	override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean = suspendCoroutine { c ->
 		fs.mkdir(getFullPath(path), "777".toInt(8)) { err ->
 			c.resume((err == null))

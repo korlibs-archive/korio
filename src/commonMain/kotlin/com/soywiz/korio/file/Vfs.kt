@@ -42,18 +42,18 @@ abstract class Vfs {
 		createTime = DateTime.EPOCH, modifiedTime = DateTime.EPOCH, lastAccessTime = DateTime.EPOCH, extraInfo = extraInfo
 	)
 
-	open suspend fun exec(
+	suspend fun exec(
 		path: String,
 		cmdAndArgs: List<String>,
 		handler: VfsProcessHandler = VfsProcessHandler()
-	): Int = throw UnsupportedOperationException()
+	): Int = exec(path, cmdAndArgs, Environment.getAll(), handler)
 
 	open suspend fun exec(
 		path: String,
 		cmdAndArgs: List<String>,
 		env: Map<String, String>,
 		handler: VfsProcessHandler = VfsProcessHandler()
-	): Int = throw UnsupportedOperationException()
+	): Int = unsupported()
 
 	open suspend fun open(path: String, mode: VfsOpenMode): AsyncStream = throw UnsupportedOperationException()
 

@@ -6,11 +6,12 @@ import com.soywiz.korio.util.*
 import kotlin.browser.*
 
 actual object Environment {
-	actual operator fun get(key: String): String? = if (OS.isJsNodeJs) {
-		process.env[key]
-	} else {
-		val qs = QueryString.decode((document.location?.search ?: "").trimStart('?'))
-		val envs = qs.map { it.key.toUpperCase() to (it.value.firstOrNull() ?: it.key) }.toMap()
-		envs[key.toUpperCase()]
+	val allEnvs: Map<String, String> = when {
+		OS.isJsNodeJs -> jsObjectKeysArray(process.env).associate { it to process.env[it] }
+		else -> QueryString.decode((document.location?.search ?: "").trimStart('?')).map { it.key to (it.value.firstOrNull() ?: it.key) }.toMap()
 	}
+	val allEnvsUpperCase = allEnvs.map { it.key.toUpperCase() to it.value }.toMap()
+
+	actual operator fun get(key: String): String? = allEnvsUpperCase[key.toUpperCase()]
+	actual fun getAll(): Map<String, String> = allEnvs
 }

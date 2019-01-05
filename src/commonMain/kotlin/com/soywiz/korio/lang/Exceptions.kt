@@ -27,7 +27,7 @@ fun noImpl(msg: String): Nothing = throw NotImplementedException(msg)
 fun invalidOp(msg: String): Nothing = throw InvalidOperationException(msg)
 fun invalidArg(msg: String): Nothing = throw InvalidArgumentException(msg)
 fun unsupported(msg: String): Nothing = throw UnsupportedOperationException(msg)
-fun unsupported(): Nothing = throw UnsupportedOperationException()
+fun unsupported(): Nothing = throw UnsupportedOperationException("unsupported")
 fun invalidArgument(msg: String): Nothing = throw InvalidArgumentException(msg)
 fun unexpected(msg: String): Nothing = throw UnexpectedException(msg)
 

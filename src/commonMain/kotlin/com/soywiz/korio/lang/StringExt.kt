@@ -121,3 +121,5 @@ fun String.parseInt(): Int = when {
 }
 
 val String.quoted: String get() = this.quote()
+
+fun String.toCharArray() = CharArray(length) { this@toCharArray[it] }

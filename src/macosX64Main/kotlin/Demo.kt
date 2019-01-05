@@ -1,3 +1,6 @@
+import platform.Foundation.*
+import platform.darwin.*
+
 /*
 import com.soywiz.korio.net.*
 import kotlinx.cinterop.*
@@ -308,3 +311,7 @@ object NativeAsyncSocketFactory : AsyncSocketFactory() {
 	}
 }
 */
+
+fun test() {
+	NSProcessInfo.processInfo.environment
+}
