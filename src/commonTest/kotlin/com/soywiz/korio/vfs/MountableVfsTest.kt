@@ -10,12 +10,13 @@ import kotlin.test.*
 class MountableVfsTest {
 	@Test
 	fun testMountable() = suspendTest {
-		MountableVfs(closeMounts = true) {
+		val root = MountableVfs(closeMounts = true) {
 			mount("/zip/demo2", resourcesVfs["hello.zip"].openAsZip())
 			mount("/zip", resourcesVfs["hello.zip"].openAsZip())
 			mount("/zip/demo", resourcesVfs["hello.zip"].openAsZip())
 			mount("/iso", resourcesVfs["isotest.iso"].openAsIso())
-		}.useVfs { root ->
+		}
+		try {
 			assertEquals("HELLO WORLD!", root["/zip/hello/world.txt"].readString())
 			assertEquals("HELLO WORLD!", root["/zip/demo/hello/world.txt"].readString())
 			assertEquals("HELLO WORLD!", root["/zip/demo2/hello/world.txt"].readString())
@@ -26,6 +27,8 @@ class MountableVfsTest {
 			expectException<FileNotFoundException> {
 				root["/zip/hello/world.txt"].readString()
 			}
+		} finally {
+			root.vfs.close()
 		}
 	}
 }
