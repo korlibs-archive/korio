@@ -33,7 +33,7 @@ actual object Environment {
 		}.toMap()
 	}
 	private val allEnvs by lazy { getEnvs() }
-	private val allEnvsUpper by lazy { allEnvs.map { it.key.toUpperCase() to it.value } }.toMap()
+	private val allEnvsUpper by lazy { allEnvs.entries.map { it.key.toUpperCase() to it.value } }.toMap()
 
 	//actual operator fun get(key: String): String? = platform.posix.getenv(key)?.toKString()
 	actual operator fun get(key: String): String? = allEnvsUpper[key.toUpperCase()]

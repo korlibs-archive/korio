@@ -1,7 +1,9 @@
 package com.soywiz.korio.vfs
 
 import com.soywiz.korio.async.*
+import com.soywiz.korio.file.*
 import com.soywiz.korio.file.std.*
+import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import kotlin.test.*
@@ -26,13 +28,13 @@ class LocalVfsTest {
 			tempVfs["korio.temp3"].absolutePath.replace('\\', '/'),
 			temp["korio.temp3"].absolutePath
 		)
-		//assertEquals("1", temp.execToString(listOf("pwd")).trim())
 	}
 
 	@Test
 	fun execTest() = suspendTest {
 		when {
 			OS.isJsBrowserOrWorker -> Unit // Skip
+			OS.isNative -> Unit // Skip
 			else -> assertEquals("1", temp.execToString(listOf("echo", "1")).trim())
 		}
 	}
@@ -43,4 +45,24 @@ class LocalVfsTest {
 		temp["korio.temp.folder/test.txt"].delete()
 		temp["korio.temp.folder"].delete()
 	}
+
+	private val local by lazy { localCurrentDirVfs }
+	private val existing1 by lazy { local["__existing"] }
+	private val unexisting1 by lazy { local["__unexisting"] }
+
+	@Test
+	fun openModeRead() = suspendTest {
+		existing1.writeString("hello")
+		val readBytes = existing1.openUse(VfsOpenMode.READ) {
+			val result = readAll()
+			println("result: " + result.size)
+			println("result: " + result.contentToString())
+			result
+		}
+		println("readBytes: " + readBytes.size)
+		println("readBytes: " + readBytes.contentToString())
+		assertEquals("hello", readBytes.toString(UTF8))
+		expectException<FileNotFoundException> { unexisting1.open(VfsOpenMode.READ) }
+	}
+
 }

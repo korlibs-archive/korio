@@ -217,21 +217,17 @@ enum class VfsOpenMode(
 	val truncate: Boolean = false
 ) {
 	READ("rb", write = false),
-	WRITE("rwb", write = true, createIfNotExists = true),
+	WRITE("r+b", write = true, createIfNotExists = true),
 	APPEND("a+b", write = true, createIfNotExists = true),
-	CREATE_OR_TRUNCATE("rwb", write = true, createIfNotExists = true, truncate = true),
-	CREATE("rwb", write = true, createIfNotExists = true),
-	CREATE_NEW("rwb", write = true);
-
-	companion object {
-		fun fromString(str: String): VfsOpenMode {
-			if ('r' in str) {
-				return READ
-			}
-			TODO()
-		}
-	}
+	CREATE_OR_TRUNCATE("w+b", write = true, createIfNotExists = true, truncate = true),
+	CREATE("w+b", write = true, createIfNotExists = true),
+	CREATE_NEW("w+b", write = true);
 }
+
+//"r"	Open for reading only. Invoking any of the write methods of the resulting object will cause an IOException to be thrown.
+//"rw"	Open for reading and writing. If the file does not already exist then an attempt will be made to create it.
+//"rws"	Open for reading and writing, as with "rw", and also require that every update to the file's content or metadata be written synchronously to the underlying storage device.
+//"rwd"  	Open for reading and writing, as with "rw", and also require that every update to the file's content be written synchronously to the underlying storage device.
 
 open class VfsProcessHandler {
 	open suspend fun onOut(data: ByteArray): Unit = Unit

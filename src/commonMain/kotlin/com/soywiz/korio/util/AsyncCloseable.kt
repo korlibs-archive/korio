@@ -12,9 +12,9 @@ interface AsyncCloseable {
 	}
 }
 
-suspend inline fun <T : AsyncCloseable, TR> T.use(noinline callback: suspend T.() -> TR): TR {
+suspend inline fun <T : AsyncCloseable, TR> T.use(callback: T.() -> TR): TR {
 	try {
-		return callback.await(this@use)
+		return callback(this@use)
 	} finally {
 		close()
 	}

@@ -482,12 +482,12 @@ suspend fun AsyncInputStream.readAll(): ByteArray {
 	return try {
 		if (this is AsyncGetPositionStream && this is AsyncGetLengthStream) {
 			val available = this.getLength() - this.getPosition()
-			return this.readBytesExact(available.toInt())
+			this.readBytesExact(available.toInt())
 		} else if (this is AsyncStream && this.hasAvailable()) {
 			val available = this.getAvailable().toInt()
-			return this.readBytesExact(available)
+			this.readBytesExact(available)
 		} else {
-			val out = ByteArrayBuilder2()
+			val out = ByteArrayBuilder()
 			val temp = ByteArray(0x1000)
 			while (true) {
 				val r = this.read(temp, 0, temp.size)
