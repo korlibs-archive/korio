@@ -2,21 +2,10 @@ package com.soywiz.korio.async
 
 import com.soywiz.kds.*
 import com.soywiz.klock.*
-import com.soywiz.korio.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
-
-// @TODO: BUG: kotlin-js bug :: Uncaught ReferenceError: CoroutineImpl is not defined
-//Coroutine$await$lambda.$metadata$ = {kind: Kotlin.Kind.CLASS, simpleName: null, interfaces: [CoroutineImpl]};
-//Coroutine$await$lambda.prototype = Object.create(CoroutineImpl.prototype);
-
-//suspend inline fun <T, R> (suspend T.() -> R).await(receiver: T): R = withContext(coroutineContext.dispatcher) { this(receiver) }
-//suspend inline fun <R> (suspend () -> R).await(): R = withContext(coroutineContext.dispatcher) { this() }
-
-suspend fun <T, R> (suspend T.() -> R).await(receiver: T): R = this(receiver)
-suspend fun <R> (suspend () -> R).await(): R = this()
 
 // @TODO: Do this better! (JS should use requestAnimationFrame)
 suspend fun delayNextFrame() = _delayNextFrame()
@@ -46,16 +35,6 @@ suspend fun CoroutineContext.delayNextFrame() {
 	delayFrame.delayFrame()
 }
 
-suspend fun CoroutineContext.delayMs(time: Long) {
-	withContext(this) {
-		kotlinx.coroutines.delay(time)
-	}
-}
-
-suspend fun delay(time: TimeSpan): Unit = delay(time.millisecondsLong)
-
-suspend fun CoroutineContext.delay(time: TimeSpan) = delayMs(time.millisecondsLong)
-
 fun CoroutineScope.animationFrameLoop(callback: suspend (Closeable) -> Unit): Closeable {
 	var running = true
 	val close = Closeable {
@@ -70,8 +49,8 @@ fun CoroutineScope.animationFrameLoop(callback: suspend (Closeable) -> Unit): Cl
 	return close
 }
 
-@InternalCoroutinesApi
-class TestCoroutineDispatcher(val frameTime: Int = 16) :
+@UseExperimental(InternalCoroutinesApi::class)
+class TestCoroutineDispatcher(val frameTime: TimeSpan = 16.milliseconds) :
 	AbstractCoroutineContextElement(ContinuationInterceptor),
 	ContinuationInterceptor,
 	Delay, DelayFrame {
@@ -113,7 +92,7 @@ class TestCoroutineDispatcher(val frameTime: Int = 16) :
 	}
 
 	override fun delayFrame(continuation: CancellableContinuation<Unit>) {
-		scheduleAfter(frameTime) { continuation.resume(Unit) }
+		scheduleAfter(frameTime.millisecondsInt) { continuation.resume(Unit) }
 	}
 
 	var exception: Throwable? = null
@@ -151,22 +130,11 @@ class TestCoroutineDispatcher(val frameTime: Int = 16) :
 	}
 }
 
-expect fun suspendTest(callback: suspend () -> Unit)
-fun suspendTest(context: CoroutineContext, callback: suspend () -> Unit) = suspendTest { withContext(context) { callback() } }
-
 // @TODO: Kotlin.JS bug!
 //fun suspendTestExceptJs(callback: suspend () -> Unit) = suspendTest {
 //	if (OS.isJs) return@suspendTest
 //	callback()
 //}
-
-fun suspendTestExceptJs(callback: suspend () -> Unit) {
-	if (!OS.isJs) {
-		suspendTest {
-			callback()
-		}
-	}
-}
 
 fun CoroutineScope.launchImmediately(callback: suspend () -> Unit) =
 	launch(coroutineContext, start = CoroutineStart.UNDISPATCHED) {
@@ -227,3 +195,13 @@ fun <T> asyncImmediately(context: CoroutineContext, callback: suspend () -> T) =
 fun <T> asyncAsap(context: CoroutineContext, callback: suspend () -> T) = CoroutineScope(context).asyncAsap(callback)
 
 expect fun asyncEntryPoint(callback: suspend () -> Unit)
+fun suspendTest(callback: suspend () -> Unit) = asyncEntryPoint(callback)
+fun suspendTest(context: CoroutineContext, callback: suspend () -> Unit) = suspendTest { withContext(context) { callback() } }
+fun suspendTestExceptJs(callback: suspend () -> Unit) {
+	if (!OS.isJs) {
+		suspendTest {
+			callback()
+		}
+	}
+}
+

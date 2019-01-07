@@ -6,6 +6,9 @@ import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
+import kotlin.coroutines.*
 
 open class NodeVfs(val caseSensitive: Boolean = true) : Vfs() {
 	val events = Signal<FileEvent>()
@@ -128,12 +131,10 @@ open class NodeVfs(val caseSensitive: Boolean = true) : Vfs() {
 		}
 	}
 
-	override suspend fun list(path: String): SuspendingSequence<VfsFile> {
-		return asyncGenerate {
-			val node = rootNode[path]
-			for ((name, _) in node.children) {
-				yield(file("$path/$name"))
-			}
+	override suspend fun list(path: String): ReceiveChannel<VfsFile> = produce {
+		val node = rootNode[path]
+		for ((name, _) in node.children) {
+			send(file("$path/$name"))
 		}
 	}
 

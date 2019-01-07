@@ -1,30 +1,30 @@
 package com.soywiz.korio.async
 
-import com.soywiz.korio.concurrent.atomic.*
+import kotlinx.coroutines.channels.*
 
 class AsyncPool<T>(val maxItems: Int = Int.MAX_VALUE, val create: suspend () -> T) {
-	var createdItems = korAtomic(0)
-	private val freedItem = ProduceConsumer<T>()
+	var createdItems = 0
+	private val freedItem = Channel<T>(maxItems)
 
-	suspend fun <TR> tempAlloc(callback: suspend (T) -> TR): TR {
+	suspend fun alloc(): T {
+		return if (createdItems >= maxItems) {
+			freedItem.receive()
+		} else {
+			createdItems++
+			create()
+		}
+	}
+
+	fun free(item: T) {
+		freedItem.offer(item)
+	}
+
+	suspend inline fun <TR> alloc(callback: suspend (T) -> TR): TR {
 		val item = alloc()
 		try {
 			return callback(item)
 		} finally {
 			free(item)
 		}
-	}
-
-	suspend fun alloc(): T {
-		return if (createdItems.value >= maxItems) {
-			freedItem.consume()!!
-		} else {
-			createdItems.addAndGet(1)
-			create()
-		}
-	}
-
-	fun free(item: T) {
-		freedItem.produce(item)
 	}
 }

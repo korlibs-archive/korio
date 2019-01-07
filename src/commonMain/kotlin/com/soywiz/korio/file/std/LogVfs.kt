@@ -5,6 +5,7 @@ import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
+import kotlinx.coroutines.channels.*
 
 class LogVfs(val parent: VfsFile) : Vfs.Proxy() {
 	val log = arrayListOf<String>()
@@ -74,7 +75,7 @@ class LogVfs(val parent: VfsFile) : Vfs.Proxy() {
 		return super.stat(path)
 	}
 
-	override suspend fun list(path: String): SuspendingSequence<VfsFile> {
+	override suspend fun list(path: String): ReceiveChannel<VfsFile> {
 		log += "list($path)"
 		return super.list(path)
 	}

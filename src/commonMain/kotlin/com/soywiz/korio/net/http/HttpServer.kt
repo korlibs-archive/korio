@@ -8,6 +8,7 @@ import com.soywiz.korio.net.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
 open class HttpServer protected constructor() : AsyncCloseable {
@@ -28,7 +29,8 @@ open class HttpServer protected constructor() : AsyncCloseable {
 
 	abstract class WsRequest(
 		uri: String,
-		headers: Http.Headers
+		headers: Http.Headers,
+		val scope: CoroutineScope
 	) : BaseRequest(uri, headers) {
 		abstract fun reject()
 
@@ -62,19 +64,19 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		//	return emitter.toSequence()
 		//}
 
-		fun stringMessageStream() = asyncGenerate3<String> {
-			onStringMessage { yield(it) }
+		fun stringMessageStream() = scope.produce<String> {
+			onStringMessage { send(it) }
 			onClose { close() }
 		}
 
-		fun binaryMessageStream() = asyncGenerate3<ByteArray> {
-			onBinaryMessage { yield(it) }
+		fun binaryMessageStream() = scope.produce<ByteArray> {
+			onBinaryMessage { send(it) }
 			onClose { close() }
 		}
 
-		fun anyMessageStream() = asyncGenerate3<Any> {
-			onStringMessage { yield(it) }
-			onBinaryMessage { yield(it) }
+		fun anyMessageStream() = scope.produce<Any> {
+			onStringMessage { send(it) }
+			onBinaryMessage { send(it) }
 			onClose { close() }
 		}
 	}

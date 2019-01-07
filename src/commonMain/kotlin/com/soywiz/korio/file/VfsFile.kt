@@ -9,12 +9,14 @@ import com.soywiz.korio.file.std.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
 class VfsFile(
 	val vfs: Vfs,
 	val path: String
-) : VfsNamed(path.pathInfo), AsyncInputOpenable, SuspendingSuspendSequence<VfsFile>, Extra by Extra.Mixin() {
+) : VfsNamed(path.pathInfo), AsyncInputOpenable, Extra by Extra.Mixin() {
 	val parent: VfsFile get() = VfsFile(vfs, folder)
 	val root: VfsFile get() = vfs.root
 	val absolutePath: String get() = vfs.getAbsolutePath(this.path)
@@ -124,19 +126,15 @@ class VfsFile(
 
 	suspend fun renameTo(dstPath: String) = vfs.rename(this.path, dstPath)
 
-	suspend fun list(): SuspendingSequence<VfsFile> = vfs.list(this.path)
+	suspend fun list(): ReceiveChannel<VfsFile> = vfs.list(this.path)
 
-	override suspend fun iterator(): SuspendingIterator<VfsFile> = list().iterator()
-
-	suspend fun listRecursive(filter: (VfsFile) -> Boolean = { true }): SuspendingSequence<VfsFile> {
-		return asyncGenerate {
-			for (file in list()) {
-				if (!filter(file)) continue
-				yield(file)
-				val stat = file.stat()
-				if (stat.isDirectory) {
-					for (f in file.listRecursive()) yield(f)
-				}
+	suspend fun listRecursive(filter: (VfsFile) -> Boolean = { true }): ReceiveChannel<VfsFile> = produce {
+		for (file in list()) {
+			if (!filter(file)) continue
+			send(file)
+			val stat = file.stat()
+			if (stat.isDirectory) {
+				for (f in file.listRecursive()) send(f)
 			}
 		}
 	}

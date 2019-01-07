@@ -8,6 +8,7 @@ import com.soywiz.korio.file.std.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
+import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 import kotlin.math.*
 import kotlin.reflect.*
@@ -111,7 +112,7 @@ abstract class Vfs : AsyncCloseable {
 	open suspend fun setAttributes(path: String, attributes: List<Attribute>): Unit = Unit
 
 	open suspend fun stat(path: String): VfsStat = createNonExistsStat(path)
-	open suspend fun list(path: String): SuspendingSequence<VfsFile> = listOf<VfsFile>().toAsync()
+	open suspend fun list(path: String): ReceiveChannel<VfsFile> = listOf<VfsFile>().toChannel()
 	open suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean = unsupported()
 	open suspend fun rmdir(path: String): Boolean = delete(path) // For compatibility
 	open suspend fun delete(path: String): Boolean = unsupported()
@@ -166,7 +167,7 @@ abstract class Vfs : AsyncCloseable {
 		override suspend fun setSize(path: String, size: Long): Unit = initOnce().access(path).setSize(size)
 		override suspend fun stat(path: String): VfsStat = initOnce().access(path).stat().copy(file = file(path))
 		override suspend fun list(path: String) =
-			asyncGenerate<VfsFile> { initOnce(); for (it in access(path).list()) yield(it.transform()) }
+			produce<VfsFile> { initOnce(); for (it in access(path).list()) send(it.transform()) }
 
 		override suspend fun delete(path: String): Boolean = initOnce().access(path).delete()
 		override suspend fun setAttributes(path: String, attributes: List<Attribute>) =

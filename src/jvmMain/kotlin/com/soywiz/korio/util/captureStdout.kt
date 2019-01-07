@@ -56,7 +56,7 @@ suspend fun asyncCaptureStdout(callback: suspend () -> Unit): String {
 	val old = StdoutRouterStream.routePerThread.get()
 	try {
 		StdoutRouterStream.routePerThread.set(out)
-		callback.await()
+		callback()
 	} finally {
 		StdoutRouterStream.routePerThread.set(old)
 	}

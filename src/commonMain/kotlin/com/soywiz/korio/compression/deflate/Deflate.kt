@@ -3,12 +3,14 @@ package com.soywiz.korio.compression.deflate
 import com.soywiz.kmem.*
 import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.util.*
+import com.soywiz.korio.experimental.*
 import com.soywiz.korio.stream.*
 import kotlin.math.*
 
 expect fun Deflate(windowBits: Int): CompressionMethod
 val Deflate: CompressionMethod by lazy { Deflate(15) }
 
+@UseExperimental(KorioExperimentalApi::class)
 open class DeflatePortable(val windowBits: Int) : CompressionMethod {
 	override suspend fun compress(
 		i: BitReader,

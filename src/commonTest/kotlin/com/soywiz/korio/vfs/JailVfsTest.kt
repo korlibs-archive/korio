@@ -5,6 +5,7 @@ import com.soywiz.korio.file.*
 import com.soywiz.korio.file.std.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.util.*
+import kotlinx.coroutines.channels.*
 import kotlin.test.*
 
 class JailVfsTest {

@@ -139,18 +139,20 @@ class LocalVfsNative : LocalVfs() {
 		result
 	}
 
-	override suspend fun list(path: String): SuspendingSequence<VfsFile> = run {
+	override suspend fun list(path: String) = produce {
 		val dir = opendir(resolve(path))
 		val out = ArrayList<VfsFile>()
 		if (dir != null) {
-			while (true) {
-				val dent = readdir(dir) ?: break
-				val name = dent.pointed.d_name.toKString()
-				out += file(name)
+			try {
+				while (true) {
+					val dent = readdir(dir) ?: break
+					val name = dent.pointed.d_name.toKString()
+					send(file(name))
+				}
+			} finally {
+				closedir(dir)
 			}
-			closedir(dir)
 		}
-		SuspendingSequence(out)
 	}
 
 	override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean = run {

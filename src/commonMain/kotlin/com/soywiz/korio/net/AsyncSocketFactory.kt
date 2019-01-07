@@ -6,6 +6,7 @@ import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
 val ANY_PORT = 0
@@ -72,12 +73,12 @@ interface AsyncServer {
 		return Closeable { job.cancel() }
 	}
 
-	suspend fun listen(): SuspendingSequence<AsyncClient> {
+	suspend fun listen(): ReceiveChannel<AsyncClient> {
 		val ctx = coroutineContext
-		return asyncGenerate3 {
+		return CoroutineScope(ctx).produce {
 			launchImmediately(ctx) {
 				listen {
-					yield(it)
+					send(it)
 				}
 			}
 		}

@@ -2,6 +2,7 @@ package com.soywiz.korio.async
 
 import com.soywiz.korio.lang.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
 class AsyncSignal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
@@ -36,9 +37,9 @@ class AsyncSignal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
 
 	operator fun invoke(handler: suspend (T) -> Unit): Closeable = add(handler)
 
-	suspend fun listen(): SuspendingSequence<T> = asyncGenerate {
+	suspend fun listen(): ReceiveChannel<T> = produce {
 		while (true) {
-			yield(waitOne())
+			send(waitOne())
 		}
 	}
 }

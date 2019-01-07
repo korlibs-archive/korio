@@ -1,13 +1,12 @@
 package com.soywiz.korio.net.http
 
-import com.soywiz.klock.*
 import com.soywiz.kmem.*
-import com.soywiz.korio.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.concurrent.atomic.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import java.net.*
 import java.security.*
 import java.security.cert.*
@@ -95,7 +94,7 @@ class HttpClientJvm : HttpClient() {
 				con.connect()
 			}
 
-			val produceConsumer = ProduceConsumer<ByteArray>()
+			val channel = Channel<ByteArray>(4)
 
 			val pheaders = Http.Headers.fromListMap(con.headerFields)
 			val length = pheaders[Http.Headers.ContentLength]?.toLongOrNull()
@@ -110,25 +109,25 @@ class HttpClientJvm : HttpClient() {
 						loop@ while (true) {
 							// @TODO: Totally cancel reading if nobody is consuming this. Think about the best way of doing this.
 							// node.js pause equivalent?
-							val chunkStartTime = DateTime.now()
-							while (produceConsumer.availableCount > 4) { // Prevent filling the memory if nobody is consuming data
-								//println("PREVENT!")
-								delay(10)
-								val chunkCurrentTime = DateTime.now()
-								if ((chunkCurrentTime - chunkStartTime) >= 2.seconds) {
-									System.err.println("[$id] thread=$currentThreadId Two seconds passed without anyone reading data (available=${produceConsumer.availableCount}) from $url. Closing...")
-									break@loop
-								}
-							}
+							//val chunkStartTime = DateTime.now()
+							//while (produceConsumer.isFull > 4) { // Prevent filling the memory if nobody is consuming data
+							//	//println("PREVENT!")
+							//	delay(10)
+							//	val chunkCurrentTime = DateTime.now()
+							//	if ((chunkCurrentTime - chunkStartTime) >= 2.seconds) {
+							//		System.err.println("[$id] thread=$currentThreadId Two seconds passed without anyone reading data (available=${produceConsumer.availableCount}) from $url. Closing...")
+							//		break@loop
+							//	}
+							//}
 							val read = stream.read(temp)
 							//println(" --- [$id][D] thread=$currentThreadId : $read")
 							if (read <= 0) break
-							produceConsumer.produce(temp.copyOf(read))
+							channel.send(temp.copyOf(read))
 						}
 					}
 				} finally {
 					runIgnoringExceptions { syncStream?.close() }
-					runIgnoringExceptions { produceConsumer.close() }
+					runIgnoringExceptions { channel.close() }
 					runIgnoringExceptions { con.disconnect() }
 					HttpStats.disconnections.incrementAndGet()
 				}
@@ -141,7 +140,7 @@ class HttpClientJvm : HttpClient() {
 			//		content = if (con.responseCode < 400) con.inputStream.readBytes().openAsync() else con.errorStream.toAsync().toAsyncStream()
 			//)
 
-			val acontent = produceConsumer.toAsyncInputStream()
+			val acontent = channel.toAsyncInputStream()
 			Response(
 				status = con.responseCode,
 				statusText = con.responseMessage,

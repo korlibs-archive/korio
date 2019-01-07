@@ -9,6 +9,7 @@ import com.soywiz.kmem.*
 import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.experimental.*
 import kotlin.math.*
 
 //actual fun Deflate(windowBits: Int): CompressionMethod = DeflatePortable(windowBits)
@@ -16,6 +17,7 @@ actual fun Deflate(windowBits: Int): CompressionMethod = DeflateNative(windowBit
 
 private const val CHUNK = 64 * 1024
 
+@UseExperimental(KorioExperimentalApi::class)
 fun DeflateNative(windowBits: Int): CompressionMethod = object : CompressionMethod {
 	override suspend fun uncompress(input: BitReader, output: AsyncOutputStream) {
 		memScoped {

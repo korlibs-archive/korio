@@ -2,6 +2,7 @@ package com.soywiz.korio.compression
 
 import com.soywiz.korio.async.*
 import com.soywiz.korio.compression.util.*
+import com.soywiz.korio.experimental.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 
@@ -11,7 +12,10 @@ open class CompressionContext(var level: Int = 6) {
 }
 
 interface CompressionMethod {
+	@KorioExperimentalApi
 	suspend fun uncompress(reader: BitReader, out: AsyncOutputStream): Unit = unsupported()
+
+	@KorioExperimentalApi
 	suspend fun compress(
 		i: BitReader,
 		o: AsyncOutputStream,
@@ -19,12 +23,16 @@ interface CompressionMethod {
 	): Unit = unsupported()
 
 	object Uncompressed : CompressionMethod {
+		@UseExperimental(KorioExperimentalApi::class)
 		override suspend fun uncompress(reader: BitReader, out: AsyncOutputStream): Unit = run { reader.copyTo(out) }
+		@UseExperimental(KorioExperimentalApi::class)
 		override suspend fun compress(i: BitReader, o: AsyncOutputStream, context: CompressionContext): Unit = run { i.copyTo(o) }
 	}
 }
 
+@UseExperimental(KorioExperimentalApi::class)
 suspend fun CompressionMethod.uncompress(i: AsyncInputStreamWithLength, o: AsyncOutputStream): Unit = uncompress(BitReader(i), o)
+@UseExperimental(KorioExperimentalApi::class)
 suspend fun CompressionMethod.compress(i: AsyncInputStreamWithLength, o: AsyncOutputStream, context: CompressionContext = CompressionContext()): Unit = compress(BitReader(i), o, context)
 
 suspend fun CompressionMethod.uncompressStream(input: AsyncInputStreamWithLength): AsyncInputStream = asyncStreamWriter { output -> uncompress(input, output) }

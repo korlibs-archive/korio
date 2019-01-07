@@ -2,13 +2,13 @@ package com.soywiz.korio.file.std
 
 import com.soywiz.klock.*
 import com.soywiz.kmem.*
-import com.soywiz.korio.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.json.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
+import kotlinx.coroutines.channels.*
 import kotlin.math.*
 
 fun SimpleStorage.toVfs(): VfsFile = MapLikeStorageVfs(this).root
@@ -77,11 +77,11 @@ class MapLikeStorageVfs(val storage: SimpleStorage) : Vfs() {
 		return true
 	}
 
-	override suspend fun list(path: String): SuspendingSequence<VfsFile> {
+	override suspend fun list(path: String): ReceiveChannel<VfsFile> {
 		initOnce()
 		val npath = path.normalizePath()
 		val entry = files.getEntryInfo(npath) ?: throw IOException("Can't find '$path'")
-		return entry.children.map { VfsFile(this, it) }.toAsync()
+		return entry.children.map { VfsFile(this, it) }.toChannel()
 	}
 
 	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {

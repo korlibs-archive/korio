@@ -10,6 +10,8 @@ import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import com.soywiz.korio.util.checksum.*
+import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
@@ -217,12 +219,10 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 			return files[path.normalizeName()].toStat(this@Impl[path])
 		}
 
-		override suspend fun list(path: String): SuspendingSequence<VfsFile> {
-			return asyncGenerate(coroutineContext) {
-				for ((_, entry) in filesPerFolder[path.normalizeName()] ?: LinkedHashMap()) {
-					//yield(entry.toStat(this@Impl[entry.path]))
-					yield(vfs[entry.path])
-				}
+		override suspend fun list(path: String): ReceiveChannel<VfsFile> = produce {
+			for ((_, entry) in filesPerFolder[path.normalizeName()] ?: LinkedHashMap()) {
+				//yield(entry.toStat(this@Impl[entry.path]))
+				send(vfs[entry.path])
 			}
 		}
 

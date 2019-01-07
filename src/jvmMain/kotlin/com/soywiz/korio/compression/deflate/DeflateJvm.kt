@@ -2,9 +2,11 @@ package com.soywiz.korio.compression.deflate
 
 import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.util.*
+import com.soywiz.korio.experimental.*
 import com.soywiz.korio.stream.*
 import java.util.zip.*
 
+@UseExperimental(KorioExperimentalApi::class)
 actual fun Deflate(windowBits: Int): CompressionMethod = object : CompressionMethod {
 	override suspend fun uncompress(i: BitReader, o: AsyncOutputStream) {
 		val tempInput = ByteArray(1024)

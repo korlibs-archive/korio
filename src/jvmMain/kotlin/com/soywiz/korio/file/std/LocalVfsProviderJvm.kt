@@ -7,6 +7,7 @@ import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import java.io.*
 import java.nio.*
 import java.nio.channels.*
@@ -159,8 +160,8 @@ class LocalVfsJvm : LocalVfs() {
 		}
 	}
 
-	override suspend fun list(path: String): SuspendingSequence<VfsFile> =
-		executeIo { (File(path).listFiles() ?: arrayOf()).map { that.file("$path/${it.name}") }.toAsync() }
+	override suspend fun list(path: String): ReceiveChannel<VfsFile> =
+		executeIo { (File(path).listFiles() ?: arrayOf()).map { that.file("$path/${it.name}") }.toChannel() }
 
 	override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean =
 		executeIo { resolveFile(path).mkdirs() }

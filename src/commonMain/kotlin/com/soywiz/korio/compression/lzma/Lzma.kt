@@ -2,11 +2,13 @@ package com.soywiz.korio.compression.lzma
 
 import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.util.*
+import com.soywiz.korio.experimental.*
 import com.soywiz.korio.stream.*
 
 /**
  * @TODO: Streaming! (right now loads the whole stream in-memory)
  */
+@UseExperimental(KorioExperimentalApi::class)
 object Lzma : CompressionMethod {
 	override suspend fun uncompress(reader: BitReader, out: AsyncOutputStream) {
 		val input = reader.readAll().openSync()

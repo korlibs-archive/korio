@@ -2,6 +2,7 @@ package com.soywiz.korio.compression.deflate
 
 import com.soywiz.korio.compression.*
 import com.soywiz.korio.compression.util.*
+import com.soywiz.korio.experimental.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
@@ -14,6 +15,7 @@ open class GZIPNoCrc(deflater: () -> CompressionMethod) : GZIPBase(false, deflat
 	companion object : GZIPNoCrc({ Deflate })
 }
 
+@UseExperimental(KorioExperimentalApi::class)
 open class GZIPBase(val checkCrc: Boolean, val deflater: () -> CompressionMethod) : CompressionMethod {
 	override suspend fun uncompress(reader: BitReader, out: AsyncOutputStream) {
 		val r = reader
