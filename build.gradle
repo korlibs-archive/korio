@@ -173,6 +173,12 @@ afterEvaluate {
 	}
 }
 
+[kotlin.targets.js, kotlin.targets.metadata].each { target ->
+	target.compilations.main.kotlinSourceSets.resources.collectMany { it.srcDirs }.each {
+		tasks.jsJar.from it
+	}
+}
+
 // Only run JS tests if not in windows
 if (!org.apache.tools.ant.taskdefs.condition.Os.isFamily(org.apache.tools.ant.taskdefs.condition.Os.FAMILY_WINDOWS)) {
     jsTest.dependsOn runMocha
