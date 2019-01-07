@@ -45,6 +45,9 @@ class EventLoopExecutorService(val context: CoroutineContext) : ExecutorService 
 	override fun isTerminated(): Boolean = true
 
 	override fun execute(command: Runnable) {
-		context.dispatcher.dispatch(context, Runnable { command.run() })
+		launchImmediately(context) {
+			command.run()
+		}
+		//context.dispatcher.dispatch(context, Runnable { command.run() })
 	}
 }

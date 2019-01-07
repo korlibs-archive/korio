@@ -1,10 +1,11 @@
 package com.soywiz.korio.async
 
+import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
 actual fun suspendTest(callback: suspend () -> Unit): dynamic = kotlin.js.Promise<dynamic> { resolve, reject ->
 	callback.startCoroutine(object : Continuation<Unit> {
-		override val context: CoroutineContext = KorioDefaultDispatcher
+		override val context: CoroutineContext = Dispatchers.Default
 		override fun resumeWith(result: Result<Unit>) {
 			val exception = result.exceptionOrNull()
 			if (exception != null) {
@@ -17,11 +18,11 @@ actual fun suspendTest(callback: suspend () -> Unit): dynamic = kotlin.js.Promis
 	})
 }
 
-actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit): dynamic {
+actual fun asyncEntryPoint(callback: suspend () -> Unit): dynamic {
 	//callback.startCoroutine(EmptyContinuation(context))
 	return kotlin.js.Promise<dynamic> { resolve, reject ->
 		callback.startCoroutine(object : Continuation<Unit> {
-			override val context: CoroutineContext = context
+			override val context: CoroutineContext = Dispatchers.Default
 
 			override fun resumeWith(result: Result<Unit>) {
 				val exception = result.exceptionOrNull()

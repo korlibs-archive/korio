@@ -10,13 +10,14 @@ operator fun ExecutorService.invoke(callback: () -> Unit) {
 	this.execute(callback)
 }
 
+private val mainDispatcher by lazy { newSingleThreadContext("mainDispatcher") }
+internal val workerContext by lazy { newSingleThreadContext("worker") }
+
 actual fun suspendTest(callback: suspend () -> Unit) {
-	runBlocking { callback() }
+	runBlocking(mainDispatcher) { callback() }
 }
 
-actual fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit) =
-	runBlocking(context) { callback() }
-
-internal val workerContext by lazy { newSingleThreadContext("worker") }
+actual fun asyncEntryPoint(callback: suspend () -> Unit) =
+	runBlocking(mainDispatcher) { callback() }
 
 suspend fun <T> executeInWorkerJVM(callback: suspend () -> T): T = withContext(workerContext) { callback() }

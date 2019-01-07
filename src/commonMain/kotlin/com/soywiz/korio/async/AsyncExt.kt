@@ -15,14 +15,8 @@ import kotlin.coroutines.*
 //suspend inline fun <T, R> (suspend T.() -> R).await(receiver: T): R = withContext(coroutineContext.dispatcher) { this(receiver) }
 //suspend inline fun <R> (suspend () -> R).await(): R = withContext(coroutineContext.dispatcher) { this() }
 
-suspend fun <T, R> (suspend T.() -> R).await(receiver: T): R =
-	withContext(coroutineContext.dispatcher) { this@await(receiver) }
-
-suspend fun <R> (suspend () -> R).await(): R = withContext(coroutineContext.dispatcher) { this@await() }
-
-// @TODO: Try to get in subinstance
-val CoroutineContext.tryDispatcher: CoroutineDispatcher? get() = this as? CoroutineDispatcher?
-val CoroutineContext.dispatcher: CoroutineDispatcher get() = this.tryDispatcher ?: KorioDefaultDispatcher
+suspend fun <T, R> (suspend T.() -> R).await(receiver: T): R = this(receiver)
+suspend fun <R> (suspend () -> R).await(): R = this()
 
 // @TODO: Do this better! (JS should use requestAnimationFrame)
 suspend fun delayNextFrame() = _delayNextFrame()
@@ -232,4 +226,4 @@ fun <T> asyncImmediately(context: CoroutineContext, callback: suspend () -> T) =
 
 fun <T> asyncAsap(context: CoroutineContext, callback: suspend () -> T) = CoroutineScope(context).asyncAsap(callback)
 
-expect fun asyncEntryPoint(context: CoroutineContext, callback: suspend () -> Unit)
+expect fun asyncEntryPoint(callback: suspend () -> Unit)
