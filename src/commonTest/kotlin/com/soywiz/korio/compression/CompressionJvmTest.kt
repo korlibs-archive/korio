@@ -2,8 +2,9 @@ package com.soywiz.korio.compression
 
 import com.soywiz.kmem.*
 import com.soywiz.korio.compression.deflate.*
-import com.soywiz.korio.crypto.*
+import com.soywiz.korio.util.*
 import com.soywiz.korio.lang.*
+import com.soywiz.korio.util.*
 import kotlin.test.*
 
 class CompressionJvmTest {

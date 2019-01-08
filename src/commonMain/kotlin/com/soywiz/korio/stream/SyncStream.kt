@@ -2,8 +2,8 @@ package com.soywiz.korio.stream
 
 import com.soywiz.kds.*
 import com.soywiz.kmem.*
+import com.soywiz.korio.internal.*
 import com.soywiz.korio.lang.*
-import com.soywiz.korio.util.*
 import kotlin.math.*
 
 interface SyncInputStream : OptionalCloseable {
@@ -258,14 +258,15 @@ fun SyncStream.readStream(length: Long): SyncStream = readSlice(length)
 
 fun SyncInputStream.readStringz(charset: Charset = UTF8): String {
 	val buf = ByteArrayBuilder2()
-	val temp = BYTES_TEMP
-	while (true) {
-		val read = read(temp, 0, 1)
-		if (read <= 0) break
-		if (temp[0] == 0.toByte()) break
-		buf.append(temp[0].toByte())
+	return bytesTempPool.alloc2 { temp ->
+		while (true) {
+			val read = read(temp, 0, 1)
+			if (read <= 0) break
+			if (temp[0] == 0.toByte()) break
+			buf.append(temp[0].toByte())
+		}
+		buf.toByteArray().toString(charset)
 	}
-	return buf.toByteArray().toString(charset)
 }
 
 fun SyncInputStream.readStringz(len: Int, charset: Charset = UTF8): String {
@@ -393,11 +394,12 @@ fun String.openAsync(charset: Charset = UTF8): AsyncStream = toByteArray(charset
 fun SyncOutputStream.writeStream(source: SyncInputStream): Unit = source.copyTo(this)
 
 fun SyncInputStream.copyTo(target: SyncOutputStream): Unit {
-	val chunk = BYTES_TEMP
-	while (true) {
-		val count = this.read(chunk)
-		if (count <= 0) break
-		target.write(chunk, 0, count)
+	bytesTempPool.alloc2 { chunk ->
+		while (true) {
+			val count = this.read(chunk)
+			if (count <= 0) break
+			target.write(chunk, 0, count)
+		}
 	}
 }
 

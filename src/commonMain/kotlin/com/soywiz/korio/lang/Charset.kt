@@ -46,17 +46,14 @@ open class UTC8CharsetBase(name: String) : Charset(name) {
 		if ((start < 0 || start > src.size) || (end < 0 || end > src.size)) error("Out of bounds")
 		var i = start
 		while (i < end) {
-			// @TODO: kotlin-js generates that looks pretty slow:
-			// val c = src[i++].toInt() and 0xFF
-			//   --->  var c = src[tmp$ = i, i = tmp$ + 1 | 0, tmp$] & 255;
 			val c = src[i].toInt() and 0xFF
 			when (c shr 4) {
-				0, 1, 2, 3, 4, 5, 6, 7 -> {
+				in 0..7 -> {
 					// 0xxxxxxx
 					out.append(c.toChar())
 					i += 1
 				}
-				12, 13 -> {
+				in 12..13 -> {
 					// 110x xxxx   10xx xxxx
 					out.append((c and 0x1F shl 6 or (src[i + 1].toInt() and 0x3F)).toChar())
 					i += 2
@@ -143,8 +140,6 @@ fun ByteArray.toString(charset: Charset): String {
 	charset.decode(out, this)
 	return out.toString()
 }
-
-fun ByteArray.toUtf8String() = this.toString(UTF8)
 
 fun ByteArray.readStringz(o: Int, size: Int, charset: Charset = UTF8): String {
 	var idx = o

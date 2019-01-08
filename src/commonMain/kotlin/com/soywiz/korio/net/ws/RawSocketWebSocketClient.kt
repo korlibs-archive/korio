@@ -3,7 +3,7 @@ package com.soywiz.korio.net.ws
 import com.soywiz.klock.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
-import com.soywiz.korio.crypto.*
+import com.soywiz.korio.util.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
 import com.soywiz.korio.stream.*

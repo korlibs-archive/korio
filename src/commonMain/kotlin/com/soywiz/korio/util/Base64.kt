@@ -1,4 +1,4 @@
-package com.soywiz.korio.crypto
+package com.soywiz.korio.util
 
 import com.soywiz.kmem.*
 import com.soywiz.korio.lang.*
