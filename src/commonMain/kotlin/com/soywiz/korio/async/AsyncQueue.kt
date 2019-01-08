@@ -4,7 +4,7 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.*
 
 //class AsyncQueue(val context: CoroutineContext) {
-class AsyncQueue() {
+class AsyncQueue {
 	//constructor() : AsyncQueue(CoroutineContext())
 
 	val thread = AsyncThread()
