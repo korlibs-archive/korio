@@ -8,6 +8,7 @@ import com.soywiz.korio.stream.*
 import kotlin.math.*
 
 expect fun Deflate(windowBits: Int): CompressionMethod
+
 val Deflate: CompressionMethod by lazy { Deflate(15) }
 
 @UseExperimental(KorioExperimentalApi::class)

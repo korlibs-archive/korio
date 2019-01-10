@@ -14,11 +14,11 @@ object Lzma : CompressionMethod {
 		val input = reader.readAll().openSync()
 		val properties = input.readBytesExact(5)
 		val decoder = SevenZip.LzmaDecoder()
-		if (!decoder.SetDecoderProperties(properties)) throw Exception("Incorrect stream properties")
+		if (!decoder.setDecoderProperties(properties)) throw Exception("Incorrect stream properties")
 		val outSize = input.readS64LE()
 
 		out.writeBytes(MemorySyncStreamToByteArray {
-			if (!decoder.Code(input, this, outSize)) throw Exception("Error in data stream")
+			if (!decoder.code(input, this, outSize)) throw Exception("Error in data stream")
 		})
 	}
 
@@ -37,17 +37,17 @@ object Lzma : CompressionMethod {
 		val out = MemorySyncStreamToByteArray {
 			val output = this
 			val encoder = SevenZip.LzmaEncoder()
-			if (!encoder.SetAlgorithm(algorithm)) throw Exception("Incorrect compression mode")
-			if (!encoder.SetDictionarySize(dictionarySize))
+			if (!encoder.setAlgorithm(algorithm)) throw Exception("Incorrect compression mode")
+			if (!encoder.setDictionarySize(dictionarySize))
 				throw Exception("Incorrect dictionary size")
-			if (!encoder.SetNumFastBytes(fb)) throw Exception("Incorrect -fb value")
-			if (!encoder.SetMatchFinder(matchFinder)) throw Exception("Incorrect -mf value")
-			if (!encoder.SetLcLpPb(lc, lp, pb)) throw Exception("Incorrect -lc or -lp or -pb value")
-			encoder.SetEndMarkerMode(eos)
-			encoder.WriteCoderProperties(this)
+			if (!encoder.setNumFastBytes(fb)) throw Exception("Incorrect -fb value")
+			if (!encoder.setMatchFinder(matchFinder)) throw Exception("Incorrect -mf value")
+			if (!encoder.setLcLpPb(lc, lp, pb)) throw Exception("Incorrect -lc or -lp or -pb value")
+			encoder.setEndMarkerMode(eos)
+			encoder.writeCoderProperties(this)
 			val fileSize: Long = if (eos) -1 else input.size.toLong()
 			this.write64LE(fileSize)
-			encoder.Code(input.openSync(), output, -1, -1, null)
+			encoder.code(input.openSync(), output, -1, -1, null)
 		}
 
 		o.writeBytes(out)

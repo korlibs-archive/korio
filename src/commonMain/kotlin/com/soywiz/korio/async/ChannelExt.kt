@@ -24,20 +24,11 @@ suspend fun <T> ReceiveChannel<T>.chunks(count: Int) = produce {
 	}
 }
 
-//fun <T> Iterable<T>.toChannel(): ReceiveChannel<T>
-
-suspend fun <T> Iterable<T>.toChannel(): ReceiveChannel<T> = produce {
-	for (v in this@toChannel) send(v)
-}
+suspend fun <T> Iterable<T>.toChannel(): ReceiveChannel<T> = produce { for (v in this@toChannel) send(v) }
 
 @UseExperimental(ExperimentalTypeInference::class)
 suspend fun <E> produce(capacity: Int = 0, @BuilderInference block: suspend ProducerScope<E>.() -> Unit): ReceiveChannel<E> =
 	CoroutineScope(coroutineContext).produce(coroutineContext, capacity, block)
-
-//@UseExperimental(ExperimentalTypeInference::class)
-//suspend fun <E> produce(capacity: Int = 0, block: suspend ProducerScope<E>.() -> Unit): ReceiveChannel<E> =
-//	CoroutineScope(coroutineContext).produce(coroutineContext, capacity, block)
-
 
 fun ReceiveChannel<ByteArray>.toAsyncInputStream(): AsyncInputStream {
 	val channel = this

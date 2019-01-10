@@ -38,16 +38,12 @@ suspend fun CompressionMethod.compress(i: AsyncInputStreamWithLength, o: AsyncOu
 suspend fun CompressionMethod.uncompressStream(input: AsyncInputStreamWithLength): AsyncInputStream = asyncStreamWriter { output -> uncompress(input, output) }
 suspend fun CompressionMethod.compressStream(input: AsyncInputStreamWithLength, context: CompressionContext = CompressionContext()): AsyncInputStream = asyncStreamWriter { output -> compress(input, output, context) }
 
-fun CompressionMethod.uncompress(i: SyncInputStream, o: SyncOutputStream) {
-	runBlockingNoSuspensions {
-		this@uncompress.uncompress(i.toAsyncInputStream(), o.toAsyncOutputStream())
-	}
+fun CompressionMethod.uncompress(i: SyncInputStream, o: SyncOutputStream) = runBlockingNoSuspensions {
+	uncompress(i.toAsyncInputStream(), o.toAsyncOutputStream())
 }
 
-fun CompressionMethod.compress(i: SyncInputStream, o: SyncOutputStream, context: CompressionContext = CompressionContext()) {
-	runBlockingNoSuspensions {
-		this@compress.compress(i.toAsyncInputStream(), o.toAsyncOutputStream(), context)
-	}
+fun CompressionMethod.compress(i: SyncInputStream, o: SyncOutputStream, context: CompressionContext = CompressionContext()) = runBlockingNoSuspensions {
+	compress(i.toAsyncInputStream(), o.toAsyncOutputStream(), context)
 }
 
 fun ByteArray.uncompress(method: CompressionMethod, outputSizeHint: Int = this.size * 2): ByteArray = MemorySyncStreamToByteArray(outputSizeHint) { method.uncompress(this@uncompress.openSync(), this) }

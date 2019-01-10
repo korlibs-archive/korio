@@ -1,53 +1,58 @@
+@file:Suppress("PrivatePropertyName", "NAME_SHADOWING", "PropertyName")
+
 package com.soywiz.korio.compression.lzma
 
+import com.soywiz.korio.experimental.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.checksum.*
 import kotlin.math.*
 
-object SevenZip {
+// Ported from the public domain Java version of the LZMA SDK : https://www.7-zip.org/download.html
 
+@UseExperimental(KorioExperimentalApi::class)
+object SevenZip {
 	interface ICodeProgress {
-		fun SetProgress(inSize: Long, outSize: Long)
+		fun setProgress(inSize: Long, outSize: Long)
 	}
 
-	class BitTreeEncoder(internal var NumBitLevels: Int) {
-		internal val Models: ShortArray = ShortArray(1 shl NumBitLevels)
+	class BitTreeEncoder(private var numBitLevels: Int) {
+		private val models: ShortArray = ShortArray(1 shl numBitLevels)
 
-		fun Init() {
-			RangeDecoder.InitBitModels(Models)
+		fun init() {
+			RangeDecoder.initBitModels(models)
 		}
 
-		fun Encode(rangeEncoder: RangeEncoder, symbol: Int) {
+		fun encode(rangeEncoder: RangeEncoder, symbol: Int) {
 			var m = 1
-			var bitIndex = NumBitLevels
+			var bitIndex = numBitLevels
 			while (bitIndex != 0) {
 				bitIndex--
 				val bit = symbol.ushr(bitIndex) and 1
-				rangeEncoder.Encode(Models, m, bit)
+				rangeEncoder.encode(models, m, bit)
 				m = m shl 1 or bit
 			}
 		}
 
-		fun ReverseEncode(rangeEncoder: RangeEncoder, symbol: Int) {
+		fun reverseEncode(rangeEncoder: RangeEncoder, symbol: Int) {
 			var symbol = symbol
 			var m = 1
-			for (i in 0 until NumBitLevels) {
+			for (i in 0 until numBitLevels) {
 				val bit = symbol and 1
-				rangeEncoder.Encode(Models, m, bit)
+				rangeEncoder.encode(models, m, bit)
 				m = m shl 1 or bit
 				symbol = symbol shr 1
 			}
 		}
 
-		fun GetPrice(symbol: Int): Int {
+		fun getPrice(symbol: Int): Int {
 			var price = 0
 			var m = 1
-			var bitIndex = NumBitLevels
+			var bitIndex = numBitLevels
 			while (bitIndex != 0) {
 				bitIndex--
 				val bit = symbol.ushr(bitIndex) and 1
-				price += RangeEncoder.GetPrice(
-					Models[m].toInt(),
+				price += RangeEncoder.getPrice(
+					models[m].toInt(),
 					bit
 				)
 				m = (m shl 1) + bit
@@ -55,15 +60,15 @@ object SevenZip {
 			return price
 		}
 
-		fun ReverseGetPrice(symbol: Int): Int {
+		fun reverseGetPrice(symbol: Int): Int {
 			var symbol = symbol
 			var price = 0
 			var m = 1
-			for (i in NumBitLevels downTo 1) {
+			for (i in numBitLevels downTo 1) {
 				val bit = symbol and 1
 				symbol = symbol ushr 1
-				price += RangeEncoder.GetPrice(
-					Models[m].toInt(),
+				price += RangeEncoder.getPrice(
+					models[m].toInt(),
 					bit
 				)
 				m = m shl 1 or bit
@@ -72,8 +77,7 @@ object SevenZip {
 		}
 
 		companion object {
-
-			fun ReverseGetPrice(
+			fun reverseGetPrice(
 				Models: ShortArray, startIndex: Int,
 				NumBitLevels: Int, symbol: Int
 			): Int {
@@ -83,7 +87,7 @@ object SevenZip {
 				for (i in NumBitLevels downTo 1) {
 					val bit = symbol and 1
 					symbol = symbol ushr 1
-					price += RangeEncoder.GetPrice(
+					price += RangeEncoder.getPrice(
 						Models[startIndex + m].toInt(),
 						bit
 					)
@@ -92,7 +96,7 @@ object SevenZip {
 				return price
 			}
 
-			fun ReverseEncode(
+			fun reverseEncode(
 				Models: ShortArray, startIndex: Int,
 				rangeEncoder: RangeEncoder, NumBitLevels: Int, symbol: Int
 			) {
@@ -100,7 +104,7 @@ object SevenZip {
 				var m = 1
 				for (i in 0 until NumBitLevels) {
 					val bit = symbol and 1
-					rangeEncoder.Encode(Models, startIndex + m, bit)
+					rangeEncoder.encode(Models, startIndex + m, bit)
 					m = m shl 1 or bit
 					symbol = symbol shr 1
 				}
@@ -108,25 +112,25 @@ object SevenZip {
 		}
 	}
 
-	class BitTreeDecoder(internal var NumBitLevels: Int) {
-		internal val Models: ShortArray = ShortArray(1 shl NumBitLevels)
+	class BitTreeDecoder(private var numBitLevels: Int) {
+		private val models: ShortArray = ShortArray(1 shl numBitLevels)
 
-		fun Init() {
-			RangeDecoder.InitBitModels(Models)
+		fun init() {
+			RangeDecoder.initBitModels(models)
 		}
 
-		fun Decode(rangeDecoder: RangeDecoder): Int {
+		fun decode(rangeDecoder: RangeDecoder): Int {
 			var m = 1
-			for (bitIndex in NumBitLevels downTo 1)
-				m = (m shl 1) + rangeDecoder.DecodeBit(Models, m)
-			return m - (1 shl NumBitLevels)
+			for (bitIndex in numBitLevels downTo 1)
+				m = (m shl 1) + rangeDecoder.decodeBit(models, m)
+			return m - (1 shl numBitLevels)
 		}
 
-		fun ReverseDecode(rangeDecoder: RangeDecoder): Int {
+		fun reverseDecode(rangeDecoder: RangeDecoder): Int {
 			var m = 1
 			var symbol = 0
-			for (bitIndex in 0 until NumBitLevels) {
-				val bit = rangeDecoder.DecodeBit(Models, m)
+			for (bitIndex in 0 until numBitLevels) {
+				val bit = rangeDecoder.decodeBit(models, m)
 				m = m shl 1
 				m += bit
 				symbol = symbol or (bit shl bitIndex)
@@ -135,15 +139,14 @@ object SevenZip {
 		}
 
 		companion object {
-
-			fun ReverseDecode(
+			fun reverseDecode(
 				Models: ShortArray, startIndex: Int,
 				rangeDecoder: RangeDecoder, NumBitLevels: Int
 			): Int {
 				var m = 1
 				var symbol = 0
 				for (bitIndex in 0 until NumBitLevels) {
-					val bit = rangeDecoder.DecodeBit(Models, startIndex + m)
+					val bit = rangeDecoder.decodeBit(Models, startIndex + m)
 					m = m shl 1
 					m += bit
 					symbol = symbol or (bit shl bitIndex)
@@ -155,62 +158,62 @@ object SevenZip {
 
 	class RangeDecoder {
 
-		internal var Range: Int = 0
-		internal var Code: Int = 0
+		internal var range: Int = 0
+		internal var code: Int = 0
 
-		internal var Stream: SyncInputStream? = null
+		internal var stream: SyncInputStream? = null
 
-		fun SetStream(stream: SyncInputStream) {
-			Stream = stream
+		fun setStream(stream: SyncInputStream) {
+			this.stream = stream
 		}
 
-		fun ReleaseStream() {
-			Stream = null
+		fun releaseStream() {
+			stream = null
 		}
 
-		fun Init() {
-			Code = 0
-			Range = -1
+		fun init() {
+			code = 0
+			range = -1
 			for (i in 0..4)
-				Code = Code shl 8 or Stream!!.read()
+				code = code shl 8 or stream!!.read()
 		}
 
-		fun DecodeDirectBits(numTotalBits: Int): Int {
+		fun decodeDirectBits(numTotalBits: Int): Int {
 			var result = 0
 			for (i in numTotalBits downTo 1) {
-				Range = Range ushr 1
-				val t = (Code - Range).ushr(31)
-				Code -= Range and t - 1
+				range = range ushr 1
+				val t = (code - range).ushr(31)
+				code -= range and t - 1
 				result = result shl 1 or 1 - t
 
-				if (Range and kTopMask == 0) {
-					Code = Code shl 8 or Stream!!.read()
-					Range = Range shl 8
+				if (range and kTopMask == 0) {
+					code = code shl 8 or stream!!.read()
+					range = range shl 8
 				}
 			}
 			return result
 		}
 
-		fun DecodeBit(probs: ShortArray, index: Int): Int {
+		fun decodeBit(probs: ShortArray, index: Int): Int {
 			val prob = probs[index].toInt()
-			val newBound = Range.ushr(kNumBitModelTotalBits) * prob
-			if (Code xor -0x80000000 < newBound xor -0x80000000) {
-				Range = newBound
+			val newBound = range.ushr(kNumBitModelTotalBits) * prob
+			if (code xor -0x80000000 < newBound xor -0x80000000) {
+				range = newBound
 				probs[index] = (prob + (kBitModelTotal - prob).ushr(
 					kNumMoveBits
 				)).toShort()
-				if (Range and kTopMask == 0) {
-					Code = Code shl 8 or Stream!!.read()
-					Range = Range shl 8
+				if (range and kTopMask == 0) {
+					code = code shl 8 or stream!!.read()
+					range = range shl 8
 				}
 				return 0
 			} else {
-				Range -= newBound
-				Code -= newBound
+				range -= newBound
+				code -= newBound
 				probs[index] = (prob - prob.ushr(kNumMoveBits)).toShort()
-				if (Range and kTopMask == 0) {
-					Code = Code shl 8 or Stream!!.read()
-					Range = Range shl 8
+				if (range and kTopMask == 0) {
+					code = code shl 8 or stream!!.read()
+					range = range shl 8
 				}
 				return 1
 			}
@@ -223,7 +226,7 @@ object SevenZip {
 			internal const val kBitModelTotal = 1 shl kNumBitModelTotalBits
 			internal const val kNumMoveBits = 5
 
-			fun InitBitModels(probs: ShortArray) {
+			fun initBitModels(probs: ShortArray) {
 				for (i in probs.indices)
 					probs[i] = kBitModelTotal.ushr(1).toShort()
 			}
@@ -232,88 +235,88 @@ object SevenZip {
 
 	class RangeEncoder {
 
-		internal var Stream: SyncOutputStream? = null
+		internal var stream: SyncOutputStream? = null
 
-		internal var Low: Long = 0
-		internal var Range: Int = 0
-		internal var _cacheSize: Int = 0
-		internal var _cache: Int = 0
+		private var low: Long = 0
+		internal var range: Int = 0
+		private var _cacheSize: Int = 0
+		private var _cache: Int = 0
 
-		internal var _position: Long = 0
+		private var _position: Long = 0
 
-		fun SetStream(stream: SyncOutputStream) {
-			Stream = stream
+		fun setStream(stream: SyncOutputStream) {
+			this.stream = stream
 		}
 
-		fun ReleaseStream() {
-			Stream = null
+		fun releaseStream() {
+			stream = null
 		}
 
-		fun Init() {
+		fun init() {
 			_position = 0
-			Low = 0
-			Range = -1
+			low = 0
+			range = -1
 			_cacheSize = 1
 			_cache = 0
 		}
 
-		fun FlushData() {
+		fun flushData() {
 			for (i in 0..4)
-				ShiftLow()
+				shiftLow()
 		}
 
-		fun FlushStream() {
-			Stream!!.flush()
+		fun flushStream() {
+			stream!!.flush()
 		}
 
-		fun ShiftLow() {
-			val LowHi = Low.ushr(32).toInt()
-			if (LowHi != 0 || Low < 0xFF000000L) {
+		private fun shiftLow() {
+			val lowHi = low.ushr(32).toInt()
+			if (lowHi != 0 || low < 0xFF000000L) {
 				_position += _cacheSize.toLong()
 				var temp = _cache
 				do {
-					Stream!!.write8(temp + LowHi)
+					stream!!.write8(temp + lowHi)
 					temp = 0xFF
 				} while (--_cacheSize != 0)
-				_cache = Low.toInt().ushr(24)
+				_cache = low.toInt().ushr(24)
 			}
 			_cacheSize++
-			Low = Low and 0xFFFFFF shl 8
+			low = low and 0xFFFFFF shl 8
 		}
 
-		fun EncodeDirectBits(v: Int, numTotalBits: Int) {
+		fun encodeDirectBits(v: Int, numTotalBits: Int) {
 			for (i in numTotalBits - 1 downTo 0) {
-				Range = Range ushr 1
+				range = range ushr 1
 				if (v.ushr(i) and 1 == 1)
-					Low += Range.toLong()
-				if (Range and kTopMask == 0) {
-					Range = Range shl 8
-					ShiftLow()
+					low += range.toLong()
+				if (range and kTopMask == 0) {
+					range = range shl 8
+					shiftLow()
 				}
 			}
 		}
 
 
-		fun GetProcessedSizeAdd(): Long {
+		fun getProcessedSizeAdd(): Long {
 			return _cacheSize.toLong() + _position + 4
 		}
 
-		fun Encode(probs: ShortArray, index: Int, symbol: Int) {
+		fun encode(probs: ShortArray, index: Int, symbol: Int) {
 			val prob = probs[index].toInt()
-			val newBound = Range.ushr(kNumBitModelTotalBits) * prob
+			val newBound = range.ushr(kNumBitModelTotalBits) * prob
 			if (symbol == 0) {
-				Range = newBound
+				range = newBound
 				probs[index] = (prob + (kBitModelTotal - prob).ushr(
 					kNumMoveBits
 				)).toShort()
 			} else {
-				Low += newBound and 0xFFFFFFFFL.toInt()
-				Range -= newBound
+				low += newBound and 0xFFFFFFFFL.toInt()
+				range -= newBound
 				probs[index] = (prob - prob.ushr(kNumMoveBits)).toShort()
 			}
-			if (Range and kTopMask == 0) {
-				Range = Range shl 8
-				ShiftLow()
+			if (range and kTopMask == 0) {
+				range = range shl 8
+				shiftLow()
 			}
 		}
 
@@ -323,19 +326,14 @@ object SevenZip {
 			internal const val kNumBitModelTotalBits = 11
 			internal const val kBitModelTotal = 1 shl kNumBitModelTotalBits
 			internal const val kNumMoveBits = 5
-			internal const val kNumMoveReducingBits = 2
+			private const val kNumMoveReducingBits = 2
 			const val kNumBitPriceShiftBits = 6
 
-			fun InitBitModels(probs: ShortArray) {
-				for (i in probs.indices)
-					probs[i] = kBitModelTotal.ushr(1).toShort()
+			fun initBitModels(probs: ShortArray) {
+				for (i in probs.indices) probs[i] = kBitModelTotal.ushr(1).toShort()
 			}
 
-			private val ProbPrices = IntArray(
-				kBitModelTotal.ushr(
-					kNumMoveReducingBits
-				)
-			)
+			private val probPrices = IntArray(kBitModelTotal ushr kNumMoveReducingBits)
 
 			init {
 				val kNumBits = kNumBitModelTotalBits - kNumMoveReducingBits
@@ -343,28 +341,14 @@ object SevenZip {
 					val start = 1 shl kNumBits - i - 1
 					val end = 1 shl kNumBits - i
 					for (j in start until end)
-						ProbPrices[j] = (i shl kNumBitPriceShiftBits) +
+						probPrices[j] = (i shl kNumBitPriceShiftBits) +
 								(end - j shl kNumBitPriceShiftBits).ushr(kNumBits - i - 1)
 				}
 			}
 
-			fun GetPrice(Prob: Int, symbol: Int): Int {
-				return ProbPrices[(Prob - symbol xor -symbol and kBitModelTotal - 1).ushr(
-					kNumMoveReducingBits
-				)]
-			}
-
-			fun GetPrice0(Prob: Int): Int {
-				return ProbPrices[Prob.ushr(
-					kNumMoveReducingBits
-				)]
-			}
-
-			fun GetPrice1(Prob: Int): Int {
-				return ProbPrices[(kBitModelTotal - Prob).ushr(
-					kNumMoveReducingBits
-				)]
-			}
+			fun getPrice(Prob: Int, symbol: Int): Int = probPrices[(Prob - symbol xor -symbol and kBitModelTotal - 1).ushr(kNumMoveReducingBits)]
+			fun getPrice0(Prob: Int): Int = probPrices[Prob ushr kNumMoveReducingBits]
+			fun getPrice1(Prob: Int): Int = probPrices[(kBitModelTotal - Prob).ushr(kNumMoveReducingBits)]
 		}
 	}
 
@@ -388,7 +372,7 @@ object SevenZip {
 
 		const val kStartPosModelIndex = 4
 		const val kEndPosModelIndex = 14
-		const val kNumPosModels = kEndPosModelIndex - kStartPosModelIndex
+		//const val kNumPosModels = kEndPosModelIndex - kStartPosModelIndex
 
 		const val kNumFullDistances = 1 shl kEndPosModelIndex / 2
 
@@ -408,20 +392,20 @@ object SevenZip {
 		const val kNumLenSymbols = kNumLowLenSymbols + kNumMidLenSymbols + (1 shl kNumHighLenBits)
 		const val kMatchMaxLen = kMatchMinLen + kNumLenSymbols - 1
 
-		fun StateInit(): Int = 0
+		fun stateInit(): Int = 0
 
-		fun StateUpdateChar(index: Int): Int = when {
+		fun stateUpdateChar(index: Int): Int = when {
 			index < 4 -> 0
 			index < 10 -> index - 3
 			else -> index - 6
 		}
 
-		fun StateUpdateMatch(index: Int): Int = if (index < 7) 7 else 10
-		fun StateUpdateRep(index: Int): Int = if (index < 7) 8 else 11
-		fun StateUpdateShortRep(index: Int): Int = if (index < 7) 9 else 11
-		fun StateIsCharState(index: Int): Boolean = index < 7
+		fun stateUpdateMatch(index: Int): Int = if (index < 7) 7 else 10
+		fun stateUpdateRep(index: Int): Int = if (index < 7) 8 else 11
+		fun stateUpdateShortRep(index: Int): Int = if (index < 7) 9 else 11
+		fun stateIsCharState(index: Int): Boolean = index < 7
 
-		fun GetLenToPosState(len: Int): Int {
+		fun getLenToPosState(len: Int): Int {
 			var len = len
 			len -= kMatchMinLen
 			return if (len < kNumLenToPosStates) len else kNumLenToPosStates - 1
@@ -429,121 +413,93 @@ object SevenZip {
 	}
 
 	class LzmaDecoder {
+		private var m_OutWindow = LzOutWindow()
+		private var m_RangeDecoder = RangeDecoder()
 
-		internal var m_OutWindow = LzOutWindow()
-		internal var m_RangeDecoder = RangeDecoder()
+		private var m_IsMatchDecoders = ShortArray(LzmaBase.kNumStates shl LzmaBase.kNumPosStatesBitsMax)
+		private var m_IsRepDecoders = ShortArray(LzmaBase.kNumStates)
+		private var m_IsRepG0Decoders = ShortArray(LzmaBase.kNumStates)
+		private var m_IsRepG1Decoders = ShortArray(LzmaBase.kNumStates)
+		private var m_IsRepG2Decoders = ShortArray(LzmaBase.kNumStates)
+		private var m_IsRep0LongDecoders = ShortArray(LzmaBase.kNumStates shl LzmaBase.kNumPosStatesBitsMax)
 
-		internal var m_IsMatchDecoders = ShortArray(LzmaBase.kNumStates shl LzmaBase.kNumPosStatesBitsMax)
-		internal var m_IsRepDecoders = ShortArray(LzmaBase.kNumStates)
-		internal var m_IsRepG0Decoders = ShortArray(LzmaBase.kNumStates)
-		internal var m_IsRepG1Decoders = ShortArray(LzmaBase.kNumStates)
-		internal var m_IsRepG2Decoders = ShortArray(LzmaBase.kNumStates)
-		internal var m_IsRep0LongDecoders = ShortArray(LzmaBase.kNumStates shl LzmaBase.kNumPosStatesBitsMax)
+		private var m_PosSlotDecoder = arrayOfNulls<BitTreeDecoder>(LzmaBase.kNumLenToPosStates)
+		private var m_PosDecoders = ShortArray(LzmaBase.kNumFullDistances - LzmaBase.kEndPosModelIndex)
+		private var m_PosAlignDecoder = BitTreeDecoder(LzmaBase.kNumAlignBits)
 
-		internal var m_PosSlotDecoder = arrayOfNulls<BitTreeDecoder>(
-			LzmaBase.kNumLenToPosStates
-		)
-		internal var m_PosDecoders = ShortArray(LzmaBase.kNumFullDistances - LzmaBase.kEndPosModelIndex)
+		private var m_LenDecoder = LenDecoder()
+		private var m_RepLenDecoder = LenDecoder()
 
-		internal var m_PosAlignDecoder =
-			BitTreeDecoder(LzmaBase.kNumAlignBits)
+		private var m_LiteralDecoder = LiteralDecoder()
 
-		internal var m_LenDecoder = LenDecoder()
-		internal var m_RepLenDecoder = LenDecoder()
+		private var m_DictionarySize = -1
+		private var m_DictionarySizeCheck = -1
 
-		internal var m_LiteralDecoder = LiteralDecoder()
-
-		internal var m_DictionarySize = -1
-		internal var m_DictionarySizeCheck = -1
-
-		internal var m_PosStateMask: Int = 0
+		private var m_PosStateMask: Int = 0
 
 		internal inner class LenDecoder {
-			var m_Choice = ShortArray(2)
-			var m_LowCoder = arrayOfNulls<BitTreeDecoder>(
-				LzmaBase.kNumPosStatesMax
-			)
-			var m_MidCoder = arrayOfNulls<BitTreeDecoder>(
-				LzmaBase.kNumPosStatesMax
-			)
-			var m_HighCoder =
-				BitTreeDecoder(LzmaBase.kNumHighLenBits)
-			var m_NumPosStates = 0
+			private var m_Choice = ShortArray(2)
+			private var m_LowCoder = arrayOfNulls<BitTreeDecoder>(LzmaBase.kNumPosStatesMax)
+			private var m_MidCoder = arrayOfNulls<BitTreeDecoder>(LzmaBase.kNumPosStatesMax)
+			private var m_HighCoder = BitTreeDecoder(LzmaBase.kNumHighLenBits)
+			private var m_NumPosStates = 0
 
-			fun Create(numPosStates: Int) {
+			fun create(numPosStates: Int) {
 				while (m_NumPosStates < numPosStates) {
-					m_LowCoder[m_NumPosStates] =
-							BitTreeDecoder(LzmaBase.kNumLowLenBits)
-					m_MidCoder[m_NumPosStates] =
-							BitTreeDecoder(LzmaBase.kNumMidLenBits)
+					m_LowCoder[m_NumPosStates] = BitTreeDecoder(LzmaBase.kNumLowLenBits)
+					m_MidCoder[m_NumPosStates] = BitTreeDecoder(LzmaBase.kNumMidLenBits)
 					m_NumPosStates++
 				}
 			}
 
-			fun Init() {
-				RangeDecoder.InitBitModels(
-					m_Choice
-				)
+			fun init() {
+				RangeDecoder.initBitModels(m_Choice)
 				for (posState in 0 until m_NumPosStates) {
-					m_LowCoder[posState]!!.Init()
-					m_MidCoder[posState]!!.Init()
+					m_LowCoder[posState]!!.init()
+					m_MidCoder[posState]!!.init()
 				}
-				m_HighCoder.Init()
+				m_HighCoder.init()
 			}
 
-			fun Decode(
-				rangeDecoder: RangeDecoder,
-				posState: Int
-			): Int {
-				if (rangeDecoder.DecodeBit(m_Choice, 0) == 0)
-					return m_LowCoder[posState]!!.Decode(rangeDecoder)
+			fun decode(rangeDecoder: RangeDecoder, posState: Int): Int {
+				if (rangeDecoder.decodeBit(m_Choice, 0) == 0) return m_LowCoder[posState]!!.decode(rangeDecoder)
 				var symbol = LzmaBase.kNumLowLenSymbols
-				if (rangeDecoder.DecodeBit(m_Choice, 1) == 0)
-					symbol += m_MidCoder[posState]!!.Decode(rangeDecoder)
-				else
-					symbol += LzmaBase.kNumMidLenSymbols + m_HighCoder.Decode(rangeDecoder)
+				symbol += if (rangeDecoder.decodeBit(m_Choice, 1) == 0) m_MidCoder[posState]!!.decode(rangeDecoder) else LzmaBase.kNumMidLenSymbols + m_HighCoder.decode(rangeDecoder)
 				return symbol
 			}
 		}
 
 		internal inner class LiteralDecoder {
-
-			var m_Coders: Array<Decoder2>? = null
-			var m_NumPrevBits: Int = 0
-			var m_NumPosBits: Int = 0
-			var m_PosMask: Int = 0
+			private var m_Coders: Array<Decoder2>? = null
+			private var m_NumPrevBits: Int = 0
+			private var m_NumPosBits: Int = 0
+			private var m_PosMask: Int = 0
 
 			internal inner class Decoder2 {
-				var m_Decoders = ShortArray(0x300)
+				private var m_Decoders = ShortArray(0x300)
 
-				fun Init() {
-					RangeDecoder.InitBitModels(
+				fun init() {
+					RangeDecoder.initBitModels(
 						m_Decoders
 					)
 				}
 
-				fun DecodeNormal(rangeDecoder: RangeDecoder): Byte {
+				fun decodeNormal(rangeDecoder: RangeDecoder): Byte {
 					var symbol = 1
-					do
-						symbol = symbol shl 1 or rangeDecoder.DecodeBit(m_Decoders, symbol)
-					while (symbol < 0x100)
+					do { symbol = symbol shl 1 or rangeDecoder.decodeBit(m_Decoders, symbol) } while (symbol < 0x100)
 					return symbol.toByte()
 				}
 
-				fun DecodeWithMatchByte(
-					rangeDecoder: RangeDecoder,
-					matchByte: Byte
-				): Byte {
+				fun decodeWithMatchByte(rangeDecoder: RangeDecoder, matchByte: Byte): Byte {
 					var matchByte = matchByte
 					var symbol = 1
 					do {
 						val matchBit = (matchByte shr 7) and 1
 						matchByte = ((matchByte shl 1).toByte())
-						val bit = rangeDecoder.DecodeBit(m_Decoders, (1 + matchBit shl 8) + symbol)
+						val bit = rangeDecoder.decodeBit(m_Decoders, (1 + matchBit shl 8) + symbol)
 						symbol = symbol shl 1 or bit
 						if (matchBit != bit) {
-							while (symbol < 0x100)
-								symbol = symbol shl 1 or rangeDecoder.DecodeBit(m_Decoders, symbol)
+							while (symbol < 0x100) symbol = symbol shl 1 or rangeDecoder.decodeBit(m_Decoders, symbol)
 							break
 						}
 					} while (symbol < 0x100)
@@ -551,9 +507,8 @@ object SevenZip {
 				}
 			}
 
-			fun Create(numPosBits: Int, numPrevBits: Int) {
-				if (m_Coders != null && m_NumPrevBits == numPrevBits && m_NumPosBits == numPosBits)
-					return
+			fun create(numPosBits: Int, numPrevBits: Int) {
+				if (m_Coders != null && m_NumPrevBits == numPrevBits && m_NumPosBits == numPosBits) return
 				m_NumPosBits = numPosBits
 				m_PosMask = (1 shl numPosBits) - 1
 				m_NumPrevBits = numPrevBits
@@ -561,75 +516,64 @@ object SevenZip {
 				m_Coders = Array(numStates) { Decoder2() }
 			}
 
-			fun Init() {
+			fun init() {
 				val numStates = 1 shl m_NumPrevBits + m_NumPosBits
 				for (i in 0 until numStates)
-					m_Coders!![i].Init()
+					m_Coders!![i].init()
 			}
 
-			fun GetDecoder(pos: Int, prevByte: Byte): Decoder2 {
-				return m_Coders!![(pos and m_PosMask shl m_NumPrevBits) + (prevByte and 0xFF).ushr(8 - m_NumPrevBits)]
-			}
+			fun getDecoder(pos: Int, prevByte: Byte): Decoder2 = m_Coders!![(pos and m_PosMask shl m_NumPrevBits) + (prevByte and 0xFF).ushr(8 - m_NumPrevBits)]
 		}
 
 		init {
-			for (i in 0 until LzmaBase.kNumLenToPosStates)
-				m_PosSlotDecoder[i] =
-						BitTreeDecoder(LzmaBase.kNumPosSlotBits)
+			for (i in 0 until LzmaBase.kNumLenToPosStates) m_PosSlotDecoder[i] = BitTreeDecoder(LzmaBase.kNumPosSlotBits)
 		}
 
-		internal fun SetDictionarySize(dictionarySize: Int): Boolean {
-			if (dictionarySize < 0)
-				return false
+		private fun setDictionarySize(dictionarySize: Int): Boolean {
+			if (dictionarySize < 0) return false
 			if (m_DictionarySize != dictionarySize) {
 				m_DictionarySize = dictionarySize
 				m_DictionarySizeCheck = max(m_DictionarySize, 1)
-				m_OutWindow.Create(max(m_DictionarySizeCheck, 1 shl 12))
+				m_OutWindow.create(max(m_DictionarySizeCheck, 1 shl 12))
 			}
 			return true
 		}
 
-		internal fun SetLcLpPb(lc: Int, lp: Int, pb: Int): Boolean {
-			if (lc > LzmaBase.kNumLitContextBitsMax || lp > 4 || pb > LzmaBase.kNumPosStatesBitsMax)
-				return false
-			m_LiteralDecoder.Create(lp, lc)
+		private fun setLcLpPb(lc: Int, lp: Int, pb: Int): Boolean {
+			if (lc > LzmaBase.kNumLitContextBitsMax || lp > 4 || pb > LzmaBase.kNumPosStatesBitsMax) return false
+			m_LiteralDecoder.create(lp, lc)
 			val numPosStates = 1 shl pb
-			m_LenDecoder.Create(numPosStates)
-			m_RepLenDecoder.Create(numPosStates)
+			m_LenDecoder.create(numPosStates)
+			m_RepLenDecoder.create(numPosStates)
 			m_PosStateMask = numPosStates - 1
 			return true
 		}
 
-		internal fun Init() {
-			m_OutWindow.Init(false)
+		internal fun init() {
+			m_OutWindow.init(false)
 
-			RangeDecoder.InitBitModels(m_IsMatchDecoders)
-			RangeDecoder.InitBitModels(m_IsRep0LongDecoders)
-			RangeDecoder.InitBitModels(m_IsRepDecoders)
-			RangeDecoder.InitBitModels(m_IsRepG0Decoders)
-			RangeDecoder.InitBitModels(m_IsRepG1Decoders)
-			RangeDecoder.InitBitModels(m_IsRepG2Decoders)
-			RangeDecoder.InitBitModels(m_PosDecoders)
+			RangeDecoder.initBitModels(m_IsMatchDecoders)
+			RangeDecoder.initBitModels(m_IsRep0LongDecoders)
+			RangeDecoder.initBitModels(m_IsRepDecoders)
+			RangeDecoder.initBitModels(m_IsRepG0Decoders)
+			RangeDecoder.initBitModels(m_IsRepG1Decoders)
+			RangeDecoder.initBitModels(m_IsRepG2Decoders)
+			RangeDecoder.initBitModels(m_PosDecoders)
 
-			m_LiteralDecoder.Init()
-			for (i in 0 until LzmaBase.kNumLenToPosStates) {
-				m_PosSlotDecoder[i]!!.Init()
-			}
-			m_LenDecoder.Init()
-			m_RepLenDecoder.Init()
-			m_PosAlignDecoder.Init()
-			m_RangeDecoder.Init()
+			m_LiteralDecoder.init()
+			for (i in 0 until LzmaBase.kNumLenToPosStates) m_PosSlotDecoder[i]!!.init()
+			m_LenDecoder.init()
+			m_RepLenDecoder.init()
+			m_PosAlignDecoder.init()
+			m_RangeDecoder.init()
 		}
 
-		fun Code(
-			inStream: SyncInputStream, outStream: SyncOutputStream,
-			outSize: Long
-		): Boolean {
-			m_RangeDecoder.SetStream(inStream)
-			m_OutWindow.SetStream(outStream)
-			Init()
+		fun code(inStream: SyncInputStream, outStream: SyncOutputStream, outSize: Long): Boolean {
+			m_RangeDecoder.setStream(inStream)
+			m_OutWindow.setStream(outStream)
+			init()
 
-			var state = LzmaBase.StateInit()
+			var state = LzmaBase.stateInit()
 			var rep0 = 0
 			var rep1 = 0
 			var rep2 = 0
@@ -639,40 +583,36 @@ object SevenZip {
 			var prevByte: Byte = 0
 			while (outSize < 0 || nowPos64 < outSize) {
 				val posState = nowPos64.toInt() and m_PosStateMask
-				if (m_RangeDecoder.DecodeBit(
-						m_IsMatchDecoders,
-						(state shl LzmaBase.kNumPosStatesBitsMax) + posState
-					) == 0
-				) {
-					val decoder2 = m_LiteralDecoder.GetDecoder(nowPos64.toInt(), prevByte)
-					if (!LzmaBase.StateIsCharState(state))
-						prevByte = decoder2.DecodeWithMatchByte(m_RangeDecoder, m_OutWindow.GetByte(rep0))
+				if (m_RangeDecoder.decodeBit(m_IsMatchDecoders, (state shl LzmaBase.kNumPosStatesBitsMax) + posState) == 0) {
+					val decoder2 = m_LiteralDecoder.getDecoder(nowPos64.toInt(), prevByte)
+					prevByte = if (!LzmaBase.stateIsCharState(state))
+						decoder2.decodeWithMatchByte(m_RangeDecoder, m_OutWindow.getByte(rep0))
 					else
-						prevByte = decoder2.DecodeNormal(m_RangeDecoder)
-					m_OutWindow.PutByte(prevByte)
-					state = LzmaBase.StateUpdateChar(state)
+						decoder2.decodeNormal(m_RangeDecoder)
+					m_OutWindow.putByte(prevByte)
+					state = LzmaBase.stateUpdateChar(state)
 					nowPos64++
 				} else {
 					var len: Int
-					if (m_RangeDecoder.DecodeBit(m_IsRepDecoders, state) == 1) {
+					if (m_RangeDecoder.decodeBit(m_IsRepDecoders, state) == 1) {
 						len = 0
-						if (m_RangeDecoder.DecodeBit(m_IsRepG0Decoders, state) == 0) {
-							if (m_RangeDecoder.DecodeBit(
+						if (m_RangeDecoder.decodeBit(m_IsRepG0Decoders, state) == 0) {
+							if (m_RangeDecoder.decodeBit(
 									m_IsRep0LongDecoders,
 									(state shl LzmaBase.kNumPosStatesBitsMax) + posState
 								) == 0
 							) {
-								state = LzmaBase.StateUpdateShortRep(
+								state = LzmaBase.stateUpdateShortRep(
 									state
 								)
 								len = 1
 							}
 						} else {
 							val distance: Int
-							if (m_RangeDecoder.DecodeBit(m_IsRepG1Decoders, state) == 0)
+							if (m_RangeDecoder.decodeBit(m_IsRepG1Decoders, state) == 0)
 								distance = rep1
 							else {
-								if (m_RangeDecoder.DecodeBit(m_IsRepG2Decoders, state) == 0)
+								if (m_RangeDecoder.decodeBit(m_IsRepG2Decoders, state) == 0)
 									distance = rep2
 								else {
 									distance = rep3
@@ -684,32 +624,32 @@ object SevenZip {
 							rep0 = distance
 						}
 						if (len == 0) {
-							len = m_RepLenDecoder.Decode(m_RangeDecoder, posState) +
+							len = m_RepLenDecoder.decode(m_RangeDecoder, posState) +
 									LzmaBase.kMatchMinLen
-							state = LzmaBase.StateUpdateRep(state)
+							state = LzmaBase.stateUpdateRep(state)
 						}
 					} else {
 						rep3 = rep2
 						rep2 = rep1
 						rep1 = rep0
-						len = LzmaBase.kMatchMinLen + m_LenDecoder.Decode(m_RangeDecoder, posState)
-						state = LzmaBase.StateUpdateMatch(state)
-						val posSlot = m_PosSlotDecoder[LzmaBase.GetLenToPosState(
+						len = LzmaBase.kMatchMinLen + m_LenDecoder.decode(m_RangeDecoder, posState)
+						state = LzmaBase.stateUpdateMatch(state)
+						val posSlot = m_PosSlotDecoder[LzmaBase.getLenToPosState(
 							len
-						)]!!.Decode(m_RangeDecoder)
+						)]!!.decode(m_RangeDecoder)
 						if (posSlot >= LzmaBase.kStartPosModelIndex) {
 							val numDirectBits = (posSlot shr 1) - 1
 							rep0 = 2 or (posSlot and 1) shl numDirectBits
 							if (posSlot < LzmaBase.kEndPosModelIndex)
-								rep0 += BitTreeDecoder.ReverseDecode(
+								rep0 += BitTreeDecoder.reverseDecode(
 									m_PosDecoders,
 									rep0 - posSlot - 1, m_RangeDecoder, numDirectBits
 								)
 							else {
-								rep0 += m_RangeDecoder.DecodeDirectBits(
+								rep0 += m_RangeDecoder.decodeDirectBits(
 									numDirectBits - LzmaBase.kNumAlignBits
 								) shl LzmaBase.kNumAlignBits
-								rep0 += m_PosAlignDecoder.ReverseDecode(m_RangeDecoder)
+								rep0 += m_PosAlignDecoder.reverseDecode(m_RangeDecoder)
 								if (rep0 < 0) {
 									if (rep0 == -1)
 										break
@@ -723,156 +663,135 @@ object SevenZip {
 						// m_OutWindow.Flush();
 						return false
 					}
-					m_OutWindow.CopyBlock(rep0, len)
+					m_OutWindow.copyBlock(rep0, len)
 					nowPos64 += len.toLong()
-					prevByte = m_OutWindow.GetByte(0)
+					prevByte = m_OutWindow.getByte(0)
 				}
 			}
-			m_OutWindow.Flush()
-			m_OutWindow.ReleaseStream()
-			m_RangeDecoder.ReleaseStream()
+			m_OutWindow.flush()
+			m_OutWindow.releaseStream()
+			m_RangeDecoder.releaseStream()
 			return true
 		}
 
-		fun SetDecoderProperties(properties: ByteArray): Boolean {
-			if (properties.size < 5)
-				return false
+		fun setDecoderProperties(properties: ByteArray): Boolean {
+			if (properties.size < 5) return false
 			val `val` = properties[0] and 0xFF
 			val lc = `val` % 9
 			val remainder = `val` / 9
 			val lp = remainder % 5
 			val pb = remainder / 5
 			var dictionarySize = 0
-			for (i in 0..3)
-				dictionarySize += properties[1 + i].toInt() and 0xFF shl i * 8
-			return if (!SetLcLpPb(lc, lp, pb)) false else SetDictionarySize(dictionarySize)
+			for (i in 0..3) dictionarySize += properties[1 + i].toInt() and 0xFF shl i * 8
+			return if (!setLcLpPb(lc, lp, pb)) false else setDictionarySize(dictionarySize)
 		}
 	}
 
 	class LzmaEncoder {
+		private var _state = LzmaBase.stateInit()
+		private var _previousByte: Byte = 0
+		private var _repDistances = IntArray(LzmaBase.kNumRepDistances)
+		private var _optimum = Array(kNumOpts) { Optimal() }
 
-		internal var _state = LzmaBase.StateInit()
-		internal var _previousByte: Byte = 0
-		internal var _repDistances = IntArray(LzmaBase.kNumRepDistances)
-		internal var _optimum = Array<Optimal>(kNumOpts) { Optimal() }
+		private var _matchFinder: LzBinTree? = null
+		private var _rangeEncoder = RangeEncoder()
 
-		internal var _matchFinder: LzBinTree? = null
-		internal var _rangeEncoder = RangeEncoder()
+		private var _isMatch = ShortArray(LzmaBase.kNumStates shl LzmaBase.kNumPosStatesBitsMax)
+		private var _isRep = ShortArray(LzmaBase.kNumStates)
+		private var _isRepG0 = ShortArray(LzmaBase.kNumStates)
+		private var _isRepG1 = ShortArray(LzmaBase.kNumStates)
+		private var _isRepG2 = ShortArray(LzmaBase.kNumStates)
+		private var _isRep0Long = ShortArray(LzmaBase.kNumStates shl LzmaBase.kNumPosStatesBitsMax)
 
-		internal var _isMatch = ShortArray(LzmaBase.kNumStates shl LzmaBase.kNumPosStatesBitsMax)
-		internal var _isRep = ShortArray(LzmaBase.kNumStates)
-		internal var _isRepG0 = ShortArray(LzmaBase.kNumStates)
-		internal var _isRepG1 = ShortArray(LzmaBase.kNumStates)
-		internal var _isRepG2 = ShortArray(LzmaBase.kNumStates)
-		internal var _isRep0Long = ShortArray(LzmaBase.kNumStates shl LzmaBase.kNumPosStatesBitsMax)
+		private var _posSlotEncoder = Array(LzmaBase.kNumLenToPosStates) { BitTreeEncoder(LzmaBase.kNumPosSlotBits) } // kNumPosSlotBits
 
-		internal var _posSlotEncoder =
-			Array<BitTreeEncoder>(LzmaBase.kNumLenToPosStates) {
-				BitTreeEncoder(
-					LzmaBase.kNumPosSlotBits
-				)
-			} // kNumPosSlotBits
+		private var _posEncoders = ShortArray(LzmaBase.kNumFullDistances - LzmaBase.kEndPosModelIndex)
+		private var _posAlignEncoder = BitTreeEncoder(LzmaBase.kNumAlignBits)
 
+		private var _lenEncoder = LenPriceTableEncoder()
+		private var _repMatchLenEncoder = LenPriceTableEncoder()
 
-		internal var _posEncoders = ShortArray(LzmaBase.kNumFullDistances - LzmaBase.kEndPosModelIndex)
-		internal var _posAlignEncoder =
-			BitTreeEncoder(LzmaBase.kNumAlignBits)
+		private var _literalEncoder = LiteralEncoder()
 
-		internal var _lenEncoder = LenPriceTableEncoder()
-		internal var _repMatchLenEncoder = LenPriceTableEncoder()
+		private var _matchDistances = IntArray(LzmaBase.kMatchMaxLen * 2 + 2)
 
-		internal var _literalEncoder = LiteralEncoder()
+		private var _numFastBytes = kNumFastBytesDefault
+		private var _longestMatchLength: Int = 0
+		private var _numDistancePairs: Int = 0
 
-		internal var _matchDistances = IntArray(LzmaBase.kMatchMaxLen * 2 + 2)
+		private var _additionalOffset: Int = 0
 
-		internal var _numFastBytes =
-			kNumFastBytesDefault
-		internal var _longestMatchLength: Int = 0
-		internal var _numDistancePairs: Int = 0
+		private var _optimumEndIndex: Int = 0
+		private var _optimumCurrentIndex: Int = 0
 
-		internal var _additionalOffset: Int = 0
+		private var _longestMatchWasFound: Boolean = false
 
-		internal var _optimumEndIndex: Int = 0
-		internal var _optimumCurrentIndex: Int = 0
+		private var _posSlotPrices = IntArray(1 shl LzmaBase.kNumPosSlotBits + LzmaBase.kNumLenToPosStatesBits)
+		private var _distancesPrices = IntArray(LzmaBase.kNumFullDistances shl LzmaBase.kNumLenToPosStatesBits)
+		private var _alignPrices = IntArray(LzmaBase.kAlignTableSize)
+		private var _alignPriceCount: Int = 0
 
-		internal var _longestMatchWasFound: Boolean = false
+		private var _distTableSize = kDefaultDictionaryLogSize * 2
 
-		internal var _posSlotPrices = IntArray(1 shl LzmaBase.kNumPosSlotBits + LzmaBase.kNumLenToPosStatesBits)
-		internal var _distancesPrices = IntArray(LzmaBase.kNumFullDistances shl LzmaBase.kNumLenToPosStatesBits)
-		internal var _alignPrices = IntArray(LzmaBase.kAlignTableSize)
-		internal var _alignPriceCount: Int = 0
+		private var _posStateBits = 2
+		private var _posStateMask = 4 - 1
+		private var _numLiteralPosStateBits = 0
+		private var _numLiteralContextBits = 3
 
-		internal var _distTableSize = kDefaultDictionaryLogSize * 2
+		private var _dictionarySize = 1 shl kDefaultDictionaryLogSize
+		private var _dictionarySizePrev = -1
+		private var _numFastBytesPrev = -1
 
-		internal var _posStateBits = 2
-		internal var _posStateMask = 4 - 1
-		internal var _numLiteralPosStateBits = 0
-		internal var _numLiteralContextBits = 3
+		private var nowPos64: Long = 0
+		private var _finished: Boolean = false
+		private var _inStream: SyncInputStream? = null
 
-		internal var _dictionarySize = 1 shl kDefaultDictionaryLogSize
-		internal var _dictionarySizePrev = -1
-		internal var _numFastBytesPrev = -1
+		private var _matchFinderType = EMatchFinderTypeBT4
+		private var _writeEndMark = false
 
-		internal var nowPos64: Long = 0
-		internal var _finished: Boolean = false
-		internal var _inStream: SyncInputStream? = null
+		private var _needReleaseMFStream = false
 
-		internal var _matchFinderType =
-			EMatchFinderTypeBT4
-		internal var _writeEndMark = false
+		private var reps = IntArray(LzmaBase.kNumRepDistances)
+		private var repLens = IntArray(LzmaBase.kNumRepDistances)
+		private var backRes: Int = 0
 
-		internal var _needReleaseMFStream = false
+		private var processedInSize = LongArray(1)
+		private var processedOutSize = LongArray(1)
+		private var finished = BooleanArray(1)
+		private var properties = ByteArray(kPropSize)
 
-		internal var reps = IntArray(LzmaBase.kNumRepDistances)
-		internal var repLens = IntArray(LzmaBase.kNumRepDistances)
-		internal var backRes: Int = 0
+		private var tempPrices = IntArray(LzmaBase.kNumFullDistances)
+		private var _matchPriceCount: Int = 0
 
-		internal var processedInSize = LongArray(1)
-		internal var processedOutSize = LongArray(1)
-		internal var finished = BooleanArray(1)
-		internal var properties = ByteArray(kPropSize)
-
-		internal var tempPrices = IntArray(LzmaBase.kNumFullDistances)
-		internal var _matchPriceCount: Int = 0
-
-		internal fun BaseInit() {
-			_state = LzmaBase.StateInit()
+		private fun baseInit() {
+			_state = LzmaBase.stateInit()
 			_previousByte = 0
-			for (i in 0 until LzmaBase.kNumRepDistances)
-				_repDistances[i] = 0
+			for (i in 0 until LzmaBase.kNumRepDistances) _repDistances[i] = 0
 		}
 
 		internal inner class LiteralEncoder {
-
-			var m_Coders: Array<Encoder2>? = null
-			var m_NumPrevBits: Int = 0
-			var m_NumPosBits: Int = 0
-			var m_PosMask: Int = 0
+			private var m_Coders: Array<Encoder2>? = null
+			private var m_NumPrevBits: Int = 0
+			private var m_NumPosBits: Int = 0
+			private var m_PosMask: Int = 0
 
 			internal inner class Encoder2 {
-				var m_Encoders = ShortArray(0x300)
+				private var m_Encoders = ShortArray(0x300)
 
-				fun Init() {
-					RangeEncoder.InitBitModels(m_Encoders)
+				fun init() {
+					RangeEncoder.initBitModels(m_Encoders)
 				}
 
-				fun Encode(
-					rangeEncoder: RangeEncoder,
-					symbol: Byte
-				) {
+				fun encode(rangeEncoder: RangeEncoder, symbol: Byte) {
 					var context = 1
 					for (i in 7 downTo 0) {
 						val bit = (symbol shr i) and 1
-						rangeEncoder.Encode(m_Encoders, context, bit)
+						rangeEncoder.encode(m_Encoders, context, bit)
 						context = context shl 1 or bit
 					}
 				}
 
-				fun EncodeMatched(
-					rangeEncoder: RangeEncoder,
-					matchByte: Byte,
-					symbol: Byte
-				) {
+				fun encodeMatched(rangeEncoder: RangeEncoder, matchByte: Byte, symbol: Byte) {
 					var context = 1
 					var same = true
 					for (i in 7 downTo 0) {
@@ -883,12 +802,12 @@ object SevenZip {
 							state += 1 + matchBit shl 8
 							same = matchBit == bit
 						}
-						rangeEncoder.Encode(m_Encoders, state, bit)
+						rangeEncoder.encode(m_Encoders, state, bit)
 						context = context shl 1 or bit
 					}
 				}
 
-				fun GetPrice(matchMode: Boolean, matchByte: Byte, symbol: Byte): Int {
+				fun getPrice(matchMode: Boolean, matchByte: Byte, symbol: Byte): Int {
 					var price = 0
 					var context = 1
 					var i = 7
@@ -896,7 +815,7 @@ object SevenZip {
 						while (i >= 0) {
 							val matchBit = matchByte shr i and 1
 							val bit = symbol shr i and 1
-							price += RangeEncoder.GetPrice(
+							price += RangeEncoder.getPrice(
 								m_Encoders[(1 + matchBit shl 8) + context].toInt(),
 								bit
 							)
@@ -910,7 +829,7 @@ object SevenZip {
 					}
 					while (i >= 0) {
 						val bit = symbol shr i and 1
-						price += RangeEncoder.GetPrice(
+						price += RangeEncoder.getPrice(
 							m_Encoders[context].toInt(),
 							bit
 						)
@@ -921,7 +840,7 @@ object SevenZip {
 				}
 			}
 
-			fun Create(numPosBits: Int, numPrevBits: Int) {
+			fun create(numPosBits: Int, numPrevBits: Int) {
 				if (m_Coders != null && m_NumPrevBits == numPrevBits && m_NumPosBits == numPosBits)
 					return
 				m_NumPosBits = numPosBits
@@ -931,169 +850,143 @@ object SevenZip {
 				m_Coders = Array(numStates) { Encoder2() }
 			}
 
-			fun Init() {
+			fun init() {
 				val numStates = 1 shl m_NumPrevBits + m_NumPosBits
 				for (i in 0 until numStates)
-					m_Coders!![i].Init()
+					m_Coders!![i].init()
 			}
 
-			fun GetSubCoder(pos: Int, prevByte: Byte): Encoder2 =
+			fun getSubCoder(pos: Int, prevByte: Byte): Encoder2 =
 				m_Coders!![(pos and m_PosMask shl m_NumPrevBits) + (prevByte and 0xFF).ushr(8 - m_NumPrevBits)]
 		}
 
 		internal open inner class LenEncoder {
-			var _choice = ShortArray(2)
-			var _lowCoder = arrayOfNulls<BitTreeEncoder>(LzmaBase.kNumPosStatesEncodingMax)
-			var _midCoder = arrayOfNulls<BitTreeEncoder>(LzmaBase.kNumPosStatesEncodingMax)
-			var _highCoder = BitTreeEncoder(LzmaBase.kNumHighLenBits)
+			private var _choice = ShortArray(2)
+			private var _lowCoder = Array(LzmaBase.kNumPosStatesEncodingMax) { BitTreeEncoder(LzmaBase.kNumLowLenBits) }
+			private var _midCoder = Array(LzmaBase.kNumPosStatesEncodingMax) { BitTreeEncoder(LzmaBase.kNumMidLenBits) }
+			private var _highCoder = BitTreeEncoder(LzmaBase.kNumHighLenBits)
 
-			init {
-				for (posState in 0 until LzmaBase.kNumPosStatesEncodingMax) {
-					_lowCoder[posState] =
-							BitTreeEncoder(LzmaBase.kNumLowLenBits)
-					_midCoder[posState] =
-							BitTreeEncoder(LzmaBase.kNumMidLenBits)
-				}
-			}
-
-			fun Init(numPosStates: Int) {
-				RangeEncoder.InitBitModels(_choice)
+			fun init(numPosStates: Int) {
+				RangeEncoder.initBitModels(_choice)
 
 				for (posState in 0 until numPosStates) {
-					_lowCoder[posState]!!.Init()
-					_midCoder[posState]!!.Init()
+					_lowCoder[posState].init()
+					_midCoder[posState].init()
 				}
-				_highCoder.Init()
+				_highCoder.init()
 			}
 
-			open fun Encode(
-				rangeEncoder: RangeEncoder,
-				symbol: Int,
-				posState: Int
-			) {
+			open fun encode(rangeEncoder: RangeEncoder, symbol: Int, posState: Int) {
 				var sym = symbol
 				if (sym < LzmaBase.kNumLowLenSymbols) {
-					rangeEncoder.Encode(_choice, 0, 0)
-					_lowCoder[posState]!!.Encode(rangeEncoder, sym)
+					rangeEncoder.encode(_choice, 0, 0)
+					_lowCoder[posState].encode(rangeEncoder, sym)
 				} else {
 					sym -= LzmaBase.kNumLowLenSymbols
-					rangeEncoder.Encode(_choice, 0, 1)
+					rangeEncoder.encode(_choice, 0, 1)
 					if (sym < LzmaBase.kNumMidLenSymbols) {
-						rangeEncoder.Encode(_choice, 1, 0)
-						_midCoder[posState]!!.Encode(rangeEncoder, sym)
+						rangeEncoder.encode(_choice, 1, 0)
+						_midCoder[posState].encode(rangeEncoder, sym)
 					} else {
-						rangeEncoder.Encode(_choice, 1, 1)
-						_highCoder.Encode(rangeEncoder, sym - LzmaBase.kNumMidLenSymbols)
+						rangeEncoder.encode(_choice, 1, 1)
+						_highCoder.encode(rangeEncoder, sym - LzmaBase.kNumMidLenSymbols)
 					}
 				}
 			}
 
-			fun SetPrices(posState: Int, numSymbols: Int, prices: IntArray, st: Int) {
-				val a0 = RangeEncoder.GetPrice0(_choice[0].toInt())
-				val a1 = RangeEncoder.GetPrice1(_choice[0].toInt())
-				val b0 = a1 + RangeEncoder.GetPrice0(_choice[1].toInt())
-				val b1 = a1 + RangeEncoder.GetPrice1(_choice[1].toInt())
+			fun setPrices(posState: Int, numSymbols: Int, prices: IntArray, st: Int) {
+				val a0 = RangeEncoder.getPrice0(_choice[0].toInt())
+				val a1 = RangeEncoder.getPrice1(_choice[0].toInt())
+				val b0 = a1 + RangeEncoder.getPrice0(_choice[1].toInt())
+				val b1 = a1 + RangeEncoder.getPrice1(_choice[1].toInt())
 				var i = 0
 				while (i < LzmaBase.kNumLowLenSymbols) {
-					if (i >= numSymbols)
-						return
-					prices[st + i] = a0 + _lowCoder[posState]!!.GetPrice(i)
+					if (i >= numSymbols) return
+					prices[st + i] = a0 + _lowCoder[posState].getPrice(i)
 					i++
 				}
 				while (i < LzmaBase.kNumLowLenSymbols + LzmaBase.kNumMidLenSymbols) {
-					if (i >= numSymbols)
-						return
-					prices[st + i] = b0 + _midCoder[posState]!!.GetPrice(i - LzmaBase.kNumLowLenSymbols)
+					if (i >= numSymbols) return
+					prices[st + i] = b0 + _midCoder[posState].getPrice(i - LzmaBase.kNumLowLenSymbols)
 					i++
 				}
 				while (i < numSymbols) {
-					prices[st + i] = b1 +
-							_highCoder.GetPrice(i - LzmaBase.kNumLowLenSymbols - LzmaBase.kNumMidLenSymbols)
+					prices[st + i] = b1 + _highCoder.getPrice(i - LzmaBase.kNumLowLenSymbols - LzmaBase.kNumMidLenSymbols)
 					i++
 				}
 			}
 		}
 
 		internal inner class LenPriceTableEncoder : LenEncoder() {
-			var _prices = IntArray(LzmaBase.kNumLenSymbols shl LzmaBase.kNumPosStatesBitsEncodingMax)
-			var _tableSize: Int = 0
-			var _counters = IntArray(LzmaBase.kNumPosStatesEncodingMax)
+			private var _prices = IntArray(LzmaBase.kNumLenSymbols shl LzmaBase.kNumPosStatesBitsEncodingMax)
+			private var _tableSize: Int = 0
+			private var _counters = IntArray(LzmaBase.kNumPosStatesEncodingMax)
 
-			fun SetTableSize(tableSize: Int) {
+			fun setTableSize(tableSize: Int) {
 				_tableSize = tableSize
 			}
 
-			fun GetPrice(symbol: Int, posState: Int): Int {
-				return _prices[posState * LzmaBase.kNumLenSymbols + symbol]
-			}
+			fun getPrice(symbol: Int, posState: Int): Int = _prices[posState * LzmaBase.kNumLenSymbols + symbol]
 
-			fun UpdateTable(posState: Int) {
-				SetPrices(posState, _tableSize, _prices, posState * LzmaBase.kNumLenSymbols)
+			private fun updateTable(posState: Int) {
+				setPrices(posState, _tableSize, _prices, posState * LzmaBase.kNumLenSymbols)
 				_counters[posState] = _tableSize
 			}
 
-			fun UpdateTables(numPosStates: Int) {
-				for (posState in 0 until numPosStates) {
-					UpdateTable(posState)
-				}
-			}
+			fun updateTables(numPosStates: Int) = run { for (posState in 0 until numPosStates) updateTable(posState) }
 
-			override fun Encode(
-				rangeEncoder: RangeEncoder,
-				symbol: Int,
-				posState: Int
-			) {
-				super.Encode(rangeEncoder, symbol, posState)
+			override fun encode(rangeEncoder: RangeEncoder, symbol: Int, posState: Int) {
+				super.encode(rangeEncoder, symbol, posState)
 				if (--_counters[posState] == 0)
-					UpdateTable(posState)
+					updateTable(posState)
 			}
 		}
 
 		internal inner class Optimal {
-			var State: Int = 0
+			var state: Int = 0
 
-			var Prev1IsChar: Boolean = false
-			var Prev2: Boolean = false
+			var prev1IsChar: Boolean = false
+			var prev2: Boolean = false
 
-			var PosPrev2: Int = 0
-			var BackPrev2: Int = 0
+			var posPrev2: Int = 0
+			var backPrev2: Int = 0
 
-			var Price: Int = 0
-			var PosPrev: Int = 0
-			var BackPrev: Int = 0
+			var price: Int = 0
+			var posPrev: Int = 0
+			var backPrev: Int = 0
 
-			var Backs0: Int = 0
-			var Backs1: Int = 0
-			var Backs2: Int = 0
-			var Backs3: Int = 0
+			var backs0: Int = 0
+			var backs1: Int = 0
+			var backs2: Int = 0
+			var backs3: Int = 0
 
-			fun MakeAsChar() {
-				BackPrev = -1
-				Prev1IsChar = false
+			fun makeAsChar() {
+				backPrev = -1
+				prev1IsChar = false
 			}
 
-			fun MakeAsShortRep() {
-				BackPrev = 0
-				Prev1IsChar = false
+			fun makeAsShortRep() {
+				backPrev = 0
+				prev1IsChar = false
 			}
 
-			fun IsShortRep(): Boolean = BackPrev == 0
+			fun isShortRep(): Boolean = backPrev == 0
 		}
 
-		internal fun Create() {
+		internal fun create() {
 			if (_matchFinder == null) {
 				val bt = LzBinTree()
 				var numHashBytes = 4
 				if (_matchFinderType == EMatchFinderTypeBT2)
 					numHashBytes = 2
-				bt.SetType(numHashBytes)
+				bt.setType(numHashBytes)
 				_matchFinder = bt
 			}
-			_literalEncoder.Create(_numLiteralPosStateBits, _numLiteralContextBits)
+			_literalEncoder.create(_numLiteralPosStateBits, _numLiteralContextBits)
 
 			if (_dictionarySize == _dictionarySizePrev && _numFastBytesPrev == _numFastBytes)
 				return
-			_matchFinder!!.Create(
+			_matchFinder!!.create(
 				_dictionarySize,
 				kNumOpts, _numFastBytes, LzmaBase.kMatchMaxLen + 1
 			)
@@ -1101,31 +994,29 @@ object SevenZip {
 			_numFastBytesPrev = _numFastBytes
 		}
 
-		internal fun SetWriteEndMarkerMode(writeEndMarker: Boolean) {
-			_writeEndMark = writeEndMarker
-		}
+		//internal fun setWriteEndMarkerMode(writeEndMarker: Boolean) { _writeEndMark = writeEndMarker }
 
-		internal fun Init() {
-			BaseInit()
-			_rangeEncoder.Init()
+		internal fun init() {
+			baseInit()
+			_rangeEncoder.init()
 
-			RangeEncoder.InitBitModels(_isMatch)
-			RangeEncoder.InitBitModels(_isRep0Long)
-			RangeEncoder.InitBitModels(_isRep)
-			RangeEncoder.InitBitModels(_isRepG0)
-			RangeEncoder.InitBitModels(_isRepG1)
-			RangeEncoder.InitBitModels(_isRepG2)
-			RangeEncoder.InitBitModels(_posEncoders)
+			RangeEncoder.initBitModels(_isMatch)
+			RangeEncoder.initBitModels(_isRep0Long)
+			RangeEncoder.initBitModels(_isRep)
+			RangeEncoder.initBitModels(_isRepG0)
+			RangeEncoder.initBitModels(_isRepG1)
+			RangeEncoder.initBitModels(_isRepG2)
+			RangeEncoder.initBitModels(_posEncoders)
 
-			_literalEncoder.Init()
+			_literalEncoder.init()
 			for (i in 0 until LzmaBase.kNumLenToPosStates) {
-				_posSlotEncoder[i].Init()
+				_posSlotEncoder[i].init()
 			}
 
-			_lenEncoder.Init(1 shl _posStateBits)
-			_repMatchLenEncoder.Init(1 shl _posStateBits)
+			_lenEncoder.init(1 shl _posStateBits)
+			_repMatchLenEncoder.init(1 shl _posStateBits)
 
-			_posAlignEncoder.Init()
+			_posAlignEncoder.init()
 
 			_longestMatchWasFound = false
 			_optimumEndIndex = 0
@@ -1133,13 +1024,13 @@ object SevenZip {
 			_additionalOffset = 0
 		}
 
-		internal fun ReadMatchDistances(): Int {
+		private fun readMatchDistances(): Int {
 			var lenRes = 0
-			_numDistancePairs = _matchFinder!!.GetMatches(_matchDistances)
+			_numDistancePairs = _matchFinder!!.getMatches(_matchDistances)
 			if (_numDistancePairs > 0) {
 				lenRes = _matchDistances[_numDistancePairs - 2]
 				if (lenRes == _numFastBytes)
-					lenRes += _matchFinder!!.GetMatchLen(
+					lenRes += _matchFinder!!.getMatchLen(
 						lenRes - 1, _matchDistances[_numDistancePairs - 1],
 						LzmaBase.kMatchMaxLen - lenRes
 					)
@@ -1148,91 +1039,88 @@ object SevenZip {
 			return lenRes
 		}
 
-		internal fun MovePos(num: Int) {
+		private fun movePos(num: Int) {
 			if (num > 0) {
-				_matchFinder!!.Skip(num)
+				_matchFinder!!.skip(num)
 				_additionalOffset += num
 			}
 		}
 
-		internal fun GetRepLen1Price(state: Int, posState: Int): Int =
-			RangeEncoder.GetPrice0(_isRepG0[state].toInt()) + RangeEncoder.GetPrice0(
+		private fun getRepLen1Price(state: Int, posState: Int): Int =
+			RangeEncoder.getPrice0(_isRepG0[state].toInt()) + RangeEncoder.getPrice0(
 				_isRep0Long[(state shl LzmaBase.kNumPosStatesBitsMax) + posState].toInt()
 			)
 
-		internal fun GetPureRepPrice(repIndex: Int, state: Int, posState: Int): Int {
+		private fun getPureRepPrice(repIndex: Int, state: Int, posState: Int): Int {
 			var price: Int
 			if (repIndex == 0) {
-				price = RangeEncoder.GetPrice0(_isRepG0[state].toInt())
-				price += RangeEncoder.GetPrice1(
+				price = RangeEncoder.getPrice0(_isRepG0[state].toInt())
+				price += RangeEncoder.getPrice1(
 					_isRep0Long[(state shl LzmaBase.kNumPosStatesBitsMax) + posState].toInt()
 				)
 			} else {
-				price = RangeEncoder.GetPrice1(_isRepG0[state].toInt())
+				price = RangeEncoder.getPrice1(_isRepG0[state].toInt())
 				if (repIndex == 1) {
-					price += RangeEncoder.GetPrice0(_isRepG1[state].toInt())
+					price += RangeEncoder.getPrice0(_isRepG1[state].toInt())
 				} else {
-					price += RangeEncoder.GetPrice1(_isRepG1[state].toInt())
-					price += RangeEncoder.GetPrice(_isRepG2[state].toInt(), repIndex - 2)
+					price += RangeEncoder.getPrice1(_isRepG1[state].toInt())
+					price += RangeEncoder.getPrice(_isRepG2[state].toInt(), repIndex - 2)
 				}
 			}
 			return price
 		}
 
-		internal fun GetRepPrice(repIndex: Int, len: Int, state: Int, posState: Int): Int {
-			val price = _repMatchLenEncoder.GetPrice(len - LzmaBase.kMatchMinLen, posState)
-			return price + GetPureRepPrice(repIndex, state, posState)
+		private fun getRepPrice(repIndex: Int, len: Int, state: Int, posState: Int): Int {
+			val price = _repMatchLenEncoder.getPrice(len - LzmaBase.kMatchMinLen, posState)
+			return price + getPureRepPrice(repIndex, state, posState)
 		}
 
-		internal fun GetPosLenPrice(pos: Int, len: Int, posState: Int): Int {
+		private fun getPosLenPrice(pos: Int, len: Int, posState: Int): Int {
 			val price: Int
-			val lenToPosState = LzmaBase.GetLenToPosState(len)
-			if (pos < LzmaBase.kNumFullDistances)
-				price = _distancesPrices[lenToPosState * LzmaBase.kNumFullDistances + pos]
+			val lenToPosState = LzmaBase.getLenToPosState(len)
+			price = if (pos < LzmaBase.kNumFullDistances)
+				_distancesPrices[lenToPosState * LzmaBase.kNumFullDistances + pos]
 			else
-				price = _posSlotPrices[(lenToPosState shl LzmaBase.kNumPosSlotBits) + GetPosSlot2(
-					pos
-				)] +
-						_alignPrices[pos and LzmaBase.kAlignMask]
-			return price + _lenEncoder.GetPrice(len - LzmaBase.kMatchMinLen, posState)
+				_posSlotPrices[(lenToPosState shl LzmaBase.kNumPosSlotBits) + getPosSlot2(pos)] + _alignPrices[pos and LzmaBase.kAlignMask]
+			return price + _lenEncoder.getPrice(len - LzmaBase.kMatchMinLen, posState)
 		}
 
-		internal fun Backward(cur: Int): Int {
+		private fun backward(cur: Int): Int {
 			var cc = cur
 			_optimumEndIndex = cc
-			var posMem = _optimum[cc].PosPrev
-			var backMem = _optimum[cc].BackPrev
+			var posMem = _optimum[cc].posPrev
+			var backMem = _optimum[cc].backPrev
 			do {
-				if (_optimum[cc].Prev1IsChar) {
-					_optimum[posMem].MakeAsChar()
-					_optimum[posMem].PosPrev = posMem - 1
-					if (_optimum[cc].Prev2) {
-						_optimum[posMem - 1].Prev1IsChar = false
-						_optimum[posMem - 1].PosPrev = _optimum[cc].PosPrev2
-						_optimum[posMem - 1].BackPrev = _optimum[cc].BackPrev2
+				if (_optimum[cc].prev1IsChar) {
+					_optimum[posMem].makeAsChar()
+					_optimum[posMem].posPrev = posMem - 1
+					if (_optimum[cc].prev2) {
+						_optimum[posMem - 1].prev1IsChar = false
+						_optimum[posMem - 1].posPrev = _optimum[cc].posPrev2
+						_optimum[posMem - 1].backPrev = _optimum[cc].backPrev2
 					}
 				}
 				val posPrev = posMem
 				val backCur = backMem
 
-				backMem = _optimum[posPrev].BackPrev
-				posMem = _optimum[posPrev].PosPrev
+				backMem = _optimum[posPrev].backPrev
+				posMem = _optimum[posPrev].posPrev
 
-				_optimum[posPrev].BackPrev = backCur
-				_optimum[posPrev].PosPrev = cc
+				_optimum[posPrev].backPrev = backCur
+				_optimum[posPrev].posPrev = cc
 				cc = posPrev
 			} while (cc > 0)
-			backRes = _optimum[0].BackPrev
-			_optimumCurrentIndex = _optimum[0].PosPrev
+			backRes = _optimum[0].backPrev
+			_optimumCurrentIndex = _optimum[0].posPrev
 			return _optimumCurrentIndex
 		}
 
-		internal fun GetOptimum(position: Int): Int {
+		private fun getOptimum(position: Int): Int {
 			var ppos = position
 			if (_optimumEndIndex != _optimumCurrentIndex) {
-				val lenRes = _optimum[_optimumCurrentIndex].PosPrev - _optimumCurrentIndex
-				backRes = _optimum[_optimumCurrentIndex].BackPrev
-				_optimumCurrentIndex = _optimum[_optimumCurrentIndex].PosPrev
+				val lenRes = _optimum[_optimumCurrentIndex].posPrev - _optimumCurrentIndex
+				backRes = _optimum[_optimumCurrentIndex].backPrev
+				_optimumCurrentIndex = _optimum[_optimumCurrentIndex].posPrev
 				return lenRes
 			}
 			_optimumEndIndex = 0
@@ -1241,27 +1129,28 @@ object SevenZip {
 			val lenMain: Int
 			var numDistancePairs: Int
 			if (!_longestMatchWasFound) {
-				lenMain = ReadMatchDistances()
+				lenMain = readMatchDistances()
 			} else {
 				lenMain = _longestMatchLength
 				_longestMatchWasFound = false
 			}
 			numDistancePairs = _numDistancePairs
 
-			var numAvailableBytes = _matchFinder!!.GetNumAvailableBytes() + 1
+			var numAvailableBytes = _matchFinder!!.getNumAvailableBytes() + 1
 			if (numAvailableBytes < 2) {
 				backRes = -1
 				return 1
 			}
 			if (numAvailableBytes > LzmaBase.kMatchMaxLen) {
+				@Suppress("UNUSED_VALUE")
 				numAvailableBytes = LzmaBase.kMatchMaxLen
 			}
 
 			var repMaxIndex = 0
-			var i: Int = 0
+			var i = 0
 			while (i < LzmaBase.kNumRepDistances) {
 				reps[i] = _repDistances[i]
-				repLens[i] = _matchFinder!!.GetMatchLen(
+				repLens[i] = _matchFinder!!.getMatchLen(
 					0 - 1, reps[i],
 					LzmaBase.kMatchMaxLen
 				)
@@ -1272,71 +1161,71 @@ object SevenZip {
 			if (repLens[repMaxIndex] >= _numFastBytes) {
 				backRes = repMaxIndex
 				val lenRes = repLens[repMaxIndex]
-				MovePos(lenRes - 1)
+				movePos(lenRes - 1)
 				return lenRes
 			}
 
 			if (lenMain >= _numFastBytes) {
 				backRes = _matchDistances[numDistancePairs - 1] +
 						LzmaBase.kNumRepDistances
-				MovePos(lenMain - 1)
+				movePos(lenMain - 1)
 				return lenMain
 			}
 
-			var currentByte = _matchFinder!!.GetIndexByte(0 - 1)
-			var matchByte = _matchFinder!!.GetIndexByte(0 - _repDistances[0] - 1 - 1)
+			var currentByte = _matchFinder!!.getIndexByte(0 - 1)
+			var matchByte = _matchFinder!!.getIndexByte(0 - _repDistances[0] - 1 - 1)
 
 			if (lenMain < 2 && currentByte != matchByte && repLens[repMaxIndex] < 2) {
 				backRes = -1
 				return 1
 			}
 
-			_optimum[0].State = _state
+			_optimum[0].state = _state
 
 			var posState = ppos and _posStateMask
 
-			_optimum[1].Price = RangeEncoder.GetPrice0(
+			_optimum[1].price = RangeEncoder.getPrice0(
 				_isMatch[(_state shl LzmaBase.kNumPosStatesBitsMax) + posState].toInt()
 			) +
-					_literalEncoder.GetSubCoder(ppos, _previousByte).GetPrice(
-						!LzmaBase.StateIsCharState(_state),
+					_literalEncoder.getSubCoder(ppos, _previousByte).getPrice(
+						!LzmaBase.stateIsCharState(_state),
 						matchByte,
 						currentByte
 					)
-			_optimum[1].MakeAsChar()
+			_optimum[1].makeAsChar()
 
 			var matchPrice =
-				RangeEncoder.GetPrice1(_isMatch[(_state shl LzmaBase.kNumPosStatesBitsMax) + posState].toInt())
+				RangeEncoder.getPrice1(_isMatch[(_state shl LzmaBase.kNumPosStatesBitsMax) + posState].toInt())
 			var repMatchPrice =
-				matchPrice + RangeEncoder.GetPrice1(
+				matchPrice + RangeEncoder.getPrice1(
 					_isRep[_state].toInt()
 				)
 
 			if (matchByte == currentByte) {
-				val shortRepPrice = repMatchPrice + GetRepLen1Price(_state, posState)
-				if (shortRepPrice < _optimum[1].Price) {
-					_optimum[1].Price = shortRepPrice
-					_optimum[1].MakeAsShortRep()
+				val shortRepPrice = repMatchPrice + getRepLen1Price(_state, posState)
+				if (shortRepPrice < _optimum[1].price) {
+					_optimum[1].price = shortRepPrice
+					_optimum[1].makeAsShortRep()
 				}
 			}
 
 			var lenEnd = if (lenMain >= repLens[repMaxIndex]) lenMain else repLens[repMaxIndex]
 
 			if (lenEnd < 2) {
-				backRes = _optimum[1].BackPrev
+				backRes = _optimum[1].backPrev
 				return 1
 			}
 
-			_optimum[1].PosPrev = 0
+			_optimum[1].posPrev = 0
 
-			_optimum[0].Backs0 = reps[0]
-			_optimum[0].Backs1 = reps[1]
-			_optimum[0].Backs2 = reps[2]
-			_optimum[0].Backs3 = reps[3]
+			_optimum[0].backs0 = reps[0]
+			_optimum[0].backs1 = reps[1]
+			_optimum[0].backs2 = reps[2]
+			_optimum[0].backs3 = reps[3]
 
 			var len = lenEnd
 			do
-				_optimum[len--].Price =
+				_optimum[len--].price =
 						kIfinityPrice
 			while (len >= 2)
 
@@ -1347,22 +1236,22 @@ object SevenZip {
 					i++
 					continue
 				}
-				val price = repMatchPrice + GetPureRepPrice(i, _state, posState)
+				val price = repMatchPrice + getPureRepPrice(i, _state, posState)
 				do {
-					val curAndLenPrice = price + _repMatchLenEncoder.GetPrice(repLen - 2, posState)
+					val curAndLenPrice = price + _repMatchLenEncoder.getPrice(repLen - 2, posState)
 					val optimum = _optimum[repLen]
-					if (curAndLenPrice < optimum.Price) {
-						optimum.Price = curAndLenPrice
-						optimum.PosPrev = 0
-						optimum.BackPrev = i
-						optimum.Prev1IsChar = false
+					if (curAndLenPrice < optimum.price) {
+						optimum.price = curAndLenPrice
+						optimum.posPrev = 0
+						optimum.backPrev = i
+						optimum.prev1IsChar = false
 					}
 				} while (--repLen >= 2)
 				i++
 			}
 
 			var normalMatchPrice =
-				matchPrice + RangeEncoder.GetPrice0(
+				matchPrice + RangeEncoder.getPrice0(
 					_isRep[_state].toInt()
 				)
 
@@ -1373,14 +1262,14 @@ object SevenZip {
 					offs += 2
 				while (true) {
 					val distance = _matchDistances[offs + 1]
-					val curAndLenPrice = normalMatchPrice + GetPosLenPrice(distance, len, posState)
+					val curAndLenPrice = normalMatchPrice + getPosLenPrice(distance, len, posState)
 					val optimum = _optimum[len]
-					if (curAndLenPrice < optimum.Price) {
-						optimum.Price = curAndLenPrice
-						optimum.PosPrev = 0
-						optimum.BackPrev = distance +
+					if (curAndLenPrice < optimum.price) {
+						optimum.price = curAndLenPrice
+						optimum.posPrev = 0
+						optimum.backPrev = distance +
 								LzmaBase.kNumRepDistances
-						optimum.Prev1IsChar = false
+						optimum.prev1IsChar = false
 					}
 					if (len == _matchDistances[offs]) {
 						offs += 2
@@ -1396,130 +1285,135 @@ object SevenZip {
 			while (true) {
 				cur++
 				if (cur == lenEnd)
-					return Backward(cur)
-				var newLen = ReadMatchDistances()
+					return backward(cur)
+				var newLen = readMatchDistances()
 				numDistancePairs = _numDistancePairs
 				if (newLen >= _numFastBytes) {
 
 					_longestMatchLength = newLen
 					_longestMatchWasFound = true
-					return Backward(cur)
+					return backward(cur)
 				}
 				ppos++
-				var posPrev = _optimum[cur].PosPrev
+				var posPrev = _optimum[cur].posPrev
 				var state: Int
-				if (_optimum[cur].Prev1IsChar) {
+				if (_optimum[cur].prev1IsChar) {
 					posPrev--
-					if (_optimum[cur].Prev2) {
-						state = _optimum[_optimum[cur].PosPrev2].State
-						if (_optimum[cur].BackPrev2 < LzmaBase.kNumRepDistances)
-							state = LzmaBase.StateUpdateRep(state)
+					if (_optimum[cur].prev2) {
+						state = _optimum[_optimum[cur].posPrev2].state
+						state = if (_optimum[cur].backPrev2 < LzmaBase.kNumRepDistances)
+							LzmaBase.stateUpdateRep(state)
 						else
-							state = LzmaBase.StateUpdateMatch(state)
+							LzmaBase.stateUpdateMatch(state)
 					} else
-						state = _optimum[posPrev].State
-					state = LzmaBase.StateUpdateChar(state)
+						state = _optimum[posPrev].state
+					state = LzmaBase.stateUpdateChar(state)
 				} else
-					state = _optimum[posPrev].State
+					state = _optimum[posPrev].state
 				if (posPrev == cur - 1) {
-					if (_optimum[cur].IsShortRep())
-						state = LzmaBase.StateUpdateShortRep(state)
+					state = if (_optimum[cur].isShortRep())
+						LzmaBase.stateUpdateShortRep(state)
 					else
-						state = LzmaBase.StateUpdateChar(state)
+						LzmaBase.stateUpdateChar(state)
 				} else {
 					val pos: Int
-					if (_optimum[cur].Prev1IsChar && _optimum[cur].Prev2) {
-						posPrev = _optimum[cur].PosPrev2
-						pos = _optimum[cur].BackPrev2
-						state = LzmaBase.StateUpdateRep(state)
+					if (_optimum[cur].prev1IsChar && _optimum[cur].prev2) {
+						posPrev = _optimum[cur].posPrev2
+						pos = _optimum[cur].backPrev2
+						state = LzmaBase.stateUpdateRep(state)
 					} else {
-						pos = _optimum[cur].BackPrev
-						if (pos < LzmaBase.kNumRepDistances)
-							state = LzmaBase.StateUpdateRep(state)
+						pos = _optimum[cur].backPrev
+						state = if (pos < LzmaBase.kNumRepDistances)
+							LzmaBase.stateUpdateRep(state)
 						else
-							state = LzmaBase.StateUpdateMatch(state)
+							LzmaBase.stateUpdateMatch(state)
 					}
 					val opt = _optimum[posPrev]
 					if (pos < LzmaBase.kNumRepDistances) {
-						if (pos == 0) {
-							reps[0] = opt.Backs0
-							reps[1] = opt.Backs1
-							reps[2] = opt.Backs2
-							reps[3] = opt.Backs3
-						} else if (pos == 1) {
-							reps[0] = opt.Backs1
-							reps[1] = opt.Backs0
-							reps[2] = opt.Backs2
-							reps[3] = opt.Backs3
-						} else if (pos == 2) {
-							reps[0] = opt.Backs2
-							reps[1] = opt.Backs0
-							reps[2] = opt.Backs1
-							reps[3] = opt.Backs3
-						} else {
-							reps[0] = opt.Backs3
-							reps[1] = opt.Backs0
-							reps[2] = opt.Backs1
-							reps[3] = opt.Backs2
+						when (pos) {
+							0 -> {
+								reps[0] = opt.backs0
+								reps[1] = opt.backs1
+								reps[2] = opt.backs2
+								reps[3] = opt.backs3
+							}
+							1 -> {
+								reps[0] = opt.backs1
+								reps[1] = opt.backs0
+								reps[2] = opt.backs2
+								reps[3] = opt.backs3
+							}
+							2 -> {
+								reps[0] = opt.backs2
+								reps[1] = opt.backs0
+								reps[2] = opt.backs1
+								reps[3] = opt.backs3
+							}
+							else -> {
+								reps[0] = opt.backs3
+								reps[1] = opt.backs0
+								reps[2] = opt.backs1
+								reps[3] = opt.backs2
+							}
 						}
 					} else {
 						reps[0] = pos - LzmaBase.kNumRepDistances
-						reps[1] = opt.Backs0
-						reps[2] = opt.Backs1
-						reps[3] = opt.Backs2
+						reps[1] = opt.backs0
+						reps[2] = opt.backs1
+						reps[3] = opt.backs2
 					}
 				}
-				_optimum[cur].State = state
-				_optimum[cur].Backs0 = reps[0]
-				_optimum[cur].Backs1 = reps[1]
-				_optimum[cur].Backs2 = reps[2]
-				_optimum[cur].Backs3 = reps[3]
-				val curPrice = _optimum[cur].Price
+				_optimum[cur].state = state
+				_optimum[cur].backs0 = reps[0]
+				_optimum[cur].backs1 = reps[1]
+				_optimum[cur].backs2 = reps[2]
+				_optimum[cur].backs3 = reps[3]
+				val curPrice = _optimum[cur].price
 
-				currentByte = _matchFinder!!.GetIndexByte(0 - 1)
-				matchByte = _matchFinder!!.GetIndexByte(0 - reps[0] - 1 - 1)
+				currentByte = _matchFinder!!.getIndexByte(0 - 1)
+				matchByte = _matchFinder!!.getIndexByte(0 - reps[0] - 1 - 1)
 
 				posState = ppos and _posStateMask
 
 				val curAnd1Price = curPrice +
-						RangeEncoder.GetPrice0(
+						RangeEncoder.getPrice0(
 							_isMatch[(state shl LzmaBase.kNumPosStatesBitsMax) + posState].toInt()
 						) +
-						_literalEncoder.GetSubCoder(
+						_literalEncoder.getSubCoder(
 							ppos,
-							_matchFinder!!.GetIndexByte(0 - 2)
-						).GetPrice(!LzmaBase.StateIsCharState(state), matchByte, currentByte)
+							_matchFinder!!.getIndexByte(0 - 2)
+						).getPrice(!LzmaBase.stateIsCharState(state), matchByte, currentByte)
 
 				val nextOptimum = _optimum[cur + 1]
 
 				var nextIsChar = false
-				if (curAnd1Price < nextOptimum.Price) {
-					nextOptimum.Price = curAnd1Price
-					nextOptimum.PosPrev = cur
-					nextOptimum.MakeAsChar()
+				if (curAnd1Price < nextOptimum.price) {
+					nextOptimum.price = curAnd1Price
+					nextOptimum.posPrev = cur
+					nextOptimum.makeAsChar()
 					nextIsChar = true
 				}
 
 				matchPrice = curPrice +
-						RangeEncoder.GetPrice1(
+						RangeEncoder.getPrice1(
 							_isMatch[(state shl LzmaBase.kNumPosStatesBitsMax) + posState].toInt()
 						)
 				repMatchPrice = matchPrice +
-						RangeEncoder.GetPrice1(
+						RangeEncoder.getPrice1(
 							_isRep[state].toInt()
 						)
 
-				if (matchByte == currentByte && !(nextOptimum.PosPrev < cur && nextOptimum.BackPrev == 0)) {
-					val shortRepPrice = repMatchPrice + GetRepLen1Price(state, posState)
-					if (shortRepPrice <= nextOptimum.Price) {
-						nextOptimum.Price = shortRepPrice
-						nextOptimum.PosPrev = cur
-						nextOptimum.MakeAsShortRep()
+				if (matchByte == currentByte && !(nextOptimum.posPrev < cur && nextOptimum.backPrev == 0)) {
+					val shortRepPrice = repMatchPrice + getRepLen1Price(state, posState)
+					if (shortRepPrice <= nextOptimum.price) {
+						nextOptimum.price = shortRepPrice
+						nextOptimum.posPrev = cur
+						nextOptimum.makeAsShortRep()
 						nextIsChar = true
 					}
 				}
 
-				var numAvailableBytesFull = _matchFinder!!.GetNumAvailableBytes() + 1
+				var numAvailableBytesFull = _matchFinder!!.getNumAvailableBytes() + 1
 				numAvailableBytesFull = min(kNumOpts - 1 - cur, numAvailableBytesFull)
 				numAvailableBytes = numAvailableBytesFull
 
@@ -1530,33 +1424,33 @@ object SevenZip {
 				if (!nextIsChar && matchByte != currentByte) {
 					// try Literal + rep0
 					val t = min(numAvailableBytesFull - 1, _numFastBytes)
-					val lenTest2 = _matchFinder!!.GetMatchLen(0, reps[0], t)
+					val lenTest2 = _matchFinder!!.getMatchLen(0, reps[0], t)
 					if (lenTest2 >= 2) {
-						val state2 = LzmaBase.StateUpdateChar(state)
+						val state2 = LzmaBase.stateUpdateChar(state)
 
 						val posStateNext = ppos + 1 and _posStateMask
 						val nextRepMatchPrice = curAnd1Price +
-								RangeEncoder.GetPrice1(
+								RangeEncoder.getPrice1(
 									_isMatch[(state2 shl LzmaBase.kNumPosStatesBitsMax) + posStateNext].toInt()
 								) +
-								RangeEncoder.GetPrice1(
+								RangeEncoder.getPrice1(
 									_isRep[state2].toInt()
 								)
 						run {
 							val offset = cur + 1 + lenTest2
 							while (lenEnd < offset)
-								_optimum[++lenEnd].Price =
+								_optimum[++lenEnd].price =
 										kIfinityPrice
-							val curAndLenPrice = nextRepMatchPrice + GetRepPrice(
+							val curAndLenPrice = nextRepMatchPrice + getRepPrice(
 								0, lenTest2, state2, posStateNext
 							)
 							val optimum = _optimum[offset]
-							if (curAndLenPrice < optimum.Price) {
-								optimum.Price = curAndLenPrice
-								optimum.PosPrev = cur + 1
-								optimum.BackPrev = 0
-								optimum.Prev1IsChar = true
-								optimum.Prev2 = false
+							if (curAndLenPrice < optimum.price) {
+								optimum.price = curAndLenPrice
+								optimum.posPrev = cur + 1
+								optimum.backPrev = 0
+								optimum.prev1IsChar = true
+								optimum.prev2 = false
 							}
 						}
 					}
@@ -1565,21 +1459,21 @@ object SevenZip {
 				var startLen = 2 // speed optimization
 
 				for (repIndex in 0 until LzmaBase.kNumRepDistances) {
-					var lenTest = _matchFinder!!.GetMatchLen(0 - 1, reps[repIndex], numAvailableBytes)
+					var lenTest = _matchFinder!!.getMatchLen(0 - 1, reps[repIndex], numAvailableBytes)
 					if (lenTest < 2)
 						continue
 					val lenTestTemp = lenTest
 					do {
 						while (lenEnd < cur + lenTest)
-							_optimum[++lenEnd].Price =
+							_optimum[++lenEnd].price =
 									kIfinityPrice
-						val curAndLenPrice = repMatchPrice + GetRepPrice(repIndex, lenTest, state, posState)
+						val curAndLenPrice = repMatchPrice + getRepPrice(repIndex, lenTest, state, posState)
 						val optimum = _optimum[cur + lenTest]
-						if (curAndLenPrice < optimum.Price) {
-							optimum.Price = curAndLenPrice
-							optimum.PosPrev = cur
-							optimum.BackPrev = repIndex
-							optimum.Prev1IsChar = false
+						if (curAndLenPrice < optimum.price) {
+							optimum.price = curAndLenPrice
+							optimum.posPrev = cur
+							optimum.backPrev = repIndex
+							optimum.prev1IsChar = false
 						}
 					} while (--lenTest >= 2)
 					lenTest = lenTestTemp
@@ -1590,32 +1484,32 @@ object SevenZip {
 					// if (_maxMode)
 					if (lenTest < numAvailableBytesFull) {
 						val t = min(numAvailableBytesFull - 1 - lenTest, _numFastBytes)
-						val lenTest2 = _matchFinder!!.GetMatchLen(lenTest, reps[repIndex], t)
+						val lenTest2 = _matchFinder!!.getMatchLen(lenTest, reps[repIndex], t)
 						if (lenTest2 >= 2) {
 							var state2 =
-								LzmaBase.StateUpdateRep(state)
+								LzmaBase.stateUpdateRep(state)
 
 							var posStateNext = ppos + lenTest and _posStateMask
-							val curAndLenCharPrice = repMatchPrice + GetRepPrice(repIndex, lenTest, state, posState) +
-									RangeEncoder.GetPrice0(
+							val curAndLenCharPrice = repMatchPrice + getRepPrice(repIndex, lenTest, state, posState) +
+									RangeEncoder.getPrice0(
 										_isMatch[(state2 shl LzmaBase.kNumPosStatesBitsMax) + posStateNext].toInt()
 									) +
-									_literalEncoder.GetSubCoder(
+									_literalEncoder.getSubCoder(
 										ppos + lenTest,
-										_matchFinder!!.GetIndexByte(lenTest - 1 - 1)
-									).GetPrice(
+										_matchFinder!!.getIndexByte(lenTest - 1 - 1)
+									).getPrice(
 										true,
-										_matchFinder!!.GetIndexByte(lenTest - 1 - (reps[repIndex] + 1)),
-										_matchFinder!!.GetIndexByte(lenTest - 1)
+										_matchFinder!!.getIndexByte(lenTest - 1 - (reps[repIndex] + 1)),
+										_matchFinder!!.getIndexByte(lenTest - 1)
 									)
-							state2 = LzmaBase.StateUpdateChar(state2)
+							state2 = LzmaBase.stateUpdateChar(state2)
 							posStateNext = ppos + lenTest + 1 and _posStateMask
 							val nextMatchPrice =
-								curAndLenCharPrice + RangeEncoder.GetPrice1(
+								curAndLenCharPrice + RangeEncoder.getPrice1(
 									_isMatch[(state2 shl LzmaBase.kNumPosStatesBitsMax) + posStateNext].toInt()
 								)
 							val nextRepMatchPrice =
-								nextMatchPrice + RangeEncoder.GetPrice1(
+								nextMatchPrice + RangeEncoder.getPrice1(
 									_isRep[state2].toInt()
 								)
 
@@ -1623,18 +1517,18 @@ object SevenZip {
 							run {
 								val offset = lenTest + 1 + lenTest2
 								while (lenEnd < cur + offset)
-									_optimum[++lenEnd].Price =
+									_optimum[++lenEnd].price =
 											kIfinityPrice
-								val curAndLenPrice = nextRepMatchPrice + GetRepPrice(0, lenTest2, state2, posStateNext)
+								val curAndLenPrice = nextRepMatchPrice + getRepPrice(0, lenTest2, state2, posStateNext)
 								val optimum = _optimum[cur + offset]
-								if (curAndLenPrice < optimum.Price) {
-									optimum.Price = curAndLenPrice
-									optimum.PosPrev = cur + lenTest + 1
-									optimum.BackPrev = 0
-									optimum.Prev1IsChar = true
-									optimum.Prev2 = true
-									optimum.PosPrev2 = cur
-									optimum.BackPrev2 = repIndex
+								if (curAndLenPrice < optimum.price) {
+									optimum.price = curAndLenPrice
+									optimum.posPrev = cur + lenTest + 1
+									optimum.backPrev = 0
+									optimum.prev1IsChar = true
+									optimum.prev2 = true
+									optimum.posPrev2 = cur
+									optimum.backPrev2 = repIndex
 								}
 							}
 						}
@@ -1652,11 +1546,11 @@ object SevenZip {
 				}
 				if (newLen >= startLen) {
 					normalMatchPrice = matchPrice +
-							RangeEncoder.GetPrice0(
+							RangeEncoder.getPrice0(
 								_isRep[state].toInt()
 							)
 					while (lenEnd < cur + newLen)
-						_optimum[++lenEnd].Price =
+						_optimum[++lenEnd].price =
 								kIfinityPrice
 
 					var offs = 0
@@ -1666,67 +1560,67 @@ object SevenZip {
 					var lenTest = startLen
 					while (true) {
 						val curBack = _matchDistances[offs + 1]
-						var curAndLenPrice = normalMatchPrice + GetPosLenPrice(curBack, lenTest, posState)
+						var curAndLenPrice = normalMatchPrice + getPosLenPrice(curBack, lenTest, posState)
 						var optimum = _optimum[cur + lenTest]
-						if (curAndLenPrice < optimum.Price) {
-							optimum.Price = curAndLenPrice
-							optimum.PosPrev = cur
-							optimum.BackPrev = curBack +
+						if (curAndLenPrice < optimum.price) {
+							optimum.price = curAndLenPrice
+							optimum.posPrev = cur
+							optimum.backPrev = curBack +
 									LzmaBase.kNumRepDistances
-							optimum.Prev1IsChar = false
+							optimum.prev1IsChar = false
 						}
 
 						if (lenTest == _matchDistances[offs]) {
 							if (lenTest < numAvailableBytesFull) {
 								val t = min(numAvailableBytesFull - 1 - lenTest, _numFastBytes)
-								val lenTest2 = _matchFinder!!.GetMatchLen(lenTest, curBack, t)
+								val lenTest2 = _matchFinder!!.getMatchLen(lenTest, curBack, t)
 								if (lenTest2 >= 2) {
 									var state2 =
-										LzmaBase.StateUpdateMatch(
+										LzmaBase.stateUpdateMatch(
 											state
 										)
 
 									var posStateNext = ppos + lenTest and _posStateMask
 									val curAndLenCharPrice = curAndLenPrice +
-											RangeEncoder.GetPrice0(
+											RangeEncoder.getPrice0(
 												_isMatch[(state2 shl LzmaBase.kNumPosStatesBitsMax) + posStateNext].toInt()
 											) +
-											_literalEncoder.GetSubCoder(
+											_literalEncoder.getSubCoder(
 												ppos + lenTest,
-												_matchFinder!!.GetIndexByte(lenTest - 1 - 1)
-											).GetPrice(
+												_matchFinder!!.getIndexByte(lenTest - 1 - 1)
+											).getPrice(
 												true,
-												_matchFinder!!.GetIndexByte(lenTest - (curBack + 1) - 1),
-												_matchFinder!!.GetIndexByte(lenTest - 1)
+												_matchFinder!!.getIndexByte(lenTest - (curBack + 1) - 1),
+												_matchFinder!!.getIndexByte(lenTest - 1)
 											)
 									state2 =
-											LzmaBase.StateUpdateChar(
+											LzmaBase.stateUpdateChar(
 												state2
 											)
 									posStateNext = ppos + lenTest + 1 and _posStateMask
 									val nextMatchPrice =
-										curAndLenCharPrice + RangeEncoder.GetPrice1(
+										curAndLenCharPrice + RangeEncoder.getPrice1(
 											_isMatch[(state2 shl LzmaBase.kNumPosStatesBitsMax) + posStateNext].toInt()
 										)
 									val nextRepMatchPrice =
-										nextMatchPrice + RangeEncoder.GetPrice1(
+										nextMatchPrice + RangeEncoder.getPrice1(
 											_isRep[state2].toInt()
 										)
 
 									val offset = lenTest + 1 + lenTest2
 									while (lenEnd < cur + offset)
-										_optimum[++lenEnd].Price =
+										_optimum[++lenEnd].price =
 												kIfinityPrice
-									curAndLenPrice = nextRepMatchPrice + GetRepPrice(0, lenTest2, state2, posStateNext)
+									curAndLenPrice = nextRepMatchPrice + getRepPrice(0, lenTest2, state2, posStateNext)
 									optimum = _optimum[cur + offset]
-									if (curAndLenPrice < optimum.Price) {
-										optimum.Price = curAndLenPrice
-										optimum.PosPrev = cur + lenTest + 1
-										optimum.BackPrev = 0
-										optimum.Prev1IsChar = true
-										optimum.Prev2 = true
-										optimum.PosPrev2 = cur
-										optimum.BackPrev2 = curBack +
+									if (curAndLenPrice < optimum.price) {
+										optimum.price = curAndLenPrice
+										optimum.posPrev = cur + lenTest + 1
+										optimum.backPrev = 0
+										optimum.prev1IsChar = true
+										optimum.prev2 = true
+										optimum.posPrev2 = cur
+										optimum.backPrev2 = curBack +
 												LzmaBase.kNumRepDistances
 									}
 								}
@@ -1741,44 +1635,42 @@ object SevenZip {
 			}
 		}
 
-		internal fun ChangePair(smallDist: Int, bigDist: Int): Boolean {
-			val kDif = 7
-			return smallDist < 1 shl 32 - kDif && bigDist >= smallDist shl kDif
-		}
+		//internal fun changePair(smallDist: Int, bigDist: Int): Boolean {
+		//	val kDif = 7
+		//	return smallDist < 1 shl 32 - kDif && bigDist >= smallDist shl kDif
+		//}
 
-		internal fun WriteEndMarker(posState: Int) {
-			if (!_writeEndMark)
-				return
-
-			_rangeEncoder.Encode(_isMatch, (_state shl LzmaBase.kNumPosStatesBitsMax) + posState, 1)
-			_rangeEncoder.Encode(_isRep, _state, 0)
-			_state = LzmaBase.StateUpdateMatch(_state)
+		private fun writeEndMarker(posState: Int) {
+			if (!_writeEndMark) return
+			_rangeEncoder.encode(_isMatch, (_state shl LzmaBase.kNumPosStatesBitsMax) + posState, 1)
+			_rangeEncoder.encode(_isRep, _state, 0)
+			_state = LzmaBase.stateUpdateMatch(_state)
 			val len = LzmaBase.kMatchMinLen
-			_lenEncoder.Encode(_rangeEncoder, len - LzmaBase.kMatchMinLen, posState)
+			_lenEncoder.encode(_rangeEncoder, len - LzmaBase.kMatchMinLen, posState)
 			val posSlot = (1 shl LzmaBase.kNumPosSlotBits) - 1
-			val lenToPosState = LzmaBase.GetLenToPosState(len)
-			_posSlotEncoder[lenToPosState].Encode(_rangeEncoder, posSlot)
+			val lenToPosState = LzmaBase.getLenToPosState(len)
+			_posSlotEncoder[lenToPosState].encode(_rangeEncoder, posSlot)
 			val footerBits = 30
 			val posReduced = (1 shl footerBits) - 1
-			_rangeEncoder.EncodeDirectBits(posReduced shr LzmaBase.kNumAlignBits, footerBits - LzmaBase.kNumAlignBits)
-			_posAlignEncoder.ReverseEncode(_rangeEncoder, posReduced and LzmaBase.kAlignMask)
+			_rangeEncoder.encodeDirectBits(posReduced shr LzmaBase.kNumAlignBits, footerBits - LzmaBase.kNumAlignBits)
+			_posAlignEncoder.reverseEncode(_rangeEncoder, posReduced and LzmaBase.kAlignMask)
 		}
 
-		internal fun Flush(nowPos: Int) {
-			ReleaseMFStream()
-			WriteEndMarker(nowPos and _posStateMask)
-			_rangeEncoder.FlushData()
-			_rangeEncoder.FlushStream()
+		private fun flush(nowPos: Int) {
+			releaseMFStream()
+			writeEndMarker(nowPos and _posStateMask)
+			_rangeEncoder.flushData()
+			_rangeEncoder.flushStream()
 		}
 
-		fun CodeOneBlock(inSize: LongArray, outSize: LongArray, finished: BooleanArray) {
+		private fun codeOneBlock(inSize: LongArray, outSize: LongArray, finished: BooleanArray) {
 			inSize[0] = 0
 			outSize[0] = 0
 			finished[0] = true
 
 			if (_inStream != null) {
-				_matchFinder!!.SetStream(_inStream!!)
-				_matchFinder!!.Init()
+				_matchFinder!!.setStream(_inStream!!)
+				_matchFinder!!.init()
 				_needReleaseMFStream = true
 				_inStream = null
 			}
@@ -1790,68 +1682,66 @@ object SevenZip {
 
 			val progressPosValuePrev = nowPos64
 			if (nowPos64 == 0L) {
-				if (_matchFinder!!.GetNumAvailableBytes() == 0) {
-					Flush(nowPos64.toInt())
+				if (_matchFinder!!.getNumAvailableBytes() == 0) {
+					flush(nowPos64.toInt())
 					return
 				}
 
-				ReadMatchDistances()
+				readMatchDistances()
 				val posState = nowPos64.toInt() and _posStateMask
-				_rangeEncoder.Encode(_isMatch, (_state shl LzmaBase.kNumPosStatesBitsMax) + posState, 0)
-				_state = LzmaBase.StateUpdateChar(_state)
-				val curByte = _matchFinder!!.GetIndexByte(0 - _additionalOffset)
-				_literalEncoder.GetSubCoder(nowPos64.toInt(), _previousByte).Encode(_rangeEncoder, curByte)
+				_rangeEncoder.encode(_isMatch, (_state shl LzmaBase.kNumPosStatesBitsMax) + posState, 0)
+				_state = LzmaBase.stateUpdateChar(_state)
+				val curByte = _matchFinder!!.getIndexByte(0 - _additionalOffset)
+				_literalEncoder.getSubCoder(nowPos64.toInt(), _previousByte).encode(_rangeEncoder, curByte)
 				_previousByte = curByte
 				_additionalOffset--
 				nowPos64++
 			}
-			if (_matchFinder!!.GetNumAvailableBytes() == 0) {
-				Flush(nowPos64.toInt())
+			if (_matchFinder!!.getNumAvailableBytes() == 0) {
+				flush(nowPos64.toInt())
 				return
 			}
 			while (true) {
 
-				val len = GetOptimum(nowPos64.toInt())
+				val len = getOptimum(nowPos64.toInt())
 				var pos = backRes
 				val posState = nowPos64.toInt() and _posStateMask
 				val complexState = (_state shl LzmaBase.kNumPosStatesBitsMax) + posState
 				if (len == 1 && pos == -1) {
-					_rangeEncoder.Encode(_isMatch, complexState, 0)
-					val curByte = _matchFinder!!.GetIndexByte(0 - _additionalOffset)
-					val subCoder = _literalEncoder.GetSubCoder(nowPos64.toInt(), _previousByte)
-					if (!LzmaBase.StateIsCharState(_state)) {
-						val matchByte = _matchFinder!!.GetIndexByte(0 - _repDistances[0] - 1 - _additionalOffset)
-						subCoder.EncodeMatched(_rangeEncoder, matchByte, curByte)
+					_rangeEncoder.encode(_isMatch, complexState, 0)
+					val curByte = _matchFinder!!.getIndexByte(0 - _additionalOffset)
+					val subCoder = _literalEncoder.getSubCoder(nowPos64.toInt(), _previousByte)
+					if (!LzmaBase.stateIsCharState(_state)) {
+						val matchByte = _matchFinder!!.getIndexByte(0 - _repDistances[0] - 1 - _additionalOffset)
+						subCoder.encodeMatched(_rangeEncoder, matchByte, curByte)
 					} else
-						subCoder.Encode(_rangeEncoder, curByte)
+						subCoder.encode(_rangeEncoder, curByte)
 					_previousByte = curByte
-					_state = LzmaBase.StateUpdateChar(_state)
+					_state = LzmaBase.stateUpdateChar(_state)
 				} else {
-					_rangeEncoder.Encode(_isMatch, complexState, 1)
+					_rangeEncoder.encode(_isMatch, complexState, 1)
 					if (pos < LzmaBase.kNumRepDistances) {
-						_rangeEncoder.Encode(_isRep, _state, 1)
+						_rangeEncoder.encode(_isRep, _state, 1)
 						if (pos == 0) {
-							_rangeEncoder.Encode(_isRepG0, _state, 0)
+							_rangeEncoder.encode(_isRepG0, _state, 0)
 							if (len == 1)
-								_rangeEncoder.Encode(_isRep0Long, complexState, 0)
+								_rangeEncoder.encode(_isRep0Long, complexState, 0)
 							else
-								_rangeEncoder.Encode(_isRep0Long, complexState, 1)
+								_rangeEncoder.encode(_isRep0Long, complexState, 1)
 						} else {
-							_rangeEncoder.Encode(_isRepG0, _state, 1)
+							_rangeEncoder.encode(_isRepG0, _state, 1)
 							if (pos == 1)
-								_rangeEncoder.Encode(_isRepG1, _state, 0)
+								_rangeEncoder.encode(_isRepG1, _state, 0)
 							else {
-								_rangeEncoder.Encode(_isRepG1, _state, 1)
-								_rangeEncoder.Encode(_isRepG2, _state, pos - 2)
+								_rangeEncoder.encode(_isRepG1, _state, 1)
+								_rangeEncoder.encode(_isRepG2, _state, pos - 2)
 							}
 						}
-						if (len == 1)
-							_state = LzmaBase.StateUpdateShortRep(
-								_state
-							)
-						else {
-							_repMatchLenEncoder.Encode(_rangeEncoder, len - LzmaBase.kMatchMinLen, posState)
-							_state = LzmaBase.StateUpdateRep(_state)
+						_state = if (len == 1) {
+							LzmaBase.stateUpdateShortRep(_state)
+						} else {
+							_repMatchLenEncoder.encode(_rangeEncoder, len - LzmaBase.kMatchMinLen, posState)
+							LzmaBase.stateUpdateRep(_state)
 						}
 						val distance = _repDistances[pos]
 						if (pos != 0) {
@@ -1860,15 +1750,15 @@ object SevenZip {
 							_repDistances[0] = distance
 						}
 					} else {
-						_rangeEncoder.Encode(_isRep, _state, 0)
-						_state = LzmaBase.StateUpdateMatch(_state)
-						_lenEncoder.Encode(_rangeEncoder, len - LzmaBase.kMatchMinLen, posState)
+						_rangeEncoder.encode(_isRep, _state, 0)
+						_state = LzmaBase.stateUpdateMatch(_state)
+						_lenEncoder.encode(_rangeEncoder, len - LzmaBase.kMatchMinLen, posState)
 						pos -= LzmaBase.kNumRepDistances
 						val posSlot =
-							GetPosSlot(pos)
+							getPosSlot(pos)
 						val lenToPosState =
-							LzmaBase.GetLenToPosState(len)
-						_posSlotEncoder[lenToPosState].Encode(_rangeEncoder, posSlot)
+							LzmaBase.getLenToPosState(len)
+						_posSlotEncoder[lenToPosState].encode(_rangeEncoder, posSlot)
 
 						if (posSlot >= LzmaBase.kStartPosModelIndex) {
 							val footerBits = (posSlot shr 1) - 1
@@ -1876,16 +1766,16 @@ object SevenZip {
 							val posReduced = pos - baseVal
 
 							if (posSlot < LzmaBase.kEndPosModelIndex)
-								BitTreeEncoder.ReverseEncode(
+								BitTreeEncoder.reverseEncode(
 									_posEncoders,
 									baseVal - posSlot - 1, _rangeEncoder, footerBits, posReduced
 								)
 							else {
-								_rangeEncoder.EncodeDirectBits(
+								_rangeEncoder.encodeDirectBits(
 									posReduced shr LzmaBase.kNumAlignBits,
 									footerBits - LzmaBase.kNumAlignBits
 								)
-								_posAlignEncoder.ReverseEncode(_rangeEncoder, posReduced and LzmaBase.kAlignMask)
+								_posAlignEncoder.reverseEncode(_rangeEncoder, posReduced and LzmaBase.kAlignMask)
 								_alignPriceCount++
 							}
 						}
@@ -1895,20 +1785,20 @@ object SevenZip {
 						_repDistances[0] = distance
 						_matchPriceCount++
 					}
-					_previousByte = _matchFinder!!.GetIndexByte(len - 1 - _additionalOffset)
+					_previousByte = _matchFinder!!.getIndexByte(len - 1 - _additionalOffset)
 				}
 				_additionalOffset -= len
 				nowPos64 += len.toLong()
 				if (_additionalOffset == 0) {
 					// if (!_fastMode)
 					if (_matchPriceCount >= 1 shl 7)
-						FillDistancesPrices()
+						fillDistancesPrices()
 					if (_alignPriceCount >= LzmaBase.kAlignTableSize)
-						FillAlignPrices()
+						fillAlignPrices()
 					inSize[0] = nowPos64
-					outSize[0] = _rangeEncoder.GetProcessedSizeAdd()
-					if (_matchFinder!!.GetNumAvailableBytes() == 0) {
-						Flush(nowPos64.toInt())
+					outSize[0] = _rangeEncoder.getProcessedSizeAdd()
+					if (_matchFinder!!.getNumAvailableBytes() == 0) {
+						flush(nowPos64.toInt())
 						return
 					}
 
@@ -1921,73 +1811,63 @@ object SevenZip {
 			}
 		}
 
-		internal fun ReleaseMFStream() {
+		private fun releaseMFStream() {
 			if (_matchFinder != null && _needReleaseMFStream) {
-				_matchFinder!!.ReleaseStream()
+				_matchFinder!!.releaseStream()
 				_needReleaseMFStream = false
 			}
 		}
 
-		internal fun SetOutStream(outStream: SyncOutputStream) {
-			_rangeEncoder.SetStream(outStream)
+		private fun setOutStream(outStream: SyncOutputStream) {
+			_rangeEncoder.setStream(outStream)
 		}
 
-		internal fun ReleaseOutStream() {
-			_rangeEncoder.ReleaseStream()
+		private fun releaseOutStream() {
+			_rangeEncoder.releaseStream()
 		}
 
-		internal fun ReleaseStreams() {
-			ReleaseMFStream()
-			ReleaseOutStream()
+		private fun releaseStreams() {
+			releaseMFStream()
+			releaseOutStream()
 		}
 
-		internal fun SetStreams(
-			inStream: SyncInputStream, outStream: SyncOutputStream,
-			inSize: Long, outSize: Long
-		) {
+		@Suppress("UNUSED_PARAMETER")
+		private fun setStreams(inStream: SyncInputStream, outStream: SyncOutputStream, inSize: Long, outSize: Long) {
 			_inStream = inStream
 			_finished = false
-			Create()
-			SetOutStream(outStream)
-			Init()
+			create()
+			setOutStream(outStream)
+			init()
 
 			// if (!_fastMode)
 			run {
-				FillDistancesPrices()
-				FillAlignPrices()
+				fillDistancesPrices()
+				fillAlignPrices()
 			}
 
-			_lenEncoder.SetTableSize(_numFastBytes + 1 - LzmaBase.kMatchMinLen)
-			_lenEncoder.UpdateTables(1 shl _posStateBits)
-			_repMatchLenEncoder.SetTableSize(_numFastBytes + 1 - LzmaBase.kMatchMinLen)
-			_repMatchLenEncoder.UpdateTables(1 shl _posStateBits)
+			_lenEncoder.setTableSize(_numFastBytes + 1 - LzmaBase.kMatchMinLen)
+			_lenEncoder.updateTables(1 shl _posStateBits)
+			_repMatchLenEncoder.setTableSize(_numFastBytes + 1 - LzmaBase.kMatchMinLen)
+			_repMatchLenEncoder.updateTables(1 shl _posStateBits)
 
 			nowPos64 = 0
 		}
 
-		fun Code(
-			inStream: SyncInputStream, outStream: SyncOutputStream,
-			inSize: Long, outSize: Long, progress: ICodeProgress?
-		) {
+		fun code(inStream: SyncInputStream, outStream: SyncOutputStream, inSize: Long, outSize: Long, progress: ICodeProgress?) {
 			_needReleaseMFStream = false
 			try {
-				SetStreams(inStream, outStream, inSize, outSize)
+				setStreams(inStream, outStream, inSize, outSize)
 				while (true) {
-
-
-					CodeOneBlock(processedInSize, processedOutSize, finished)
-					if (finished[0])
-						return
-					if (progress != null) {
-						progress.SetProgress(processedInSize[0], processedOutSize[0])
-					}
+					codeOneBlock(processedInSize, processedOutSize, finished)
+					if (finished[0]) return
+					progress?.setProgress(processedInSize[0], processedOutSize[0])
 				}
 			} finally {
-				ReleaseStreams()
+				releaseStreams()
 			}
 		}
 
-		fun WriteCoderProperties(outStream: SyncOutputStream) {
+		fun writeCoderProperties(outStream: SyncOutputStream) {
 			properties[0] = ((_posStateBits * 5 + _numLiteralPosStateBits) * 9 + _numLiteralContextBits).toByte()
 			for (i in 0..3)
 				properties[1 + i] = (_dictionarySize shr 8 * i).toByte()
@@ -1997,26 +1877,21 @@ object SevenZip {
 			)
 		}
 
-		internal fun FillDistancesPrices() {
+		private fun fillDistancesPrices() {
 			for (i in LzmaBase.kStartPosModelIndex until LzmaBase.kNumFullDistances) {
-				val posSlot = GetPosSlot(i)
+				val posSlot = getPosSlot(i)
 				val footerBits = (posSlot shr 1) - 1
 				val baseVal = 2 or (posSlot and 1) shl footerBits
-				tempPrices[i] =
-						BitTreeEncoder.ReverseGetPrice(
-							_posEncoders,
-							baseVal - posSlot - 1, footerBits, i - baseVal
-						)
+				tempPrices[i] = BitTreeEncoder.reverseGetPrice(_posEncoders, baseVal - posSlot - 1, footerBits, i - baseVal)
 			}
 
 			for (lenToPosState in 0 until LzmaBase.kNumLenToPosStates) {
-				var posSlot: Int
 				val encoder = _posSlotEncoder[lenToPosState]
 
 				val st = lenToPosState shl LzmaBase.kNumPosSlotBits
-				posSlot = 0
+				var posSlot = 0
 				while (posSlot < _distTableSize) {
-					_posSlotPrices[st + posSlot] = encoder.GetPrice(posSlot)
+					_posSlotPrices[st + posSlot] = encoder.getPrice(posSlot)
 					posSlot++
 				}
 				posSlot = LzmaBase.kEndPosModelIndex
@@ -2026,14 +1901,13 @@ object SevenZip {
 				}
 
 				val st2 = lenToPosState * LzmaBase.kNumFullDistances
-				var i: Int
-				i = 0
+				var i = 0
 				while (i < LzmaBase.kStartPosModelIndex) {
 					_distancesPrices[st2 + i] = _posSlotPrices[st + i]
 					i++
 				}
 				while (i < LzmaBase.kNumFullDistances) {
-					_distancesPrices[st2 + i] = _posSlotPrices[st + GetPosSlot(
+					_distancesPrices[st2 + i] = _posSlotPrices[st + getPosSlot(
 						i
 					)] + tempPrices[i]
 					i++
@@ -2042,14 +1916,15 @@ object SevenZip {
 			_matchPriceCount = 0
 		}
 
-		internal fun FillAlignPrices() {
+		private fun fillAlignPrices() {
 			for (i in 0 until LzmaBase.kAlignTableSize)
-				_alignPrices[i] = _posAlignEncoder.ReverseGetPrice(i)
+				_alignPrices[i] = _posAlignEncoder.reverseGetPrice(i)
 			_alignPriceCount = 0
 		}
 
 
-		fun SetAlgorithm(algorithm: Int): Boolean {
+		@Suppress("UNUSED_PARAMETER")
+		fun setAlgorithm(algorithm: Int): Boolean {
 			/*
         _fastMode = (algorithm == 0);
         _maxMode = (algorithm >= 2);
@@ -2057,15 +1932,14 @@ object SevenZip {
 			return true
 		}
 
-		fun SetDictionarySize(dictionarySize: Int): Boolean {
+		fun setDictionarySize(dictionarySize: Int): Boolean {
 			val kDicLogSizeMaxCompress = 29
 			val cond1 = dictionarySize < (1 shl LzmaBase.kDicLogSizeMin)
 			val cond2 = dictionarySize > (1 shl kDicLogSizeMaxCompress)
 			if (cond1 || cond2)
 				return false
 			_dictionarySize = dictionarySize
-			var dicLogSize: Int
-			dicLogSize = 0
+			var dicLogSize = 0
 			while (dictionarySize > 1 shl dicLogSize) {
 				dicLogSize++
 			}
@@ -2073,14 +1947,14 @@ object SevenZip {
 			return true
 		}
 
-		fun SetNumFastBytes(numFastBytes: Int): Boolean {
+		fun setNumFastBytes(numFastBytes: Int): Boolean {
 			if (numFastBytes < 5 || numFastBytes > LzmaBase.kMatchMaxLen)
 				return false
 			_numFastBytes = numFastBytes
 			return true
 		}
 
-		fun SetMatchFinder(matchFinderIndex: Int): Boolean {
+		fun setMatchFinder(matchFinderIndex: Int): Boolean {
 			if (matchFinderIndex < 0 || matchFinderIndex > 2)
 				return false
 			val matchFinderIndexPrev = _matchFinderType
@@ -2092,7 +1966,7 @@ object SevenZip {
 			return true
 		}
 
-		fun SetLcLpPb(lc: Int, lp: Int, pb: Int): Boolean {
+		fun setLcLpPb(lc: Int, lp: Int, pb: Int): Boolean {
 			if (lp < 0 || lp > LzmaBase.kNumLitPosStatesBitsEncodingMax ||
 				lc < 0 || lc > LzmaBase.kNumLitContextBitsMax ||
 				pb < 0 || pb > LzmaBase.kNumPosStatesBitsEncodingMax
@@ -2105,18 +1979,17 @@ object SevenZip {
 			return true
 		}
 
-		fun SetEndMarkerMode(endMarkerMode: Boolean) {
+		fun setEndMarkerMode(endMarkerMode: Boolean) {
 			_writeEndMark = endMarkerMode
 		}
 
 		companion object {
-			val EMatchFinderTypeBT2 = 0
-			val EMatchFinderTypeBT4 = 1
+			const val EMatchFinderTypeBT2 = 0
+			const val EMatchFinderTypeBT4 = 1
 
+			internal const val kIfinityPrice = 0xFFFFFFF
 
-			internal val kIfinityPrice = 0xFFFFFFF
-
-			internal var g_FastPos = ByteArray(1 shl 11)
+			private var g_FastPos = ByteArray(1 shl 11)
 
 			init {
 				val kFastSlots = 22
@@ -2134,13 +2007,13 @@ object SevenZip {
 				}
 			}
 
-			internal fun GetPosSlot(pos: Int): Int {
+			internal fun getPosSlot(pos: Int): Int {
 				if (pos < 1 shl 11)
 					return g_FastPos[pos].toInt()
 				return if (pos < 1 shl 21) g_FastPos[pos shr 10] + 20 else g_FastPos[pos shr 20] + 40
 			}
 
-			internal fun GetPosSlot2(pos: Int): Int {
+			internal fun getPosSlot2(pos: Int): Int {
 				if (pos < 1 shl 17)
 					return g_FastPos[pos shr 6] + 12
 				return if (pos < 1 shl 27) g_FastPos[pos shr 16] + 32 else g_FastPos[pos shr 26] + 52
@@ -2149,33 +2022,33 @@ object SevenZip {
 			internal const val kDefaultDictionaryLogSize = 22
 			internal const val kNumFastBytesDefault = 0x20
 
-			const val kNumLenSpecSymbols = LzmaBase.kNumLowLenSymbols + LzmaBase.kNumMidLenSymbols
+			//const val kNumLenSpecSymbols = LzmaBase.kNumLowLenSymbols + LzmaBase.kNumMidLenSymbols
 
 			internal const val kNumOpts = 1 shl 12
 
-			val kPropSize = 5
+			const val kPropSize = 5
 		}
 	}
 
 	class LzBinTree : LzInWindow() {
-		internal var _cyclicBufferPos: Int = 0
-		internal var _cyclicBufferSize = 0
-		internal var _matchMaxLen: Int = 0
+		private var _cyclicBufferPos: Int = 0
+		private var _cyclicBufferSize = 0
+		private var _matchMaxLen: Int = 0
 
-		internal lateinit var _son: IntArray
-		internal lateinit var _hash: IntArray
+		private lateinit var _son: IntArray
+		private lateinit var _hash: IntArray
 
-		internal var _cutValue = 0xFF
-		internal var _hashMask: Int = 0
-		internal var _hashSizeSum = 0
+		private var _cutValue = 0xFF
+		private var _hashMask: Int = 0
+		private var _hashSizeSum = 0
 
-		internal var HASH_ARRAY = true
+		private var HASH_ARRAY = true
 
-		internal var kNumHashDirectBytes = 0
-		internal var kMinMatchCheck = 4
-		internal var kFixHashSize = kHash2Size + kHash3Size
+		private var kNumHashDirectBytes = 0
+		private var kMinMatchCheck = 4
+		private var kFixHashSize = kHash2Size + kHash3Size
 
-		fun SetType(numHashBytes: Int) {
+		fun setType(numHashBytes: Int) {
 			HASH_ARRAY = numHashBytes > 2
 			if (HASH_ARRAY) {
 				kNumHashDirectBytes = 0
@@ -2190,45 +2063,33 @@ object SevenZip {
 		}
 
 
-		override fun Init() {
-			super.Init()
+		override fun init() {
+			super.init()
 			for (i in 0 until _hashSizeSum)
 				_hash[i] = kEmptyHashValue
 			_cyclicBufferPos = 0
-			ReduceOffsets(-1)
+			reduceOffsets(-1)
 		}
 
-		override fun MovePos() {
+		override fun movePos() {
 			if (++_cyclicBufferPos >= _cyclicBufferSize)
 				_cyclicBufferPos = 0
-			super.MovePos()
+			super.movePos()
 			if (_pos == kMaxValForNormalize)
-				Normalize()
+				normalize()
 		}
 
 
-		fun Create(
-			historySize: Int, keepAddBufferBefore: Int,
-			matchMaxLen: Int, keepAddBufferAfter: Int
-		): Boolean {
-			if (historySize > kMaxValForNormalize - 256)
-				return false
+		fun create(historySize: Int, keepAddBufferBefore: Int, matchMaxLen: Int, keepAddBufferAfter: Int): Boolean {
+			if (historySize > kMaxValForNormalize - 256) return false
 			_cutValue = 16 + (matchMaxLen shr 1)
-
-			val windowReservSize = (historySize + keepAddBufferBefore +
-					matchMaxLen + keepAddBufferAfter) / 2 + 256
-
-			super.Create(historySize + keepAddBufferBefore, matchMaxLen + keepAddBufferAfter, windowReservSize)
-
+			val windowReservSize = (historySize + keepAddBufferBefore + matchMaxLen + keepAddBufferAfter) / 2 + 256
+			super.create(historySize + keepAddBufferBefore, matchMaxLen + keepAddBufferAfter, windowReservSize)
 			_matchMaxLen = matchMaxLen
-
 			val cyclicBufferSize = historySize + 1
-			if (_cyclicBufferSize != cyclicBufferSize)
-				_cyclicBufferSize = cyclicBufferSize
+			if (_cyclicBufferSize != cyclicBufferSize) _cyclicBufferSize = cyclicBufferSize
 			_son = IntArray(_cyclicBufferSize * 2)
-
 			var hs = kBT2HashSize
-
 			if (HASH_ARRAY) {
 				hs = historySize - 1
 				hs = hs or (hs shr 1)
@@ -2237,8 +2098,7 @@ object SevenZip {
 				hs = hs or (hs shr 8)
 				hs = hs shr 1
 				hs = hs or 0xFFFF
-				if (hs > 1 shl 24)
-					hs = hs shr 1
+				if (hs > 1 shl 24) hs = hs shr 1
 				_hashMask = hs
 				hs++
 				hs += kFixHashSize
@@ -2250,14 +2110,14 @@ object SevenZip {
 			return true
 		}
 
-		fun GetMatches(distances: IntArray): Int {
+		fun getMatches(distances: IntArray): Int {
 			val lenLimit: Int
-			if (_pos + _matchMaxLen <= _streamPos)
+			if (_pos + _matchMaxLen <= _streamPos) {
 				lenLimit = _matchMaxLen
-			else {
+			} else {
 				lenLimit = _streamPos - _pos
 				if (lenLimit < kMinMatchCheck) {
-					MovePos()
+					movePos()
 					return 0
 				}
 			}
@@ -2370,11 +2230,11 @@ object SevenZip {
 					len0 = len
 				}
 			}
-			MovePos()
+			movePos()
 			return offset
 		}
 
-		fun Skip(num: Int) {
+		fun skip(num: Int) {
 			var nnum = num
 			do {
 				val lenLimit: Int
@@ -2383,7 +2243,7 @@ object SevenZip {
 				else {
 					lenLimit = _streamPos - _pos
 					if (lenLimit < kMinMatchCheck) {
-						MovePos()
+						movePos()
 						continue
 					}
 				}
@@ -2454,11 +2314,11 @@ object SevenZip {
 						len0 = len
 					}
 				}
-				MovePos()
+				movePos()
 			} while (--nnum != 0)
 		}
 
-		internal fun NormalizeLinks(items: IntArray, numItems: Int, subValue: Int) {
+		private fun normalizeLinks(items: IntArray, numItems: Int, subValue: Int) {
 			for (i in 0 until numItems) {
 				var value = items[i]
 				if (value <= subValue)
@@ -2469,16 +2329,14 @@ object SevenZip {
 			}
 		}
 
-		internal fun Normalize() {
+		private fun normalize() {
 			val subValue = _pos - _cyclicBufferSize
-			NormalizeLinks(_son, _cyclicBufferSize * 2, subValue)
-			NormalizeLinks(_hash, _hashSizeSum, subValue)
-			ReduceOffsets(subValue)
+			normalizeLinks(_son, _cyclicBufferSize * 2, subValue)
+			normalizeLinks(_hash, _hashSizeSum, subValue)
+			reduceOffsets(subValue)
 		}
 
-		fun SetCutValue(cutValue: Int) {
-			_cutValue = cutValue
-		}
+		//fun setCutValue(cutValue: Int) = run { _cutValue = cutValue }
 
 		companion object {
 			internal const val kHash2Size = 1 shl 10
@@ -2495,37 +2353,32 @@ object SevenZip {
 
 	open class LzInWindow {
 		var _bufferBase: ByteArray? = null // pointer to buffer with data
-		internal var _stream: SyncInputStream? = null
-		internal var _posLimit: Int = 0  // offset (from _buffer) of first byte when new block reading must be done
-		internal var _streamEndWasReached: Boolean = false // if (true) then _streamPos shows real end of stream
+		private var _stream: SyncInputStream? = null
+		private var _posLimit: Int = 0  // offset (from _buffer) of first byte when new block reading must be done
+		private var _streamEndWasReached: Boolean = false // if (true) then _streamPos shows real end of stream
 
-		internal var _pointerToLastSafePosition: Int = 0
+		private var _pointerToLastSafePosition: Int = 0
 
 		var _bufferOffset: Int = 0
 
-		var _blockSize: Int = 0  // Size of Allocated memory block
+		private var _blockSize: Int = 0  // Size of Allocated memory block
 		var _pos: Int = 0             // offset (from _buffer) of curent byte
-		internal var _keepSizeBefore: Int = 0  // how many BYTEs must be kept in buffer before _pos
-		internal var _keepSizeAfter: Int = 0   // how many BYTEs must be kept buffer after _pos
+		private var _keepSizeBefore: Int = 0  // how many BYTEs must be kept in buffer before _pos
+		private var _keepSizeAfter: Int = 0   // how many BYTEs must be kept buffer after _pos
 		var _streamPos: Int = 0   // offset (from _buffer) of first not read byte from Stream
 
-		fun MoveBlock() {
+		private fun moveBlock() {
 			var offset = _bufferOffset + _pos - _keepSizeBefore
 			// we need one additional byte, since MovePos moves on 1 byte.
-			if (offset > 0)
-				offset--
-
+			if (offset > 0) offset--
 			val numBytes = _bufferOffset + _streamPos - offset
-
 			// check negative offset ????
-			for (i in 0 until numBytes)
-				_bufferBase!![i] = _bufferBase!![offset + i]
+			for (i in 0 until numBytes) _bufferBase!![i] = _bufferBase!![offset + i]
 			_bufferOffset -= offset
 		}
 
-		fun ReadBlock() {
-			if (_streamEndWasReached)
-				return
+		private fun readBlock() {
+			if (_streamEndWasReached) return
 			while (true) {
 				val size = 0 - _bufferOffset + _blockSize - _streamPos
 				if (size == 0)
@@ -2546,54 +2399,51 @@ object SevenZip {
 			}
 		}
 
-		internal fun Free() {
+		private fun free() {
 			_bufferBase = null
 		}
 
-		fun Create(keepSizeBefore: Int, keepSizeAfter: Int, keepSizeReserv: Int) {
+		fun create(keepSizeBefore: Int, keepSizeAfter: Int, keepSizeReserv: Int) {
 			_keepSizeBefore = keepSizeBefore
 			_keepSizeAfter = keepSizeAfter
 			val blockSize = keepSizeBefore + keepSizeAfter + keepSizeReserv
 			if (_bufferBase == null || _blockSize != blockSize) {
-				Free()
+				free()
 				_blockSize = blockSize
 				_bufferBase = ByteArray(_blockSize)
 			}
 			_pointerToLastSafePosition = _blockSize - keepSizeAfter
 		}
 
-		fun SetStream(stream: SyncInputStream) {
+		fun setStream(stream: SyncInputStream) {
 			_stream = stream
 		}
 
-		fun ReleaseStream() {
+		fun releaseStream() {
 			_stream = null
 		}
 
-		open fun Init() {
+		open fun init() {
 			_bufferOffset = 0
 			_pos = 0
 			_streamPos = 0
 			_streamEndWasReached = false
-			ReadBlock()
+			readBlock()
 		}
 
-		open fun MovePos() {
+		open fun movePos() {
 			_pos++
 			if (_pos > _posLimit) {
 				val pointerToPostion = _bufferOffset + _pos
-				if (pointerToPostion > _pointerToLastSafePosition)
-					MoveBlock()
-				ReadBlock()
+				if (pointerToPostion > _pointerToLastSafePosition) moveBlock()
+				readBlock()
 			}
 		}
 
-		fun GetIndexByte(index: Int): Byte {
-			return _bufferBase!![_bufferOffset + _pos + index]
-		}
+		fun getIndexByte(index: Int): Byte = _bufferBase!![_bufferOffset + _pos + index]
 
 		// index + limit have not to exceed _keepSizeAfter;
-		fun GetMatchLen(index: Int, distance: Int, limit: Int): Int {
+		fun getMatchLen(index: Int, distance: Int, limit: Int): Int {
 			var ddis = distance
 			var dlim = limit
 			if (_streamEndWasReached && _pos + index + dlim > _streamPos) dlim = _streamPos - (_pos + index)
@@ -2601,18 +2451,16 @@ object SevenZip {
 			// Byte *pby = _buffer + (size_t)_pos + index;
 			val pby = _bufferOffset + _pos + index
 
-			var i: Int = 0
-			while (i < dlim && _bufferBase!![pby + i] == _bufferBase!![pby + i - ddis]) {
-				i++
-			}
+			var i = 0
+			while (i < dlim && _bufferBase!![pby + i] == _bufferBase!![pby + i - ddis]) i++
 			return i
 		}
 
-		fun GetNumAvailableBytes(): Int {
+		fun getNumAvailableBytes(): Int {
 			return _streamPos - _pos
 		}
 
-		fun ReduceOffsets(subValue: Int) {
+		fun reduceOffsets(subValue: Int) {
 			_bufferOffset += subValue
 			_posLimit -= subValue
 			_pos -= subValue
@@ -2621,13 +2469,13 @@ object SevenZip {
 	}
 
 	class LzOutWindow {
-		internal var _buffer: ByteArray? = null
-		internal var _pos: Int = 0
-		internal var _windowSize = 0
-		internal var _streamPos: Int = 0
-		internal var _stream: SyncOutputStream? = null
+		private var _buffer: ByteArray? = null
+		private var _pos: Int = 0
+		private var _windowSize = 0
+		private var _streamPos: Int = 0
+		private var _stream: SyncOutputStream? = null
 
-		fun Create(windowSize: Int) {
+		fun create(windowSize: Int) {
 			if (_buffer == null || _windowSize != windowSize)
 				_buffer = ByteArray(windowSize)
 			_windowSize = windowSize
@@ -2635,58 +2483,53 @@ object SevenZip {
 			_streamPos = 0
 		}
 
-		fun SetStream(stream: SyncOutputStream) {
-			ReleaseStream()
+		fun setStream(stream: SyncOutputStream) {
+			releaseStream()
 			_stream = stream
 		}
 
-		fun ReleaseStream() {
-			Flush()
+		fun releaseStream() {
+			flush()
 			_stream = null
 		}
 
-		fun Init(solid: Boolean) {
+		fun init(solid: Boolean) {
 			if (!solid) {
 				_streamPos = 0
 				_pos = 0
 			}
 		}
 
-		fun Flush() {
+		fun flush() {
 			val size = _pos - _streamPos
-			if (size == 0)
-				return
+			if (size == 0) return
 			_stream!!.write(_buffer!!, _streamPos, size)
-			if (_pos >= _windowSize)
-				_pos = 0
+			if (_pos >= _windowSize) _pos = 0
 			_streamPos = _pos
 		}
 
-		fun CopyBlock(distance: Int, len: Int) {
+		fun copyBlock(distance: Int, len: Int) {
 			var llen = len
 			var pos = _pos - distance - 1
 			if (pos < 0)
 				pos += _windowSize
 			while (llen != 0) {
-				if (pos >= _windowSize)
-					pos = 0
+				if (pos >= _windowSize) pos = 0
 				_buffer!![_pos++] = _buffer!![pos++]
-				if (_pos >= _windowSize)
-					Flush()
+				if (_pos >= _windowSize) flush()
 				llen--
 			}
 		}
 
-		fun PutByte(b: Byte) {
+		fun putByte(b: Byte) {
 			_buffer!![_pos++] = b
 			if (_pos >= _windowSize)
-				Flush()
+				flush()
 		}
 
-		fun GetByte(distance: Int): Byte {
+		fun getByte(distance: Int): Byte {
 			var pos = _pos - distance - 1
-			if (pos < 0)
-				pos += _windowSize
+			if (pos < 0) pos += _windowSize
 			return _buffer!![pos]
 		}
 	}

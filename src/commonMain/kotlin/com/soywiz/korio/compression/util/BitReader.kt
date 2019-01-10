@@ -2,10 +2,12 @@ package com.soywiz.korio.compression.util
 
 import com.soywiz.kds.*
 import com.soywiz.kmem.*
+import com.soywiz.korio.experimental.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import kotlin.math.*
 
+@KorioExperimentalApi
 open class BitReader(val s: AsyncInputStreamWithLength) : AsyncInputStreamWithLength {
 	@PublishedApi
 	internal var bitdata = 0
