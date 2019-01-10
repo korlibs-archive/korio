@@ -1,10 +1,13 @@
 package com.soywiz.korio.util
 
+internal expect val rawOsName: String
+internal expect val rawPlatformName: String
+
 object OS {
-	val rawName = PlatformInfo.rawOsName
+	val rawName = rawOsName
 	val rawNameLC = rawName.toLowerCase()
 
-	val platformName = PlatformInfo.platformName
+	val platformName = rawPlatformName
 	val platformNameLC = platformName.toLowerCase()
 
 	val isWindows = rawNameLC.contains("win")
@@ -13,9 +16,9 @@ object OS {
 	val isLinux = rawNameLC.contains("nix") || rawNameLC.contains("nux") || rawNameLC.contains("aix")
 	val isMac = rawNameLC.contains("mac")
 
-	val isJs = Platform.isJs
-	val isNative = Platform.isNative
-	val isJvm = Platform.isJvm
+	val isJs = rawPlatformName.endsWith("js")
+	val isNative = rawPlatformName == "native"
+	val isJvm = rawPlatformName == "jvm"
 
 	val isJsShell = platformNameLC == "shell.js"
 	val isJsNodeJs = platformNameLC == "node.js"
