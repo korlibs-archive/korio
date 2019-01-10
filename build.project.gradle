@@ -1,6 +1,7 @@
 (new File(projectDir, "src/commonMain/kotlin/com/soywiz/korio/internal/KorioVersion.kt")).with {
 	parentFile.mkdirs()
-	write("package com.soywiz.korio.internal\n\ninternal const val KORIO_VERSION = \"$projectVersion\"")
+	String newText = "package com.soywiz.korio.internal\n\ninternal const val KORIO_VERSION = \"$projectVersion\""
+	if (it.text != newText) it.text = newText
 }
 
 kotlin {
