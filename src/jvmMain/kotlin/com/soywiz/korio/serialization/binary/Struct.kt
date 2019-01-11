@@ -184,7 +184,7 @@ fun ByteArray.readStructElement(offset: Int, type: Struct.Type, littleEndian: Bo
 		}
 		is Struct.Type.STRING -> {
 			val strBytes = readByteArray(offset, type.count)
-			strBytes.copyOf(strBytes.indexOfElse(0)).toString(type.charset)
+			strBytes.copyOf(strBytes.indexOf(0, default = strBytes.size)).toString(type.charset)
 		}
 	}
 }
