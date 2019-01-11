@@ -20,13 +20,13 @@ class JsonPrettyTest {
 
 	@Test
 	fun encode1() {
-		assertEquals("1", Json.encodePretty(1, mapper))
+		assertEquals("1", Json.stringifyTyped(1, mapper, pretty = true))
 		//assertEquals("null", Json.encodePretty(null, mapper))
-		assertEquals("true", Json.encodePretty(true, mapper))
-		assertEquals("false", Json.encodePretty(false, mapper))
-		assertEquals("{\n}", Json.encodePretty(mapOf<String, Any?>(), mapper))
-		assertEquals("[\n]", Json.encodePretty(listOf<Any?>(), mapper))
-		assertEquals("\"a\"", Json.encodePretty("a", mapper))
+		assertEquals("true", Json.stringifyTyped(true, mapper, pretty = true))
+		assertEquals("false", Json.stringifyTyped(false, mapper, pretty = true))
+		assertEquals("{\n}", Json.stringifyTyped(mapOf<String, Any?>(), mapper, pretty = true))
+		assertEquals("[\n]", Json.stringifyTyped(listOf<Any?>(), mapper, pretty = true))
+		assertEquals("\"a\"", Json.stringifyTyped("a", mapper, pretty = true))
 	}
 
 	@Test
@@ -38,7 +38,7 @@ class JsonPrettyTest {
 			|	2,
 			|	3
 			|]
-		""".trimMargin(), Json.encodePretty(listOf(1, 2, 3), mapper)
+		""".trimMargin(), Json.stringifyTyped(listOf(1, 2, 3), mapper, pretty = true)
 		)
 
 		assertEquals(
@@ -47,7 +47,7 @@ class JsonPrettyTest {
 			|	"a": 1,
 			|	"b": 2
 			|}
-		""".trimMargin(), Json.encodePretty(linkedMapOf("a" to 1, "b" to 2), mapper)
+		""".trimMargin(), Json.stringifyTyped(linkedMapOf("a" to 1, "b" to 2), mapper, pretty = true)
 		)
 	}
 
@@ -59,7 +59,7 @@ class JsonPrettyTest {
 			|	"a": 1,
 			|	"b": "test"
 			|}
-			""".trimMargin(), Json.stringifyPretty(Demo(1, "test"), mapper)
+			""".trimMargin(), Json.stringifyTyped(Demo(1, "test"), mapper, pretty = true)
 		)
 	}
 
@@ -85,7 +85,7 @@ class JsonPrettyTest {
 				|	}
 				|}
 			""".trimMargin(),
-			Json.stringifyPretty(
+			Json.stringifyTyped(
 				linkedMapOf(
 					"a" to listOf(1, 2, 3, 4),
 					"b" to listOf(5, 6),
@@ -94,7 +94,7 @@ class JsonPrettyTest {
 						"b" to null,
 						"c" to "hello"
 					)
-				), mapper
+				), mapper, pretty = true
 			)
 		)
 	}

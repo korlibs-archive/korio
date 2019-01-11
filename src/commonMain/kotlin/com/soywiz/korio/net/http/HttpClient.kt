@@ -1,7 +1,6 @@
 package com.soywiz.korio.net.http
 
 import com.soywiz.kds.*
-import com.soywiz.korio.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.concurrent.atomic.*
 import com.soywiz.korio.lang.*
@@ -143,7 +142,7 @@ abstract class HttpClient protected constructor() {
 		requestAsString(Http.Method.GET, url, config = config.copy(throwErrors = true)).content
 
 	suspend fun readJson(url: String, config: RequestConfig = RequestConfig()): Any? =
-		Json.decode(requestAsString(Http.Method.GET, url, config = config.copy(throwErrors = true)).content)
+		Json.parse(requestAsString(Http.Method.GET, url, config = config.copy(throwErrors = true)).content)
 
 	companion object {
 		operator fun invoke() = defaultHttpFactory.createClient()

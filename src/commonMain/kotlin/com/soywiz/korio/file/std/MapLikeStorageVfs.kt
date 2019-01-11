@@ -211,11 +211,11 @@ private class StorageFiles(val storage: SimpleStorage) {
 
 	suspend fun removeEntryInfo(fileName: String): Boolean {
 		val entry = getEntryInfo(fileName)
-		if (entry != null) {
+		return if (entry != null) {
 			for (child in entry.children) removeEntryInfo(child)
-			return true
+			true
 		} else {
-			return false
+			false
 		}
 	}
 

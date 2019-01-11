@@ -40,7 +40,7 @@ class ClassFactoryTest {
 		class A(val a: Array<B>, val b: IntArray)
 		assertEquals(
 			"""{"a":[{}],"b":[1,2,3]}""",
-			Json.encode(A(arrayOf(B()), intArrayOf(1, 2, 3)), mapper)
+			Json.stringifyTyped(A(arrayOf(B()), intArrayOf(1, 2, 3)), mapper)
 		)
 	}
 

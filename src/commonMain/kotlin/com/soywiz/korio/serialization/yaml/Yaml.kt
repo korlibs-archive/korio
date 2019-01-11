@@ -18,13 +18,6 @@ import kotlin.reflect.*
 
 object Yaml {
 	fun decode(str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
-	inline fun <reified T : Any> decodeToType(s: String, mapper: ObjectMapper = Mapper): T =
-		decodeToType(s, T::class, mapper)
-
-	@Suppress("UNCHECKED_CAST")
-	fun <T : Any> decodeToType(s: String, clazz: KClass<T>, mapper: ObjectMapper = Mapper): T =
-		mapper.toTyped(clazz, decode(s))
-
 	fun read(str: String) = read(ListReader(StrReader(str).tokenize()), level = 0)
 
 	private fun parseStr(tok: Token) = when (tok) {

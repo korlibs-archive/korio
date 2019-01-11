@@ -1,100 +1,64 @@
 package com.soywiz.korio.serialization.json
 
-import com.soywiz.korio.*
 import com.soywiz.korio.lang.*
-import com.soywiz.korio.serialization.*
 import com.soywiz.korio.util.*
 import kotlin.collections.set
-import kotlin.reflect.*
 
 object Json {
-	inline fun <reified T : Any> encodePretty(obj: T, mapper: ObjectMapper = Mapper) = stringifyPretty<T>(obj, mapper)
-	inline fun <reified T : Any> encode(obj: T?, mapper: ObjectMapper = Mapper, pretty: Boolean = false): String =
-		stringify(obj, mapper, pretty)
-
-	inline fun <reified T : Any> stringifyPretty(obj: T, mapper: ObjectMapper = Mapper) =
-		stringify<T>(obj, mapper, pretty = true)
-
-	inline fun <reified T : Any> stringify(obj: T?, mapper: ObjectMapper = Mapper, pretty: Boolean = false): String {
-		return if (pretty) {
-			encodePrettyUntyped(mapper.toUntyped(T::class, obj))
-		} else {
-			encodeUntyped(mapper.toUntyped(T::class, obj))
-		}
+	fun parse(s: String): Any? = parse(StrReader(s))
+	fun stringify(obj: Any?, pretty: Boolean = false) = when {
+		pretty -> Indenter().apply { stringifyPretty(obj, this) }.toString(doIndent = true, indentChunk = "\t")
+		else -> StringBuilder().apply { stringify(obj, this) }.toString()
 	}
 
-	fun parse(s: String): Any? = StrReader(s).decode()
-	inline fun <reified T : Any> parseTyped(s: String, mapper: ObjectMapper = Mapper): T =
-		decodeToType(T::class, s, mapper)
-
-	fun invalidJson(msg: String = "Invalid JSON"): Nothing = throw IOException(msg)
-
-	fun decode(s: String): Any? = StrReader(s).decode()
-
-	inline fun <reified T : Any> decodeToType(s: String, mapper: ObjectMapper = Mapper): T =
-		decodeToType(T::class, s, mapper)
-
-	@Suppress("UNCHECKED_CAST")
-	@Deprecated("Put class first")
-	fun <T : Any> decodeToType(s: String, clazz: KClass<T>, mapper: ObjectMapper = Mapper): T =
-		mapper.toTyped(clazz, decode(s))
-
-	@Suppress("UNCHECKED_CAST")
-	fun <T : Any> decodeToType(clazz: KClass<T>, s: String, mapper: ObjectMapper = Mapper): T =
-		mapper.toTyped(clazz, decode(s))
-
-	fun StrReader.decode(): Any? {
-		val ic = skipSpaces().read()
-		when (ic) {
-			'{' -> {
-				val out = LinkedHashMap<String, Any?>()
-				obj@ while (true) {
-					when (skipSpaces().read()) {
-						'}' -> break@obj; ',' -> continue@obj; else -> unread()
-					}
-					val key = decode() as String
-					skipSpaces().expect(':')
-					val value = decode()
-					out[key] = value
-				}
-				return out
-			}
-			'[' -> {
-				val out = arrayListOf<Any?>()
-				array@ while (true) {
-					when (skipSpaces().read()) {
-						']' -> break@array; ',' -> continue@array; else -> unread()
-					}
-					val item = decode()
-					out += item
-				}
-				return out
-			}
-			'-', '+', in '0'..'9' -> {
-				unread()
-				val res =
-					readWhile { (it in '0'..'9') || it == '.' || it == 'e' || it == 'E' || it == '-' || it == '+' }
-				val dres = res.toDouble()
-				return if (dres.toInt().toDouble() == dres) dres.toInt() else dres
-			}
-			't', 'f', 'n' -> {
-				unread()
-				if (tryRead("true")) return true
-				if (tryRead("false")) return false
-				if (tryRead("null")) return null
-				invalidJson()
-			}
-			'"' -> {
-				unread()
-				return readStringLit()
-			}
-			else -> invalidJson("Not expected '$ic'")
-		}
+	interface CustomSerializer {
+		fun encodeToJson(b: StringBuilder)
 	}
 
-	fun encodeUntyped(obj: Any?) = StringBuilder().apply { encodeUntyped(obj, this) }.toString()
+	fun parse(s: StrReader): Any? = when (val ic = s.skipSpaces().read()) {
+		'{' -> LinkedHashMap<String, Any?>().apply {
+			obj@ while (true) {
+				when (s.skipSpaces().read()) {
+					'}' -> break@obj; ',' -> continue@obj; else -> s.unread()
+				}
+				val key = parse(s) as String
+				s.skipSpaces().expect(':')
+				val value = parse(s)
+				this[key] = value
+			}
+		}
+		'[' -> arrayListOf<Any?>().apply {
+			array@ while (true) {
+				when (s.skipSpaces().read()) {
+					']' -> break@array; ',' -> continue@array; else -> s.unread()
+				}
+				val item = parse(s)
+				this += item
+			}
+		}
+		'-', '+', in '0'..'9' -> {
+			s.unread()
+			val res = s.readWhile { (it in '0'..'9') || it == '.' || it == 'e' || it == 'E' || it == '-' || it == '+' }
+			val dres = res.toDouble()
+			if (dres.toInt().toDouble() == dres) dres.toInt() else dres
+		}
+		't', 'f', 'n' -> {
+			s.unread()
+			when {
+				s.tryRead("true") -> true
+				s.tryRead("false") -> false
+				s.tryRead("null") -> null
+				else -> invalidJson()
+			}
+		}
+		'"' -> {
+			s.unread()
+			s.readStringLit()
+		}
+		else -> invalidJson("Not expected '$ic'")
+	}
 
-	fun encodeUntyped(obj: Any?, b: StringBuilder) {
+	fun stringify(obj: Any?, b: StringBuilder) {
 		when (obj) {
 			null -> b.append("null")
 			is Boolean -> b.append(if (obj) "true" else "false")
@@ -102,9 +66,9 @@ object Json {
 				b.append('{')
 				for ((i, v) in obj.entries.withIndex()) {
 					if (i != 0) b.append(',')
-					encodeUntyped(v.key, b)
+					stringify(v.key, b)
 					b.append(':')
-					encodeUntyped(v.value, b)
+					stringify(v.value, b)
 				}
 				b.append('}')
 			}
@@ -112,26 +76,19 @@ object Json {
 				b.append('[')
 				for ((i, v) in obj.withIndex()) {
 					if (i != 0) b.append(',')
-					encodeUntyped(v, b)
+					stringify(v, b)
 				}
 				b.append(']')
 			}
 			is Enum<*> -> encodeString(obj.name, b)
 			is String -> encodeString(obj, b)
 			is Number -> b.append("$obj")
-			is CustomJsonSerializer -> obj.encodeToJson(b)
-			else -> {
-				invalidOp("Don't know how to serialize $obj")
-				//encode(ClassFactory(obj::class).toMap(obj), b)
-			}
+			is CustomSerializer -> obj.encodeToJson(b)
+			else -> invalidOp("Don't know how to serialize $obj") //encode(ClassFactory(obj::class).toMap(obj), b)
 		}
 	}
 
-	fun encodePrettyUntyped(obj: Any?, indentChunk: String = "\t"): String = Indenter().apply {
-		encodePrettyUntyped(obj, this)
-	}.toString(doIndent = true, indentChunk = indentChunk)
-
-	fun encodePrettyUntyped(obj: Any?, b: Indenter) {
+	fun stringifyPretty(obj: Any?, b: Indenter) {
 		when (obj) {
 			null -> b.inline("null")
 			is Boolean -> b.inline(if (obj) "true" else "false")
@@ -143,7 +100,7 @@ object Json {
 						if (i != 0) b.line(",")
 						b.inline(encodeString("" + v.key))
 						b.inline(": ")
-						encodePrettyUntyped(v.value, b)
+						stringifyPretty(v.value, b)
 						if (i == entries.size - 1) b.line("")
 					}
 				}
@@ -155,7 +112,7 @@ object Json {
 					val entries = obj.toList()
 					for ((i, v) in entries.withIndex()) {
 						if (i != 0) b.line(",")
-						encodePrettyUntyped(v, b)
+						stringifyPretty(v, b)
 						if (i == entries.size - 1) b.line("")
 					}
 				}
@@ -163,10 +120,7 @@ object Json {
 			}
 			is String -> b.inline(encodeString(obj))
 			is Number -> b.inline("$obj")
-			//else -> encodePretty(ClassFactory(obj::class).toMap(obj), b)
-			is CustomJsonSerializer -> {
-				b.inline(StringBuilder().apply { obj.encodeToJson(this) }.toString())
-			}
+			is CustomSerializer -> b.inline(StringBuilder().apply { obj.encodeToJson(this) }.toString())
 			else -> {
 				invalidOp("Don't know how to serialize $obj")
 				//encode(ClassFactory(obj::class).toMap(obj), b)
@@ -188,11 +142,9 @@ object Json {
 		}
 		b.append('"')
 	}
+
+	private fun invalidJson(msg: String = "Invalid JSON"): Nothing = throw IOException(msg)
 }
 
-interface CustomJsonSerializer {
-	fun encodeToJson(b: StringBuilder)
-}
-
-fun Map<*, *>.toJson(mapper: ObjectMapper) = Json.encode(this, mapper)
-fun Map<*, *>.toJsonUntyped() = Json.encodeUntyped(this)
+fun String.fromJson(): Any? = Json.parse(this)
+fun Map<*, *>.toJson(pretty: Boolean = false): String = Json.stringify(this, pretty)

@@ -8,7 +8,7 @@ import com.soywiz.korio.stream.*
 
 class HttpRestClient(val endpoint: HttpClientEndpoint) {
 	suspend fun request(method: Http.Method, path: String, request: Any?, mapper: ObjectMapper = Mapper): Any {
-		val requestContent = request?.let { Json.encode(it, mapper) }
+		val requestContent = request?.let { Json.stringifyTyped(it, mapper) }
 		val result = endpoint.request(
 			method,
 			path,
@@ -21,7 +21,7 @@ class HttpRestClient(val endpoint: HttpClientEndpoint) {
 		val stringResult = result.readAllString()
 		//println(stringResult)
 		return try {
-			Json.decode(stringResult) ?: mapOf<String, String>()
+			Json.parse(stringResult) ?: mapOf<String, String>()
 		} catch (e: IOException) {
 			mapOf<String, String>()
 		}

@@ -11,28 +11,22 @@ object XmlEntities {
 	private val entityToChar = charToEntity.flip()
 
 	fun encode(str: String): String = str.transform { charToEntity[it] ?: "$it" }
-	fun decode(str: String): String {
-		val r = StrReader(str)
-		var out = ""
-
+	fun decode(str: String): String = decode(StrReader(str))
+	fun decode(r: StrReader): String = buildString {
 		while (!r.eof) {
-			val c = r.readChar()
-			when (c) {
+			@Suppress("LiftReturnOrAssignment") // Performance?
+			when (val c = r.readChar()) {
 				'&' -> {
 					val value = r.readUntilIncluded(';') ?: ""
 					val full = "&$value"
-					out += if (value.startsWith('#')) {
-						"${value.substring(1, value.length - 1).toInt().toChar()}"
-					} else if (entityToChar.contains(full)) {
-						"${entityToChar[full]}"
-					} else {
-						full
-					}
+					append(when {
+						value.startsWith('#') -> "${value.substring(1, value.length - 1).toInt().toChar()}"
+						entityToChar.contains(full) -> "${entityToChar[full]}"
+						else -> full
+					})
 				}
-				else -> out += c
+				else -> append(c)
 			}
 		}
-
-		return out
 	}
 }

@@ -58,62 +58,62 @@ class JsonTest {
 
 	@kotlin.test.Test
 	fun decode1() {
-		assertEquals(linkedMapOf("a" to 1).toString(), Json.decode("""{"a":1}""").toString())
+		assertEquals(linkedMapOf("a" to 1).toString(), Json.parse("""{"a":1}""").toString())
 		//assertEquals(-1e7, Json.decode("""-1e7"""))
-		assertEquals(-10000000, Json.decode("""-1e7"""))
+		assertEquals(-10000000, Json.parse("""-1e7"""))
 	}
 
 	@kotlin.test.Test
 	fun decode2() {
 		assertEquals(
 			listOf("a", 1, -1, 0.125, 0, 11, true, false, null, listOf<Any?>(), mapOf<String, Any?>()).toString(),
-			Json.decode("""["a", 1, -1, 0.125, 0, 11, true, false, null, [], {}]""").toString()
+			Json.parse("""["a", 1, -1, 0.125, 0, 11, true, false, null, [], {}]""").toString()
 		)
 	}
 
 	@kotlin.test.Test
 	fun decode3() {
-		assertEquals("\"", Json.decode(""" "\"" """))
-		assertEquals(listOf(1, 2).toString(), Json.decode(""" [ 1 , 2 ]""").toString())
+		assertEquals("\"", Json.parse(""" "\"" """))
+		assertEquals(listOf(1, 2).toString(), Json.parse(""" [ 1 , 2 ]""").toString())
 	}
 
 	@kotlin.test.Test
 	fun encode1() {
-		assertEquals("1", Json.encode(1, mapper))
-		assertEquals("null", Json.encode<Any>(null, mapper))
-		assertEquals("true", Json.encode(true, mapper))
-		assertEquals("false", Json.encode(false, mapper))
-		assertEquals("{}", Json.encode(mapOf<String, Any?>(), mapper))
-		assertEquals("[]", Json.encode(listOf<Any?>(), mapper))
-		assertEquals("\"a\"", Json.encode("a", mapper))
+		assertEquals("1", Json.stringifyTyped(1, mapper))
+		assertEquals("null", Json.stringifyTyped<Any>(null, mapper))
+		assertEquals("true", Json.stringifyTyped(true, mapper))
+		assertEquals("false", Json.stringifyTyped(false, mapper))
+		assertEquals("{}", Json.stringifyTyped(mapOf<String, Any?>(), mapper))
+		assertEquals("[]", Json.stringifyTyped(listOf<Any?>(), mapper))
+		assertEquals("\"a\"", Json.stringifyTyped("a", mapper))
 	}
 
 	@kotlin.test.Test
 	fun encode2() {
-		assertEquals("[1,2,3]", Json.encode(listOf(1, 2, 3), mapper))
-		assertEquals("""{"a":1,"b":2}""", Json.encode(linkedMapOf("a" to 1, "b" to 2), mapper))
+		assertEquals("[1,2,3]", Json.stringifyTyped(listOf(1, 2, 3), mapper))
+		assertEquals("""{"a":1,"b":2}""", Json.stringifyTyped(linkedMapOf("a" to 1, "b" to 2), mapper))
 	}
 
 	@kotlin.test.Test
 	fun encodeTyped() {
-		assertEquals("""{"a":1,"b":"test"}""", Json.encode(Demo(1, "test"), mapper))
+		assertEquals("""{"a":1,"b":"test"}""", Json.stringifyTyped(Demo(1, "test"), mapper))
 	}
 
 	@kotlin.test.Test
 	fun decodeToType1() {
 		//assertEquals(Demo(1, "hello"), Json.decodeToType<Demo>("""{"a": 1, "b": "hello"}""", mapper))
-		assertEquals(Demo(1, "hello"), Json.decodeToType(Demo::class, """{"a": 1, "b": "hello"}""", mapper))
+		assertEquals(Demo(1, "hello"), Json.parseTyped(Demo::class, """{"a": 1, "b": "hello"}""", mapper))
 	}
 
 	@kotlin.test.Test
 	fun decodeUnicode() {
-		assertEquals("aeb", Json.decode(""" "a\u0065b" """))
+		assertEquals("aeb", Json.parse(""" "a\u0065b" """))
 	}
 
 	@kotlin.test.Test
 	fun decodeTypedList() {
 		//val result = Json.decodeToType<DemoList>("""{ "demos" : [{"a":1,"b":"A"}, {"a":2,"b":"B"}] }""", mapper)
-		val result = Json.decodeToType(DemoList::class, """{ "demos" : [{"a":1,"b":"A"}, {"a":2,"b":"B"}] }""", mapper)
+		val result = Json.parseTyped(DemoList::class, """{ "demos" : [{"a":1,"b":"A"}, {"a":2,"b":"B"}] }""", mapper)
 		val demo = result.demos.first()
 		assertEquals(1, demo.a)
 	}
@@ -121,7 +121,7 @@ class JsonTest {
 	@kotlin.test.Test
 	fun decodeTypedSet() {
 		//val result = Json.decodeToType<DemoSet>("""{ "demos" : [{"a":1,"b":"A"}, {"a":2,"b":"B"}] }""", mapper)
-		val result = Json.decodeToType(DemoSet::class, """{ "demos" : [{"a":1,"b":"A"}, {"a":2,"b":"B"}] }""", mapper)
+		val result = Json.parseTyped(DemoSet::class, """{ "demos" : [{"a":1,"b":"A"}, {"a":2,"b":"B"}] }""", mapper)
 		val demo = result.demos.first()
 		assertEquals(1, demo.a)
 	}
@@ -138,34 +138,34 @@ class JsonTest {
 
 		assertEquals(
 			listOf(1, 2, 3, 4, 5).toString(),
-			Json.decodeToType(List::class, """[1, 2, 3, 4, 5]""", mapper).toString()
+			Json.parseTyped(List::class, """[1, 2, 3, 4, 5]""", mapper).toString()
 		)
-		assertEquals(1, Json.decodeToType(Int::class, "1", mapper))
-		assertEquals(true, Json.decodeToType(Boolean::class, "true", mapper))
-		assertEquals("a", Json.decodeToType(String::class, "\"a\"", mapper))
-		assertEquals('a', Json.decodeToType(Char::class, "\"a\"", mapper))
+		assertEquals(1, Json.parseTyped(Int::class, "1", mapper))
+		assertEquals(true, Json.parseTyped(Boolean::class, "true", mapper))
+		assertEquals("a", Json.parseTyped(String::class, "\"a\"", mapper))
+		assertEquals('a', Json.parseTyped(Char::class, "\"a\"", mapper))
 	}
 
 	@kotlin.test.Test
 	fun decodeToPrimChar() {
 		//assertEquals('a', Json.decodeToType<Char>("\"a\"", mapper))
-		assertEquals('a', Json.decodeToType(Char::class, "\"a\"", mapper))
+		assertEquals('a', Json.parseTyped(Char::class, "\"a\"", mapper))
 	}
 
 	@kotlin.test.Test
 	fun encodeWithStaticMembers() {
-		assertEquals("""{"a":10}""", Json.encode(Demo2(), mapper))
+		assertEquals("""{"a":10}""", Json.stringifyTyped(Demo2(), mapper))
 	}
 
 	@kotlin.test.Test
 	fun testEncodeEnum() {
-		assertEquals("""{"a":"HELLO"}""", Json.encode(ClassWithEnum(), mapper))
+		assertEquals("""{"a":"HELLO"}""", Json.stringifyTyped(ClassWithEnum(), mapper))
 	}
 
 	@kotlin.test.Test
 	fun testDecodeEnum() {
 		//assertEquals(ClassWithEnum(MyEnum.WORLD), Json.decodeToType<ClassWithEnum>("""{"a":"WORLD"}""", mapper))
-		assertEquals(ClassWithEnum(MyEnum.WORLD), Json.decodeToType(ClassWithEnum::class, """{"a":"WORLD"}""", mapper))
+		assertEquals(ClassWithEnum(MyEnum.WORLD), Json.parseTyped(ClassWithEnum::class, """{"a":"WORLD"}""", mapper))
 	}
 
 	@kotlin.test.Test
@@ -182,7 +182,7 @@ class JsonTest {
 		//assertEquals(Demo(linkedMapOf("z" to V(1, 2))), Json.decodeToType<Demo>("""{"v":{"z":{"a":1,"b":2}}}""", mapper))
 		assertEquals(
 			Demo(linkedMapOf("z" to V(1, 2))),
-			Json.decodeToType(Demo::class, """{"v":{"z":{"a":1,"b":2}}}""", mapper)
+			Json.parseTyped(Demo::class, """{"v":{"z":{"a":1,"b":2}}}""", mapper)
 		)
 	}
 
@@ -196,7 +196,7 @@ class JsonTest {
 
 		assertEquals(
 			"""{"v":{"z1":{"a":1,"b":2},"z2":{"a":1,"b":2}}}""",
-			Json.encode(Demo(linkedMapOf("z1" to V(1, 2), "z2" to V(1, 2))), mapper)
+			Json.stringifyTyped(Demo(linkedMapOf("z1" to V(1, 2), "z2" to V(1, 2))), mapper)
 		)
 	}
 }

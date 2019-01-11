@@ -231,7 +231,7 @@ fun StrReader.readStringLit(reportErrors: Boolean = true): String {
 					'\\' -> '\\'; '/' -> '/'; '\'' -> '\''; '"' -> '"'
 					'b' -> '\b'; 'f' -> '\u000c'; 'n' -> '\n'; 'r' -> '\r'; 't' -> '\t'
 					'u' -> read(4).toInt(0x10).toChar()
-					else -> Json.invalidJson("Invalid char '$cc'")
+					else -> throw IOException("Invalid char '$cc'")
 				}
 			)
 		} else if (c == quotec) {
