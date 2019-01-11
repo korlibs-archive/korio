@@ -22,7 +22,13 @@ internal actual object DynamicInternal {
 		val method = when (methods.size) {
 			0 -> null
 			1 -> methods.first()
-			else -> methods.filter { it.parameterTypes.toList().zip(args.map { it!!.javaClass }).all { it.first.isAssignableFrom(it.second) } }.firstOrNull()
+			else -> {
+				val methodsSameArity = methods.filter { it.parameterCount == args.size }
+				val argTypes = args.map { it!!::class.javaObjectType }
+				methodsSameArity.firstOrNull { it.parameterTypes.toList().zip(argTypes).all {
+					it.first.kotlin.javaObjectType.isAssignableFrom(it.second)
+				} }
+			}
 		}
 		return when {
 			method != null -> method.apply { isAccessible = true }
