@@ -212,8 +212,6 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 	}
 }
 
-fun Char.isWhitespaceFast(): Boolean = this == ' ' || this == '\t' || this == '\r' || this == '\n'
-
 fun StrReader.readStringLit(reportErrors: Boolean = true): String {
 	val out = StringBuilder()
 	val quotec = read()
