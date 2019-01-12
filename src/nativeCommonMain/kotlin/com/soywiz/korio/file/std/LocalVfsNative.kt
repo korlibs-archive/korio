@@ -1,6 +1,7 @@
 package com.soywiz.korio.file.std
 
 import com.soywiz.kds.*
+import com.soywiz.kmem.*
 import com.soywiz.klock.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.util.*
@@ -22,6 +23,7 @@ import kotlinx.coroutines.*
 
 import kotlinx.cinterop.*
 import platform.posix.*
+import kotlin.native.concurrent.*
 import com.soywiz.korio.lang.Environment
 
 val tmpdir: String by lazy { Environment["TMPDIR"] ?: Environment["TEMP"] ?: Environment["TMP"] ?: "/tmp" }
@@ -39,6 +41,81 @@ actual val tempVfs: VfsFile by lazy { localVfs(tmpdir) }
 
 actual fun localVfs(path: String): VfsFile = LocalVfsNative()[path]
 
+private val IOWorker by lazy { Worker.start() }
+
+internal suspend fun fileOpen(name: String, mode: String): CPointer<FILE>? {
+	data class Info(val name: String, val mode: String)
+	return IOWorker.execute(TransferMode.SAFE, { Info(name, mode) }, { (name, mode) ->
+		platform.posix.fopen(name, mode)
+	}).await()
+}
+
+internal suspend fun fileClose(file: CPointer<FILE>): Unit {
+	return IOWorker.execute(TransferMode.SAFE, { file }, { fd ->
+		platform.posix.fclose(fd)
+		Unit
+	}).await()
+}
+
+internal suspend fun fileLength(file: CPointer<FILE>): Long {
+	return IOWorker.execute(TransferMode.SAFE, { file }, { fd ->
+		val prev = platform.posix.ftell(fd)
+		platform.posix.fseek(fd, 0L.convert(), platform.posix.SEEK_END)
+		val end = platform.posix.ftell(fd)
+		platform.posix.fseek(fd, prev.convert(), platform.posix.SEEK_SET)
+		end.toLong()
+	}).await()
+}
+
+internal suspend fun fileSetLength(file: String, length: Long): Unit {
+	data class Info(val file: String, val length: Long)
+	return IOWorker.execute(TransferMode.SAFE, { Info(file, length) }, { (fd, len) ->
+		platform.posix.truncate(fd, len.convert())
+		Unit
+	}).await()
+}
+
+internal suspend fun fileRead(file: CPointer<FILE>, position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
+	val data = fileRead(file, position, len) ?: return -1
+	arraycopy(data, 0, buffer, offset, data.size)
+	return data.size
+}
+
+internal suspend fun fileWrite(file: CPointer<FILE>, position: Long, buffer: ByteArray, offset: Int, len: Int) {
+	if (len > 0) {
+		fileWrite(file, position, buffer.copyOfRange(offset, offset + len))
+	}
+}
+
+internal suspend fun fileRead(file: CPointer<FILE>, position: Long, size: Int): ByteArray? {
+	data class Info(val file: CPointer<FILE>, val position: Long, val size: Int)
+
+	if (size < 0) return null
+	if (size == 0) return byteArrayOf()
+
+	return IOWorker.execute(TransferMode.SAFE, { Info(file, position, size) }, { (fd, position, len) ->
+		val data = ByteArray(len)
+		val read = data.usePinned { pin ->
+			platform.posix.fseek(fd, position.convert(), platform.posix.SEEK_SET)
+			platform.posix.fread(pin.addressOf(0), 1, len.convert(), fd).toInt()
+		}
+		if (read < 0) null else data.copyOf(read)
+	}).await()
+}
+
+internal suspend fun fileWrite(file: CPointer<FILE>, position: Long, data: ByteArray): Long {
+	data class Info(val file: CPointer<FILE>, val position: Long, val data: ByteArray)
+
+	if (data.isEmpty()) return 0L
+
+	return IOWorker.execute(TransferMode.SAFE, { Info(file, position, if (data.isFrozen) data else data.copyOf()) }, { (fd, position, data) ->
+		data.usePinned { pin ->
+			platform.posix.fseek(fd, position.convert(), platform.posix.SEEK_SET)
+			platform.posix.fwrite(pin.addressOf(0), 1.convert(), data.size.convert(), fd).toLong()
+		}.toLong()
+	}).await()
+}
+
 class LocalVfsNative : LocalVfs() {
 	val that = this
 	override val absolutePath: String = ""
@@ -53,7 +130,7 @@ class LocalVfsNative : LocalVfs() {
 
 	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
 		val rpath = resolve(path)
-		var fd: CPointer<FILE>? = platform.posix.fopen(rpath, mode.cmode)
+		var fd: CPointer<FILE>? = fileOpen(rpath, mode.cmode)
 		val errno = posix_errno()
 		//if (fd == null || errno != 0) {
 		if (fd == null) {
@@ -68,49 +145,26 @@ class LocalVfsNative : LocalVfs() {
 		return object : AsyncStreamBase() {
 			override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
 				checkFd()
-				//println("AsyncStreamBase.read($position, buffer=${buffer.size}, offset=$offset, len=$len)")
-				return buffer.usePinned { pin ->
-					if (len > 0) {
-						val totalLen = getLength()
-						platform.posix.fseek(fd, position.convert(), platform.posix.SEEK_SET)
-						var result = platform.posix.fread(pin.addressOf(offset), 1, len.convert(), fd).toInt()
-
-						//println("AsyncStreamBase:position=$position,len=$len,totalLen=$totalLen,result=$result,presult=$presult,ferror=${platform.posix.ferror(fd)},feof=${platform.posix.feof(fd)}")
-						return result
-					} else {
-						0
-					}
-				}
+				return fileRead(fd!!, position, buffer, offset, len)
 			}
 
 			override suspend fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
 				checkFd()
-				return buffer.usePinned { pin ->
-					if (len > 0) {
-						//platform.posix.fseeko64(fd, position, platform.posix.SEEK_SET)
-						platform.posix.fseek(fd, position.convert(), platform.posix.SEEK_SET)
-
-						platform.posix.fwrite(pin.addressOf(offset), 1, len.convert(), fd)
-					}
-					Unit
-				}
+				return fileWrite(fd!!, position, buffer, offset, len)
 			}
 
 			override suspend fun setLength(value: Long): Unit {
 				checkFd()
-				platform.posix.truncate(rpath, value.convert())
+				fileSetLength(rpath, value)
 			}
 
 			override suspend fun getLength(): Long {
 				checkFd()
-				//platform.posix.fseeko64(fd, 0L, platform.posix.SEEK_END)
-				//return platform.posix.ftello64(fd)
-				platform.posix.fseek(fd, 0L.convert(), platform.posix.SEEK_END)
-				return platform.posix.ftell(fd).toLong()
+				return fileLength(fd!!)
 			}
 			override suspend fun close() {
 				if (fd != null) {
-					platform.posix.fclose(fd)
+					fileClose(fd!!)
 				}
 				fd = null
 			}
