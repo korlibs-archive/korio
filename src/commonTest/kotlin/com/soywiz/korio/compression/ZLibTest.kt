@@ -2,10 +2,9 @@ package com.soywiz.korio.compression
 
 import com.soywiz.korio.compression.deflate.*
 import com.soywiz.korio.compression.lzma.*
-import com.soywiz.korio.util.*
 import com.soywiz.korio.lang.*
-import com.soywiz.korio.util.*
 import com.soywiz.korio.util.checksum.*
+import com.soywiz.korio.util.encoding.*
 import kotlin.test.*
 
 class ZLibTest {
@@ -50,8 +49,8 @@ class ZLibTest {
 
 	@Test
 	fun test() {
-		assertEquals("hello", "78 DA CB 48 CD C9 C9 07 00 06 2C 02 15".unhexIgnoreSpaces.uncompress(ZLib).toString(UTF8))
-		assertEquals("hello", "1F 8B 08 00 00 00 00 00 02 13 CB 48 CD C9 C9 07 00 86 A6 10 36 05 00 00 00".unhexIgnoreSpaces.uncompress(GZIP).toString(UTF8))
+		assertEquals("hello", "78 DA CB 48 CD C9 C9 07 00 06 2C 02 15".unhexIgnoreSpaces.uncompress(ZLib).toStringDecimal(UTF8))
+		assertEquals("hello", "1F 8B 08 00 00 00 00 00 02 13 CB 48 CD C9 C9 07 00 86 A6 10 36 05 00 00 00".unhexIgnoreSpaces.uncompress(GZIP).toStringDecimal(UTF8))
 	}
 
 	@Test

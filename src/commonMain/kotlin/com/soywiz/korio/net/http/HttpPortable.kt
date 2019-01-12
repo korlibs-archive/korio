@@ -96,7 +96,7 @@ internal object HttpPortable {
 
 						//val header = cb.readBufferedLine().trim()
 						//val fline = cb.readBufferedUntil('\n'.toByte()).toString(UTF8).trim()
-						val fline = cb.readUntil('\n'.toByte(), limit = LimitRequestFieldSize).toString(UTF8).trim()
+						val fline = cb.readUntil('\n'.toByte(), limit = LimitRequestFieldSize).toStringDecimal(UTF8).trim()
 						//println("fline: $fline")
 						val match = HeaderRegex.matchEntire(fline)
 							?: throw IllegalStateException("Not a valid request '$fline'")
@@ -105,7 +105,7 @@ internal object HttpPortable {
 						val httpVersion = match.groupValues[3]
 						val headerList = arrayListOf<Pair<String, String>>()
 						for (n in 0 until LimitRequestFields) { // up to 1024 headers
-							val line = cb.readUntil('\n'.toByte(), limit = LimitRequestFieldSize).toString(UTF8).trim()
+							val line = cb.readUntil('\n'.toByte(), limit = LimitRequestFieldSize).toStringDecimal(UTF8).trim()
 							if (line.isEmpty()) break
 							val parts = line.split(':', limit = 2)
 							headerList += parts.getOrElse(0) { "" }.trim() to parts.getOrElse(1) { "" }.trim()

@@ -1,8 +1,8 @@
 package com.soywiz.korio.net.http
 
-import com.soywiz.korio.util.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
+import com.soywiz.korio.util.encoding.*
 
 interface Http {
 	enum class Methods : Method {
@@ -75,7 +75,7 @@ interface Http {
 			fun parse(auth: String): Auth {
 				val parts = auth.split(' ', limit = 2)
 				if (parts[0].equals("basic", ignoreCase = true)) {
-					val parts = parts[1].fromBase64().toString(UTF8).split(':', limit = 2)
+					val parts = parts[1].fromBase64().toStringDecimal(UTF8).split(':', limit = 2)
 					return Auth(user = parts[0], pass = parts[1], digest = "")
 				} else if (parts[0].isEmpty()) {
 					return Auth(user = "", pass = "", digest = "")

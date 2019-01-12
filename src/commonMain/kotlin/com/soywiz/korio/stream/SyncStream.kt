@@ -265,17 +265,17 @@ fun SyncInputStream.readStringz(charset: Charset = UTF8): String {
 			if (temp[0] == 0.toByte()) break
 			buf.append(temp[0].toByte())
 		}
-		buf.toByteArray().toString(charset)
+		buf.toByteArray().toStringDecimal(charset)
 	}
 }
 
 fun SyncInputStream.readStringz(len: Int, charset: Charset = UTF8): String {
 	val res = readBytes(len)
 	val index = res.indexOf(0.toByte())
-	return res.copyOf(if (index < 0) len else index).toString(charset)
+	return res.copyOf(if (index < 0) len else index).toStringDecimal(charset)
 }
 
-fun SyncInputStream.readString(len: Int, charset: Charset = UTF8): String = readBytes(len).toString(charset)
+fun SyncInputStream.readString(len: Int, charset: Charset = UTF8): String = readBytes(len).toStringDecimal(charset)
 fun SyncOutputStream.writeString(string: String, charset: Charset = UTF8): Unit =
 	writeBytes(string.toByteArray(charset))
 
@@ -508,7 +508,7 @@ fun SyncOutputStream.writeStringVL(str: String, charset: Charset = UTF8): Unit {
 fun SyncStream.readStringVL(charset: Charset = UTF8): String {
 	val bytes = ByteArray(readU_VL())
 	readExact(bytes, 0, bytes.size)
-	return bytes.toString(charset)
+	return bytes.toStringDecimal(charset)
 }
 
 fun SyncInputStream.readExactTo(buffer: ByteArray, offset: Int = 0, length: Int = buffer.size - offset): Int {

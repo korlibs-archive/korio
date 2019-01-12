@@ -64,7 +64,7 @@ internal class ByteArrayBuilder2() {
 	}
 
 	// @TODO: Optimize this!
-	fun toString(charset: Charset): String = toByteArray().toString(charset)
+	fun toString(charset: Charset): String = toByteArray().toStringDecimal(charset)
 
 	class Small(var _bytes: ByteArray, var _len: Int = 0) {
 		constructor(capacity: Int = 64) : this(ByteArray(capacity))
@@ -98,7 +98,7 @@ internal class ByteArrayBuilder2() {
 		fun toByteArray() = _bytes.copyOf(_len)
 
 		// @TODO: Optimize this!
-		fun toString(charset: Charset): String = toByteArray().toString(charset)
+		fun toString(charset: Charset): String = toByteArray().toStringDecimal(charset)
 	}
 }
 
@@ -126,5 +126,5 @@ class ByteArrayBuilderSmall(private var bytes: ByteArray, private var len: Int =
 	fun toByteArray() = bytes.copyOf(len)
 
 	// @TODO: Optimize this!
-	fun toString(charset: Charset): String = toByteArray().toString(charset)
+	fun toString(charset: Charset): String = toByteArray().toStringDecimal(charset)
 }

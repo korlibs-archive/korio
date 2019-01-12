@@ -7,7 +7,7 @@ import com.soywiz.korio.util.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.*
+import com.soywiz.korio.util.encoding.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.random.*
@@ -128,7 +128,7 @@ class RawSocketWebSocketClient(
 				try {
 					loop@ while (!closed) {
 						val frame = readWsFrame()
-						val payload = if (frame.frameIsBinary) frame.data else frame.data.toString(UTF8)
+						val payload = if (frame.frameIsBinary) frame.data else frame.data.toStringDecimal(UTF8)
 						when (frame.type) {
 							WsOpcode.Close -> {
 								break@loop

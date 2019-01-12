@@ -8,14 +8,12 @@ import com.soywiz.korio.compression.deflate.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.*
 import com.soywiz.korio.util.checksum.*
-import kotlinx.coroutines.*
+import com.soywiz.korio.util.encoding.*
 import kotlinx.coroutines.channels.*
 import kotlin.collections.component1
 import kotlin.collections.component2
 import kotlin.collections.set
-import kotlin.coroutines.*
 import kotlin.math.*
 
 suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Boolean = true, closeStream: Boolean = false): VfsFile {

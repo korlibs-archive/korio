@@ -1,7 +1,7 @@
-package com.soywiz.korio.util
+package com.soywiz.korio.util.encoding
 
 object Hex {
-	const val DIGITS = "0123456789ABCDEF"
+	private const val DIGITS = "0123456789ABCDEF"
 	val DIGITS_UPPER = DIGITS.toUpperCase()
 	val DIGITS_LOWER = DIGITS.toLowerCase()
 

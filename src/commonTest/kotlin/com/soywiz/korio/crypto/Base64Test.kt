@@ -1,7 +1,7 @@
 package com.soywiz.korio.crypto
 
 import com.soywiz.korio.lang.*
-import com.soywiz.korio.util.*
+import com.soywiz.korio.util.encoding.*
 import kotlin.test.*
 
 class Base64Test {
@@ -11,6 +11,6 @@ class Base64Test {
 		assertEquals("aGVsbG8=", Base64.encode("hello".toByteArray()))
 		assertEquals("aGVsbG8=", Base64.encode("hello", UTF8))
 		assertEquals(byteArrayOf(1, 2, 3).toList(), Base64.decode("AQID").toList())
-		assertEquals("hello", Base64.decode("aGVsbG8=").toString(UTF8))
+		assertEquals("hello", Base64.decode("aGVsbG8=").toStringDecimal(UTF8))
 	}
 }

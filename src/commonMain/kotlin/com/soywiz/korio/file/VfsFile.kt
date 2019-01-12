@@ -9,7 +9,6 @@ import com.soywiz.korio.file.std.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
-import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
@@ -79,7 +78,7 @@ class VfsFile(
 	suspend fun writeLines(lines: List<String>, charset: Charset = UTF8) =
 		writeString(lines.joinToString("\n"), charset = charset)
 
-	suspend fun readString(charset: Charset = UTF8): String = read().toString(charset)
+	suspend fun readString(charset: Charset = UTF8): String = read().toStringDecimal(charset)
 
 	suspend fun writeString(data: String, vararg attributes: Vfs.Attribute, charset: Charset = UTF8): Unit =
 		run { write(data.toByteArray(charset), *attributes) }
@@ -166,8 +165,8 @@ class VfsFile(
 			}
 		})
 
-		val errString = err.toByteArray().toString(charset)
-		val outString = out.toByteArray().toString(charset)
+		val errString = err.toByteArray().toStringDecimal(charset)
+		val outString = out.toByteArray().toStringDecimal(charset)
 
 		if (throwOnError && result != 0) throw VfsProcessException("Process not returned 0, but $result. Error: $errString, Output: $outString")
 
@@ -183,8 +182,8 @@ class VfsFile(
 		charset: Charset = UTF8
 	): Int {
 		return exec(cmdAndArgs.toList(), env, object : VfsProcessHandler() {
-			override suspend fun onOut(data: ByteArray) = print(data.toString(charset))
-			override suspend fun onErr(data: ByteArray) = print(data.toString(charset))
+			override suspend fun onOut(data: ByteArray) = print(data.toStringDecimal(charset))
+			override suspend fun onErr(data: ByteArray) = print(data.toStringDecimal(charset))
 		}).also {
 			println()
 		}

@@ -1,8 +1,8 @@
 package com.soywiz.korio.util
 
 import com.soywiz.kmem.*
-import com.soywiz.korio.*
 import com.soywiz.korio.lang.*
+import com.soywiz.korio.util.encoding.*
 import kotlin.random.*
 
 @Suppress("EXPERIMENTAL_API_USAGE")

@@ -1,7 +1,7 @@
 package com.soywiz.korio.ds
 
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.*
+import com.soywiz.korio.util.encoding.*
 import kotlin.test.*
 
 class ByteArrayBuilderTest {

@@ -4,7 +4,7 @@ import com.soywiz.korio.util.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.*
+import com.soywiz.korio.util.encoding.*
 
 data class URL private constructor(
 	val isOpaque: Boolean,
@@ -150,7 +150,7 @@ data class URL private constructor(
 				}
 				n++
 			}
-			return bos.toByteArray().toString(charset)
+			return bos.toByteArray().toStringDecimal(charset)
 		}
 
 		fun encodeComponent(s: String, charset: Charset = UTF8, formUrlEncoded: Boolean = false): String {
@@ -164,7 +164,7 @@ data class URL private constructor(
 					in 'a'..'z', in 'A'..'Z', in '0'..'9', '-', '_', '.', '*' -> sb.append(cc)
 					else -> {
 						sb.append('%')
-						for (n in 1 downTo 0) sb.append(Hex.DIGITS[c.toInt().ushr(n * 4) and 0xF])
+						for (n in 1 downTo 0) sb.append(Hex.DIGITS_UPPER[c.toInt().ushr(n * 4) and 0xF])
 					}
 				}
 			}

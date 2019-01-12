@@ -2,9 +2,8 @@ package com.soywiz.korio.compression
 
 import com.soywiz.kmem.*
 import com.soywiz.korio.compression.deflate.*
-import com.soywiz.korio.util.*
 import com.soywiz.korio.lang.*
-import com.soywiz.korio.util.*
+import com.soywiz.korio.util.encoding.*
 import kotlin.test.*
 
 class CompressionJvmTest {
@@ -62,6 +61,6 @@ class CompressionJvmTest {
 		val uncompressed = str.toByteArray(UTF8)
 		val compressed = uncompressed.compress(method)
 		val decompressed = compressed.uncompress(method)
-		assertEquals(decompressed.toString(UTF8), str, "With $method")
+		assertEquals(decompressed.toStringDecimal(UTF8), str, "With $method")
 	}
 }

@@ -1,4 +1,4 @@
-package com.soywiz.korio.util
+package com.soywiz.korio.util.encoding
 
 import com.soywiz.kmem.*
 import com.soywiz.korio.lang.*

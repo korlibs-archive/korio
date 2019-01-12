@@ -78,7 +78,7 @@ class ZipVfsTest {
 
 			assertEquals(
 				contents,
-				helloZip["hello/compressedWorld.txt"].openUse { readAvailable() }.toString(UTF8)
+				helloZip["hello/compressedWorld.txt"].openUse { readAvailable() }.toStringDecimal(UTF8)
 			)
 
 			assertEquals(

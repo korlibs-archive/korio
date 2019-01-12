@@ -98,19 +98,19 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 
 
 	// String
-	fun readString(len: Int, charset: Charset = UTF8) = readBytes(len).toString(charset)
+	fun readString(len: Int, charset: Charset = UTF8) = readBytes(len).toStringDecimal(charset)
 
 	fun readStringz(len: Int, charset: Charset = UTF8): String {
 		val res = readBytes(len)
 		val index = res.indexOf(0.toByte())
-		return res.copyOf(if (index < 0) len else index).toString(charset)
+		return res.copyOf(if (index < 0) len else index).toStringDecimal(charset)
 	}
 
 	fun readStringz(charset: Charset = UTF8): String {
 		val startOffset = offset
 		val index = ba.indexOf(0.toByte(), offset)
 		val end = if (index >= 0) index else ba.size
-		val str = ba.copyOfRange(startOffset, end - startOffset).toString(charset)
+		val str = ba.copyOfRange(startOffset, end - startOffset).toStringDecimal(charset)
 		offset = if (index >= 0) end + 1 else end
 		return str
 	}

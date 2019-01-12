@@ -5,8 +5,8 @@ import com.soywiz.korio.compression.util.*
 import com.soywiz.korio.experimental.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.*
 import com.soywiz.korio.util.checksum.*
+import com.soywiz.korio.util.encoding.*
 
 open class GZIP(deflater: () -> CompressionMethod) : GZIPBase(true, deflater) {
 	companion object : GZIP({ Deflate })

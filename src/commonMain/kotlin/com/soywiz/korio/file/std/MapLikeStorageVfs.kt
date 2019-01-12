@@ -7,7 +7,7 @@ import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.serialization.json.*
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.*
+import com.soywiz.korio.util.encoding.*
 import kotlinx.coroutines.channels.*
 import kotlin.math.*
 
