@@ -1,6 +1,7 @@
-package com.soywiz.korio.serialization.yaml
+package com.soywiz.korio.dynamic.serialization
 
-import com.soywiz.korio.serialization.*
+import com.soywiz.korio.dynamic.mapper.*
+import com.soywiz.korio.serialization.yaml.*
 import kotlin.reflect.*
 
 inline fun <reified T : Any> Yaml.decodeToType(s: String, mapper: ObjectMapper): T =
@@ -8,5 +9,5 @@ inline fun <reified T : Any> Yaml.decodeToType(s: String, mapper: ObjectMapper):
 
 @Suppress("UNCHECKED_CAST")
 fun <T : Any> Yaml.decodeToType(s: String, clazz: KClass<T>, mapper: ObjectMapper): T =
-	mapper.toTyped(clazz, Yaml.decode(s))
+	mapper.toTyped(clazz, decode(s))
 

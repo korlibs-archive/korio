@@ -51,6 +51,10 @@ internal actual object DynamicInternal {
 		return field?.get(instance)
 	}
 
+	actual fun set(instance: Any?, key: String, value: Any?) {
+		TODO()
+	}
+
 	actual fun invoke(instance: Any?, key: String, args: Array<out Any?>): Any? {
 		if (instance == null) return null
 		val method = tryGetMethod(if (instance is Class<*>) instance else instance.javaClass, key, args)

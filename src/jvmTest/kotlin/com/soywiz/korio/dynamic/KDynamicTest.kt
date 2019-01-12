@@ -25,4 +25,9 @@ class KDynamicTest {
 		fun demo(a: String): String = "b"
 		fun demo(a: Int): String = "c"
 	}
+
+	@Test
+	fun test3() {
+		assertEquals(10, KDynamic(mapOf("a" to 10)) { it["a"].int })
+	}
 }

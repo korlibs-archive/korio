@@ -91,7 +91,7 @@ internal object HttpPortable {
 				val close = socket.listen { client ->
 					while (true) {
 						//println("Connected! : $client : ${KorioNative.currentThreadId}")
-						val cb = client.toBuffered()
+						val cb = client.bufferedInput()
 						//val cb = client
 
 						//val header = cb.readBufferedLine().trim()

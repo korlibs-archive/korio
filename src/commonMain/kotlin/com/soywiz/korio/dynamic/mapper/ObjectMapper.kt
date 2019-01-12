@@ -1,6 +1,7 @@
-package com.soywiz.korio.serialization
+package com.soywiz.korio.dynamic.mapper
 
 import com.soywiz.kds.*
+import com.soywiz.korio.dynamic.*
 import com.soywiz.korio.lang.*
 import kotlin.reflect.*
 
@@ -18,26 +19,15 @@ class ObjectMapper {
 	var fallbackUntyper: ((Any) -> Any)? = null
 
 	@Suppress("NOTHING_TO_INLINE")
-	class TypeContext(val map: ObjectMapper) : DynamicContext {
-		fun <T : Any> Any?.gen(clazz: KClass<T>): T = map.toTyped(clazz, this)
-		fun <T : Any> Any?.genList(clazz: KClass<T>): ArrayList<T> =
-			ArrayList(this.toDynamicList().map { it.gen(clazz) }.toList())
-
-		fun <T : Any> Any?.genSet(clazz: KClass<T>): HashSet<T> =
-			HashSet(this.toDynamicList().map { it.gen(clazz) }.toSet())
-
-		fun <K : Any, V : Any> Any?.genMap(kclazz: KClass<K>, vclazz: KClass<V>): MutableMap<K, V> =
-			this.toDynamicMap().map { it.key.gen(kclazz) to it.value.gen(vclazz) }.toLinkedMap()
-
-		inline fun <reified T : Any> Any?.gen(): T = map.toTyped(T::class, this)
-		inline fun <reified T : Any> Any?.genList(): ArrayList<T> =
-			ArrayList(this.toDynamicList().map { it.gen<T>() }.toList())
-
-		inline fun <reified T : Any> Any?.genSet(): HashSet<T> =
-			HashSet(this.toDynamicList().map { it.gen<T>() }.toSet())
-
-		inline fun <reified K : Any, reified V : Any> Any?.genMap(): MutableMap<K, V> =
-			this.toDynamicMap().map { it.key.gen<K>() to it.value.gen<V>() }.toLinkedMap()
+	class TypeContext(val mapper: ObjectMapper) : KDynamic() {
+		fun <T : Any> Any?.gen(clazz: KClass<T>): T = this@TypeContext.mapper.toTyped(clazz, this)
+		fun <T : Any> Any?.genList(clazz: KClass<T>): ArrayList<T> = ArrayList(this.list.map { it.gen(clazz) }.toList())
+		fun <T : Any> Any?.genSet(clazz: KClass<T>): HashSet<T> = HashSet(this.list.map { it.gen(clazz) }.toSet())
+		fun <K : Any, V : Any> Any?.genMap(kclazz: KClass<K>, vclazz: KClass<V>): MutableMap<K, V> = this.map.map { it.key.gen(kclazz) to it.value.gen(vclazz) }.toLinkedMap()
+		inline fun <reified T : Any> Any?.gen(): T = this@TypeContext.mapper.toTyped(T::class, this)
+		inline fun <reified T : Any> Any?.genList(): ArrayList<T> = ArrayList(this.list.map { it.gen<T>() }.toList())
+		inline fun <reified T : Any> Any?.genSet(): HashSet<T> = HashSet(this.list.map { it.gen<T>() }.toSet())
+		inline fun <reified K : Any, reified V : Any> Any?.genMap(): MutableMap<K, V> = this.map.map { it.key.gen<K>() to it.value.gen<V>() }.toLinkedMap()
 	}
 
 	@Suppress("NOTHING_TO_INLINE")
@@ -74,13 +64,17 @@ class ObjectMapper {
 		registerType(Float::class) { it.toFloat() }
 		registerType(Double::class) { it.toDouble() }
 		//registerType(Number::class) { it.toNumber() } // @TODO: This produces an undefined error in kotlin-js
-		registerType(Set::class) { it.toDynamicList().toSet() }
-		registerType(List::class) { it.toDynamicList() }
-		registerType(MutableList::class) { it.toDynamicList().toMutableList() }
+		registerType(Set::class) { it.list.toSet() }
+		registerType(List::class) { it.list }
+		registerType(MutableList::class) { it.list.toMutableList() }
 		registerType(String::class) { it?.toString() ?: "null" }
 	}
 
 	inline fun <reified T : Any> toUntyped(obj: T?): Any? = toUntyped(T::class, obj)
+
+	fun <T : Any> getKey(clazz: KClass<T>, obj: T?, key: String): Any? {
+		return (toUntyped(clazz, obj) as Map<String, Any?>)[key]
+	}
 
 	fun <T : Any> toUntyped(clazz: KClass<T>, obj: T?): Any? = when (obj) {
 		null -> obj

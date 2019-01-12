@@ -1,6 +1,7 @@
 package com.soywiz.korio.serialization.json
 
-import com.soywiz.korio.serialization.*
+import com.soywiz.korio.dynamic.mapper.*
+import com.soywiz.korio.dynamic.serialization.*
 import kotlin.test.*
 
 class JsonPrettyTest {

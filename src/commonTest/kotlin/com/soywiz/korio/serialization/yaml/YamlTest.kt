@@ -1,6 +1,7 @@
 package com.soywiz.korio.serialization.yaml
 
-import com.soywiz.korio.serialization.*
+import com.soywiz.korio.dynamic.mapper.*
+import com.soywiz.korio.dynamic.serialization.*
 import kotlin.test.*
 
 // http://nodeca.github.io/js-yaml/

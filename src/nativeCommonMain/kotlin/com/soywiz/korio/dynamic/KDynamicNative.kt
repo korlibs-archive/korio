@@ -6,6 +6,11 @@ internal actual object DynamicInternal {
 	actual fun get(instance: Any?, key: String): Any? {
 		TODO()
 	}
+
+	actual fun set(instance: Any?, key: String, value: Any?) {
+		TODO()
+	}
+
 	actual fun invoke(instance: Any?, key: String, args: Array<out Any?>): Any? {
 		TODO()
 	}

@@ -1,6 +1,7 @@
 package com.soywiz.korio.serialization.json
 
-import com.soywiz.korio.serialization.*
+import com.soywiz.korio.dynamic.mapper.*
+import com.soywiz.korio.dynamic.serialization.*
 import kotlin.test.*
 
 class JsonTest {
@@ -177,7 +178,7 @@ class JsonTest {
 		//mapper.registerType { Demo(it["v"].toDynamicMap().map { it.key.toString() to it.value.gen<V>() }.toMap()) }
 
 		mapper.registerType { V(it["a"].gen(Int::class), it["b"].gen(Int::class)) }
-		mapper.registerType { Demo(it["v"].toDynamicMap().map { it.key.toString() to it.value.gen<V>() }.toMap()) }
+		mapper.registerType { Demo(it["v"].map.map { it.key.toString() to it.value.gen<V>() }.toMap()) }
 
 		//assertEquals(Demo(linkedMapOf("z" to V(1, 2))), Json.decodeToType<Demo>("""{"v":{"z":{"a":1,"b":2}}}""", mapper))
 		assertEquals(
