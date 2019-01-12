@@ -8,18 +8,17 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
-val ANY_PORT = 0
-
 abstract class AsyncSocketFactory {
 	abstract suspend fun createClient(secure: Boolean = false): AsyncClient
 	abstract suspend fun createServer(port: Int, host: String = "127.0.0.1", backlog: Int = 511, secure: Boolean = false): AsyncServer
 }
 
-expect val asyncSocketFactory: AsyncSocketFactory
+internal expect val asyncSocketFactory: AsyncSocketFactory
+
+suspend fun createTcpClient(secure: Boolean = false): AsyncClient = asyncSocketFactory.createClient(secure)
+suspend fun createTcpServer(port: Int = AsyncServer.ANY_PORT, host: String = "127.0.0.1", backlog: Int = 511, secure: Boolean = false): AsyncServer = asyncSocketFactory.createServer(port, host, backlog, secure)
 
 suspend fun createTcpClient(host: String, port: Int, secure: Boolean = false): AsyncClient = asyncSocketFactory.createClient(secure).apply { connect(host, port) }
-suspend fun createTcpClient(secure: Boolean = false): AsyncClient = asyncSocketFactory.createClient(secure)
-suspend fun createTcpServer(port: Int = ANY_PORT, host: String = "127.0.0.1", backlog: Int = 511, secure: Boolean = false): AsyncServer = asyncSocketFactory.createServer(port, host, backlog, secure)
 
 interface AsyncClient : AsyncInputStream, AsyncOutputStream, AsyncCloseable {
 	suspend fun connect(host: String, port: Int)
@@ -55,6 +54,8 @@ interface AsyncServer {
 	val port: Int
 
 	companion object {
+		val ANY_PORT = 0
+
 		suspend operator fun invoke(port: Int, host: String = "127.0.0.1", backlog: Int = -1) =
 			asyncSocketFactory.createServer(port, host, backlog)
 	}

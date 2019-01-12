@@ -19,7 +19,7 @@ class AsyncSocketTest {
 		val read = arrayListOf<ByteArray>()
 
 		launchImmediately(coroutineContext) {
-			val server = createTcpServer(ANY_PORT)
+			val server = createTcpServer(AsyncServer.ANY_PORT)
 			port = server.port
 			connected.complete(Unit)
 			val client = server.accept()

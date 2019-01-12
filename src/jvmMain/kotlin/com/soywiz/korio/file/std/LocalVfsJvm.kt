@@ -1,13 +1,27 @@
 package com.soywiz.korio.file.std
 
+import com.soywiz.klock.*
+import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
+import com.soywiz.korio.lang.*
+import com.soywiz.korio.lang.Closeable
+import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
+import kotlinx.coroutines.channels.*
 import java.io.*
-import java.security.*
+import java.io.FileNotFoundException
+import java.net.*
+import java.nio.*
+import java.nio.channels.*
+import java.nio.channels.CompletionHandler
+import java.nio.file.*
+import java.nio.file.Path
+import java.util.concurrent.*
+import kotlin.coroutines.*
 
-private val secureRandom: SecureRandom by lazy { SecureRandom.getInstanceStrong() }
-
-private val absoluteCwd = File(".").absolutePath
+private val absoluteCwd by lazy { File(".").absolutePath }
+val tmpdir: String by lazy { System.getProperty("java.io.tmpdir") }
 
 actual val resourcesVfs: VfsFile by lazy { ResourcesVfsProviderJvm()().root.jail() }
 actual val rootLocalVfs: VfsFile by lazy { localVfs(absoluteCwd) }
@@ -20,12 +34,334 @@ actual val tempVfs: VfsFile by lazy { localVfs(tmpdir) }
 
 actual fun localVfs(path: String): VfsFile = LocalVfsJvm()[path]
 
-
-val tmpdir: String get() = System.getProperty("java.io.tmpdir")
-
 // Extensions
 operator fun LocalVfs.Companion.get(base: File) = localVfs(base)
+
 fun localVfs(base: File): VfsFile = localVfs(base.absolutePath)
 fun jailedLocalVfs(base: File): VfsFile = localVfs(base.absolutePath).jail()
 suspend fun File.open(mode: VfsOpenMode) = localVfs(this).open(mode)
 fun File.toVfs() = localVfs(this)
+fun UrlVfs(url: URL): VfsFile = UrlVfs(url.toString())
+
+private class ResourcesVfsProviderJvm {
+	operator fun invoke(): Vfs = invoke(ClassLoader.getSystemClassLoader())
+
+	operator fun invoke(classLoader: ClassLoader): Vfs {
+		val merged = MergedVfs()
+
+		return object : Vfs.Decorator(merged.root) {
+			override suspend fun init() {
+				//println("localCurrentDirVfs: $localCurrentDirVfs, ${localCurrentDirVfs.absolutePath}")
+
+				// @TODO: IntelliJ doesn't properly set resources folder for MPP just yet (on gradle works just fine),
+				// @TODO: so at least we try to load resources from sources until this is fixed.
+				for (folder in listOf(
+					localCurrentDirVfs["src/commonMain/resources"],
+					localCurrentDirVfs["src/jvmMain/resources"],
+					localCurrentDirVfs["resources"],
+					localCurrentDirVfs["jvmResources"]
+				)) {
+					if (folder.exists() && folder.isDirectory()) {
+						merged += folder.jail()
+					}
+				}
+
+
+				if (classLoader is URLClassLoader) {
+					for (url in classLoader.urLs) {
+						//println("ResourcesVfsProviderJvm.url: $url")
+						val urlStr = url.toString()
+						val vfs = when {
+							urlStr.startsWith("http") -> UrlVfs(url)
+							else -> localVfs(File(url.toURI()))
+						}
+
+						//println(vfs)
+
+						when {
+							vfs.extension in setOf("jar", "zip") -> {
+								//merged.vfsList += vfs.openAsZip()
+							}
+							else -> merged += vfs.jail()
+						}
+					}
+					//println(merged.options)
+				} else {
+					//println("ResourcesVfsProviderJvm.classLoader not URLClassLoader: $classLoader")
+				}
+
+				//println("ResourcesVfsProviderJvm:classLoader:$classLoader")
+
+				merged += object : Vfs() {
+					private fun normalize(path: String): String = path.trim('/')
+
+					private fun getResourceAsStream(npath: String) = classLoader.getResourceAsStream(npath)
+						?: classLoader.getResourceAsStream("/$npath")
+						?: invalidOp("Can't find '$npath' in ResourcesVfsProviderJvm")
+
+					override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
+						val npath = normalize(path)
+						//println("ResourcesVfsProviderJvm:open: $path")
+						return MemorySyncStream(getResourceAsStream(npath).readBytes()).toAsync()
+					}
+
+					override suspend fun stat(path: String): VfsStat = run {
+						val npath = normalize(path)
+						//println("ResourcesVfsProviderJvm:stat: $npath")
+						try {
+							val s = getResourceAsStream(npath)
+							val size = s.available()
+							s.read()
+							createExistsStat(npath, isDirectory = false, size = size.toLong())
+						} catch (e: Throwable) {
+							//e.printStackTrace()
+							createNonExistsStat(npath)
+						}
+					}
+
+					override fun toString(): String = "ResourcesVfsProviderJvm"
+				}.root
+
+				println("ResourcesVfsProviderJvm: $merged")
+			}
+
+			override fun toString(): String = "ResourcesVfs"
+		}
+	}
+}
+
+private class LocalVfsJvm : LocalVfs() {
+	val that = this
+	override val absolutePath: String = ""
+
+	private suspend fun <T> executeIo(callback: suspend () -> T): T = callback()
+
+	fun resolve(path: String) = path
+	fun resolvePath(path: String) = Paths.get(resolve(path))
+	fun resolveFile(path: String) = File(resolve(path))
+
+	override suspend fun exec(
+		path: String,
+		cmdAndArgs: List<String>,
+		env: Map<String, String>,
+		handler: VfsProcessHandler
+	): Int = executeIo {
+		val actualCmd = if (OS.isWindows) listOf("cmd", "/c") + cmdAndArgs else cmdAndArgs
+		val pb = ProcessBuilder(actualCmd)
+		pb.environment().putAll(LinkedHashMap())
+		pb.directory(resolveFile(path))
+
+		val p = pb.start()
+		var closing = false
+		while (true) {
+			val o = p.inputStream.readAvailableChunk(readRest = closing)
+			val e = p.errorStream.readAvailableChunk(readRest = closing)
+			if (o.isNotEmpty()) handler.onOut(o)
+			if (e.isNotEmpty()) handler.onErr(e)
+			if (closing) break
+			if (o.isEmpty() && e.isEmpty() && !p.isAliveJre7) {
+				closing = true
+				continue
+			}
+			Thread.sleep(1L)
+		}
+		p.waitFor()
+		//handler.onCompleted(p.exitValue())
+		p.exitValue()
+	}
+
+	private fun InputStream.readAvailableChunk(readRest: Boolean): ByteArray {
+		val out = ByteArrayOutputStream()
+		while (if (readRest) true else available() > 0) {
+			val c = this.read()
+			if (c < 0) break
+			out.write(c)
+		}
+		return out.toByteArray()
+	}
+
+	private fun InputStreamReader.readAvailableChunk(i: InputStream, readRest: Boolean): String {
+		val out = java.lang.StringBuilder()
+		while (if (readRest) true else i.available() > 0) {
+			val c = this.read()
+			if (c < 0) break
+			out.append(c.toChar())
+		}
+		return out.toString()
+	}
+
+	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
+		try {
+			val channel = AsynchronousFileChannel.open(
+				resolvePath(path), *when (mode) {
+					VfsOpenMode.READ -> arrayOf(StandardOpenOption.READ)
+					VfsOpenMode.WRITE -> arrayOf(StandardOpenOption.READ, StandardOpenOption.WRITE)
+					VfsOpenMode.APPEND -> arrayOf(
+						StandardOpenOption.READ,
+						StandardOpenOption.WRITE,
+						StandardOpenOption.APPEND
+					)
+					VfsOpenMode.CREATE -> arrayOf(
+						StandardOpenOption.READ,
+						StandardOpenOption.WRITE,
+						StandardOpenOption.CREATE
+					)
+					VfsOpenMode.CREATE_NEW -> arrayOf(
+						StandardOpenOption.READ,
+						StandardOpenOption.WRITE,
+						StandardOpenOption.CREATE_NEW
+					)
+					VfsOpenMode.CREATE_OR_TRUNCATE -> arrayOf(
+						StandardOpenOption.READ,
+						StandardOpenOption.WRITE,
+						StandardOpenOption.CREATE,
+						StandardOpenOption.TRUNCATE_EXISTING
+					)
+				}
+			)
+
+			return object : AsyncStreamBase() {
+				override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
+					val bb = ByteBuffer.wrap(buffer, offset, len)
+					return completionHandler<Int> { channel.read(bb, position, Unit, it) }
+				}
+
+				override suspend fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
+					val bb = ByteBuffer.wrap(buffer, offset, len)
+					completionHandler<Int> { channel.write(bb, position, Unit, it) }
+				}
+
+				override suspend fun setLength(value: Long): Unit {
+					channel.truncate(value); Unit
+				}
+
+				override suspend fun getLength(): Long = channel.size()
+				override suspend fun close() = channel.close()
+
+				override fun toString(): String = "$that($path)"
+			}.toAsyncStream()
+		} catch (e: java.nio.file.NoSuchFileException) {
+			throw FileNotFoundException(e.message)
+		}
+	}
+
+	override suspend fun setSize(path: String, size: Long): Unit = executeIo {
+		val file = resolveFile(path)
+		FileOutputStream(file, true).channel.use { outChan ->
+			outChan.truncate(size)
+		}
+		Unit
+	}
+
+	override suspend fun stat(path: String): VfsStat = executeIo {
+		val file = resolveFile(path)
+		val fullpath = "$path/${file.name}"
+		if (file.exists()) {
+			val lastModified = DateTime.fromUnix(file.lastModified())
+			createExistsStat(
+				fullpath,
+				isDirectory = file.isDirectory,
+				size = file.length(),
+				createTime = lastModified,
+				modifiedTime = lastModified,
+				lastAccessTime = lastModified
+			)
+		} else {
+			createNonExistsStat(fullpath)
+		}
+	}
+
+	override suspend fun list(path: String): ReceiveChannel<VfsFile> =
+		executeIo { (File(path).listFiles() ?: arrayOf()).map { that.file("$path/${it.name}") }.toChannel() }
+
+	override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean =
+		executeIo { resolveFile(path).mkdirs() }
+
+	override suspend fun touch(path: String, time: DateTime, atime: DateTime): Unit =
+		executeIo { resolveFile(path).setLastModified(time.unixMillisLong); Unit }
+
+	override suspend fun delete(path: String): Boolean = executeIo { resolveFile(path).delete() }
+	override suspend fun rmdir(path: String): Boolean = executeIo { resolveFile(path).delete() }
+	override suspend fun rename(src: String, dst: String): Boolean =
+		executeIo { resolveFile(src).renameTo(resolveFile(dst)) }
+
+	suspend fun <T> completionHandler(callback: (CompletionHandler<T, Unit>) -> Unit): T {
+		return suspendCancellableCoroutine<T> { c ->
+			callback(object : CompletionHandler<T, Unit> {
+				override fun completed(result: T, attachment: Unit?) = c.resume(result)
+				override fun failed(exc: Throwable, attachment: Unit?) = c.resumeWithException(exc)
+			})
+		}
+	}
+
+	override suspend fun watch(path: String, handler: (FileEvent) -> Unit): Closeable {
+		var running = true
+		val fs = FileSystems.getDefault()
+		val watcher = fs.newWatchService()
+
+		fs.getPath(path).register(
+			watcher,
+			StandardWatchEventKinds.ENTRY_CREATE,
+			StandardWatchEventKinds.ENTRY_DELETE,
+			StandardWatchEventKinds.ENTRY_MODIFY
+		)
+
+		launchImmediately(coroutineContext) {
+			while (running) {
+				val key = executeIo {
+					var r: WatchKey?
+					do {
+						r = watcher.poll(100L, TimeUnit.MILLISECONDS)
+					} while (r == null && running)
+					r
+				} ?: continue
+
+				for (e in key.pollEvents()) {
+					val kind = e.kind()
+					val filepath = e.context() as Path
+					val rfilepath = fs.getPath(path, filepath.toString())
+					val file = rfilepath.toFile()
+					val absolutePath = file.absolutePath
+					val vfsFile = file(absolutePath)
+					when (kind) {
+						StandardWatchEventKinds.OVERFLOW -> {
+							println("Overflow WatchService")
+						}
+						StandardWatchEventKinds.ENTRY_CREATE -> {
+							handler(
+								FileEvent(
+									FileEvent.Kind.CREATED,
+									vfsFile
+								)
+							)
+						}
+						StandardWatchEventKinds.ENTRY_MODIFY -> {
+							handler(
+								FileEvent(
+									FileEvent.Kind.MODIFIED,
+									vfsFile
+								)
+							)
+						}
+						StandardWatchEventKinds.ENTRY_DELETE -> {
+							handler(
+								FileEvent(
+									FileEvent.Kind.DELETED,
+									vfsFile
+								)
+							)
+						}
+					}
+				}
+				key.reset()
+			}
+		}
+
+		return Closeable {
+			running = false
+			watcher.close()
+		}
+	}
+
+	override fun toString(): String = "LocalVfs"
+}

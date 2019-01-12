@@ -10,7 +10,7 @@ import java.nio.channels.*
 import java.nio.channels.CompletionHandler
 import kotlin.coroutines.*
 
-actual val asyncSocketFactory: AsyncSocketFactory by lazy {
+internal actual val asyncSocketFactory: AsyncSocketFactory by lazy {
 	object : AsyncSocketFactory() {
 		override suspend fun createClient(secure: Boolean): AsyncClient = JvmAsyncClient()
 		override suspend fun createServer(port: Int, host: String, backlog: Int, secure: Boolean): AsyncServer =
