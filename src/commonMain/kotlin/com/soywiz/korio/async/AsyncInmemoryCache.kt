@@ -1,7 +1,6 @@
-package com.soywiz.korio.util
+package com.soywiz.korio.async
 
 import com.soywiz.klock.*
-import com.soywiz.korio.async.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.reflect.*
@@ -19,7 +18,7 @@ class AsyncInmemoryCache(val timeProvider: TimeProvider = TimeProvider) {
 	suspend fun <T : Any?> get(key: String, ttl: TimeSpan, gen: suspend () -> T): T {
 		val entry = cache[key]
 		if (entry == null || (timeProvider.now() - entry.timestamp) >= ttl) {
-			cache[key] = AsyncInmemoryCache.Entry(timeProvider.now(), asyncImmediately(coroutineContext) { gen() })
+			cache[key] = Entry(timeProvider.now(), asyncImmediately(coroutineContext) { gen() })
 		}
 		return (cache[key]!!.data as Deferred<T>).await()
 	}

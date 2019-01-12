@@ -1,7 +1,7 @@
 package com.soywiz.korio.util.checksum
 
+import com.soywiz.korio.async.*
 import com.soywiz.korio.stream.*
-import com.soywiz.korio.util.*
 
 interface SimpleChecksum {
 	val initialValue: Int

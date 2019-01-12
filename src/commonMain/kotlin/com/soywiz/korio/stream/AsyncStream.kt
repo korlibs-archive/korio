@@ -154,25 +154,18 @@ suspend fun AsyncStreamBase.readBytes(position: Long, count: Int): ByteArray {
 
 fun AsyncStreamBase.toAsyncStream(position: Long = 0L): AsyncStream = AsyncStream(this, position)
 
-class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : Extra by Extra.Mixin(), AsyncInputStream,
-	AsyncInputStreamWithLength, AsyncOutputStream, AsyncPositionLengthStream, AsyncCloseable {
-	// NOTE: Sharing queue would hang writing on hang read
-	//private val ioQueue = AsyncThread()
-	//private val readQueue = ioQueue
-	//private val writeQueue = ioQueue
-
+class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : Extra by Extra.Mixin(), AsyncInputStream, AsyncInputStreamWithLength, AsyncOutputStream, AsyncPositionLengthStream,
+	AsyncCloseable {
 	private val readQueue = AsyncThread()
 	private val writeQueue = AsyncThread()
 
 	override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int = readQueue {
-		//suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
 		val read = base.read(position, buffer, offset, len)
 		if (read >= 0) position += read
 		read
 	}
 
 	override suspend fun write(buffer: ByteArray, offset: Int, len: Int): Unit = writeQueue {
-		//suspend override fun write(buffer: ByteArray, offset: Int, len: Int): Unit {
 		base.write(position, buffer, offset, len)
 		position += len
 	}
@@ -189,6 +182,15 @@ class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : Extra by
 	override suspend fun close(): Unit = base.close()
 
 	fun duplicate(): AsyncStream = AsyncStream(base, position)
+}
+
+inline fun <T> AsyncStream.keepPosition(callback: () -> T): T {
+	val old = this.position
+	try {
+		return callback()
+	} finally {
+		this.position = old
+	}
 }
 
 suspend fun AsyncPositionLengthStream.getAvailable(): Long = getLength() - getPosition()
@@ -237,41 +239,12 @@ class SliceAsyncStreamBase(
 	override fun toString(): String = "SliceAsyncStreamBase($base, $baseStart, $baseEnd)"
 }
 
-fun AsyncStream.buffered(blockSize: Int = 2048, blocksToRead: Int = 0x10) =
-	BufferedStreamBase(this.base, blockSize, blocksToRead).toAsyncStream(this.position)
+fun AsyncStream.buffered(blockSize: Int = 2048, blocksToRead: Int = 0x10) = BufferedStreamBase(this.base, blockSize, blocksToRead).toAsyncStream(this.position)
 
-class BufferedStreamBase(val base: AsyncStreamBase, val blockSize: Int = 2048, val blocksToRead: Int = 0x10) :
-	AsyncStreamBase() {
-	val bsize = blockSize * blocksToRead
+class BufferedStreamBase(val base: AsyncStreamBase, val blockSize: Int = 2048, val blocksToRead: Int = 0x10) : AsyncStreamBase() {
+	private val bsize = blockSize * blocksToRead
 
-	override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
-		val readLen = _read(position, buffer, offset, len)
-		//val readLen = _readUpTo(position, buffer, offset, len)
-		//val readLen = base.read(position, buffer, offset, len)
-		//println("### read($position, $offset, $len)=$readLen :: ${buffer.copyOfRange(offset, offset + min(1024, len)).hex}")
-		return readLen
-	}
-
-	//suspend fun _readUpTo(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
-	//	var pos = position
-	//	var off = offset
-	//	var rem = len
-	//	var totalRead = 0
-	//	var chunkCount = 0
-	//	while (rem > 0) {
-	//		val read = _read(pos, buffer, off, rem)
-	//		if (read <= 0) {
-	//			if (totalRead == 0) return read
-	//			return totalRead
-	//		}
-	//		totalRead += read
-	//		rem -= read
-	//		off += read
-	//		pos += read
-	//		chunkCount++
-	//	}
-	//	return totalRead
-	//}
+	override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = _read(position, buffer, offset, len)
 
 	var cachedData = byteArrayOf()
 	var cachedSector = -1L
@@ -386,12 +359,10 @@ suspend fun AsyncInputStream.readExact(buffer: ByteArray, offset: Int, len: Int)
 //suspend private fun AsyncInputStream.readSmallTempExact(len: Int): ByteArray = readSmallTempExact(len, READ_SMALL_TEMP)
 
 @PublishedApi
-internal suspend inline fun <R> AsyncInputStream.readSmallTempExact(size: Int, callback: ByteArray.() -> R): R {
-	return smallBytesPool.allocThis {
-		val read = read(this, 0, size)
-		if (read != size) error("Couldn't read exact size=$size but read=$read")
-		callback()
-	}
+internal suspend inline fun <R> AsyncInputStream.readSmallTempExact(size: Int, callback: ByteArray.() -> R): R = smallBytesPool.allocThis {
+	val read = read(this, 0, size)
+	if (read != size) error("Couldn't read exact size=$size but read=$read")
+	callback()
 }
 
 
@@ -415,20 +386,17 @@ suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {
 	val BYTES_TEMP_SIZE = 0x1000
 	if (len > BYTES_TEMP_SIZE) {
 		if (this is AsyncPositionLengthStream) {
-			val alen = min(len, this.getAvailable().toIntClamp())
-			val ba = ByteArray(alen)
-			var available = alen
+			val ba = ByteArray(min(len, this.getAvailable().toIntClamp()))
+			var available = ba.size
 			var pos = 0
 			while (true) {
-				val alen2 = read(ba, pos, available)
-				if (alen2 <= 0) break
-				pos += alen2
-				available -= alen2
+				val alen = read(ba, pos, available)
+				if (alen <= 0) break
+				pos += alen
+				available -= alen
 			}
 			return if (ba.size == pos) ba else ba.copyOf(pos)
 		} else {
-			// @TODO: We can read chunks of data in preallocated byte arrays, then join them all.
-			// @TODO: That would prevent resizing issues with the trade-off of more allocations.
 			var pending = len
 			val temp = ByteArray(BYTES_TEMP_SIZE)
 			val bout = ByteArrayBuilder()
@@ -459,6 +427,7 @@ suspend fun AsyncInputStream.readBytesExact(len: Int): ByteArray = ByteArray(len
 
 //suspend fun AsyncInputStream.readU8(): Int = readBytesExact(1).readU8(0)
 suspend fun AsyncInputStream.readU8(): Int = read()
+
 suspend fun AsyncInputStream.readS8(): Int = read().toByte().toInt()
 suspend fun AsyncInputStream.readU16LE(): Int = readSmallTempExact(2) { readU16LE(0) }
 suspend fun AsyncInputStream.readU24LE(): Int = readSmallTempExact(3) { readU24LE(0) }

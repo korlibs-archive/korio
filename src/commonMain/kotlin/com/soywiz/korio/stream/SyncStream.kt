@@ -7,19 +7,15 @@ import com.soywiz.korio.lang.*
 import kotlin.math.*
 
 interface SyncInputStream : OptionalCloseable {
-	fun read(buffer: ByteArray, offset: Int, len: Int): Int
+	fun read(buffer: ByteArray, offset: Int = 0, len: Int = buffer.size - offset): Int
 	fun read(): Int = smallBytesPool.alloc2 { if (read(it, 0, 1) > 0) it[0].unsigned else -1 }
 }
 
 interface SyncOutputStream : OptionalCloseable {
-	fun write(buffer: ByteArray, offset: Int, len: Int): Unit
+	fun write(buffer: ByteArray, offset: Int = 0, len: Int = buffer.size - offset): Unit
 	fun write(byte: Int) = smallBytesPool.alloc2 { it[0] = byte.toByte(); write(it, 0, 1) }
+	fun flush() = Unit
 }
-
-fun SyncOutputStream.flush() {
-}
-
-fun SyncOutputStream.write(buffer: ByteArray) = write(buffer, 0, buffer.size)
 
 interface SyncPositionStream {
 	var position: Long
@@ -35,25 +31,15 @@ interface SyncRAInputStream {
 
 interface SyncRAOutputStream {
 	fun write(position: Long, buffer: ByteArray, offset: Int, len: Int): Unit
+	fun flush(): Unit = Unit
 }
 
 open class SyncStreamBase : Closeable, SyncRAInputStream, SyncRAOutputStream, SyncLengthStream {
 	val smallTemp = ByteArray(16)
-	fun read(position: Long): Int {
-		val count = read(position, smallTemp, 0, 1)
-		return if (count >= 1) smallTemp[0].toInt() and 0xFF else -1
-	}
-
-	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int =
-		throw UnsupportedOperationException()
-
-	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int): Unit =
-		throw UnsupportedOperationException()
-
-	override var length: Long
-		set(value) = throw UnsupportedOperationException()
-		get() = throw UnsupportedOperationException()
-
+	fun read(position: Long): Int = if (read(position, smallTemp, 0, 1) >= 1) smallTemp[0].toInt() and 0xFF else -1
+	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = unsupported()
+	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int): Unit = unsupported()
+	override var length: Long set(_) = unsupported(); get() = unsupported()
 	override fun close() = Unit
 }
 
@@ -67,7 +53,7 @@ class SyncStream(val base: SyncStreamBase, override var position: Long = 0L) : E
 	}
 
 	override fun read(): Int {
-		val size = read(base.smallTemp, 0, 1)
+		val size = read(smallTemp, 0, 1)
 		if (size <= 0) return -1
 		return smallTemp[0].unsigned
 	}
@@ -88,8 +74,8 @@ class SyncStream(val base: SyncStreamBase, override var position: Long = 0L) : E
 
 	val available: Long get() = length - position
 
-	fun flush() {
-		//base.flush()
+	override fun flush() {
+		base.flush()
 	}
 
 	override fun close(): Unit = base.close()
@@ -521,6 +507,3 @@ fun SyncInputStream.readExactTo(buffer: ByteArray, offset: Int = 0, length: Int 
 	}
 	return pos - offset
 }
-
-//fun InputStream.readBytesFast(expectedSize: Int, buffer: ByteArray): Int {
-//}

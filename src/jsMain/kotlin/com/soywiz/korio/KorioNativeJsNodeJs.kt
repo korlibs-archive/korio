@@ -10,7 +10,6 @@ import com.soywiz.korio.stream.*
 import kotlinx.coroutines.*
 import org.khronos.webgl.*
 import kotlin.coroutines.*
-import kotlin.math.*
 
 internal external fun require(name: String): dynamic
 

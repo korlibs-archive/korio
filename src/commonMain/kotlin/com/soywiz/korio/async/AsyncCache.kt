@@ -1,6 +1,5 @@
-package com.soywiz.korio.util
+package com.soywiz.korio.async
 
-import com.soywiz.korio.async.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 

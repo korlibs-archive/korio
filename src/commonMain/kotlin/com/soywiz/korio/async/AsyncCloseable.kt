@@ -1,4 +1,4 @@
-package com.soywiz.korio.util
+package com.soywiz.korio.async
 
 interface AsyncCloseable {
 	suspend fun close()

@@ -1,7 +1,8 @@
-package com.soywiz.korio.stream
+package com.soywiz.korio.async
 
 import com.soywiz.kds.*
 import com.soywiz.kmem.*
+import com.soywiz.korio.stream.*
 import kotlinx.coroutines.channels.*
 
 class AsyncByteArrayDeque(private val bufferSize: Int = 1024) : AsyncOutputStream, AsyncInputStream {

@@ -19,9 +19,8 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 	}
 
 	// 8 bit
-	fun readS8() = ba[offset++]
-
-	fun readU8() = ba[offset++].toInt() and 0xFF
+	fun readS8() = increment(1) { ba.readS8(offset) }
+	fun readU8() = increment(1) { ba.readU8(offset) }
 
 	// 16 bits
 	fun readS16LE() = increment(2) { ba.readS16LE(offset) }
@@ -53,11 +52,8 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 	// Bytes
 	fun readBytes(count: Int) = increment(count) { ba.readByteArray(offset, count) }
 
-	fun readUBytes(count: Int): UByteArray = readBytes(count).asUByteArray()
-
 	// Arrays
 	fun readShortArrayLE(count: Int): ShortArray = increment(count * 2) { ba.readShortArrayLE(offset, count) }
-
 	fun readShortArrayBE(count: Int): ShortArray = increment(count * 2) { ba.readShortArrayBE(offset, count) }
 
 	fun readCharArrayLE(count: Int): CharArray = increment(count * 2) { ba.readCharArrayLE(offset, count) }
@@ -96,7 +92,6 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 		return if (sign) -uvalue - 1 else uvalue
 	}
 
-
 	// String
 	fun readString(len: Int, charset: Charset = UTF8) = readBytes(len).toStringDecimal(charset)
 
@@ -118,7 +113,7 @@ class FastByteArrayInputStream(val ba: ByteArray, var offset: Int = 0) {
 	fun readStringVL(charset: Charset = UTF8): String = readString(readU_VL(), charset)
 
 	// Tools
-	inline private fun <T> increment(count: Int, callback: () -> T): T {
+	private inline fun <T> increment(count: Int, callback: () -> T): T {
 		val out = callback()
 		offset += count
 		return out
