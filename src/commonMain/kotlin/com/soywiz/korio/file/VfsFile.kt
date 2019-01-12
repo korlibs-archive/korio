@@ -4,6 +4,7 @@ package com.soywiz.korio.file
 
 import com.soywiz.kds.*
 import com.soywiz.klock.*
+import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.file.std.*
 import com.soywiz.korio.lang.*
@@ -151,8 +152,8 @@ class VfsFile(
 		captureError: Boolean = false,
 		throwOnError: Boolean = true
 	): String {
-		val out = ByteArrayBuilder2()
-		val err = ByteArrayBuilder2()
+		val out = ByteArrayBuilder()
+		val err = ByteArrayBuilder()
 
 		val result = exec(cmdAndArgs, env, object : VfsProcessHandler() {
 			override suspend fun onOut(data: ByteArray) {

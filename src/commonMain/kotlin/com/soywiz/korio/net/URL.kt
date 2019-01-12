@@ -1,5 +1,6 @@
 package com.soywiz.korio.net
 
+import com.soywiz.kmem.*
 import com.soywiz.korio.util.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
@@ -131,7 +132,7 @@ data class URL private constructor(
 		}
 
 		fun decodeComponent(s: String, charset: Charset = UTF8, formUrlEncoded: Boolean = false): String {
-			val bos = ByteArrayBuilder2()
+			val bos = ByteArrayBuilder()
 			val len = s.length
 			var n = 0
 			while (n < len) {

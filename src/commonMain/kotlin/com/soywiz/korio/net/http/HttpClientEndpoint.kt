@@ -38,38 +38,6 @@ internal data class Request(
 	}
 }
 
-/*
-// Already defined!
-class FakeHttpClient(val defaultMessage: String = "{}") : HttpClient() {
-	private val log = arrayListOf<Request>()
-	private var responsePointer = 0
-	private val responses = arrayListOf<HttpClient.Response>()
-
-	private fun getResponse(code: Int, content: String) = HttpClient.Response(code, HttpStatusMessage.CODES[code] ?: "Code$code", Http.Headers(), content.openAsync())
-
-	fun addResponse(code: Int, content: String) {
-		responses += getResponse(code, content)
-	}
-
-	fun addOkResponse(content: String) = addResponse(200, content)
-	fun addNotFoundResponse(content: String) = addResponse(404, content)
-
-	suspend override fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
-		log += Request(method, url, headers, content)
-		if (responses.isEmpty()) addOkResponse(defaultMessage)
-		return responses.getOrElse(responsePointer++ % responses.size) {
-			getResponse(200, defaultMessage)
-		}
-	}
-
-	suspend fun capture(format: String = "{METHOD}:{PATH}:{CONTENT}", callback: suspend () -> Unit): List<String> {
-		val start = log.size
-		callback()
-		val end = log.size
-		return log.slice(start until end).map { it.format(format) }
-	}
-}
- */
 class FakeHttpClientEndpoint(val defaultMessage: String = "{}") : HttpClientEndpoint {
 	private val log = arrayListOf<Request>()
 	private var responsePointer = 0
@@ -85,7 +53,7 @@ class FakeHttpClientEndpoint(val defaultMessage: String = "{}") : HttpClientEndp
 	fun addOkResponse(content: String) = addResponse(200, content)
 	fun addNotFoundResponse(content: String) = addResponse(404, content)
 
-	suspend override fun request(
+	override suspend fun request(
 		method: Http.Method,
 		path: String,
 		headers: Http.Headers,

@@ -1,6 +1,7 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.kds.*
+import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.lang.*
 
@@ -29,7 +30,7 @@ class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int =
 	}
 
 	suspend fun readUntil(end: Byte, including: Boolean = true, limit: Int = 0x1000): ByteArray {
-		val out = ByteArrayBuilder2()
+		val out = ByteArrayBuilder()
 		while (true) {
 			require()
 			val byteInt = buf.readByte()

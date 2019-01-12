@@ -1,6 +1,7 @@
 package com.soywiz.korio.net.http
 
 import com.soywiz.kds.*
+import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
@@ -145,7 +146,7 @@ open class HttpServer protected constructor() : AsyncCloseable {
 		}
 
 		suspend fun readRawBody(maxSize: Int = 0x1000): ByteArray = suspendCoroutine { c ->
-			val out = ByteArrayBuilder2()
+			val out = ByteArrayBuilder()
 			launchImmediately(c.context) {
 				handler {
 					if (out.size + it.size > maxSize) {
@@ -266,7 +267,7 @@ class FakeRequest(
 	val body: ByteArray = EMPTY_BYTE_ARRAY,
 	requestConfig: HttpServer.RequestConfig
 ) : HttpServer.Request(method, uri, headers, requestConfig) {
-	private val buf = ByteArrayBuilder2()
+	private val buf = ByteArrayBuilder()
 	var outputHeaders: Http.Headers = Http.Headers()
 	var outputStatusCode: Int = 0
 	var outputStatusMessage: String = ""

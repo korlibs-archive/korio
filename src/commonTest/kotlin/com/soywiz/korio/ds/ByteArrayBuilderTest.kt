@@ -1,13 +1,13 @@
 package com.soywiz.korio.ds
 
-import com.soywiz.korio.stream.*
+import com.soywiz.kmem.*
 import com.soywiz.korio.util.encoding.*
 import kotlin.test.*
 
 class ByteArrayBuilderTest {
 	@Test
 	fun name() {
-		val bb = ByteArrayBuilder2()
+		val bb = ByteArrayBuilder()
 		bb.append(byteArrayOf(1))
 		bb.append(byteArrayOf(2, 3))
 		bb.append(4)

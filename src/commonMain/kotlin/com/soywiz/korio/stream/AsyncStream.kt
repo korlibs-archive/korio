@@ -339,7 +339,7 @@ suspend fun AsyncStream.readStream(length: Int): AsyncStream = readSlice(length.
 suspend fun AsyncStream.readStream(length: Long): AsyncStream = readSlice(length)
 
 suspend fun AsyncInputStream.readStringz(charset: Charset = UTF8): String {
-	val buf = ByteArrayBuilder2()
+	val buf = ByteArrayBuilder()
 	val temp = ByteArray(1)
 	while (true) {
 		val read = read(temp, 0, 1)
@@ -431,7 +431,7 @@ suspend fun AsyncInputStream.readBytesUpTo(len: Int): ByteArray {
 			// @TODO: That would prevent resizing issues with the trade-off of more allocations.
 			var pending = len
 			val temp = ByteArray(BYTES_TEMP_SIZE)
-			val bout = ByteArrayBuilder2()
+			val bout = ByteArrayBuilder()
 			while (pending > 0) {
 				val read = this.read(temp, 0, min(temp.size, pending))
 				if (read <= 0) break
@@ -665,7 +665,7 @@ suspend fun AsyncOutputStream.writeDoubleArrayBE(array: DoubleArray) =
 
 suspend fun AsyncInputStream.readUntil(endByte: Byte, limit: Int = 0x1000): ByteArray {
 	val temp = ByteArray(1)
-	val out = ByteArrayBuilder2()
+	val out = ByteArrayBuilder()
 	try {
 		while (true) {
 			val c = run { readExact(temp, 0, 1); temp[0] }
@@ -682,7 +682,7 @@ suspend fun AsyncInputStream.readUntil(endByte: Byte, limit: Int = 0x1000): Byte
 
 suspend fun AsyncInputStream.readLine(eol: Char = '\n', charset: Charset = UTF8): String {
 	val temp = ByteArray(1)
-	val out = ByteArrayBuilder2()
+	val out = ByteArrayBuilder()
 	try {
 		while (true) {
 			val c = run { readExact(temp, 0, 1); temp[0] }

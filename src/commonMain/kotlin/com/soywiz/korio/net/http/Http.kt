@@ -1,10 +1,21 @@
 package com.soywiz.korio.net.http
 
+import com.soywiz.klock.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
 import com.soywiz.korio.util.encoding.*
 
 interface Http {
+	companion object {
+		//Sun, 06 Nov 1994 08:49:37 GMT  ; RFC 822, updated by RFC 1123
+		//Sunday, 06-Nov-94 08:49:37 GMT ; RFC 850, obsoleted by RFC 1036
+		//Sun Nov  6 08:49:37 1994       ; ANSI C's asctime() format
+		val Date = DateFormat("EEE, dd MMM yyyy HH:mm:ss z")
+
+		fun TemporalRedirect(uri: String) = RedirectException(code = 307, redirectUri = uri)
+		fun PermanentRedirect(uri: String) = RedirectException(code = 301, redirectUri = uri)
+	}
+
 	enum class Methods : Method {
 		ALL,
 		OPTIONS,
@@ -173,49 +184,5 @@ interface Http {
 		}
 	}
 
-	data class RedirectException(val code: Int = 307, val redirectUri: String) :
-		Http.HttpException(code, HttpStatusMessage(code))
-
-	companion object {
-		fun TemporalRedirect(uri: String) = RedirectException(code = 307, redirectUri = uri)
-		fun PermanentRedirect(uri: String) = RedirectException(code = 301, redirectUri = uri)
-	}
-
-	/*
-	data class Headers(val items: MapList<String, String> = MapList()) : Iterable<Pair<String, String>> {
-		val itemsCI = MapList<String, String>(items.toList().flatMap { (key, values) -> values.map { key.toLowerCase() to it } })
-
-		//class MapEntry<K, V>(override val key: K, override val value: V) : Map.Entry<K, V>
-		override fun iterator(): Iterator<Pair<String, String>> = items.flatMapIterator()
-
-		constructor(map: Map<String, String>) : this(MapList(map.entries.map { it.key to it.value }))
-		constructor(str: String?) : this(parse(str))
-		constructor(vararg items: Pair<String, String>) : this(MapList(items.toList()))
-
-		operator fun get(key: String): String? = itemsCI.getFirst(key.toLowerCase())
-
-		companion object {
-			fun fromListMap(map: Map<String?, List<String>>): Headers {
-				return Headers(MapList(map.flatMap { pair -> if (pair.key == null) listOf() else pair.value.map { value -> pair.key!! to value } }))
-			}
-
-			fun parse(str: String?): MapList<String, String> {
-				if (str == null) return MapList()
-				return MapList(str.split("\n").map {
-					val parts = it.trim().split(':', limit = 2)
-					if (parts.size >= 2) parts[0].trim() to parts[1].trim() else null
-				}.filterNotNull())
-			}
-		}
-
-		fun withAppendedHeaders(vararg newHeaders: Pair<String, String>): Headers = Headers(MapList(this.items).appendAll(*newHeaders))
-		fun withReplaceHeaders(vararg newHeaders: Pair<String, String>): Headers = Headers(MapList(this.items).replaceAll(*newHeaders))
-
-		operator fun plus(that: Headers): Headers {
-			return Headers(*that.items, )
-		}
-
-		override fun toString(): String = "Headers(${items.joinToString(", ")})"
-	}
-	*/
+	data class RedirectException(val code: Int = 307, val redirectUri: String) : Http.HttpException(code, HttpStatusMessage(code))
 }

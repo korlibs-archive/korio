@@ -257,7 +257,7 @@ fun SyncStream.readStream(length: Int): SyncStream = readSlice(length.toLong())
 fun SyncStream.readStream(length: Long): SyncStream = readSlice(length)
 
 fun SyncInputStream.readStringz(charset: Charset = UTF8): String {
-	val buf = ByteArrayBuilder2()
+	val buf = ByteArrayBuilder()
 	return bytesTempPool.alloc2 { temp ->
 		while (true) {
 			val read = read(temp, 0, 1)

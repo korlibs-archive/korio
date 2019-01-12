@@ -1,7 +1,6 @@
-package com.soywiz.korio.net.http.rest
+package com.soywiz.korio.net.http
 
 import com.soywiz.korio.lang.*
-import com.soywiz.korio.net.http.*
 import com.soywiz.korio.serialization.*
 import com.soywiz.korio.serialization.json.*
 import com.soywiz.korio.stream.*
