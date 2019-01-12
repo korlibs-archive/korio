@@ -14,13 +14,12 @@ class AsyncCache {
 	}
 }
 
-class AsyncCacheItem<T> {
+class AsyncCacheGen<T>(private val gen: suspend (key: String) -> T) {
 	@PublishedApi
-	internal var promise: Deferred<T>? = null
+	internal val promises = LinkedHashMap<String, Deferred<*>>()
 
 	@Suppress("UNCHECKED_CAST")
-	suspend operator fun invoke(gen: suspend () -> T): T {
-		if (promise == null) promise = asyncImmediately(coroutineContext) { gen() }
-		return promise!!.await()
+	suspend operator fun invoke(key: String): T {
+		return (promises.getOrPut(key) { asyncImmediately(coroutineContext) { gen(key) } } as Deferred<T>).await()
 	}
 }

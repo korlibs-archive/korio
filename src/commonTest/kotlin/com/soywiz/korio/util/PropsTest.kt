@@ -16,5 +16,7 @@ class PropsTest {
 		assertEquals("world", props["hello"])
 		props["demo"] = "test"
 		assertEquals("hello=world\ndemo=test", props.serialize())
+		vfs["world.properties"].saveProperties(props)
+		assertEquals("hello=world\ndemo=test", vfs["world.properties"].readString())
 	}
 }

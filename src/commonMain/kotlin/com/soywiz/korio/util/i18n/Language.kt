@@ -1,6 +1,5 @@
 package com.soywiz.korio.util.i18n
 
-import com.soywiz.korio.*
 import com.soywiz.korio.concurrent.atomic.*
 
 internal expect val systemLanguageStrings: List<String>
@@ -22,26 +21,15 @@ enum class Language(val iso6391: String, val iso6392: String) {
 
 	companion object {
 		val BY_ID = ((values().map { it.name.toLowerCase() to it } + values().map { it.iso6391 to it } + values().map { it.iso6392 to it })).toMap()
-
-
 		operator fun get(id: String): Language? = BY_ID[id]
-		//operator fun invoke(id: String): Language? = BY_ID[id]
 
-		val SYSTEM_LANGS =
-			systemLanguageStrings.map {
-				// @TODO: kotlin-js bug ?. :: TypeError: item.split(...).firstOrNull is not a function
-				// @TODO: Kotlin seems to be calling native's JS String.split wrongly and returning an Array instead of a List, this `KorioNative.systemLanguageStrings = comes from window.navigator.languages.toList()`
-				//val parts = it?.split("-")
-				//val part = parts?.firstOrNull()
+		val SYSTEM_LANGS: List<Language> by lazy { systemLanguageStrings.mapNotNull { BY_ID[it.substringBefore('-')] } }
+		val SYSTEM: Language by lazy { SYSTEM_LANGS.firstOrNull() ?: ENGLISH }
 
-				val part = it.substringBefore('-')
-
-				BY_ID[part]
-			}.filterNotNull()
-
-		val SYSTEM = SYSTEM_LANGS.firstOrNull() ?: ENGLISH
-
-		// @TODO: make it atomic so work across threads
-		var CURRENT by korAtomic(SYSTEM)
+		var CURRENT: Language
+			set(value) = run { Language_CURRENT.value = value }
+			get() = Language_CURRENT.value
 	}
 }
+
+private val Language_CURRENT: KorAtomicRef<Language> by lazy { KorAtomicRef(Language.SYSTEM) }
