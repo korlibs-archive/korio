@@ -45,34 +45,31 @@ private val IOWorker by lazy { Worker.start() }
 
 internal suspend fun fileOpen(name: String, mode: String): CPointer<FILE>? {
 	data class Info(val name: String, val mode: String)
-	return IOWorker.execute(TransferMode.SAFE, { Info(name, mode) }, { (name, mode) ->
-		platform.posix.fopen(name, mode)
-	}).await()
+	return executeInWorker(IOWorker, Info(name, mode)) { it ->
+		platform.posix.fopen(it.name, it.mode)
+	}
 }
 
-internal suspend fun fileClose(file: CPointer<FILE>): Unit {
-	return IOWorker.execute(TransferMode.SAFE, { file }, { fd ->
-		platform.posix.fclose(fd)
-		Unit
-	}).await()
+internal suspend fun fileClose(file: CPointer<FILE>): Unit = executeInWorker(IOWorker, file) { fd ->
+	platform.posix.fclose(fd)
+	Unit
 }
 
-internal suspend fun fileLength(file: CPointer<FILE>): Long {
-	return IOWorker.execute(TransferMode.SAFE, { file }, { fd ->
-		val prev = platform.posix.ftell(fd)
-		platform.posix.fseek(fd, 0L.convert(), platform.posix.SEEK_END)
-		val end = platform.posix.ftell(fd)
-		platform.posix.fseek(fd, prev.convert(), platform.posix.SEEK_SET)
-		end.toLong()
-	}).await()
+internal suspend fun fileLength(file: CPointer<FILE>): Long = executeInWorker(IOWorker, file) { fd ->
+	val prev = platform.posix.ftell(fd)
+	platform.posix.fseek(fd, 0L.convert(), platform.posix.SEEK_END)
+	val end = platform.posix.ftell(fd)
+	platform.posix.fseek(fd, prev.convert(), platform.posix.SEEK_SET)
+	end.toLong()
 }
 
 internal suspend fun fileSetLength(file: String, length: Long): Unit {
 	data class Info(val file: String, val length: Long)
-	return IOWorker.execute(TransferMode.SAFE, { Info(file, length) }, { (fd, len) ->
+
+	return executeInWorker(IOWorker, Info(file, length)) { (fd, len) ->
 		platform.posix.truncate(fd, len.convert())
 		Unit
-	}).await()
+	}
 }
 
 internal suspend fun fileRead(file: CPointer<FILE>, position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
@@ -93,14 +90,14 @@ internal suspend fun fileRead(file: CPointer<FILE>, position: Long, size: Int): 
 	if (size < 0) return null
 	if (size == 0) return byteArrayOf()
 
-	return IOWorker.execute(TransferMode.SAFE, { Info(file, position, size) }, { (fd, position, len) ->
+	return executeInWorker(IOWorker, Info(file, position, size)) { (fd, position, len) ->
 		val data = ByteArray(len)
 		val read = data.usePinned { pin ->
 			platform.posix.fseek(fd, position.convert(), platform.posix.SEEK_SET)
 			platform.posix.fread(pin.addressOf(0), 1, len.convert(), fd).toInt()
 		}
 		if (read < 0) null else data.copyOf(read)
-	}).await()
+	}
 }
 
 internal suspend fun fileWrite(file: CPointer<FILE>, position: Long, data: ByteArray): Long {
@@ -108,12 +105,12 @@ internal suspend fun fileWrite(file: CPointer<FILE>, position: Long, data: ByteA
 
 	if (data.isEmpty()) return 0L
 
-	return IOWorker.execute(TransferMode.SAFE, { Info(file, position, if (data.isFrozen) data else data.copyOf()) }, { (fd, position, data) ->
+	return executeInWorker(IOWorker, Info(file, position, if (data.isFrozen) data else data.copyOf())) { (fd, position, data) ->
 		data.usePinned { pin ->
 			platform.posix.fseek(fd, position.convert(), platform.posix.SEEK_SET)
 			platform.posix.fwrite(pin.addressOf(0), 1.convert(), data.size.convert(), fd).toLong()
 		}.toLong()
-	}).await()
+	}
 }
 
 class LocalVfsNative : LocalVfs() {
@@ -157,6 +154,8 @@ class LocalVfsNative : LocalVfs() {
 				checkFd()
 				fileSetLength(rpath, value)
 			}
+
+			override suspend fun hasLength() = true
 
 			override suspend fun getLength(): Long {
 				checkFd()

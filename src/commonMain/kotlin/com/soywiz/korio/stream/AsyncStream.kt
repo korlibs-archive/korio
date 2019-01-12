@@ -142,6 +142,12 @@ open class AsyncStreamBase : AsyncCloseable, AsyncRAInputStream, AsyncRAOutputSt
 
 	override suspend fun setLength(value: Long): Unit = throw UnsupportedOperationException()
 	override suspend fun getLength(): Long = throw UnsupportedOperationException()
+	open suspend fun hasLength() = try {
+		getLength()
+		true
+	} catch (e: Throwable) {
+		false
+	}
 
 	override suspend fun close(): Unit = Unit
 }
@@ -175,6 +181,13 @@ class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : Extra by
 	override suspend fun setLength(value: Long): Unit = base.setLength(value)
 	override suspend fun getLength(): Long = base.getLength()
 	suspend fun size(): Long = base.getLength()
+
+	suspend fun hasLength() = base.hasLength()
+	suspend fun hasAvailable() = try {
+		getAvailable(); true
+	} catch (t: Throwable) {
+		false
+	}
 
 	suspend fun getAvailable(): Long = getLength() - getPosition()
 	suspend fun eof(): Boolean = this.getAvailable() <= 0L
@@ -498,17 +511,6 @@ suspend fun AsyncInputStream.readS32BE(): Int = readSmallTempExact(4) { readS32B
 suspend fun AsyncInputStream.readS64BE(): Long = readSmallTempExact(8) { readS64BE(0) }
 suspend fun AsyncInputStream.readF32BE(): Float = readSmallTempExact(4) { readF32BE(0) }
 suspend fun AsyncInputStream.readF64BE(): Double = readSmallTempExact(8) { readF64BE(0) }
-suspend fun AsyncStream.hasLength(): Boolean = try {
-	getLength(); true
-} catch (t: Throwable) {
-	false
-}
-
-suspend fun AsyncStream.hasAvailable(): Boolean = try {
-	getAvailable(); true
-} catch (t: Throwable) {
-	false
-}
 
 suspend fun AsyncInputStream.readAll(): ByteArray {
 	return try {

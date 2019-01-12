@@ -68,10 +68,7 @@ abstract class Vfs : AsyncCloseable {
 		val s = open(path, VfsOpenMode.READ)
 		try {
 			s.position = range.start
-			val readCount = min(
-				Int.MAX_VALUE.toLong() - 1,
-				(range.endInclusive - range.start)
-			).toInt() + 1
+			val readCount = min(Int.MAX_VALUE.toLong() - 1, (range.endInclusive - range.start)).toInt() + 1
 			return s.readBytesUpTo(readCount)
 		} finally {
 			s.close()
