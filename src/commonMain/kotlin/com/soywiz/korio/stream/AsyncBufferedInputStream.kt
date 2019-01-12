@@ -51,7 +51,7 @@ class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int =
 }
 
 suspend fun AsyncBufferedInputStream.readBufferedLine(limit: Int = 0x1000, charset: Charset = UTF8) =
-	readUntil('\n'.toByte(), including = false, limit = limit).toStringDecimal(charset)
+	readUntil('\n'.toByte(), including = false, limit = limit).toString(charset)
 
 fun AsyncInputStream.toBuffered(bufferSize: Int = 0x2000): AsyncBufferedInputStream =
 	AsyncBufferedInputStream(this, bufferSize)

@@ -126,7 +126,7 @@ class RawSocketWebSocketClient(
 				try {
 					loop@ while (!closed) {
 						val frame = readWsFrame()
-						val payload = if (frame.frameIsBinary) frame.data else frame.data.toStringDecimal(UTF8)
+						val payload = if (frame.frameIsBinary) frame.data else frame.data.toString(UTF8)
 						when (frame.type) {
 							WsOpcode.Close -> {
 								break@loop

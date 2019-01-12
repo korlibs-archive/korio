@@ -91,7 +91,7 @@ open class BitReader(val s: AsyncInputStreamWithLength) : AsyncInputStreamWithLe
 			if (c == 0) break
 			write8(c)
 		}
-	}.toStringDecimal(ASCII)
+	}.toString(ASCII)
 
 	suspend fun copyTo(o: AsyncOutputStream) {
 		while (true) {

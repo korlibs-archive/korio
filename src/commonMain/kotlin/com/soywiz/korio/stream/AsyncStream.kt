@@ -320,17 +320,17 @@ suspend fun AsyncInputStream.readStringz(charset: Charset = UTF8): String {
 		if (temp[0] == 0.toByte()) break
 		buf.append(temp[0])
 	}
-	return buf.toByteArray().toStringDecimal(charset)
+	return buf.toByteArray().toString(charset)
 }
 
 suspend fun AsyncInputStream.readStringz(len: Int, charset: Charset = UTF8): String {
 	val res = readBytesExact(len)
 	val index = res.indexOf(0.toByte())
-	return res.copyOf(if (index < 0) len else index).toStringDecimal(charset)
+	return res.copyOf(if (index < 0) len else index).toString(charset)
 }
 
 suspend fun AsyncInputStream.readString(len: Int, charset: Charset = UTF8): String =
-	readBytesExact(len).toStringDecimal(charset)
+	readBytesExact(len).toString(charset)
 
 suspend fun AsyncOutputStream.writeStringz(str: String, charset: Charset = UTF8) =
 	this.writeBytes(str.toBytez(charset))
@@ -661,7 +661,7 @@ suspend fun AsyncInputStream.readLine(eol: Char = '\n', charset: Charset = UTF8)
 		}
 	} catch (e: EOFException) {
 	}
-	return out.toByteArray().toStringDecimal(charset)
+	return out.toByteArray().toString(charset)
 }
 
 

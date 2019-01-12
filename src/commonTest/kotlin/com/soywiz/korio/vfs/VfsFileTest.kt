@@ -53,8 +53,8 @@ class VfsFileTest {
 		assertEquals("yay!", file["hello.bin"].readString())
 		assertEquals("yay!NEVER-HERE", out)
 		//assertEquals("ay", file["hello.bin"].readRangeBytes(1L .. 2L).toString(Charsets.UTF_8)) // CompilationException in Kotlin 1.1.1 -> Couldn't transform method node (probably related to long)
-		assertEquals("ay", file["hello.bin"].readRangeBytes(1..2).toStringDecimal(UTF8))
-		assertEquals("ay!", file["hello.bin"].readRangeBytes(1..200).toStringDecimal(UTF8))
+		assertEquals("ay", file["hello.bin"].readRangeBytes(1..2).toString(UTF8))
+		assertEquals("ay!", file["hello.bin"].readRangeBytes(1..200).toString(UTF8))
 	}
 
 	@Test

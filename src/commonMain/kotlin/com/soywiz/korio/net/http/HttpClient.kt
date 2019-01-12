@@ -42,7 +42,7 @@ abstract class HttpClient protected constructor() {
 		suspend fun readAllString(charset: Charset = responseCharset): String {
 			val bytes = readAllBytes()
 			//Debugger.enterDebugger()
-			return bytes.toStringDecimal(charset)
+			return bytes.toString(charset)
 		}
 
 		suspend fun checkErrors(): Response = this.apply {
@@ -178,7 +178,7 @@ class FakeHttpClient(val redirect: HttpClient? = null) : HttpClient() {
 		headers: Http.Headers,
 		content: AsyncStream?
 	): Response {
-		val contentString = content?.sliceStart()?.readAll()?.toStringDecimal(UTF8)
+		val contentString = content?.sliceStart()?.readAll()?.toString(UTF8)
 		val requestNumber = log.size
 		log += "$method, $url, $headers, $contentString"
 		if (redirect != null) return redirect.request(method, url, headers, content)

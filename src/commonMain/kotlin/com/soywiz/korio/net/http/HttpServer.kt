@@ -292,13 +292,13 @@ class FakeRequest(
 	}
 
 	override suspend fun _write(data: ByteArray, offset: Int, size: Int) {
-		log += "_write(${data.copyOfRange(offset, offset + size).toStringDecimal(UTF8)})"
+		log += "_write(${data.copyOfRange(offset, offset + size).toString(UTF8)})"
 		buf.append(data, offset, size)
 	}
 
 	override suspend fun _end() {
 		log += "_end()"
-		output = buf.toByteArray().toStringDecimal(UTF8)
+		output = buf.toByteArray().toString(UTF8)
 	}
 
 	override fun toString(): String = "$outputStatusCode:$outputStatusMessage:$outputHeaders:$output"

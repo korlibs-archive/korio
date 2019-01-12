@@ -135,7 +135,7 @@ fun String.toByteArray(charset: Charset = UTF8): ByteArray {
 	return out.toByteArray()
 }
 
-fun ByteArray.toStringDecimal(charset: Charset): String {
+fun ByteArray.toString(charset: Charset): String {
 	val out = StringBuilder()
 	charset.decode(out, this)
 	return out.toString()
@@ -148,7 +148,7 @@ fun ByteArray.readStringz(o: Int, size: Int, charset: Charset = UTF8): String {
 		if (this[idx] == 0.toByte()) break
 		idx++
 	}
-	return this.copyOfRange(o, idx).toStringDecimal(charset)
+	return this.copyOfRange(o, idx).toString(charset)
 }
 
 fun ByteArray.readStringz(o: Int, charset: Charset = UTF8): String {
@@ -156,5 +156,5 @@ fun ByteArray.readStringz(o: Int, charset: Charset = UTF8): String {
 }
 
 fun ByteArray.readString(o: Int, size: Int, charset: Charset = UTF8): String {
-	return this.copyOfRange(o, o + size).toStringDecimal(charset)
+	return this.copyOfRange(o, o + size).toString(charset)
 }

@@ -25,7 +25,7 @@ internal data class Request(
 	}
 
 	suspend fun format(format: String = "{METHOD}:{PATH}:{CONTENT}"): String {
-		val content = content?.readAll()?.toStringDecimal(UTF8)
+		val content = content?.readAll()?.toString(UTF8)
 		return format.replace(FORMAT_REGEX) {
 			val name = it.groupValues[0]
 			when (name) {

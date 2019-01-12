@@ -4,7 +4,6 @@ import com.soywiz.kmem.*
 import com.soywiz.korio.util.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
-import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.encoding.*
 
 data class URL private constructor(
@@ -151,7 +150,7 @@ data class URL private constructor(
 				}
 				n++
 			}
-			return bos.toByteArray().toStringDecimal(charset)
+			return bos.toByteArray().toString(charset)
 		}
 
 		fun encodeComponent(s: String, charset: Charset = UTF8, formUrlEncoded: Boolean = false): String {

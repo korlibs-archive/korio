@@ -61,6 +61,6 @@ class CompressionJvmTest {
 		val uncompressed = str.toByteArray(UTF8)
 		val compressed = uncompressed.compress(method)
 		val decompressed = compressed.uncompress(method)
-		assertEquals(decompressed.toStringDecimal(UTF8), str, "With $method")
+		assertEquals(decompressed.toString(UTF8), str, "With $method")
 	}
 }
