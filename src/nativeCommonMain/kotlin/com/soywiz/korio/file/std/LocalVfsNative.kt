@@ -155,8 +155,6 @@ class LocalVfsNative : LocalVfs() {
 				fileSetLength(rpath, value)
 			}
 
-			override suspend fun hasLength() = true
-
 			override suspend fun getLength(): Long {
 				checkFd()
 				return fileLength(fd!!)

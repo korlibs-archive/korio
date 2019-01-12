@@ -142,12 +142,6 @@ open class AsyncStreamBase : AsyncCloseable, AsyncRAInputStream, AsyncRAOutputSt
 
 	override suspend fun setLength(value: Long): Unit = throw UnsupportedOperationException()
 	override suspend fun getLength(): Long = throw UnsupportedOperationException()
-	open suspend fun hasLength() = try {
-		getLength()
-		true
-	} catch (e: Throwable) {
-		false
-	}
 
 	override suspend fun close(): Unit = Unit
 }
@@ -182,19 +176,23 @@ class AsyncStream(val base: AsyncStreamBase, var position: Long = 0L) : Extra by
 	override suspend fun getLength(): Long = base.getLength()
 	suspend fun size(): Long = base.getLength()
 
-	suspend fun hasLength() = base.hasLength()
-	suspend fun hasAvailable() = try {
-		getAvailable(); true
-	} catch (t: Throwable) {
-		false
-	}
-
 	suspend fun getAvailable(): Long = getLength() - getPosition()
 	suspend fun eof(): Boolean = this.getAvailable() <= 0L
 
 	override suspend fun close(): Unit = base.close()
 
 	fun duplicate(): AsyncStream = AsyncStream(base, position)
+}
+
+suspend fun AsyncStream.hasLength() = try {
+	getLength(); true
+} catch (t: Throwable) {
+	false
+}
+suspend fun AsyncStream.hasAvailable() = try {
+	getAvailable(); true
+} catch (t: Throwable) {
+	false
 }
 
 inline fun <T> AsyncStream.keepPosition(callback: () -> T): T {
