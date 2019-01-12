@@ -30,4 +30,25 @@ class KDynamicTest {
 	fun test3() {
 		assertEquals(10, KDynamic(mapOf("a" to 10)) { it["a"].int })
 	}
+
+	@Suppress("unused")
+	class Demo2 {
+		var z = 3
+		fun setA(value: Int) {
+			z = value * 2
+		}
+		fun getA() = z * 3
+	}
+
+	@Test
+	fun test4() {
+		assertEquals(20, KDynamic(Demo2()) { it["a"] = 10; it }.z)
+		assertEquals(9, KDynamic(Demo2()) { it["a"] })
+		assertEquals(3, KDynamic(Demo2()) { it["z"] })
+	}
+
+	@Test
+	fun test5() {
+		assertEquals(java.lang.Integer.TYPE, KDynamic { global["java.lang.Integer"]["TYPE"] })
+	}
 }

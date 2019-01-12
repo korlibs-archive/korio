@@ -12,7 +12,7 @@ internal expect object DynamicInternal {
 open class KDynamic {
 	companion object : KDynamic() {
 		inline operator fun <T> invoke(callback: KDynamic.() -> T): T = callback(KDynamic)
-		inline operator fun <T> invoke(value: Any?, callback: KDynamic.(Any?) -> T): T = callback(KDynamic, value)
+		inline operator fun <T, R> invoke(value: T, callback: KDynamic.(T) -> R): R = callback(KDynamic, value)
 	}
 
 	val global get() = DynamicInternal.global
