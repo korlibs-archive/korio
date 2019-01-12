@@ -21,24 +21,12 @@ abstract class WebSocketClient protected constructor(val url: String, val protoc
 suspend fun WebSocketClient.readString() = onStringMessage.waitOne()
 suspend fun WebSocketClient.readBinary() = onBinaryMessage.waitOne()
 
-suspend fun WebSocketClient(
+expect suspend fun WebSocketClient(
 	url: String,
 	protocols: List<String>? = null,
 	origin: String? = null,
 	wskey: String? = "wskey",
 	debug: Boolean = false
-) = websockets.create(url, protocols, origin = origin, wskey = wskey, debug = debug)
-
-expect val websockets: WebSocketClientFactory
-
-abstract class WebSocketClientFactory {
-	abstract suspend fun create(
-		url: String,
-		protocols: List<String>? = null,
-		origin: String? = null,
-		wskey: String? = null,
-		debug: Boolean = false
-	): WebSocketClient
-}
+): WebSocketClient
 
 class WebSocketException(message: String) : IOException(message)

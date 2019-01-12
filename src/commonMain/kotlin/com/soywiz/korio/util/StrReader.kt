@@ -210,39 +210,39 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 		fun endEmptyRange(): TRange = TRange(this.max, this.max, this.reader)
 		fun displace(offset: Int): TRange = TRange(this.min + offset, this.max + offset, this.reader)
 	}
-}
 
-fun StrReader.readStringLit(reportErrors: Boolean = true): String {
-	val out = StringBuilder()
-	val quotec = read()
-	when (quotec) {
-		'"', '\'' -> Unit
-		else -> invalidOp("Invalid string literal")
-	}
-	var closed = false
-	while (hasMore) {
-		val c = read()
-		if (c == '\\') {
-			val cc = read()
-			out.append(
-				when (cc) {
-					'\\' -> '\\'; '/' -> '/'; '\'' -> '\''; '"' -> '"'
-					'b' -> '\b'; 'f' -> '\u000c'; 'n' -> '\n'; 'r' -> '\r'; 't' -> '\t'
-					'u' -> read(4).toInt(0x10).toChar()
-					else -> throw IOException("Invalid char '$cc'")
-				}
-			)
-		} else if (c == quotec) {
-			closed = true
-			break
-		} else {
-			out.append(c)
+	fun readStringLit(reportErrors: Boolean = true): String {
+		val out = StringBuilder()
+		val quotec = read()
+		when (quotec) {
+			'"', '\'' -> Unit
+			else -> invalidOp("Invalid string literal")
 		}
+		var closed = false
+		while (hasMore) {
+			val c = read()
+			if (c == '\\') {
+				val cc = read()
+				out.append(
+					when (cc) {
+						'\\' -> '\\'; '/' -> '/'; '\'' -> '\''; '"' -> '"'
+						'b' -> '\b'; 'f' -> '\u000c'; 'n' -> '\n'; 'r' -> '\r'; 't' -> '\t'
+						'u' -> read(4).toInt(0x10).toChar()
+						else -> throw IOException("Invalid char '$cc'")
+					}
+				)
+			} else if (c == quotec) {
+				closed = true
+				break
+			} else {
+				out.append(c)
+			}
+		}
+		if (!closed && reportErrors) {
+			throw RuntimeException("String literal not closed! '${this.str}'")
+		}
+		return out.toString()
 	}
-	if (!closed && reportErrors) {
-		throw RuntimeException("String literal not closed! '${this.str}'")
-	}
-	return out.toString()
 }
 
 fun String.reader(file: String = "file", pos: Int = 0): StrReader = StrReader(this, file, pos)

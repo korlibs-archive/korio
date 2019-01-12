@@ -7,7 +7,7 @@ class WebSocketTest {
 	@Test
 	@Ignore
 	fun testWebSocket() = suspendTest {
-		val ws = websockets.create("ws://echo.websocket.org")
+		val ws = WebSocketClient("ws://echo.websocket.org")
 		ws.send("hello")
 		ws.send("world")
 		assertEquals("hello", ws.readString())

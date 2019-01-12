@@ -5,7 +5,7 @@ import com.soywiz.korio.async.*
 import com.soywiz.korio.lang.*
 
 class AsyncBufferedInputStream(val base: AsyncInputStream, val bufferSize: Int = 0x2000) : AsyncInputStream {
-	private val buf = ByteArrayDeque()
+	private val buf = ByteArrayDeque(bufferSize)
 
 	private val queue = AsyncThread()
 	private val temp = ByteArray(bufferSize)

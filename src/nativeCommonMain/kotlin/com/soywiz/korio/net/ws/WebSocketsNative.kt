@@ -1,4 +1,10 @@
 package com.soywiz.korio.net.ws
 
-actual val websockets: WebSocketClientFactory get() = com.soywiz.korio.net.ws.RawSocketWebSocketClientFactory
+actual suspend fun WebSocketClient(
+	url: String,
+	protocols: List<String>?,
+	origin: String?,
+	wskey: String?,
+	debug: Boolean
+): WebSocketClient = RawSocketWebSocketClient(url, protocols, origin, wskey, debug)
 

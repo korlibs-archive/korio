@@ -12,35 +12,33 @@ import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.random.*
 
-object RawSocketWebSocketClientFactory : WebSocketClientFactory() {
-	override suspend fun create(
-		url: String,
-		protocols: List<String>?,
-		origin: String?,
-		wskey: String?,
-		debug: Boolean
-	): WebSocketClient {
-		val uri = URL(url)
-		val secure = when (uri.scheme) {
-			"ws" -> false
-			"wss" -> true
-			else -> error("Unknown ws protocol ${uri.scheme}")
-		}
-		val host = uri.host ?: "127.0.0.1"
-		val port = uri.defaultPort.takeIf { it != URL.DEFAULT_PORT } ?: if (secure) 443 else 80
-		val client = AsyncClient(host, port, secure = secure)
+suspend fun RawSocketWebSocketClient(
+	url: String,
+	protocols: List<String>?,
+	origin: String?,
+	wskey: String?,
+	debug: Boolean
+): WebSocketClient {
+	val uri = URL(url)
+	val secure = when (uri.scheme) {
+		"ws" -> false
+		"wss" -> true
+		else -> error("Unknown ws protocol ${uri.scheme}")
+	}
+	val host = uri.host ?: "127.0.0.1"
+	val port = uri.defaultPort.takeIf { it != URL.DEFAULT_PORT } ?: if (secure) 443 else 80
+	val client = AsyncClient(host, port, secure = secure)
 
-		return RawSocketWebSocketClient(
-			coroutineContext,
-			client,
-			uri,
-			protocols,
-			debug,
-			origin,
-			wskey ?: "mykey"
-		).apply {
-			connect()
-		}
+	return RawSocketWebSocketClient(
+		coroutineContext,
+		client,
+		uri,
+		protocols,
+		debug,
+		origin,
+		wskey ?: "mykey"
+	).apply {
+		connect()
 	}
 }
 
