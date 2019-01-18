@@ -87,77 +87,77 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 
 		val ds = s.sliceWithSize(directoryOffset.toLong(), directorySize.toLong()).readAvailable().openSync()
 
-		for (n in 0 until entriesInDirectory) {
-			ds.apply {
-				val magic = readS32BE()
-				if (magic != 0x504B_0102) throw IllegalStateException("Not a zip file record ${magic.hex} instead of ${0x504B_0102.hex}")
-				val versionMade = readU16LE()
-				val versionExtract = readU16LE()
-				val flags = readU16LE()
-				val compressionMethod = readU16LE()
-				val fileTime = readU16LE()
-				val fileDate = readU16LE()
-				val crc = readS32LE()
-				val compressedSize = readS32LE()
-				val uncompressedSize = readS32LE()
-				val fileNameLength = readU16LE()
-				val extraLength = readU16LE()
-				val fileCommentLength = readU16LE()
-				val diskNumberStart = readU16LE()
-				val internalAttributes = readU16LE()
-				val externalAttributes = readS32LE()
-				val headerOffset = readU32LE()
-				val name = readString(fileNameLength)
-				val extra = readBytes(extraLength)
+		suspend fun SyncStream.readEntry(n: Int) {
+			val magic = readS32BE()
+			if (magic != 0x504B_0102) throw IllegalStateException("Not a zip file record ${magic.hex} instead of ${0x504B_0102.hex}")
+			val versionMade = readU16LE()
+			val versionExtract = readU16LE()
+			val flags = readU16LE()
+			val compressionMethod = readU16LE()
+			val fileTime = readU16LE()
+			val fileDate = readU16LE()
+			val crc = readS32LE()
+			val compressedSize = readS32LE()
+			val uncompressedSize = readS32LE()
+			val fileNameLength = readU16LE()
+			val extraLength = readU16LE()
+			val fileCommentLength = readU16LE()
+			val diskNumberStart = readU16LE()
+			val internalAttributes = readU16LE()
+			val externalAttributes = readS32LE()
+			val headerOffset = readU32LE()
+			val name = readString(fileNameLength)
+			val extra = readBytes(extraLength)
 
-				val isDirectory = name.endsWith("/")
-				val normalizedName = name.normalizeName()
+			val isDirectory = name.endsWith("/")
+			val normalizedName = name.normalizeName()
 
-				val baseFolder = normalizedName.substringBeforeLast('/', "")
-				val baseName = normalizedName.substringAfterLast('/')
+			val baseFolder = normalizedName.substringBeforeLast('/', "")
+			val baseName = normalizedName.substringAfterLast('/')
 
-				val folder = filesPerFolder.getOrPut(baseFolder) { LinkedHashMap() }
+			val folder = filesPerFolder.getOrPut(baseFolder) { LinkedHashMap() }
 
-				val headerEntry: AsyncStream = s.sliceStart(headerOffset, false) // @TODO: Kotlin-JVM BUG
-				//val headerEntry: AsyncStream = SliceAsyncStreamBase(s.base, headerOffset, s.getLength(), false).toAsyncStream()
+			val headerEntry: AsyncStream = s.sliceStart(headerOffset)
 
-
-				val entry = ZipEntry2(
-					path = name,
-					compressionMethod = compressionMethod,
-					isDirectory = isDirectory,
-					time = DosFileDateTime(fileTime, fileDate),
-					inode = n.toLong(),
-					offset = headerOffset.toInt(),
-					headerEntry = headerEntry,
-					compressedSize = compressedSize.unsigned,
-					uncompressedSize = uncompressedSize.unsigned
-				)
-				val components = listOf("") + PathInfo(normalizedName).getPathFullComponents()
-				for (m in 1 until components.size) {
-					val f = components[m - 1]
-					val c = components[m]
-					if (c !in files) {
-						val folder2 = filesPerFolder.getOrPut(f) { LinkedHashMap() }
-						val entry2 = ZipEntry2(
-							path = c,
-							compressionMethod = 0,
-							isDirectory = true,
-							time = DosFileDateTime(0, 0),
-							inode = 0L,
-							offset = 0,
-							headerEntry = byteArrayOf().openAsync(),
-							compressedSize = 0L,
-							uncompressedSize = 0L
-						)
-						folder2[PathInfo(c).baseName] = entry2
-						files[c] = entry2
-					}
+			val entry = ZipEntry2(
+				path = name,
+				compressionMethod = compressionMethod,
+				isDirectory = isDirectory,
+				time = DosFileDateTime(fileTime, fileDate),
+				inode = n.toLong(),
+				offset = headerOffset.toInt(),
+				headerEntry = headerEntry,
+				compressedSize = compressedSize.unsigned,
+				uncompressedSize = uncompressedSize.unsigned
+			)
+			val components = listOf("") + PathInfo(normalizedName).getPathFullComponents()
+			for (m in 1 until components.size) {
+				val f = components[m - 1]
+				val c = components[m]
+				if (c !in files) {
+					val folder2 = filesPerFolder.getOrPut(f) { LinkedHashMap() }
+					val entry2 = ZipEntry2(
+						path = c,
+						compressionMethod = 0,
+						isDirectory = true,
+						time = DosFileDateTime(0, 0),
+						inode = 0L,
+						offset = 0,
+						headerEntry = byteArrayOf().openAsync(),
+						compressedSize = 0L,
+						uncompressedSize = 0L
+					)
+					folder2[PathInfo(c).baseName] = entry2
+					files[c] = entry2
 				}
-				//println(components)
-				folder[baseName] = entry
-				files[normalizedName] = entry
 			}
+			//println(components)
+			folder[baseName] = entry
+			files[normalizedName] = entry
+		}
+
+		for (n in 0 until entriesInDirectory) {
+			ds.readEntry(n)
 		}
 
 		files[""] = ZipEntry2(
