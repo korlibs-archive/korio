@@ -125,6 +125,46 @@ class LocalVfsNative : LocalVfs() {
 		TODO("LocalVfsNative.exec")
 	}
 
+	override suspend fun readRange(path: String, range: LongRange): ByteArray {
+		data class Info(val path: String, val range: LongRange)
+
+		return executeInWorker(IOWorker, Info(path, range)) { (path, range) ->
+			val fd = fopen(path, "rb")
+			if (fd != null) {
+				fseek(fd, 0L.convert(), SEEK_END)
+				//val length = ftell(fd).toLong() // @TODO: Kotlin native bug?
+				val length: Long = ftell(fd).convert()
+
+				val start = kotlin.math.min(range.start, length)
+				val end = kotlin.math.min(range.endInclusive, length - 1) + 1
+				val totalRead = (end - start).toInt()
+
+				//println("range=$range")
+				//println("length=$length")
+				//println("start=$start")
+				//println("end=$end")
+				//println("totalRead=$totalRead")
+
+				val byteArray = ByteArray(totalRead)
+				val finalRead = if (byteArray.isNotEmpty()) {
+					byteArray.usePinned { pin ->
+						fseek(fd, start.convert(), SEEK_SET)
+						fread(pin.addressOf(0), 1.convert(), totalRead.convert(), fd).toInt()
+					}
+				} else {
+					0
+				}
+
+				//println("finalRead=$finalRead")
+
+				fclose(fd)
+				if (finalRead != totalRead) byteArray.copyOf(finalRead) else byteArray
+			} else {
+				null
+			}
+		} ?: throw FileNotFoundException("Can't open '$path' for reading")
+	}
+
 	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
 		val rpath = resolve(path)
 		var fd: CPointer<FILE>? = fileOpen(rpath, mode.cmode)

@@ -122,13 +122,15 @@ private class ResourcesVfsProviderJvm {
 					override fun toString(): String = "ResourcesVfsProviderJvm"
 				}.root
 
-				println("ResourcesVfsProviderJvm: $merged")
+				//println("ResourcesVfsProviderJvm: $merged")
 			}
 
 			override fun toString(): String = "ResourcesVfs"
 		}
 	}
 }
+
+private val IOContext by lazy { newSingleThreadContext("IO") }
 
 private class LocalVfsJvm : LocalVfs() {
 	val that = this
@@ -188,6 +190,19 @@ private class LocalVfsJvm : LocalVfs() {
 			out.append(c.toChar())
 		}
 		return out.toString()
+	}
+
+	override suspend fun readRange(path: String, range: LongRange): ByteArray = withContext(IOContext) {
+		RandomAccessFile(File(path), "r").use { raf ->
+			val fileLength = raf.length()
+			val start = kotlin.math.min(range.start, fileLength)
+			val end = kotlin.math.min(range.endInclusive, fileLength - 1) + 1
+			val totalRead = (end - start).toInt()
+			val out = ByteArray(totalRead)
+			raf.seek(start)
+			val read = raf.read(out)
+			if (read != totalRead) out.copyOf(read) else out
+		}
 	}
 
 	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
