@@ -11,9 +11,8 @@ import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import java.io.*
 import java.io.FileNotFoundException
+import java.io.IOException
 import java.net.*
-import java.nio.*
-import java.nio.channels.*
 import java.nio.channels.CompletionHandler
 import java.nio.file.*
 import java.nio.file.Path
@@ -136,7 +135,7 @@ private class LocalVfsJvm : LocalVfs() {
 	val that = this
 	override val absolutePath: String = ""
 
-	private suspend fun <T> executeIo(callback: suspend () -> T): T = callback()
+	private suspend fun <T> executeIo(callback: suspend () -> T): T = withContext(IOContext) { callback() }
 
 	fun resolve(path: String) = path
 	fun resolvePath(path: String) = Paths.get(resolve(path))
@@ -192,8 +191,8 @@ private class LocalVfsJvm : LocalVfs() {
 		return out.toString()
 	}
 
-	override suspend fun readRange(path: String, range: LongRange): ByteArray = withContext(IOContext) {
-		RandomAccessFile(File(path), "r").use { raf ->
+	override suspend fun readRange(path: String, range: LongRange): ByteArray = executeIo {
+		RandomAccessFile(resolveFile(path), "r").use { raf ->
 			val fileLength = raf.length()
 			val start = kotlin.math.min(range.start, fileLength)
 			val end = kotlin.math.min(range.endInclusive, fileLength - 1) + 1
@@ -205,53 +204,48 @@ private class LocalVfsJvm : LocalVfs() {
 		}
 	}
 
+	@Suppress("BlockingMethodInNonBlockingContext")
 	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {
 		try {
-			val channel = AsynchronousFileChannel.open(
-				resolvePath(path), *when (mode) {
-					VfsOpenMode.READ -> arrayOf(StandardOpenOption.READ)
-					VfsOpenMode.WRITE -> arrayOf(StandardOpenOption.READ, StandardOpenOption.WRITE)
-					VfsOpenMode.APPEND -> arrayOf(
-						StandardOpenOption.READ,
-						StandardOpenOption.WRITE,
-						StandardOpenOption.APPEND
-					)
-					VfsOpenMode.CREATE -> arrayOf(
-						StandardOpenOption.READ,
-						StandardOpenOption.WRITE,
-						StandardOpenOption.CREATE
-					)
-					VfsOpenMode.CREATE_NEW -> arrayOf(
-						StandardOpenOption.READ,
-						StandardOpenOption.WRITE,
-						StandardOpenOption.CREATE_NEW
-					)
-					VfsOpenMode.CREATE_OR_TRUNCATE -> arrayOf(
-						StandardOpenOption.READ,
-						StandardOpenOption.WRITE,
-						StandardOpenOption.CREATE,
-						StandardOpenOption.TRUNCATE_EXISTING
-					)
+			val raf = executeIo {
+				val file = resolveFile(path)
+				if (file.exists() && (mode == VfsOpenMode.CREATE_NEW)) {
+					throw IOException("File $file already exists")
 				}
-			)
+				RandomAccessFile(file, when (mode) {
+					VfsOpenMode.READ -> "r"
+					VfsOpenMode.WRITE -> "rw"
+					VfsOpenMode.APPEND -> "rw"
+					VfsOpenMode.CREATE -> "rw"
+					VfsOpenMode.CREATE_NEW -> "rw"
+					VfsOpenMode.CREATE_OR_TRUNCATE -> "rw"
+				}).apply {
+					if (mode.truncate) {
+						setLength(0L)
+					}
+					if (mode == VfsOpenMode.APPEND) {
+						seek(length())
+					}
+				}
+			}
 
 			return object : AsyncStreamBase() {
-				override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
-					val bb = ByteBuffer.wrap(buffer, offset, len)
-					return completionHandler<Int> { channel.read(bb, position, Unit, it) }
+				override suspend fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = executeIo {
+					raf.seek(position)
+					raf.read(buffer, offset, len)
 				}
 
-				override suspend fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
-					val bb = ByteBuffer.wrap(buffer, offset, len)
-					completionHandler<Int> { channel.write(bb, position, Unit, it) }
+				override suspend fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) = executeIo {
+					raf.seek(position)
+					raf.write(buffer, offset, len)
 				}
 
-				override suspend fun setLength(value: Long): Unit {
-					channel.truncate(value); Unit
+				override suspend fun setLength(value: Long): Unit = executeIo {
+					raf.setLength(value)
 				}
 
-				override suspend fun getLength(): Long = channel.size()
-				override suspend fun close() = channel.close()
+				override suspend fun getLength(): Long = executeIo { raf.length() }
+				override suspend fun close() = raf.close()
 
 				override fun toString(): String = "$that($path)"
 			}.toAsyncStream()

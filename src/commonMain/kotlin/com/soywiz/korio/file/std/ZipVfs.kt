@@ -22,10 +22,14 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 
 	val PK_END = byteArrayOf(0x50, 0x4B, 0x05, 0x06)
 	var pk_endIndex = -1
+	val fileLength = s.getLength()
 
 	for (chunkSize in listOf(0x16, 0x100, 0x1000, 0x10000)) {
-		s.setPosition(max(0L, s.getLength() - chunkSize))
-		endBytes = s.readBytesExact(max(chunkSize, s.getAvailable().toIntClamp()))
+		val pos = max(0L, fileLength - chunkSize)
+		s.setPosition(pos)
+		val bytesLen = max(chunkSize, s.getAvailable().toIntClamp())
+		val ebytes = s.readBytesExact(bytesLen)
+		endBytes = ebytes
 		pk_endIndex = endBytes.indexOf(PK_END)
 		if (pk_endIndex >= 0) break
 	}
@@ -69,7 +73,8 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 	@Suppress("UNUSED_VARIABLE")
 	data.apply {
 		//println(s)
-		if (readS32BE() != 0x504B_0506) throw IllegalStateException("Not a zip file")
+		val magic = readS32BE()
+		if (magic != 0x504B_0506) throw IllegalStateException("Not a zip file ${magic.hex} instead of ${0x504B_0102.hex}")
 		val diskNumber = readU16LE()
 		val startDiskNumber = readU16LE()
 		val entriesOnDisk = readU16LE()
@@ -81,9 +86,11 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 		//println("Zip: $entriesInDirectory")
 
 		val ds = s.sliceWithSize(directoryOffset.toLong(), directorySize.toLong()).readAvailable().openSync()
-		ds.apply {
-			for (n in 0 until entriesInDirectory) {
-				if (readS32BE() != 0x504B_0102) throw IllegalStateException("Not a zip file record")
+
+		for (n in 0 until entriesInDirectory) {
+			ds.apply {
+				val magic = readS32BE()
+				if (magic != 0x504B_0102) throw IllegalStateException("Not a zip file record ${magic.hex} instead of ${0x504B_0102.hex}")
 				val versionMade = readU16LE()
 				val versionExtract = readU16LE()
 				val flags = readU16LE()
@@ -110,6 +117,11 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 				val baseName = normalizedName.substringAfterLast('/')
 
 				val folder = filesPerFolder.getOrPut(baseFolder) { LinkedHashMap() }
+
+				val headerEntry: AsyncStream = s.sliceStart(headerOffset, false) // @TODO: Kotlin-JVM BUG
+				//val headerEntry: AsyncStream = SliceAsyncStreamBase(s.base, headerOffset, s.getLength(), false).toAsyncStream()
+
+
 				val entry = ZipEntry2(
 					path = name,
 					compressionMethod = compressionMethod,
@@ -117,7 +129,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 					time = DosFileDateTime(fileTime, fileDate),
 					inode = n.toLong(),
 					offset = headerOffset.toInt(),
-					headerEntry = s.sliceStart(headerOffset),
+					headerEntry = headerEntry,
 					compressedSize = compressedSize.unsigned,
 					uncompressedSize = uncompressedSize.unsigned
 				)
@@ -147,6 +159,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 				files[normalizedName] = entry
 			}
 		}
+
 		files[""] = ZipEntry2(
 			path = "",
 			compressionMethod = 0,
@@ -228,6 +241,10 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 	}
 
 	return Impl().root
+}
+
+internal class ZipVfsData {
+
 }
 
 private class DosFileDateTime(var dosTime: Int, var dosDate: Int) {
