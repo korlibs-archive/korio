@@ -58,8 +58,10 @@ private class ResourcesVfsProviderJvm {
 					localCurrentDirVfs["src/commonMain/resources"],
 					localCurrentDirVfs["src/jvmMain/resources"],
 					localCurrentDirVfs["resources"],
-					localCurrentDirVfs["jvmResources"]
-				)) {
+					localCurrentDirVfs["jvmResources"],
+					localCurrentDirVfs["src/commonTest/resources"],
+					localCurrentDirVfs["src/jvmTest/resources"]
+					)) {
 					if (folder.exists() && folder.isDirectory()) {
 						merged += folder.jail()
 					}

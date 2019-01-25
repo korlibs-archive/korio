@@ -1,5 +1,6 @@
 package com.soywiz.korio.android
 
+/*
 private var _KorioAndroidContext: KorioActivity? = null
 var KorioAndroidContext: KorioActivity
 	get() = _KorioAndroidContext ?: throw IllegalStateException("Must call KorioAndroidInit first!")
@@ -10,3 +11,4 @@ var KorioAndroidContext: KorioActivity
 fun KorioAndroidInit(activity: KorioActivity) {
 	KorioAndroidContext = activity
 }
+*/

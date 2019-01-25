@@ -1,5 +1,6 @@
 package com.soywiz.korio.android
 
+/*
 import android.app.Activity
 import android.os.Bundle
 import com.soywiz.kds.Extra
@@ -47,3 +48,4 @@ open class KorioActivity : Activity(), Extra by Extra.Mixin() {
 	suspend protected open fun main(args: Array<String>) {
 	}
 }
+*/
