@@ -104,24 +104,23 @@ subprojects {
 			}
 		}
 		sourceSets {
-			//jvmOnlyMain
-			//jvmOnlyTest
-
 			nativeCommonMain
 			nativeCommonTest
 			nativePosixMain
-
-			androidMain
-			androidTest
-			//if (hasAndroid) {
-			//	androidMain.dependsOn jvmMain
-			//	androidTest.dependsOn jvmTest
-			//}
-			//jvmOnlyMain.dependsOn jvmMain
-			//jvmOnlyTest.dependsOn jvmTest
-
-			mingwX64Main.dependsOn nativeCommonMain
-			mingwX64Test.dependsOn nativeCommonTest
+			if (hasAndroid) {
+				androidMain {
+					//dependsOn jvmMain
+				}
+				androidTest {
+					//dependsOn jvmTest
+				}
+			}
+			mingwX64Main {
+				dependsOn nativeCommonMain
+			}
+			mingwX64Test {
+				dependsOn nativeCommonTest
+			}
 			configure([iosX64Main, iosArm32Main, iosArm64Main, macosX64Main, linuxX64Main]) {
 				dependsOn nativeCommonMain
 				dependsOn nativePosixMain
@@ -315,9 +314,22 @@ subprojects {
 				}
 			}
 
-			configure(publications) {
-				generatePom(pom)
-			}
+            afterEvaluate {
+                configure(publications) {
+                    //println(pom.packaging)
+                    generatePom(pom)
+                    if (pom.packaging == 'aar') {
+                        pom.withXml {
+                            Node root = it.asNode()
+                            NodeList scope = root.dependencies.dependency.scope
+                            for (Node node in scope.asList()) {
+                                node.setValue("compile")
+                                //println(node)
+                            }
+                        }
+                    }
+                }
+            }
 		}
 	}
 }
