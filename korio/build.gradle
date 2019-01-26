@@ -47,8 +47,9 @@ dependencies {
 	jvmMainApi "org.jetbrains.kotlinx:$coroutines:$coroutinesVersion"
 	jsMainApi "org.jetbrains.kotlinx:$coroutines-js:$coroutinesVersion"
 	if (hasAndroid) {
-		androidMainApi "org.jetbrains.kotlinx:$coroutines:$coroutinesVersion"
-		androidMainApi 'com.android.support:appcompat-v7:24.2.1'
+		//androidMainApi "org.jetbrains.kotlinx:$coroutines:$coroutinesVersion"
+		androidMainApi "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion"
+		//androidMainApi 'com.android.support:appcompat-v7:24.2.1'
 	}
 	linuxX64MainApi "org.jetbrains.kotlinx:$coroutines-native_debug_linux_x64:$coroutinesVersion"
 	mingwX64MainApi "org.jetbrains.kotlinx:$coroutines-native_debug_mingw_x64:$coroutinesVersion"

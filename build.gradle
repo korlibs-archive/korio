@@ -104,23 +104,24 @@ subprojects {
 			}
 		}
 		sourceSets {
+			//jvmOnlyMain
+			//jvmOnlyTest
+
 			nativeCommonMain
 			nativeCommonTest
 			nativePosixMain
-			if (hasAndroid) {
-				androidMain {
-					dependsOn jvmMain
-				}
-				androidTest {
-					dependsOn jvmTest
-				}
-			}
-			mingwX64Main {
-				dependsOn nativeCommonMain
-			}
-			mingwX64Test {
-				dependsOn nativeCommonTest
-			}
+
+			androidMain
+			androidTest
+			//if (hasAndroid) {
+			//	androidMain.dependsOn jvmMain
+			//	androidTest.dependsOn jvmTest
+			//}
+			//jvmOnlyMain.dependsOn jvmMain
+			//jvmOnlyTest.dependsOn jvmTest
+
+			mingwX64Main.dependsOn nativeCommonMain
+			mingwX64Test.dependsOn nativeCommonTest
 			configure([iosX64Main, iosArm32Main, iosArm64Main, macosX64Main, linuxX64Main]) {
 				dependsOn nativeCommonMain
 				dependsOn nativePosixMain
