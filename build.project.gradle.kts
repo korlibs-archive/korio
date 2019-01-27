@@ -1,22 +1,24 @@
 val hasAndroid: Boolean by rootProject.extra
 
-File(projectDir, "korio/src/commonMain/kotlin/com/soywiz/korio/internal/KorioVersion.kt").apply {
+val pname = "korio"
+
+File(projectDir, "$pname/src/commonMain/kotlin/com/soywiz/$pname/internal/${pname.capitalize()}Version.kt").apply {
 	parentFile.mkdirs()
-	val newText = "package com.soywiz.korio.internal\n\ninternal const val KORIO_VERSION = \"${project.property("projectVersion")}\""
-	if (readText() != newText) writeText(newText)
+	val newText = "package com.soywiz.$pname.internal\n\ninternal const val ${pname.toUpperCase()}_VERSION = \"${project.property("projectVersion")}\""
+	if (!exists() || (readText() != newText)) writeText(newText)
 }
 
-val projDeps = Deps().run { mapOf(
-	"korio" to listOf(kotlinxCoroutines, klock, kmem, kds)
-) }
+val projDeps = Deps().run { LinkedHashMap<String, List<Dep>>().apply {
+	this["korio"] = listOf(kotlinxCoroutines, klock, kmem, kds)
+} }
 
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 class Deps {
-	val klock = Dep("com.soywiz:klock:${project.property("klockVersion")}")
-	val kmem = Dep("com.soywiz:kmem:${project.property("kmemVersion")}")
-	val kds = Dep("com.soywiz:kds:${project.property("kdsVersion")}")
+	val klock = DepKorlib("klock")
+	val kmem = DepKorlib("kmem")
+	val kds = DepKorlib("kds")
 	val kotlinxCoroutines = Dep {
 		val coroutinesVersion: String by project
 		val coroutines = "kotlinx-coroutines-core"
@@ -39,6 +41,7 @@ class Deps {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
+fun DepKorlib(name: String) = Dep("com.soywiz:$name:${project.property("${name}Version")}")
 class Dep(val commonName: String? = null, val project: String ? = null, val register: (DependencyHandlerScope.() -> Unit)? = null)
 
 subprojects {

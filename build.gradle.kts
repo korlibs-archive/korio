@@ -106,66 +106,34 @@ subprojects {
         }
 
         sourceSets {
-            val jvmMain = this["jvmMain"]
-            val nativeCommonMain = maybeCreate("nativeCommonMain")
-            val nativeCommonTest = maybeCreate("nativeCommonTest")
-            val nativePosixMain = maybeCreate("nativePosixMain")
-			val nonJsMain = maybeCreate("nonJsMain")
-			val nativePosixAppleMain = maybeCreate("nativePosixAppleMain")
-			val nativePosixNonAppleMain = maybeCreate("nativePosixNonAppleMain")
-			val iosCommonMain = maybeCreate("iosCommonMain")
-			val iosCommonTest = maybeCreate("iosCommonTest")
-
-			val ios = listOf("iosX64Main", "iosArm32Main", "iosArm64Main").map { maybeCreate(it) }
-			val apple = ios + listOf(maybeCreate("macosX64Main"))
-			val linux = listOf(maybeCreate("linuxX64Main"))
-
-			if (hasAndroid) {
-                maybeCreate("androidMain").apply {
-                    // Allow to have different code than for the JVM
-                    //dependsOn(jvmMain)
-                }
-                maybeCreate("androidTest").apply {
-                    // Allow to have different code than for the JVM
-                    //dependsOn(jvmMain)
+            fun dependants(name: String, on: Set<String>) {
+                val main = maybeCreate("${name}Main")
+                val test = maybeCreate("${name}Test")
+                for (o in on) {
+                    maybeCreate("${o}Main").dependsOn(main)
+                    maybeCreate("${o}Test").dependsOn(test)
                 }
             }
-			val mingwX64Main = maybeCreate("mingwX64Main").apply {
-                dependsOn(nativeCommonMain)
-            }
-			val mingwX66Test = maybeCreate("mingwX64Test").apply {
-                dependsOn(nativeCommonTest)
-            }
 
-			configure(ios + listOf(this["macosX64Main"], this["linuxX64Main"])) {
-                dependsOn(nativeCommonMain)
-                dependsOn(nativePosixMain)
-            }
+            val none = setOf<String>()
+            val android = if (hasAndroid) setOf() else setOf("android")
+            val jvm = setOf("jvm")
+            val js = setOf("js")
+			val ios = setOf("iosX64", "iosArm32", "iosArm64")
+            val macos = setOf("macosX64")
+            val linux = setOf("linuxX64")
+            val mingw = setOf("mingwX64")
+			val apple = ios + macos
+            val allNative = apple + linux + mingw
+            val jvmAndroid = jvm + android
+            val allTargets = allNative + js + jvm + android
 
-            configure(ios + listOf(this["macosX64Test"], this["linuxX64Test"])) {
-                dependsOn(nativeCommonTest)
-            }
-
-            configure(ios) { dependsOn(iosCommonMain) }
-            configure(ios) { dependsOn(iosCommonTest) }
-
-			configure(apple) {
-				dependsOn(nativePosixAppleMain)
-				dependsOn(nativeCommonMain)
-				dependsOn(nativePosixMain)
-			}
-			configure(linux) {
-				dependsOn(nativePosixNonAppleMain)
-				dependsOn(nativeCommonMain)
-				dependsOn(nativePosixMain)
-			}
-			configure(apple + linux) {
-				dependsOn(nativeCommonTest)
-				dependsOn(nonJsMain)
-			}
-			configure(listOf(maybeCreate("jvmMain"))) {
-				dependsOn(nonJsMain)
-			}
+            dependants("iosCommon", ios)
+            dependants("nativeCommon", allNative)
+            dependants("nonNativeCommon", allTargets - allNative)
+            dependants("nativePosix", allNative - mingw)
+            dependants("nativePosixApple", apple)
+            dependants("nonJs", allTargets - js)
 		}
     }
 
