@@ -20,7 +20,7 @@ buildscript {
 }
 
 var hasAndroid: Boolean by extra
-hasAndroid = (System.getProperty("sdk.dir") == null) && (System.getenv("ANDROID_HOME") == null)
+hasAndroid = (System.getProperty("sdk.dir") != null) || (System.getenv("ANDROID_HOME") != null)
 if (!hasAndroid) {
 	val trySdkDir = File(System.getProperty("user.home") + "/Library/Android/sdk")
 	if (trySdkDir.exists()) {
