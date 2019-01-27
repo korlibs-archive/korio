@@ -6,6 +6,7 @@ import groovy.xml.*
 import org.apache.tools.ant.taskdefs.condition.Os
 import org.jetbrains.kotlin.gradle.plugin.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.*
+import java.io.*
 
 buildscript {
     repositories {
@@ -36,12 +37,30 @@ plugins {
 }
 
 allprojects {
-    repositories {
-        mavenLocal()
-        maven { url = uri("https://dl.bintray.com/soywiz/soywiz") }
-        jcenter()
-        google()
-    }
+	repositories {
+		mavenLocal().apply {
+			content {
+				excludeGroup("Kotlin/Native")
+			}
+		}
+		maven {
+			url = uri("https://dl.bintray.com/soywiz/soywiz")
+			content {
+				includeGroup("com.soywiz")
+				excludeGroup("Kotlin/Native")
+			}
+		}
+		jcenter() {
+			content {
+				excludeGroup("Kotlin/Native")
+			}
+		}
+		google().apply {
+			content {
+				excludeGroup("Kotlin/Native")
+			}
+		}
+	}
 }
 
 operator fun File.get(name: String) = File(this, name)
@@ -52,6 +71,13 @@ val NamedDomainObjectCollection<KotlinTarget>.metadata get() = this["metadata"] 
 
 val <T : KotlinCompilation<*>> NamedDomainObjectContainer<T>.main get() = this["main"]
 val <T : KotlinCompilation<*>> NamedDomainObjectContainer<T>.test get() = this["test"]
+
+class MultiOutputStream(val outs: List<OutputStream>) : OutputStream() {
+	override fun write(b: Int) = run { for (out in outs) out.write(b) }
+	override fun write(b: ByteArray, off: Int, len: Int) = run { for (out in outs) out.write(b, off, len) }
+	override fun flush()  = run { for (out in outs) out.flush() }
+	override fun close()  = run { for (out in outs) out.close() }
+}
 
 subprojects {
     if (project.name == "template") return@subprojects
@@ -132,6 +158,7 @@ subprojects {
             dependants("nativeCommon", allNative)
             dependants("nonNativeCommon", allTargets - allNative)
             dependants("nativePosix", allNative - mingw)
+			dependants("nativePosixNonApple", allNative - mingw - apple)
             dependants("nativePosixApple", apple)
             dependants("nonJs", allTargets - js)
 		}
@@ -257,24 +284,39 @@ subprojects {
         outputs.file(resultsFile)
     }
 
-    afterEvaluate {
-        for (target in listOf("macosX64", "linuxX64", "mingwX64")) {
-            val taskName = "copyResourcesToExecutable_$target"
-            val targetTestTask = tasks.getByName("${target}Test") as Exec
+	afterEvaluate {
+		for (target in listOf("macosX64", "linuxX64", "mingwX64")) {
+			val taskName = "copyResourcesToExecutable_$target"
+			val targetTestTask = tasks.getByName("${target}Test") as Exec
+			val compileTestTask = tasks.getByName("compileTestKotlin${target.capitalize()}")
+			val compileMainask = tasks.getByName("compileKotlin${target.capitalize()}")
 
-            tasks {
-                create<Copy>(taskName) {
-                    for (sourceSet in kotlin.sourceSets) {
-                        from(sourceSet.resources)
-                    }
+			tasks {
+				create<Copy>(taskName) {
+					for (sourceSet in kotlin.sourceSets) {
+						from(sourceSet.resources)
+					}
 
-                    into(File(targetTestTask.executable).parentFile)
-                }
-            }
+					into(File(targetTestTask.executable).parentFile)
+				}
+			}
 
-            targetTestTask.dependsOn(taskName)
-        }
-    }
+			val reportFile = buildDir["test-results/nativeTest/text/output.txt"].apply { parentFile.mkdirs() }
+			val fout = ByteArrayOutputStream()
+			targetTestTask.standardOutput = MultiOutputStream(listOf(targetTestTask.standardOutput, fout))
+			targetTestTask.doLast {
+				reportFile.writeBytes(fout.toByteArray())
+			}
+
+			targetTestTask.inputs.files(
+				*compileTestTask.outputs.files.files.toTypedArray(),
+				*compileMainask.outputs.files.files.toTypedArray()
+			)
+			targetTestTask.outputs.file(reportFile)
+
+			targetTestTask.dependsOn(taskName)
+		}
+	}
 
     // Include resources from JS and Metadata (common) into the JS JAR
     val jsJar = tasks.getByName<Jar>("jsJar")
