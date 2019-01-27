@@ -1,6 +1,6 @@
 package com.soywiz.korio.file.std
 
-import androidContext
+import com.soywiz.korio.android.androidContext
 import com.soywiz.klock.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.async.*

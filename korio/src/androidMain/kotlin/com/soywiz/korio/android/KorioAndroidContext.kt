@@ -1,3 +1,5 @@
+package com.soywiz.korio.android
+
 import android.content.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
