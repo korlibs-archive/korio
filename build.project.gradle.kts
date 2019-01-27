@@ -39,7 +39,7 @@ class Deps {
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 /////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-class Dep(val commonName: String? = null, val register: (DependencyHandlerScope.() -> Unit)? = null)
+class Dep(val commonName: String? = null, val project: String ? = null, val register: (DependencyHandlerScope.() -> Unit)? = null)
 
 subprojects {
 	val deps = projDeps[project.name]
@@ -49,6 +49,10 @@ subprojects {
 				if (dep.commonName != null) {
 					add("commonMainApi", dep.commonName)
 					add("commonTestImplementation", dep.commonName)
+				}
+				if (dep.project != null) {
+					add("commonMainApi", project(dep.project))
+					add("commonTestImplementation", project(dep.project))
 				}
 				dep.register?.invoke(this)
 			}
