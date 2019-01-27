@@ -21,7 +21,7 @@ buildscript {
 
 var hasAndroid: Boolean by extra
 hasAndroid = (System.getProperty("sdk.dir") == null) && (System.getenv("ANDROID_HOME") == null)
-if (hasAndroid) {
+if (!hasAndroid) {
 	val trySdkDir = File(System.getProperty("user.home") + "/Library/Android/sdk")
 	if (trySdkDir.exists()) {
 		File(rootDir, "local.properties").writeText("sdk.dir=${trySdkDir.absolutePath}")
@@ -36,17 +36,11 @@ plugins {
 }
 
 allprojects {
-	println("korio-allprojects-block")
-
     repositories {
         mavenLocal()
         maven { url = uri("https://dl.bintray.com/soywiz/soywiz") }
         jcenter()
         google()
-    }
-
-    if (project.file("build.project.gradle.kts").exists()) {
-        apply(from = project.file("build.project.gradle.kts"))
     }
 }
 
@@ -60,8 +54,6 @@ val <T : KotlinCompilation<*>> NamedDomainObjectContainer<T>.main get() = this["
 val <T : KotlinCompilation<*>> NamedDomainObjectContainer<T>.test get() = this["test"]
 
 subprojects {
-	println("korio-subprojects-block")
-
     if (project.name == "template") return@subprojects
 
     apply(plugin = "kotlin-multiplatform")
@@ -118,7 +110,17 @@ subprojects {
             val nativeCommonMain = maybeCreate("nativeCommonMain")
             val nativeCommonTest = maybeCreate("nativeCommonTest")
             val nativePosixMain = maybeCreate("nativePosixMain")
-            if (hasAndroid) {
+			val nonJsMain = maybeCreate("nonJsMain")
+			val nativePosixAppleMain = maybeCreate("nativePosixAppleMain")
+			val nativePosixNonAppleMain = maybeCreate("nativePosixNonAppleMain")
+			val iosCommonMain = maybeCreate("iosCommonMain")
+			val iosCommonTest = maybeCreate("iosCommonTest")
+
+			val ios = listOf("iosX64Main", "iosArm32Main", "iosArm64Main").map { maybeCreate(it) }
+			val apple = ios + listOf(maybeCreate("macosX64Main"))
+			val linux = listOf(maybeCreate("linuxX64Main"))
+
+			if (hasAndroid) {
                 maybeCreate("androidMain").apply {
                     // Allow to have different code than for the JVM
                     //dependsOn(jvmMain)
@@ -128,31 +130,43 @@ subprojects {
                     //dependsOn(jvmMain)
                 }
             }
-            maybeCreate("mingwX64Main").apply {
+			val mingwX64Main = maybeCreate("mingwX64Main").apply {
                 dependsOn(nativeCommonMain)
             }
-            maybeCreate("mingwX64Test").apply {
+			val mingwX66Test = maybeCreate("mingwX64Test").apply {
                 dependsOn(nativeCommonTest)
             }
 
-            val iosTargets = listOf(this["iosX64Main"], this["iosArm32Main"], this["iosArm64Main"])
-
-            configure(iosTargets + listOf(this["macosX64Main"], this["linuxX64Main"])) {
+			configure(ios + listOf(this["macosX64Main"], this["linuxX64Main"])) {
                 dependsOn(nativeCommonMain)
                 dependsOn(nativePosixMain)
             }
 
-            configure(iosTargets + listOf(this["macosX64Test"], this["linuxX64Test"])) {
+            configure(ios + listOf(this["macosX64Test"], this["linuxX64Test"])) {
                 dependsOn(nativeCommonTest)
             }
 
-            val iosCommonMain = create("iosCommonMain")
-            val iosCommonTest = create("iosCommonTest")
+            configure(ios) { dependsOn(iosCommonMain) }
+            configure(ios) { dependsOn(iosCommonTest) }
 
-            configure(iosTargets) { dependsOn(iosCommonMain) }
-            configure(iosTargets) { dependsOn(iosCommonTest) }
-
-        }
+			configure(apple) {
+				dependsOn(nativePosixAppleMain)
+				dependsOn(nativeCommonMain)
+				dependsOn(nativePosixMain)
+			}
+			configure(linux) {
+				dependsOn(nativePosixNonAppleMain)
+				dependsOn(nativeCommonMain)
+				dependsOn(nativePosixMain)
+			}
+			configure(apple + linux) {
+				dependsOn(nativeCommonTest)
+				dependsOn(nonJsMain)
+			}
+			configure(listOf(maybeCreate("jvmMain"))) {
+				dependsOn(nonJsMain)
+			}
+		}
     }
 
     dependencies {
@@ -374,4 +388,8 @@ subprojects {
             jvmArgs = (jvmArgs ?: arrayListOf()) + arrayListOf("-Djava.awt.headless=true")
         }
     }
+}
+
+if (project.file("build.project.gradle.kts").exists()) {
+	apply(from = project.file("build.project.gradle.kts"))
 }
