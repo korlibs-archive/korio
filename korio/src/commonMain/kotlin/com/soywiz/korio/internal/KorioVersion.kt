@@ -1,3 +1,3 @@
 package com.soywiz.korio.internal
 
-internal const val KORIO_VERSION = "1.1.1"
+internal const val KORIO_VERSION = "1.1.2"

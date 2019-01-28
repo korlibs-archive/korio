@@ -33,7 +33,6 @@ if (!hasAndroid) {
 plugins {
     id("kotlin-multiplatform").version("1.3.20")
     id("com.moowork.node").version("1.2.0")
-    id("maven-publish")
 }
 
 allprojects {
