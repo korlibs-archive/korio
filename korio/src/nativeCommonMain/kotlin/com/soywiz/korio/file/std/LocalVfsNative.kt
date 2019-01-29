@@ -28,7 +28,8 @@ import com.soywiz.korio.lang.Environment
 
 val tmpdir: String by lazy { Environment["TMPDIR"] ?: Environment["TEMP"] ?: Environment["TMP"] ?: "/tmp" }
 
-val cwd: String by lazy { com.soywiz.korio.nativeCwd() }
+var customCwd: String? = null
+val cwd: String by lazy { customCwd ?: com.soywiz.korio.nativeCwd() }
 
 actual val resourcesVfs: VfsFile by lazy { applicationDataVfs.jail() }
 actual val rootLocalVfs: VfsFile by lazy { localVfs(cwd) }
