@@ -3,7 +3,6 @@ package com.soywiz.korio.file.std
 import com.soywiz.korio.android.androidContext
 import com.soywiz.klock.*
 import com.soywiz.kmem.*
-import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.stream.*
@@ -53,31 +52,22 @@ class AndroidResourcesVfs(val context: android.content.Context) : Vfs() {
 		return readRange(path, LONG_ZERO_TO_MAX_RANGE).openAsync(mode.cmode)
 	}
 
-	override suspend fun readRange(path: String, range: LongRange): ByteArray {
+	override suspend fun readRange(path: String, range: LongRange): ByteArray = executeIo {
 		//val path = "/assets/" + path.trim('/')
-		val path = path.trim('/')
+		val rpath = path.trim('/')
 
-		val actualLength = context.assets.openFd(path).use {
-			it.length
-		}
-
-		val endInclusive = kotlin.math.min(range.endInclusive, Long.MAX_VALUE - 1)
-		val endExclusive = endInclusive + 1
-
-		val start = range.start.clamp(0L, endExclusive)
-		val end = endExclusive.clamp(0L, actualLength)
-
-		val fs = context.assets.open(path)
-		fs.skip(start)
-		val len = (end - start).toInt()
-		val out = ByteArray(len)
-		var pos = 0
-		while (pos < out.size) {
-			val read = fs.read(out, pos, out.size - pos)
+		val fs = context.assets.open(rpath)
+		fs.skip(range.start)
+		val out = ByteArrayOutputStream()
+		val temp = ByteArray(16 * 1024)
+		var available = (range.endExclusiveClamped - range.start)
+		while (available >= 0) {
+			val read = fs.read(temp, 0, Math.min(temp.size.toLong(), available).toInt())
 			if (read <= 0) break
-			pos += read
+			out.write(temp, 0, read)
+			available -= read
 		}
-		return out
+		out.toByteArray()
 	}
 }
 
@@ -85,12 +75,13 @@ class AndroidResourcesVfs(val context: android.content.Context) : Vfs() {
 //private val IOContext by lazy { newSingleThreadContext("IO") }
 private val IOContext by lazy { Dispatchers.Unconfined }
 
+private suspend inline fun <T> executeIo(crossinline callback: suspend () -> T): T =
+	withContext(IOContext) { callback() }
+
 private class LocalVfsJvm : LocalVfs() {
 	val that = this
 	override val absolutePath: String = ""
 
-	private suspend inline fun <T> executeIo(crossinline callback: suspend () -> T): T =
-		withContext(IOContext) { callback() }
 	//private suspend inline fun <T> executeIo(callback: suspend () -> T): T = callback()
 
 	fun resolve(path: String) = path
