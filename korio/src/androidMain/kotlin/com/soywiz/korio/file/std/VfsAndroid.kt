@@ -3,6 +3,7 @@ package com.soywiz.korio.file.std
 import com.soywiz.korio.android.androidContext
 import com.soywiz.klock.*
 import com.soywiz.kmem.*
+import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.Closeable
 import com.soywiz.korio.stream.*
