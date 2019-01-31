@@ -8,3 +8,5 @@
 *.ipr
 *.iws
 *.iml
+*.hprof
+
