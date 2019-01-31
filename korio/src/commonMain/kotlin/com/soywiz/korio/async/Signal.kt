@@ -225,3 +225,36 @@ suspend fun <T> Signal<T>.waitOneOpt(timeout: TimeSpan?): T? = when {
 	timeout != null -> waitOne(timeout)
 	else -> waitOne()
 }
+
+suspend inline fun <T> Map<Signal<Unit>, T>.executeAndWaitAnySignal(callback: () -> Unit): T {
+	val deferred = CompletableDeferred<T>()
+	val closeables = this.map { pair -> pair.key.once { deferred.complete(pair.value) } }
+	try {
+		callback()
+		return deferred.await()
+	} finally {
+		closeables.close()
+	}
+}
+
+suspend inline fun <T> Iterable<Signal<T>>.executeAndWaitAnySignal(callback: () -> Unit): Pair<Signal<T>, T> {
+	val deferred = CompletableDeferred<Pair<Signal<T>, T>>()
+	val closeables = this.map { signal -> signal.once { deferred.complete(signal to it) } }
+	try {
+		callback()
+		return deferred.await()
+	} finally {
+		closeables.close()
+	}
+}
+
+suspend inline fun <T> Signal<T>.executeAndWaitSignal(callback: () -> Unit): T {
+	val deferred = CompletableDeferred<T>()
+	val closeable = this.once { deferred.complete(it) }
+	try {
+		callback()
+		return deferred.await()
+	} finally {
+		closeable.close()
+	}
+}
