@@ -48,7 +48,7 @@ class Dep(val commonName: String? = null, val project: String ? = null, val regi
 
 val ALL_TARGETS = listOf("android", "iosArm64", "iosArm32", "iosX64", "js", "jvm", "linuxX64", "macosX64", "mingwX64", "metadata")
 
-fun DependencyHandler.addCommon(group: String, name: String, version: String, targets: List<String> = ALL_TARGETS, suffixCommonRename: Boolean = false, androidIsJvm: Boolean = true) {
+fun DependencyHandler.addCommon(group: String, name: String, version: String, targets: List<String> = ALL_TARGETS, suffixCommonRename: Boolean = false, androidIsJvm: Boolean = false) {
 	for (target in targets) {
 		val base = when (target) {
 			"metadata" -> "common"
