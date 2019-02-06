@@ -16,7 +16,6 @@ buildscript {
     }
     dependencies {
         classpath("com.android.tools.build:gradle:3.3.0")
-        classpath(kotlin("gradle-plugin", version = "1.3.20"))
     }
 }
 
@@ -31,7 +30,7 @@ if (!hasAndroid) {
 }
 
 plugins {
-    id("kotlin-multiplatform").version("1.3.20")
+    id("kotlin-multiplatform").version("1.3.21")
     id("com.moowork.node").version("1.2.0")
 }
 
@@ -46,6 +45,12 @@ allprojects {
 			url = uri("https://dl.bintray.com/soywiz/soywiz")
 			content {
 				includeGroup("com.soywiz")
+				excludeGroup("Kotlin/Native")
+			}
+		}
+		maven {
+			url = uri("https://dl.bintray.com/kotlin/kotlinx")
+			content {
 				excludeGroup("Kotlin/Native")
 			}
 		}
