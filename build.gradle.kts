@@ -344,9 +344,6 @@ subprojects {
         }
     }
 
-    group = "com.soywiz"
-    version = properties["projectVersion"].toString()
-
     // Publishing
     val publishUser = (rootProject.findProperty("BINTRAY_USER") ?: project.findProperty("bintrayUser") ?: System.getenv("BINTRAY_USER"))?.toString()
     val publishPassword = (rootProject.findProperty("BINTRAY_KEY") ?: project.findProperty("bintrayApiKey") ?: System.getenv("BINTRAY_API_KEY"))?.toString()
