@@ -1,0 +1,10 @@
+apply plugin: com.soywiz.korlibs.KorlibsPlugin
+
+korlibs {
+	exposeVersion()
+
+	dependencyMulti("com.soywiz:klock:$klockVersion")
+	dependencyMulti("com.soywiz:kmem:$kmemVersion")
+	dependencyMulti("com.soywiz:kds:$kdsVersion")
+	dependencyMulti("com.soywiz:kotlinx-coroutines:$coroutinesVersion")
+}
