@@ -10,6 +10,7 @@ abstract class LocalVfs : Vfs() {
 	override fun toString(): String = "LocalVfs"
 }
 
+var resourcesVfsDebug = false
 expect val resourcesVfs: VfsFile
 expect val rootLocalVfs: VfsFile
 expect val applicationVfs: VfsFile
