@@ -6,5 +6,26 @@ korlibs {
 	dependencyMulti("com.soywiz:klock:$klockVersion")
 	dependencyMulti("com.soywiz:kmem:$kmemVersion")
 	dependencyMulti("com.soywiz:kds:$kdsVersion")
-	dependencyMulti("com.soywiz:kotlinx-coroutines:$coroutinesVersion")
+
+	//dependencyMulti("com.soywiz:kotlinx-coroutines:$coroutinesVersion")
+	dependencies {
+		add("commonMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
+		add("androidMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
+		add("jsMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutinesVersion")
+		add("jvmMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+		add("iosArm32MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-native_debug_ios_arm32:$coroutinesVersion")
+		add("iosArm64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-native_debug_ios_arm64:$coroutinesVersion")
+		add("iosX64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-native_debug_ios_x64:$coroutinesVersion")
+		add("linuxX64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-native_debug_linux_x64:$coroutinesVersion")
+		add("mingwX64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-native_debug_mingw_x64:$coroutinesVersion")
+		add("macosX64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-native_debug_macos_x64:$coroutinesVersion")
+
+		def atomicfuVersion = "0.12.1"
+		add("iosArm32MainApi", "org.jetbrains.kotlinx:atomicfu-iosarm32:$atomicfuVersion@klib")
+		add("iosArm64MainApi", "org.jetbrains.kotlinx:atomicfu-iosarm64:$atomicfuVersion@klib")
+		add("iosX64MainApi", "org.jetbrains.kotlinx:atomicfu-iosx64:$atomicfuVersion@klib")
+		add("linuxX64MainApi", "org.jetbrains.kotlinx:atomicfu-linux64:$atomicfuVersion@klib")
+		add("macosX64MainApi", "org.jetbrains.kotlinx:atomicfu-macos64:$atomicfuVersion@klib")
+		add("mingwX64MainApi", "org.jetbrains.kotlinx:atomicfu-windows64:$atomicfuVersion@klib")
+	}
 }
