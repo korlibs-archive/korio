@@ -50,8 +50,12 @@ class ObjectMapper {
 	}
 
 	fun <T : Any> toTyped(clazz: KClass<T>, obj: Any?): T {
-		val generator = _typers[clazz] ?: invalidArg("Unregistered $clazz")
-		return generator(typeCtx, obj) as T
+		val typer = _typers[clazz]
+		return when {
+			typer != null -> typer(typeCtx, obj) as T
+			fallbackTyper != null && obj != null -> fallbackTyper!!(clazz, obj) as T
+			else -> invalidArg("Unregistered $clazz")
+		}
 	}
 
 	init {
