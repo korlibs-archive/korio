@@ -27,5 +27,7 @@ korlibs {
 		add("linuxX64MainApi", "org.jetbrains.kotlinx:atomicfu-linux64:$atomicfuVersion@klib")
 		add("macosX64MainApi", "org.jetbrains.kotlinx:atomicfu-macos64:$atomicfuVersion@klib")
 		add("mingwX64MainApi", "org.jetbrains.kotlinx:atomicfu-windows64:$atomicfuVersion@klib")
+
+		add("androidTestImplementation", "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
 	}
 }
