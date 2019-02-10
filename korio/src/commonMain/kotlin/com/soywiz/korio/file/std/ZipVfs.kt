@@ -20,6 +20,8 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 	//val s = zipFile.open(VfsOpenMode.READ)
 	var endBytes = EMPTY_BYTE_ARRAY
 
+	if (s.getLength() <= 8L) throw IllegalArgumentException("Zip file is too small length=${s.getLength()}")
+
 	val PK_END = byteArrayOf(0x50, 0x4B, 0x05, 0x06)
 	var pk_endIndex = -1
 	val fileLength = s.getLength()
@@ -63,7 +65,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 
 	fun String.normalizeName() = if (caseSensitive) this.trim('/') else this.trim('/').toLowerCase()
 
-	if (pk_endIndex < 0) throw IllegalArgumentException("Not a zip file")
+	if (pk_endIndex < 0) throw IllegalArgumentException("Not a zip file (pk_endIndex < 0) : pk_endIndex=$pk_endIndex : ${endBytes.sliceArray(endBytes.size - 32 until endBytes.size).hex} : ${s.getLength()}")
 
 	val data = endBytes.copyOfRange(pk_endIndex, endBytes.size).openSync()
 
@@ -188,7 +190,7 @@ suspend fun ZipVfs(s: AsyncStream, zipFile: VfsFile? = null, caseSensitive: Bool
 			@Suppress("UNUSED_VARIABLE")
 			return base.run {
 				if (this.getAvailable() < 16) throw IllegalStateException("Chunk to small to be a ZIP chunk")
-				if (readS32BE() != 0x504B_0304) throw IllegalStateException("Not a zip file")
+				if (readS32BE() != 0x504B_0304) throw IllegalStateException("Not a zip file (readS32BE() != 0x504B_0304)")
 				val version = readU16LE()
 				val flags = readU16LE()
 				val compressionType = readU16LE()

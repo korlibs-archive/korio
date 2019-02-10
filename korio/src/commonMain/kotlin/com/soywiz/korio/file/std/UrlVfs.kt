@@ -114,6 +114,8 @@ class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHt
 	override suspend fun stat(path: String): VfsStat {
 		val fullUrl = getFullUrl(path)
 
+		//println("STAT URL: $fullUrl")
+
 		return if (fullUrl.startsWith("file:")) {
 			// file: protocol won't respond with content-length
 			try {
@@ -131,6 +133,8 @@ class UrlVfs(val url: String, val dummy: Unit, val client: HttpClient = createHt
 			}
 		} else {
 			val result = client.request(Http.Method.HEAD, fullUrl)
+
+			//println("STAT URL HEADERS: ${result.headers}")
 
 			if (result.success) {
 				createExistsStat(
