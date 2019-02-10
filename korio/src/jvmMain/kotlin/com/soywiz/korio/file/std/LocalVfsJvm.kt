@@ -284,8 +284,7 @@ private class LocalVfsJvm : LocalVfs() {
 		}
 	}
 
-	override suspend fun list(path: String): ReceiveChannel<VfsFile> =
-		executeIo { (File(path).listFiles() ?: arrayOf()).map { that.file("$path/${it.name}") }.toChannel() }
+	override suspend fun list(path: String): ReceiveChannel<VfsFile> = executeIo { (File(path).listFiles() ?: arrayOf()).map { that.file("$path/${it.name}") } }.toChannel()
 
 	override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean =
 		executeIo { resolveFile(path).mkdirs() }
