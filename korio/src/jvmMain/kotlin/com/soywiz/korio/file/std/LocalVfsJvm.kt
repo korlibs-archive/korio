@@ -132,7 +132,10 @@ private class ResourcesVfsProviderJvm {
 							srcDir["commonMain/resources"],
 							srcDir["jvmMain/resources"],
 							srcDir["commonTest/resources"],
-							srcDir["jvmTest/resources"]
+							srcDir["jvmTest/resources"],
+							// Korge
+							srcDir["../build/genMainResources"],
+							srcDir["../build/genTestResources"]
 						)) {
 							if (folder.exists() && folder.isDirectory()) {
 								merged += folder.jail()
