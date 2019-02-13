@@ -67,4 +67,12 @@ class VfsFileTest {
 			log.logstr
 		)
 	}
+
+	@Test
+	fun testUnescaped() = suspendTest {
+		val result = JailVfs(UrlVfs("http://demo.com/demo.txt")).getUnderlyingUnscapedFile()
+		//println("result: $result")
+		assertEquals(true, result.vfs is UrlVfs)
+		assertEquals("/demo.txt", result.path)
+	}
 }
