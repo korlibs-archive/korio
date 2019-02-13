@@ -36,10 +36,10 @@ object Json {
 				this += item
 			}
 		}
-		'-', '+', in '0'..'9' -> {
+		//'-', '+', in '0'..'9' -> { // @TODO: Kotlin native doesn't optimize char ranges
+		'-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> {
 			s.unread()
-			val res = s.readWhile { (it in '0'..'9') || it == '.' || it == 'e' || it == 'E' || it == '-' || it == '+' }
-			val dres = res.toDouble()
+			val dres = parseNumber(s)
 			if (dres.toInt().toDouble() == dres) dres.toInt() else dres
 		}
 		't', 'f', 'n' -> {
@@ -56,6 +56,18 @@ object Json {
 			s.readStringLit()
 		}
 		else -> invalidJson("Not expected '$ic'")
+	}
+
+	private fun Char.isNumberStart() = when (this) {
+		'-', '+', '0', '1', '2', '3', '4', '5', '6', '7', '8', '9' -> true
+		else -> false
+	}
+
+	private fun parseNumber(s: StrReader): Double {
+		val start = s.pos
+		s.skipWhile { ((it >= '0') && (it <= '9')) || it == '.' || it == 'e' || it == 'E' || it == '-' || it == '+' }
+		val end = s.pos
+		return NumberParser.parseDouble(s.str, start, end)
 	}
 
 	fun stringify(obj: Any?, b: StringBuilder) {
