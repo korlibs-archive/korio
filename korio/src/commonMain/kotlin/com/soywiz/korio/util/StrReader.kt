@@ -1,7 +1,6 @@
 package com.soywiz.korio.util
 
 import com.soywiz.korio.lang.*
-import com.soywiz.korio.serialization.json.*
 import kotlin.collections.List
 import kotlin.collections.MutableMap
 import kotlin.collections.arrayListOf
@@ -64,8 +63,14 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 	inline fun readWhile(filter: (Char) -> Boolean) = this.slice { skipWhile(filter) } ?: ""
 	inline fun readUntil(filter: (Char) -> Boolean) = this.slice { skipUntil(filter) } ?: ""
 	fun unread(count: Int = 1) = this.apply { this.pos -= count; }
-	fun readChar(): Char = if (hasMore) this.str[this.pos++] else '\u0000'
-	fun read(): Char = if (hasMore) this.str[this.pos++] else '\u0000'
+	fun readChar(): Char = if (hasMore) this.str[posSkip(1)] else '\u0000'
+	fun read(): Char = if (hasMore) this.str[posSkip(1)] else '\u0000'
+	// @TODO: https://youtrack.jetbrains.com/issue/KT-29577
+	private fun posSkip(count: Int): Int {
+		val out = this.pos
+		this.pos += count
+		return out
+	}
 
 	fun readRemaining(): String = read(available)
 
