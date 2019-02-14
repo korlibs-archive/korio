@@ -1,5 +1,6 @@
 package com.soywiz.korio.util
 
+import kotlin.math.*
 import kotlin.test.*
 
 class NumberParserTest {
@@ -11,6 +12,10 @@ class NumberParserTest {
 	@Test fun test4c() = assertEquals(-10.5, NumberParser.parseDouble("-10.5"))
 	@Test fun test5() = assertEquals(1.5, NumberParser.parseDouble("1.5"))
 	@Test fun test6() = assertEquals(1e10, NumberParser.parseDouble("1e10"))
-	@Test fun test7() = assertEquals(1e-10, NumberParser.parseDouble("1e-10"))
-	@Test fun test8() = assertEquals(-1.5e-10, NumberParser.parseDouble("-1.5e-10"))
+	@Test fun test7() = assertEquals(1e-10, NumberParser.parseDouble("1e-10"), 0.0001)
+	@Test fun test8() = assertEquals(-1.5e-10, NumberParser.parseDouble("-1.5e-10"), 0.0001)
+
+	fun assertEquals(expected: Double, actual: Double, epsilon: Double) {
+		assertTrue("$expected != $actual (epsilon=$epsilon) (diff=${abs(expected - actual)})") { abs(expected - actual) <= epsilon }
+	}
 }
