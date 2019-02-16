@@ -22,7 +22,7 @@ open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
 		if (vfsList.size == 1) {
 			return vfsList.first()[path]
 		} else {
-			return vfsList.map { it[path] }.firstOrNull { it.exists() } ?: vfsList.first()[path]
+			return vfsList.map { it[path] }.firstOrNull { it.exists() } ?: vfsList.firstOrNull()?.get(path) ?: error("MergedVfs.access: VfsList is empty $vfsList")
 		}
 	}
 

@@ -13,7 +13,7 @@ import com.soywiz.korio.util.*
 import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
-class VfsFile(
+data class VfsFile(
 	val vfs: Vfs,
 	val path: String
 ) : VfsNamed(path.pathInfo), AsyncInputOpenable, Extra by Extra.Mixin() {
@@ -219,8 +219,14 @@ class VfsFile(
 	override fun toString(): String = "$vfs[${this.path}]"
 }
 
-fun VfsFile.toUnscaped() = FinalVfsFile(vfs, this.path)
-fun FinalVfsFile.toFile() = VfsFile(vfs, path)
-data class FinalVfsFile(val vfs: Vfs, val path: String)
+fun VfsFile.toUnscaped() = FinalVfsFile(this)
+fun FinalVfsFile.toFile() = this.file
+
+//inline class FinalVfsFile(val file: VfsFile) {
+data class FinalVfsFile(val file: VfsFile) {
+	constructor(vfs: Vfs, path: String) : this(vfs[path])
+	val vfs: Vfs get() = file.vfs
+	val path: String get() = file.path
+}
 
 suspend inline fun <R> VfsFile.useVfs(callback: suspend (VfsFile) -> R): R = vfs.use { callback(this@useVfs) }

@@ -75,4 +75,17 @@ class VfsFileTest {
 		assertEquals(true, result.vfs is UrlVfs)
 		assertEquals("/demo.txt", result.path)
 	}
+
+	@Test
+	fun testUnescapedCallsInit() = suspendTest {
+		val memoryVfs = MemoryVfs()
+		var initialized = false
+		val vfs = object : Vfs.Proxy() {
+			override suspend fun access(path: String): VfsFile = memoryVfs[path]
+			override suspend fun init() = run { initialized = true }
+		}.root
+		assertEquals(memoryVfs["test"], vfs["test"].getUnderlyingUnscapedFile().toFile())
+		assertEquals(initialized, true)
+
+	}
 }

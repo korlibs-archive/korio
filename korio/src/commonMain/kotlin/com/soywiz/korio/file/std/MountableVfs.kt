@@ -46,8 +46,6 @@ suspend fun MountableVfs(closeMounts: Boolean = false, callback: suspend Mountab
 			throw FileNotFoundException(path)
 		}
 
-		override suspend fun getUnderlyingUnscapedFile(path: String) = access(path).getUnderlyingUnscapedFile()
-
 		override fun toString(): String = "MountableVfs"
 	}
 

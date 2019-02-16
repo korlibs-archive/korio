@@ -132,7 +132,7 @@ abstract class Vfs : AsyncCloseable {
 		protected open suspend fun VfsFile.transform(): VfsFile = file(this.path)
 		//suspend protected fun transform2_f(f: VfsFile): VfsFile = transform(f)
 
-		override suspend fun getUnderlyingUnscapedFile(path: String): FinalVfsFile = access(path).getUnderlyingUnscapedFile()
+		final override suspend fun getUnderlyingUnscapedFile(path: String): FinalVfsFile = initOnce().access(path).getUnderlyingUnscapedFile()
 
 		protected open suspend fun init() {
 		}
