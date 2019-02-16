@@ -18,7 +18,7 @@ class AsyncOnce<T> {
 	var promise: Deferred<T>? = null
 
 	suspend operator fun invoke(callback: suspend () -> T): T {
-		coroutineScope {
+		supervisorScope {
 			if (promise == null) {
 				promise = asyncImmediately { callback() }
 			}

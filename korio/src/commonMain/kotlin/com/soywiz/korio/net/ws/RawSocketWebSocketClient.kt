@@ -120,7 +120,7 @@ class RawSocketWebSocketClient(
 			}
 		}
 
-		coroutineScope {
+		supervisorScope {
 			launchImmediately {
 				onOpen(Unit)
 				try {

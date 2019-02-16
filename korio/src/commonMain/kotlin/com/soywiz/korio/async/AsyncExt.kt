@@ -14,13 +14,13 @@ fun <T> CoroutineScope.asyncImmediately(callback: suspend () -> T) = _async(Coro
 fun <T> CoroutineScope.asyncAsap(callback: suspend () -> T) = _async(CoroutineStart.DEFAULT, callback)
 
 
-fun launch(context: CoroutineContext, callback: suspend () -> Unit) = CoroutineScope(context).launchImmediately(callback)
-fun launchImmediately(context: CoroutineContext, callback: suspend () -> Unit) = CoroutineScope(context).launchImmediately(callback)
-fun launchAsap(context: CoroutineContext, callback: suspend () -> Unit) = CoroutineScope(context).launchAsap(callback)
+fun launch(context: CoroutineContext, callback: suspend () -> Unit) = CoroutineScope(SupervisorJob() + context).launchImmediately(callback)
+fun launchImmediately(context: CoroutineContext, callback: suspend () -> Unit) = CoroutineScope(SupervisorJob() + context).launchImmediately(callback)
+fun launchAsap(context: CoroutineContext, callback: suspend () -> Unit) = CoroutineScope(SupervisorJob() + context).launchAsap(callback)
 
-fun <T> async(context: CoroutineContext, callback: suspend () -> T) = CoroutineScope(context).asyncImmediately(callback)
-fun <T> asyncImmediately(context: CoroutineContext, callback: suspend () -> T) = CoroutineScope(context).asyncImmediately(callback)
-fun <T> asyncAsap(context: CoroutineContext, callback: suspend () -> T) = CoroutineScope(context).asyncAsap(callback)
+fun <T> async(context: CoroutineContext, callback: suspend () -> T) = CoroutineScope(SupervisorJob() + context).asyncImmediately(callback)
+fun <T> asyncImmediately(context: CoroutineContext, callback: suspend () -> T) = CoroutineScope(SupervisorJob() + context).asyncImmediately(callback)
+fun <T> asyncAsap(context: CoroutineContext, callback: suspend () -> T) = CoroutineScope(SupervisorJob() + context).asyncAsap(callback)
 
 expect fun asyncEntryPoint(callback: suspend () -> Unit)
 fun suspendTest(callback: suspend () -> Unit) = asyncEntryPoint(callback)

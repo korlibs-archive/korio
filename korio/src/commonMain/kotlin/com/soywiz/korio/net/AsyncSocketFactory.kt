@@ -63,7 +63,7 @@ interface AsyncServer {
 	suspend fun accept(): AsyncClient
 
 	suspend fun listen(handler: suspend (AsyncClient) -> Unit): Closeable {
-		val job = coroutineScope {
+		val job = supervisorScope {
 			launchImmediately {
 				while (true) {
 					handler(accept())
