@@ -3,6 +3,7 @@
 package com.soywiz.korio.async
 
 import com.soywiz.klock.*
+import com.soywiz.korio.internal.*
 import com.soywiz.korio.lang.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
@@ -98,7 +99,7 @@ class Signal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
 		val oldHandlers = handlers
 		handlersNoOnce.clear()
 		handlersToRun.clear()
-		for (handler in oldHandlers) {
+		oldHandlers.fastForEach { handler ->
 			handlersToRun.add(handler)
 			if (!handler.once) handlersNoOnce.add(handler)
 		}
@@ -106,7 +107,7 @@ class Signal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
 		handlers = handlersNoOnce
 		handlersNoOnce = temp
 
-		for (handler in handlersToRun) {
+		handlersToRun.fastForEach { handler ->
 			handler.item(value)
 		}
 	}
