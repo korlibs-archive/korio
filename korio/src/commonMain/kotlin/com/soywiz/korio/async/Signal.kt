@@ -32,11 +32,10 @@ class AsyncSignal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
 	}
 
 	suspend operator fun invoke(value: T) {
-		val it = handlers.iterator()
-		while (it.hasNext()) {
-			val node = it.next()
-			if (node.once) it.remove()
+		handlers.fastIterateRemove { node ->
+			val remove = node.once
 			node.item(value)
+			remove
 		}
 	}
 
