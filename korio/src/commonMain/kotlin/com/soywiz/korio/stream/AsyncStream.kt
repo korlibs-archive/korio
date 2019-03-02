@@ -3,6 +3,7 @@
 package com.soywiz.korio.stream
 
 import com.soywiz.kds.*
+import com.soywiz.kds.iterators.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
@@ -66,7 +67,7 @@ fun List<AsyncInputStreamWithLength>.combine(): AsyncInputStreamWithLength {
 		override suspend fun getLength(): Long = list.map { it.getLength() }.sum()
 
 		override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-			for (i in list) {
+			list.fastForEach { i ->
 				val read = i.read(buffer, offset, len)
 				if (read > 0) return read
 			}
@@ -74,7 +75,9 @@ fun List<AsyncInputStreamWithLength>.combine(): AsyncInputStreamWithLength {
 		}
 
 		override suspend fun close() {
-			for (i in list) i.close()
+			list.fastForEach { i ->
+				i.close()
+			}
 		}
 	}
 }

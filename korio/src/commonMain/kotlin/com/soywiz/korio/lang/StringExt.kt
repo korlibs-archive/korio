@@ -109,10 +109,12 @@ fun String.substr(start: Int, length: Int): String {
 	return if (high >= low) this.substring(low, high) else ""
 }
 
-fun String.transform(transform: (Char) -> String): String {
-	var out = ""
-	for (ch in this) out += transform(ch)
-	return out
+fun String.eachBuilder(transform: StringBuilder.(Char) -> Unit): String = buildString {
+	for (n in 0 until this@eachBuilder.length) transform(this, this@eachBuilder[n])
+}
+
+fun String.transform(transform: (Char) -> String): String = buildString {
+	for (n in 0 until this@transform.length) append(transform(this@transform[n]))
 }
 
 fun String.parseInt(): Int = when {

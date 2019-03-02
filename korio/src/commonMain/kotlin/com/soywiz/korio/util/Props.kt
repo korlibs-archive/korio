@@ -1,5 +1,6 @@
 package com.soywiz.korio.util
 
+import com.soywiz.kds.iterators.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 
@@ -19,9 +20,9 @@ class Props(private val props: LinkedHashMap<String, String> = LinkedHashMap<Str
 	*/
 
 	fun deserializeAdd(str: String) {
-		for (line in str.split("\n")) {
-			if (line.startsWith('#')) continue
-			if (line.isBlank()) continue
+		str.split("\n").fastForEach { line ->
+			if (line.startsWith('#')) return@fastForEach
+			if (line.isBlank()) return@fastForEach
 			val parts = line.split('=', limit = 2)
 			val key = parts[0].trim()
 			val value = parts.getOrElse(1) { " " }.trim()

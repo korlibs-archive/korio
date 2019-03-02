@@ -1,5 +1,6 @@
 package com.soywiz.korio.file.std
 
+import com.soywiz.kds.iterators.*
 import com.soywiz.klock.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
@@ -212,7 +213,9 @@ private class StorageFiles(val storage: SimpleStorage) {
 	suspend fun removeEntryInfo(fileName: String): Boolean {
 		val entry = getEntryInfo(fileName)
 		return if (entry != null) {
-			for (child in entry.children) removeEntryInfo(child)
+			entry.children.fastForEach { child ->
+				removeEntryInfo(child)
+			}
 			true
 		} else {
 			false

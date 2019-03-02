@@ -1,7 +1,7 @@
 package com.soywiz.korio.serialization.xml
 
 import com.soywiz.kds.*
-import com.soywiz.korio.*
+import com.soywiz.kds.iterators.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.util.*
@@ -82,7 +82,9 @@ data class Xml(
 				} else {
 					line("<$name$attributesStr>")
 					indent {
-						for (child in allChildren) child.toOuterXmlIndented(indenter)
+						allChildren.fastForEach { child ->
+							child.toOuterXmlIndented(indenter)
+						}
 					}
 					line("</$name>")
 				}
@@ -155,7 +157,13 @@ data class Xml(
 		private val entities = StrReader.Literals.fromList(charToEntity.values.toTypedArray())
 		private val entityToChar = charToEntity.flip()
 
-		fun encode(str: String): String = str.transform { charToEntity[it] ?: "$it" }
+		fun encode(str: String): String = str.eachBuilder {
+			val entry = charToEntity[it]
+			when {
+				entry != null -> append(entry)
+				else -> append(it)
+			}
+		}
 		fun decode(str: String): String = decode(StrReader(str))
 		fun decode(r: StrReader): String = buildString {
 			while (!r.eof) {

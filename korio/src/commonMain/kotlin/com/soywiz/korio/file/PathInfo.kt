@@ -1,5 +1,6 @@
 package com.soywiz.korio.file
 
+import com.soywiz.kds.iterators.*
 import com.soywiz.korio.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
@@ -118,7 +119,7 @@ fun PathInfo.getPathComponents(): List<String> = fullPathNormalized.split('/')
  */
 fun PathInfo.getPathFullComponents(): List<String> {
 	val out = arrayListOf<String>()
-	for (n in fullPathNormalized.indices) {
+	for (n in 0 until fullPathNormalized.length) {
 		when (fullPathNormalized[n]) {
 			'/', '\\' -> {
 				out += fullPathNormalized.substring(0, n)
@@ -172,7 +173,7 @@ fun PathInfo.normalize(): String {
 	} else {
 		val path2 = path.replace('\\', '/')
 		val out = ArrayList<String>()
-		for (part in path2.split("/")) {
+		path2.split("/").fastForEach { part ->
 			when (part) {
 				"", "." -> if (out.isEmpty()) out += "" else Unit
 				".." -> if (out.isNotEmpty()) out.removeAt(out.size - 1)

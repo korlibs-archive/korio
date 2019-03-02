@@ -1,5 +1,6 @@
 package com.soywiz.korio.util
 
+import com.soywiz.kds.iterators.*
 import com.soywiz.kmem.*
 
 inline operator fun ByteArray.set(o: Int, v: Int) = run { this[o] = v.toByte() }
@@ -8,7 +9,7 @@ inline operator fun ByteArray.set(o: Int, v: Long) = run { this[o] = v.toByte() 
 private inline fun <TArray> _join(items: List<TArray>, build: (Int) -> TArray, size: (TArray) -> Int, arraycopy: (TArray, Int, TArray, Int, Int) -> Unit): TArray {
 	val out = build(items.sumBy { size(it) })
 	var pos = 0
-	for (c in items) {
+	items.fastForEach { c ->
 		arraycopy(c, 0, out, pos, size(c))
 		pos += size(c)
 	}

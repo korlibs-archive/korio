@@ -3,41 +3,40 @@ package com.soywiz.korio.lang
 import kotlin.test.*
 
 class StringExtTest {
-	@kotlin.test.Test
-	fun name() {
-		assertEquals(listOf("90"), "90".splitKeep(Regex("\\d+")))
-		assertEquals(listOf("a", "90"), "a90".splitKeep(Regex("\\d+")))
-		assertEquals(listOf("a", "90", "b"), "a90b".splitKeep(Regex("\\d+")))
-		assertEquals(listOf("a", "90", "b", "3"), "a90b3".splitKeep(Regex("\\d+")))
-		assertEquals(listOf("a", "90", "b", "3", "cc"), "a90b3cc".splitKeep(Regex("\\d+")))
-	}
-
-	@kotlin.test.Test
-	fun format() {
-		assertEquals("GMT+0200", "GMT%s%02d%02d".format("+", 2, 0))
-	}
-
-	//@kotlin.test.Test
 	@Test
-	fun formatHex() {
-		assertEquals("FFFFFFFF", "%08X".format(0xFFFFFFFF.toInt()))
+	fun testParseInt() {
+		assertEquals(16, "0x10".parseInt())
+		assertEquals(16, "16".parseInt())
 	}
 
 	@Test
-	fun replaceNonPrintableCharacters() {
-		assertEquals("?hello??world", "\nhello\t\rworld".replaceNonPrintableCharacters(replacement = "?"))
+	fun testTransform() {
+		assertEquals("hEEllo", "hello".transform { if (it == 'e') "EE" else "$it" })
 	}
 
-	@kotlin.test.Test
-	fun name2() {
-		assertEquals(listOf<String>(), "".splitInChunks(3))
-		assertEquals(listOf("1"), "1".splitInChunks(3))
-		assertEquals(listOf("12"), "12".splitInChunks(3))
-		assertEquals(listOf("123"), "123".splitInChunks(3))
-		assertEquals(listOf("123", "4"), "1234".splitInChunks(3))
-		assertEquals(listOf("123", "45"), "12345".splitInChunks(3))
-		assertEquals(listOf("123", "456"), "123456".splitInChunks(3))
-		assertEquals(listOf("123", "456", "7"), "1234567".splitInChunks(3))
+	@Test
+	fun testEachBuilder() {
+		assertEquals("hEEllo", "hello".eachBuilder { if (it == 'e') append("EE") else append(it) })
+	}
+
+	@Test
+	fun testSplitInChunks() {
+		assertEquals(listOf("ab", "cd"), "abcd".splitInChunks(2))
+		assertEquals(listOf("ab", "cd", "e"), "abcde".splitInChunks(2))
+	}
+
+	@Test
+	fun testSplitKeep() {
+		assertEquals(listOf("a", "   ", "c"), "a   c".splitKeep(Regex("\\s+")))
+	}
+
+	@Test
+	fun testFormat() {
+		assertEquals("1 2", "%d %d".format(1, 2))
+		assertEquals("01 2", "%02d %d".format(1, 2))
+		assertEquals("f", "%x".format(15))
+		assertEquals("0f", "%02x".format(15))
+		assertEquals("0F", "%02X".format(15))
 	}
 
 }

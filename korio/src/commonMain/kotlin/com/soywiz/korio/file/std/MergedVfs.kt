@@ -1,5 +1,6 @@
 package com.soywiz.korio.file.std
 
+import com.soywiz.kds.iterators.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
@@ -27,7 +28,7 @@ open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
 	}
 
 	override suspend fun stat(path: String): VfsStat {
-		for (vfs in vfsList) {
+		vfsList.fastForEach { vfs ->
 			val result = vfs[path].stat()
 			if (result.exists) return result.copy(file = file(path))
 		}
@@ -36,8 +37,8 @@ open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
 
 	override suspend fun list(path: String): ReceiveChannel<VfsFile> = produce {
 		val emitted = LinkedHashSet<String>()
-		for (vfs in vfsList) {
-			val items = runIgnoringExceptions { vfs[path].list() } ?: continue
+		vfsList.fastForEach { vfs ->
+			val items = runIgnoringExceptions { vfs[path].list() } ?: return@fastForEach
 
 			try {
 				for (v in items) {

@@ -1,5 +1,6 @@
 package com.soywiz.korio.util
 
+import com.soywiz.kds.iterators.*
 import com.soywiz.korio.lang.*
 import kotlin.collections.List
 import kotlin.collections.MutableMap
@@ -166,7 +167,9 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 			fun fromList(lits: Array<String>): Literals {
 				val lengths = lits.map { it.length }.sorted().reversed().distinct().toTypedArray()
 				val map = linkedMapOf<String, Boolean>()
-				for (lit in lits) map[lit] = true
+				lits.fastForEach { lit ->
+					map[lit] = true
+				}
 				return Literals(lits, map, lengths)
 			}
 		}
@@ -174,7 +177,7 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 		fun contains(lit: String) = map.containsKey(lit)
 
 		fun matchAt(str: String, offset: Int): String? {
-			for (len in lengths) {
+			lengths.fastForEach { len ->
 				val id = str.substr(offset, len)
 				if (contains(id)) return id
 			}
@@ -195,7 +198,7 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 				val first = list[0]
 				var min = first.min
 				var max = first.max
-				for (i in list) {
+				list.fastForEach { i ->
 					min = min(min, i.min)
 					max = max(max, i.max)
 				}

@@ -22,7 +22,8 @@ object Hex {
 		var opos = 0
 		var nibbles = 0
 		var value = 0
-		for (c in str) {
+		for (n in 0 until str.length) {
+			val c = str[n]
 			val vv = decodeChar(c)
 			if (vv >= 0) {
 				value = (value shl 4) or vv
@@ -42,7 +43,7 @@ object Hex {
 
 	private fun encodeBase(data: ByteArray, digits: String = DIGITS): String {
 		val out = StringBuilder(data.size * 2)
-		for (n in data.indices) {
+		for (n in 0 until data.size) {
 			val v = data[n].toInt() and 0xFF
 			out.append(digits[(v ushr 4) and 0xF])
 			out.append(digits[(v ushr 0) and 0xF])

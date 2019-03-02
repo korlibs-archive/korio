@@ -1,6 +1,7 @@
 package com.soywiz.korio.util
 
 import com.soywiz.kds.*
+import com.soywiz.kds.iterators.*
 import com.soywiz.korio.dynamic.mapper.*
 import com.soywiz.korio.lang.*
 import java.lang.reflect.*
@@ -57,14 +58,16 @@ class ClassFactory<T> private constructor(iclazz: Class<out T>, internal: kotlin
 
 	init {
 		constructor.isAccessible = true
-		for (field in fields) field.isAccessible = true
+		fields.fastForEach { field ->
+			field.isAccessible = true
+		}
 	}
 
 	fun create(values: Any?): T {
 		when (values) {
 			is Map<*, *> -> {
 				val instance = createDummy()
-				for (field in fields) {
+				fields.fastForEach { field ->
 					if (values.containsKey(field.name)) {
 						field.isAccessible = true
 						field.set(instance, DynamicJvm.dynamicCast(values[field.name], field.type, field.genericType))
@@ -103,7 +106,9 @@ object JvmTyper {
 			} else {
 				val out = LinkedHashMap<String, Any?>()
 				val cf = ClassFactory.getForInstance(obj)
-				for (field in cf.fields) out[field.name] = untype(field.get(obj))
+				cf.fields.fastForEach { field ->
+					out[field.name] = untype(field.get(obj))
+				}
 				out
 			}
 		}

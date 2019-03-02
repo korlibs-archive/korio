@@ -1,5 +1,7 @@
 package com.soywiz.korio.util
 
+import com.soywiz.kds.iterators.*
+
 class Indenter(internal val actions: ArrayList<Action> = arrayListOf()) {
 	object INDENTS {
 		private val INDENTS: Array<String> = Array(1024) { "" }.apply {
@@ -132,7 +134,7 @@ class Indenter(internal val actions: ArrayList<Action> = arrayListOf()) {
 		}
 
 		fun eval(actions: List<Action>) {
-			for (action in actions) {
+			actions.fastForEach { action ->
 				when (action) {
 					is Action.Text -> {
 						if (newLine) {

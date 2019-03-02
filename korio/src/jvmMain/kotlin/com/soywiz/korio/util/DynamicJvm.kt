@@ -1,5 +1,6 @@
 package com.soywiz.korio.util
 
+import com.soywiz.kds.iterators.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.lang.*
 import java.lang.reflect.*
@@ -333,9 +334,9 @@ object DynamicJvm {
 			else -> {
 				val clazz = value::class.java
 				val out = linkedMapOf<Any?, Any?>()
-				for (field in clazz.declaredFields) {
-					if (Modifier.isStatic(field.modifiers)) continue
-					if (field.name.startsWith('$')) continue
+				clazz.declaredFields.fastForEach { field ->
+					if (Modifier.isStatic(field.modifiers)) return@fastForEach
+					if (field.name.startsWith('$')) return@fastForEach
 					field.isAccessible = true
 					out[field.name] = fromTyped(field.get(value))
 				}
@@ -470,7 +471,7 @@ object DynamicJvm {
 	fun <T> getTypedFields(sourceClass: Class<*>, source: Any?, clazz: Class<T>): List<T> {
 		val list = ArrayList<T>()
 		val expectStatic = source == null
-		for (field in sourceClass.allDeclaredFields) {
+		sourceClass.allDeclaredFields.fastForEach { field ->
 			val isStatic = Modifier.isStatic(field.modifiers)
 			if ((isStatic == expectStatic) && field.type == clazz) {
 				field.isAccessible = true

@@ -2,6 +2,7 @@
 
 package com.soywiz.korio.file.std
 
+import com.soywiz.kds.iterators.*
 import com.soywiz.korio.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
@@ -12,7 +13,7 @@ suspend fun MountableVfs(closeMounts: Boolean = false, callback: suspend Mountab
 
 		override suspend fun close() {
 			if (closeMounts) {
-				for (mount in mounts) {
+				mounts.fastForEach { mount ->
 					mount.second.vfs.close()
 				}
 			}
@@ -39,7 +40,7 @@ suspend fun MountableVfs(closeMounts: Boolean = false, callback: suspend Mountab
 
 		override suspend fun access(path: String): VfsFile {
 			val rpath = path.pathInfo.normalize()
-			for ((base, file) in mounts) {
+			mounts.fastForEach { (base, file) ->
 				//println("$base/$file")
 				if (rpath.startsWith(base)) return file[rpath.substring(base.length)]
 			}

@@ -1,5 +1,6 @@
 package com.soywiz.korio.file.std
 
+import com.soywiz.kds.iterators.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
@@ -45,7 +46,7 @@ class IsoVfs(val iso: ISO.IsoFile, val closeStream: Boolean) : Vfs() {
 
 	override suspend fun list(path: String) = produce<VfsFile> {
 		val file = isoFile[path]
-		for (c in file.children) {
+		file.children.fastForEach { c ->
 			//yield(getVfsStat(c))
 			send(vfs[c.fullname])
 		}
@@ -153,7 +154,9 @@ object ISO {
 
 		fun dump() {
 			println("$fullname: $record")
-			for (c in children) c.dump()
+			children.fastForEach { c ->
+				c.dump()
+			}
 		}
 
 		private fun String.normalizeName() = this.toLowerCase()
@@ -161,15 +164,14 @@ object ISO {
 		suspend fun open2(mode: VfsOpenMode) = reader.getSector(record.extent, record.size)
 		operator fun get(name: String): IsoFile {
 			var current = this
-			for (part in name.split("/")) {
+			name.split("/").fastForEach { part ->
 				when (part) {
 					"" -> Unit
 					"." -> Unit
 					".." -> current = current.parent!!
 					// @TODO: kotlin-js bug? It doesn't seems to like this somehow.
 					//else -> current = current.children.firstOrNull { it.name.toUpperCase() == part.toUpperCase() } ?: throw kotlin.IllegalStateException("Can't find part $part for accessing path $name children: ${current.children}")
-					else -> current = current.childrenByName[part.normalizeName()] ?:
-							throw kotlin.IllegalStateException("Can't find part $part for accessing path $name children: ${current.children}")
+					else -> current = current.childrenByName[part.normalizeName()] ?: throw kotlin.IllegalStateException("Can't find part $part for accessing path $name children: ${current.children}")
 				}
 			}
 			return current

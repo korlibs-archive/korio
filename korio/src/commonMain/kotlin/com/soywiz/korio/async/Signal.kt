@@ -2,6 +2,7 @@
 
 package com.soywiz.korio.async
 
+import com.soywiz.kds.iterators.*
 import com.soywiz.klock.*
 import com.soywiz.korio.internal.*
 import com.soywiz.korio.lang.*

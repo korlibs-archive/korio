@@ -1,5 +1,6 @@
 package com.soywiz.korio.net
 
+import com.soywiz.kds.iterators.*
 import com.soywiz.korio.file.*
 import kotlin.collections.set
 
@@ -18,11 +19,15 @@ class MimeType(val mime: String, val exts: List<String>) : Vfs.Attribute {
 		val TEXT_JS = MimeType("application/javascript", listOf("js"))
 
 		fun register(mimeType: MimeType) {
-			for (ext in mimeType.exts) MimeType_byExtensions[ext] = mimeType
+			mimeType.exts.fastForEach { ext ->
+				MimeType_byExtensions[ext] = mimeType
+			}
 		}
 
 		fun register(vararg mimeTypes: MimeType) {
-			for (mt in mimeTypes) register(mt)
+			mimeTypes.fastForEach { mt ->
+				register(mt)
+			}
 		}
 
 		fun register(mime: String, vararg exsts: String) {

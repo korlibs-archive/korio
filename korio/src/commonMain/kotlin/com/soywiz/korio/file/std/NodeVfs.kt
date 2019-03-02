@@ -2,6 +2,7 @@
 
 package com.soywiz.korio.file.std
 
+import com.soywiz.kds.iterators.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
@@ -64,7 +65,7 @@ open class NodeVfs(val caseSensitive: Boolean = true) : Vfs() {
 
 		fun access(path: String, createFolders: Boolean = false): Node {
 			var node = if (path.startsWith('/')) root else this
-			for (part in path.pathInfo.parts()) {
+			path.pathInfo.parts().fastForEach { part ->
 				var child = node.child(part)
 				if (child == null && createFolders) child = node.createChild(part, isDirectory = true)
 				node = child ?: throw FileNotFoundException("Can't find '$part' in $path")
