@@ -40,7 +40,7 @@ class SignalTest {
 			try {
 				withTimeout(200) {
 					while (true) {
-						out += "" + s.waitOne()
+						out += "" + s.waitOneBase()
 					}
 				}
 			} catch (e: CancellationException) {

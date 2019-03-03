@@ -4,50 +4,101 @@ package com.soywiz.korio.async
 
 import com.soywiz.kds.iterators.*
 import com.soywiz.klock.*
-import com.soywiz.korio.internal.*
 import com.soywiz.korio.lang.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
 import kotlin.coroutines.*
 
 
-class AsyncSignal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
-	inner class Node(val once: Boolean, val item: suspend (T) -> Unit) : Closeable {
+abstract class BaseSignal<T, THandler>(val onRegister: () -> Unit = {}) {
+	inner class Node(val once: Boolean, val item: THandler) : Closeable {
 		override fun close() {
-			handlers.remove(this)
+			if (iterating > 0) {
+				handlersToRemove.add(this)
+			} else {
+				handlers.remove(this)
+			}
 		}
 	}
 
-	private var handlers = ArrayList<Node>()
-
+	protected var handlers = ArrayList<Node>()
+	protected var handlersToRemove = ArrayList<Node>()
 	val listenerCount: Int get() = handlers.size
+	fun clear() = handlers.clear()
 
-	fun once(handler: suspend (T) -> Unit): Closeable = _add(true, handler)
-	fun add(handler: suspend (T) -> Unit): Closeable = _add(false, handler)
+	// @TODO: This breaks binary compatibility
+	//fun once(handler: THandler): Closeable = _add(true, handler)
+	//fun add(handler: THandler): Closeable = _add(false, handler)
+	//operator fun invoke(handler: THandler): Closeable = add(handler)
 
-	private fun _add(once: Boolean, handler: suspend (T) -> Unit): Closeable {
+	protected fun _add(once: Boolean, handler: THandler): Closeable {
 		onRegister()
 		val node = Node(once, handler)
 		handlers.add(node)
 		return node
 	}
-
-	suspend operator fun invoke(value: T) {
-		handlers.fastIterateRemove { node ->
-			val remove = node.once
-			node.item(value)
-			remove
+	protected var iterating: Int = 0
+	protected inline fun iterateCallbacks(callback: (THandler) -> Unit) {
+		try {
+			iterating++
+			handlers.fastIterateRemove { node ->
+				val remove = node.once
+				callback(node.item)
+				remove
+			}
+		} finally {
+			iterating--
+			if (handlersToRemove.isNotEmpty()) {
+				handlersToRemove.fastIterateRemove {
+					handlers.remove(it)
+					true
+				}
+			}
 		}
 	}
+	suspend fun listen(): ReceiveChannel<T> = produce {
+		while (true) send(waitOneBase())
+	}
+	abstract suspend fun waitOneBase(): T
+}
 
+class AsyncSignal<T>(onRegister: () -> Unit = {}) : BaseSignal<T, suspend (T) -> Unit>(onRegister) {
+	fun once(handler: suspend (T) -> Unit): Closeable = _add(true, handler)
+	fun add(handler: suspend (T) -> Unit): Closeable = _add(false, handler)
 	operator fun invoke(handler: suspend (T) -> Unit): Closeable = add(handler)
 
-	suspend fun listen(): ReceiveChannel<T> = produce {
-		while (true) {
-			send(waitOne())
+	suspend operator fun invoke(value: T) = iterateCallbacks{ it(value) }
+	override suspend fun waitOneBase(): T = suspendCancellableCoroutine { c ->
+		var close: Closeable? = null
+		close = once {
+			close?.close()
+			c.resume(it)
+		}
+		c.invokeOnCancellation {
+			close.close()
 		}
 	}
 }
+
+class Signal<T>(onRegister: () -> Unit = {}) : BaseSignal<T, (T) -> Unit>(onRegister) {
+	fun once(handler: (T) -> Unit): Closeable = _add(true, handler)
+	fun add(handler: (T) -> Unit): Closeable = _add(false, handler)
+	operator fun invoke(handler: (T) -> Unit): Closeable = add(handler)
+	operator fun invoke(value: T) = iterateCallbacks { it(value) }
+	override suspend fun waitOneBase(): T= suspendCancellableCoroutine { c ->
+		var close: Closeable? = null
+		close = once {
+			close?.close()
+			c.resume(it)
+		}
+		c.invokeOnCancellation {
+			close?.close()
+		}
+	}
+}
+
+suspend fun <T> AsyncSignal<T>.waitOne() = waitOneBase()
+suspend fun <T> Signal<T>.waitOne() = waitOneBase()
 
 fun <TI, TO> AsyncSignal<TI>.mapSignal(transform: (TI) -> TO): AsyncSignal<TO> {
 	val out = AsyncSignal<TO>()
@@ -57,76 +108,8 @@ fun <TI, TO> AsyncSignal<TI>.mapSignal(transform: (TI) -> TO): AsyncSignal<TO> {
 
 suspend operator fun AsyncSignal<Unit>.invoke() = invoke(Unit)
 
-suspend fun <T> AsyncSignal<T>.waitOne(): T = suspendCancellableCoroutine { c ->
-	var close: Closeable? = null
-	close = once {
-		close?.close()
-		c.resume(it)
-	}
-	c.invokeOnCancellation {
-		close.close()
-	}
-}
-
 //////////////////////////////////
 
-class Signal<T>(val onRegister: () -> Unit = {}) { //: AsyncSequence<T> {
-	inner class Node(val once: Boolean, val item: (T) -> Unit) : Closeable {
-		override fun close() {
-			handlers.remove(this)
-		}
-	}
-
-	private var handlersToRun = ArrayList<Node>()
-	private var handlers = ArrayList<Node>()
-	private var handlersNoOnce = ArrayList<Node>()
-
-	val listenerCount: Int get() = handlers.size
-
-	fun once(handler: (T) -> Unit): Closeable = _add(true, handler)
-	fun add(handler: (T) -> Unit): Closeable = _add(false, handler)
-
-	fun clear() = handlers.clear()
-
-	private fun _add(once: Boolean, handler: (T) -> Unit): Closeable {
-		onRegister()
-		val node = Node(once, handler)
-		handlers.add(node)
-		return node
-	}
-
-	operator fun invoke(value: T) {
-		val oldHandlers = handlers
-		handlersNoOnce.clear()
-		handlersToRun.clear()
-		oldHandlers.fastForEach { handler ->
-			handlersToRun.add(handler)
-			if (!handler.once) handlersNoOnce.add(handler)
-		}
-		val temp = handlers
-		handlers = handlersNoOnce
-		handlersNoOnce = temp
-
-		handlersToRun.fastForEach { handler ->
-			handler.item(value)
-		}
-	}
-
-	operator fun invoke(handler: (T) -> Unit): Closeable = add(handler)
-
-	suspend fun listen(): ReceiveChannel<T> = produce {
-		while (true) {
-			send(waitOne())
-		}
-	}
-
-
-//override fun iterator(): AsyncIterator<T> = asyncGenerate {
-//	while (true) {
-//		yield(waitOne())
-//	}
-//}.iterator()
-}
 
 //class AsyncSignal<T>(context: CoroutineContext) {
 
@@ -154,7 +137,7 @@ suspend fun Iterable<Signal<*>>.waitOne(): Any? = suspendCancellableCoroutine { 
 	}
 }
 
-fun <T> Signal<T>.waitOnePromise(): Deferred<T> {
+fun <T> Signal<T>.waitOneAsync(): Deferred<T> {
 	val deferred = CompletableDeferred<T>(Job())
 	var close: Closeable? = null
 	close = once {
@@ -166,6 +149,9 @@ fun <T> Signal<T>.waitOnePromise(): Deferred<T> {
 	}
 	return deferred
 }
+
+@Deprecated("", ReplaceWith("waitOneAsync()"))
+fun <T> Signal<T>.waitOnePromise(): Deferred<T> = waitOneAsync()
 
 suspend fun <T> Signal<T>.addSuspend(handler: suspend (T) -> Unit): Closeable {
 	val cc = coroutineContext
@@ -183,17 +169,6 @@ fun <T> Signal<T>.addSuspend(context: CoroutineContext, handler: suspend (T) -> 
 		}
 	}
 
-
-suspend fun <T> Signal<T>.waitOne(): T = suspendCancellableCoroutine { c ->
-	var close: Closeable? = null
-	close = once {
-		close?.close()
-		c.resume(it)
-	}
-	c.invokeOnCancellation {
-		close?.close()
-	}
-}
 
 suspend fun <T> Signal<T>.waitOne(timeout: TimeSpan): T? = kotlinx.coroutines.suspendCancellableCoroutine { c ->
 	var close: Closeable? = null
@@ -224,7 +199,7 @@ suspend fun <T> Signal<T>.waitOne(timeout: TimeSpan): T? = kotlinx.coroutines.su
 
 suspend fun <T> Signal<T>.waitOneOpt(timeout: TimeSpan?): T? = when {
 	timeout != null -> waitOne(timeout)
-	else -> waitOne()
+	else -> waitOneBase()
 }
 
 suspend inline fun <T> Map<Signal<Unit>, T>.executeAndWaitAnySignal(callback: () -> Unit): T {

@@ -157,7 +157,8 @@ data class URL private constructor(
 			val sb = StringBuilder(s.length)
 			val data = s.toByteArray(charset)
 			//for (byte c : data) System.out.printf("%02X\n", c & 0xFF);
-			for (c in data) {
+			for (n in 0 until data.size) {
+				val c = data[n]
 				val cc = c.toChar()
 				when (cc) {
 					' ' -> if (formUrlEncoded) sb.append("+") else sb.append("%20")

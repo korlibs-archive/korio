@@ -100,7 +100,7 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 	fun matchLitRange(lit: String): TRange? = tryLitRange(lit)
 
 	fun matchLitListRange(lits: Literals): TRange? {
-		for (len in lits.lengths) {
+		lits.lengths.fastForEach { len ->
 			if (lits.contains(substr(this.pos, len))) return this.readRange(len)
 		}
 		return null

@@ -1,6 +1,5 @@
 package com.soywiz.korio.net.ws
 
-import com.soywiz.korio.*
 import com.soywiz.korio.async.*
 import com.soywiz.korio.lang.*
 
@@ -18,8 +17,8 @@ abstract class WebSocketClient protected constructor(val url: String, val protoc
 	open suspend fun send(message: ByteArray): Unit = Unit
 }
 
-suspend fun WebSocketClient.readString() = onStringMessage.waitOne()
-suspend fun WebSocketClient.readBinary() = onBinaryMessage.waitOne()
+suspend fun WebSocketClient.readString() = onStringMessage.waitOneBase()
+suspend fun WebSocketClient.readBinary() = onBinaryMessage.waitOneBase()
 
 expect suspend fun WebSocketClient(
 	url: String,
