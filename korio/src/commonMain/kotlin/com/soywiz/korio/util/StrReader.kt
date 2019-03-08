@@ -81,6 +81,11 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 		return readed
 	}
 
+	fun skipExpect(expected: Char) {
+		val readed = this.readChar()
+		if (readed != expected) throw IllegalArgumentException("Expected '$expected' but found '$readed' at $pos")
+	}
+
 	fun expect(expected: Char) = readExpect("$expected")
 	fun skip(count: Int = 1) = this.apply { this.pos += count; }
 	private fun substr(pos: Int, length: Int): String {
@@ -251,6 +256,61 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 		}
 		return out.toString()
 	}
+
+
+	fun tryReadInt(default: Int): Int {
+		var digitCount = 0
+		var integral = 0
+		var mult = 1
+		loop@ while (!eof) {
+			when (val c = peek()) {
+				'-' -> {
+					skip(1)
+					mult *= -1
+				}
+				in '0'..'9' -> {
+					val digit = c - '0'
+					skip(1)
+					digitCount++
+					integral *= 10
+					integral += digit
+				}
+				else -> {
+					break@loop
+				}
+			}
+		}
+		return if (digitCount == 0) default else integral
+	}
+
+	fun tryReadNumber(default: Double = Double.NaN): Double {
+		val start = pos
+		skipWhile {
+			@Suppress("ConvertTwoComparisonsToRangeCheck")
+			(it >= '0' && it <= '9') || (it == '+') || (it == '-') || (it == 'e') || (it == 'E') || (it == '.')
+		}
+		val end = pos
+		if (end == start) return default
+		return NumberParser.parseDouble(this.str, start, end)
+	}
+
+	fun tryExpect(str: String): Boolean {
+		for (n in 0 until str.length) {
+			if (this.peekOffset(n) != str[n]) return false
+		}
+		skip(str.length)
+		return true
+	}
+
+	fun tryExpect(str: Char): Boolean {
+		if (peekChar() != str) return false
+		skip(1)
+		return true
+	}
+
+	fun peekOffset(offset: Int = 0): Char = this.str.getOrElse(pos + offset) { '\u0000' }
+
 }
 
 fun String.reader(file: String = "file", pos: Int = 0): StrReader = StrReader(this, file, pos)
+
