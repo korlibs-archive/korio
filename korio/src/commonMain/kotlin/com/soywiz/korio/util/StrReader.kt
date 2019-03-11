@@ -49,8 +49,14 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 	fun peek(): Char = if (hasMore) this.str[this.pos] else '\u0000'
 	fun peekChar(): Char = if (hasMore) this.str[this.pos] else '\u0000'
 	fun read(count: Int): String = this.peek(count).apply { skip(count) }
-	fun skipUntil(char: Char) = run { while (hasMore && this.peekChar() != char) this.readChar() }
-	fun skipUntilIncluded(char: Char) = run { while (hasMore && this.readChar() != char) Unit }
+	fun skipUntil(char: Char) {
+		val skipPos = this.str.indexOf(char, pos)
+		pos = (if (skipPos >= 0) skipPos else length)
+	}
+	fun skipUntilIncluded(char: Char) {
+		skipUntil(char)
+		if (!eof && peekChar() == char) skip(1)
+	}
 	//inline fun skipWhile(check: (Char) -> Boolean) = run { while (check(this.peekChar())) this.skip(1) }
 	inline fun skipWhile(filter: (Char) -> Boolean) = run { while (hasMore && filter(this.peekChar())) this.readChar() }
 

@@ -168,17 +168,19 @@ data class Xml(
 		fun decode(r: StrReader): String = buildString {
 			while (!r.eof) {
 				@Suppress("LiftReturnOrAssignment") // Performance?
-				when (val c = r.readChar()) {
-					'&' -> {
-						val value = r.readUntilIncluded(';') ?: ""
-						val full = "&$value"
-						append(when {
-							value.startsWith('#') -> "${value.substring(1, value.length - 1).toInt().toChar()}"
-							entityToChar.contains(full) -> "${entityToChar[full]}"
-							else -> full
-						})
-					}
-					else -> append(c)
+				val plain = r.readUntil('&')
+				if (plain != null) {
+					append(plain)
+				}
+				if (r.eof) break
+
+				r.skipExpect('&')
+				val value = r.readUntilIncluded(';') ?: ""
+				val full = "&$value"
+				when {
+					value.startsWith('#') -> append(value.substring(1, value.length - 1).toInt().toChar())
+					entityToChar.contains(full) -> append(entityToChar[full])
+					else -> append(full)
 				}
 			}
 		}
@@ -200,13 +202,14 @@ data class Xml(
 				if (r.eof) break
 
 				r.skipExpect('<')
+				var res: Element? = null
 				when {
 					r.tryExpect("![CDATA[") -> {
 						val start = r.pos
 						while (!r.eof) {
 							val end = r.pos
 							if (r.tryExpect("]]>")) {
-								yield(Element.Text(r.createRange(start, end).text))
+								res = Element.Text(r.createRange(start, end).text)
 								break
 							}
 							r.readChar()
@@ -217,7 +220,7 @@ data class Xml(
 						while (!r.eof) {
 							val end = r.pos
 							if (r.tryExpect("-->")) {
-								yield(Element.CommentTag(r.createRange(start, end).text))
+								res = Element.CommentTag(r.createRange(start, end).text)
 								break
 							}
 							r.readChar()
@@ -253,14 +256,17 @@ data class Xml(
 						val openclose = r.tryExpect('/')
 						val processingInstructionEnd = r.tryExpect('?')
 						r.skipExpect('>')
-						when {
-							processingInstruction || processingEntityOrDocType ->
-								yield(Element.ProcessingInstructionTag(name, attributes))
-							openclose -> yield(Element.OpenCloseTag(name, attributes))
-							close -> yield(Element.CloseTag(name))
-							else -> yield(Element.OpenTag(name, attributes))
+						res = when {
+							processingInstruction || processingEntityOrDocType -> Element.ProcessingInstructionTag(name, attributes)
+							openclose -> Element.OpenCloseTag(name, attributes)
+							close -> Element.CloseTag(name)
+							else -> Element.OpenTag(name, attributes)
 						}
 					}
+				}
+
+				if (res != null) {
+					yield(res)
 				}
 			}
 		}
