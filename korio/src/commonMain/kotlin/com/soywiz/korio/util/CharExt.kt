@@ -9,3 +9,4 @@ fun Char.isLetterDigitOrUnderscore(): Boolean = this.isLetterOrDigit() || this =
 fun Char.isLetterOrDigitOrDollar(): Boolean = this.isLetterOrDigit() || this == '$'
 val Char.isNumeric: Boolean get() = this.isDigit() || this == '.' || this == 'e' || this == '-'
 fun Char.isPrintable(): Boolean = this in '\u0020'..'\u007e' || this in '\u00a1'..'\u00ff'
+val Char.isPossibleFloatChar get() = (this >= '0' && this <= '9') || (this == '+') || (this == '-') || (this == 'e') || (this == 'E') || (this == '.')

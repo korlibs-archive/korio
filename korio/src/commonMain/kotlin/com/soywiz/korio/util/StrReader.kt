@@ -55,10 +55,14 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 	}
 	fun skipUntilIncluded(char: Char) {
 		skipUntil(char)
-		if (!eof && peekChar() == char) skip(1)
+		if (hasMore && peekChar() == char) skip(1)
 	}
 	//inline fun skipWhile(check: (Char) -> Boolean) = run { while (check(this.peekChar())) this.skip(1) }
-	inline fun skipWhile(filter: (Char) -> Boolean) = run { while (hasMore && filter(this.peekChar())) this.readChar() }
+	inline fun skipWhile(filter: (Char) -> Boolean) {
+		while (hasMore && filter(this.peekChar())) {
+			this.readChar()
+		}
+	}
 
 	inline fun skipUntil(filter: (Char) -> Boolean) =
 		run { while (hasMore && !filter(this.peekChar())) this.readChar() }
@@ -291,10 +295,7 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 
 	fun tryReadNumber(default: Double = Double.NaN): Double {
 		val start = pos
-		skipWhile {
-			@Suppress("ConvertTwoComparisonsToRangeCheck")
-			(it >= '0' && it <= '9') || (it == '+') || (it == '-') || (it == 'e') || (it == 'E') || (it == '.')
-		}
+		skipWhile { it.isPossibleFloatChar }
 		val end = pos
 		if (end == start) return default
 		return NumberParser.parseDouble(this.str, start, end)
