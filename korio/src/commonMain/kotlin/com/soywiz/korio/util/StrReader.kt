@@ -2,20 +2,9 @@ package com.soywiz.korio.util
 
 import com.soywiz.kds.iterators.*
 import com.soywiz.korio.lang.*
-import kotlin.collections.List
-import kotlin.collections.MutableMap
-import kotlin.collections.arrayListOf
-import kotlin.collections.distinct
-import kotlin.collections.joinToString
-import kotlin.collections.linkedMapOf
-import kotlin.collections.map
-import kotlin.collections.reversed
-import kotlin.collections.set
-import kotlin.collections.sorted
-import kotlin.collections.toCollection
-import kotlin.collections.toList
-import kotlin.collections.toTypedArray
+import kotlin.collections.*
 import kotlin.math.*
+import com.soywiz.kds.*
 
 class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 	companion object {
@@ -295,7 +284,10 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 
 	fun tryReadNumber(default: Double = Double.NaN): Double {
 		val start = pos
-		skipWhile { it.isPossibleFloatChar }
+		skipWhile {
+			@Suppress("ConvertTwoComparisonsToRangeCheck")
+			(it >= '0' && it <= '9') || (it == '+') || (it == '-') || (it == 'e') || (it == 'E') || (it == '.')
+		}
 		val end = pos
 		if (end == start) return default
 		return NumberParser.parseDouble(this.str, start, end)
@@ -317,7 +309,56 @@ class StrReader(val str: String, val file: String = "file", var pos: Int = 0) {
 
 	fun peekOffset(offset: Int = 0): Char = this.str.getOrElse(pos + offset) { '\u0000' }
 
+	fun readFloats(list: FloatArrayList = FloatArrayList(7)): FloatArrayList {
+		while (!eof) {
+			val pos0 = pos
+			val float = skipSpaces().tryReadNumber().toFloat()
+			skipSpaces()
+			val pos1 = pos
+			if (pos1 == pos0) error("Invalid number at $pos0 in '$str'")
+			list.add(float)
+			//println("float: $float, ${reader.pos}/${reader.length}")
+		}
+		return list
+	}
+
+	fun readIds(list: ArrayList<String> = ArrayList(7)): ArrayList<String> {
+		while (!eof) {
+			val pos0 = pos
+			val id = skipSpaces().tryReadId() ?: ""
+			skipSpaces()
+			val pos1 = pos
+			if (pos1 == pos0) error("Invalid identifier at $pos0 in '$str'")
+			list.add(id)
+			//println("float: $float, ${reader.pos}/${reader.length}")
+		}
+		return list
+	}
+
+	fun readInts(list: IntArrayList = IntArrayList(7)): IntArrayList {
+		while (!eof) {
+			val pos0 = pos
+			val v = skipSpaces().tryReadInt(0)
+			skipSpaces()
+			val pos1 = pos
+			if (pos1 == pos0) error("Invalid int at $pos0 in '$str'")
+			list.add(v)
+			//println("float: $float, ${reader.pos}/${reader.length}")
+		}
+		return list
+	}
+
+
+	fun tryReadId(): String? {
+		val start = pos
+		skipWhile {
+			@Suppress("ConvertTwoComparisonsToRangeCheck")
+			(it >= '0' && it <= '9') || (it >= 'a' && it <= 'z') || (it >= 'A' && it <= 'Z') || (it == '_') || (it == '.')
+		}
+		val end = pos
+		if (end == start) return null
+		return this.str.substring(start, end)
+	}
 }
 
 fun String.reader(file: String = "file", pos: Int = 0): StrReader = StrReader(this, file, pos)
-

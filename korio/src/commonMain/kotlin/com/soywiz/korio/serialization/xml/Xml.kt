@@ -294,6 +294,11 @@ val Xml.isNode get() = this.type == Xml.Type.NODE
 fun Iterable<Xml>.str(name: String, defaultValue: String = ""): String = this.first().attributes[name] ?: defaultValue
 fun Iterable<Xml>.children(name: String): Iterable<Xml> = this.flatMap { it.children(name) }
 val Iterable<Xml>.allChildren: Iterable<Xml> get() = this.flatMap(Xml::allChildren)
+val Iterable<Xml>.allNodeChildren: Iterable<Xml> get() = this.flatMap(Xml::allNodeChildren)
+
+val Iterable<Xml>.firstText: String? get() = this.firstOrNull()?.text
+val Iterable<Xml>.text: String get() = this.joinToString("") { it.text }
+
 operator fun Iterable<Xml>.get(name: String): Iterable<Xml> = this.children(name)
 fun String.toXml(): Xml = Xml.parse(this)
 
