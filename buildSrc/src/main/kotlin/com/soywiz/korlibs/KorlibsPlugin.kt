@@ -8,9 +8,12 @@ import org.gradle.api.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCompilation
 import java.io.*
 
-class KorlibsPlugin : Plugin<Project> {
+class KorlibsPluginNoNative : BaseKorlibsPlugin(false)
+class KorlibsPlugin : BaseKorlibsPlugin(true)
+
+open class BaseKorlibsPlugin(val nativeEnabled: Boolean) : Plugin<Project> {
     override fun apply(project: Project) = project {
-        val korlibs = KorlibsExtension(this)
+        val korlibs = KorlibsExtension(this, nativeEnabled)
         extensions.add("korlibs", korlibs)
 
         plugins.apply("kotlin-multiplatform")
@@ -21,7 +24,9 @@ class KorlibsPlugin : Plugin<Project> {
         // Platforms
         configureTargetCommon()
         configureTargetAndroid()
-        configureTargetNative()
+        if (nativeEnabled) {
+            configureTargetNative()
+        }
         configureTargetJavaScript()
         configureTargetJVM()
 
@@ -30,7 +35,7 @@ class KorlibsPlugin : Plugin<Project> {
     }
 }
 
-class KorlibsExtension(val project: Project) {
+class KorlibsExtension(val project: Project, val nativeEnabled: Boolean) {
     var hasAndroid = (System.getProperty("sdk.dir") != null) || (System.getenv("ANDROID_HOME") != null)
 
     init {
@@ -50,8 +55,9 @@ class KorlibsExtension(val project: Project) {
         }
     }
 
-    val ALL_NATIVE_TARGETS = listOf("iosArm64", "iosArm32", "iosX64", "linuxX64", "macosX64", "mingwX64")
-    val ALL_TARGETS = listOf("android", "js", "jvm", "metadata") + ALL_NATIVE_TARGETS
+    val ALL_NATIVE_TARGETS = if (nativeEnabled) listOf("iosArm64", "iosArm32", "iosX64", "linuxX64", "macosX64", "mingwX64") else listOf()
+    val ALL_ANDROID_TARGETS = if (hasAndroid) listOf("android") else listOf()
+    val ALL_TARGETS = ALL_ANDROID_TARGETS + listOf("js", "jvm", "metadata") + ALL_NATIVE_TARGETS
 
     @JvmOverloads
     fun dependencyMulti(group: String, name: String, version: String, targets: List<String> = ALL_TARGETS, suffixCommonRename: Boolean = false, androidIsJvm: Boolean = false) = project {

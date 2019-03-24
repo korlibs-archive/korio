@@ -1,5 +1,5 @@
 #!/bin/bash
 set -e
-./gradlew publish publishToMavenLocal
-./gradlew_linux publishLinuxX64PublicationToMavenRepository publishLinuxX64PublicationToMavenLocal
-./gradlew_win publishMingwX64PublicationToMavenRepository publishMingwX64PublicationToMavenLocal
+./gradlew publish
+./gradlew_linux publishLinuxX64PublicationToMavenRepository
+./gradlew_win publishMingwX64PublicationToMavenRepository
