@@ -8,12 +8,13 @@ import org.gradle.api.*
 import org.jetbrains.kotlin.gradle.plugin.mpp.KotlinNativeCompilation
 import java.io.*
 
-class KorlibsPluginNoNative : BaseKorlibsPlugin(false)
-class KorlibsPlugin : BaseKorlibsPlugin(true)
+class KorlibsPluginNoNativeNoAndroid : BaseKorlibsPlugin(nativeEnabled = false, androidEnabled = false)
+class KorlibsPluginNoNative : BaseKorlibsPlugin(nativeEnabled = false, androidEnabled = true)
+class KorlibsPlugin : BaseKorlibsPlugin(nativeEnabled = true, androidEnabled = true)
 
-open class BaseKorlibsPlugin(val nativeEnabled: Boolean) : Plugin<Project> {
+open class BaseKorlibsPlugin(val nativeEnabled: Boolean, val androidEnabled: Boolean) : Plugin<Project> {
     override fun apply(project: Project) = project {
-        val korlibs = KorlibsExtension(this, nativeEnabled)
+        val korlibs = KorlibsExtension(this, nativeEnabled, androidEnabled)
         extensions.add("korlibs", korlibs)
 
         plugins.apply("kotlin-multiplatform")
@@ -35,11 +36,12 @@ open class BaseKorlibsPlugin(val nativeEnabled: Boolean) : Plugin<Project> {
     }
 }
 
-class KorlibsExtension(val project: Project, val nativeEnabled: Boolean) {
-    var hasAndroid = (System.getProperty("sdk.dir") != null) || (System.getenv("ANDROID_HOME") != null)
+class KorlibsExtension(val project: Project, val nativeEnabled: Boolean, val androidEnabled: Boolean) {
+    //init { println("KorlibsExtension:${project.name},nativeEnabled=$nativeEnabled,androidEnabled=$androidEnabled") }
+    var hasAndroid = androidEnabled && ((System.getProperty("sdk.dir") != null) || (System.getenv("ANDROID_HOME") != null))
 
     init {
-        if (!hasAndroid) {
+        if (!hasAndroid && androidEnabled) {
             val trySdkDir = File(System.getProperty("user.home") + "/Library/Android/sdk")
             if (trySdkDir.exists()) {
                 File(project.rootDir, "local.properties").writeText("sdk.dir=${trySdkDir.absolutePath}")
@@ -55,9 +57,18 @@ class KorlibsExtension(val project: Project, val nativeEnabled: Boolean) {
         }
     }
 
-    val ALL_NATIVE_TARGETS = if (nativeEnabled) listOf("iosArm64", "iosArm32", "iosX64", "linuxX64", "macosX64", "mingwX64") else listOf()
+    val LINUX_DESKTOP_NATIVE_TARGETS = listOf("linuxX64")
+    val MACOS_DESKTOP_NATIVE_TARGETS = listOf("macosX64")
+    //val WINDOWS_DESKTOP_NATIVE_TARGETS = listOf("mingwX64", "mingwX86")
+    val WINDOWS_DESKTOP_NATIVE_TARGETS = listOf("mingwX64")
+    val DESKTOP_NATIVE_TARGETS = LINUX_DESKTOP_NATIVE_TARGETS + MACOS_DESKTOP_NATIVE_TARGETS + WINDOWS_DESKTOP_NATIVE_TARGETS
+    val IOS_TARGETS = listOf("iosArm64", "iosArm32", "iosX64")
+    val ALL_NATIVE_TARGETS = IOS_TARGETS + DESKTOP_NATIVE_TARGETS
     val ALL_ANDROID_TARGETS = if (hasAndroid) listOf("android") else listOf()
-    val ALL_TARGETS = ALL_ANDROID_TARGETS + listOf("js", "jvm", "metadata") + ALL_NATIVE_TARGETS
+    val JS_TARGETS = listOf("js")
+    val JVM_TARGETS = listOf("jvm")
+    val COMMON_TARGETS = listOf("metadata")
+    val ALL_TARGETS = ALL_ANDROID_TARGETS + JS_TARGETS + JVM_TARGETS + COMMON_TARGETS + ALL_NATIVE_TARGETS
 
     @JvmOverloads
     fun dependencyMulti(group: String, name: String, version: String, targets: List<String> = ALL_TARGETS, suffixCommonRename: Boolean = false, androidIsJvm: Boolean = false) = project {
