@@ -11,7 +11,7 @@ fun Project.configureKorlibsRepos() {
                 }
             }
             maven {
-				it.url = uri("https://mymavenrepo.com/repo/OgSYgOfB6MOBdJw3tWuX/")
+				it.url = uri("https://mymavenrepo.com/repo/OgSYgOfB6MOBdJw3tWuX")
 			}
 			maven {
                 it.url = uri("https://dl.bintray.com/soywiz/soywiz")
