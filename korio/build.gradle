@@ -12,6 +12,13 @@ korlibs {
 		add("androidMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
 
 		add("commonMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
+		
+		//
+		add("nativeCommonMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-native:$coroutinesVersion")
+		add("nativeCommonMainApi", "com.soywiz:kds:$kdsVersion")
+		add("nativeCommonMainApi", "com.soywiz:kmem:$kmemVersion")
+		add("nativeCommonMainApi", "com.soywiz:klock:$klockVersion")
+		
 		add("jsMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-js:$coroutinesVersion")
 		add("jvmMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 		add("iosArm32MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-iosarm32:$coroutinesVersion")

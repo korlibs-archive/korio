@@ -11,6 +11,9 @@ fun Project.configureKorlibsRepos() {
                 }
             }
             maven {
+				it.url = uri("https://mymavenrepo.com/repo/OgSYgOfB6MOBdJw3tWuX/")
+			}
+			maven {
                 it.url = uri("https://dl.bintray.com/soywiz/soywiz")
                 it.content {
                     it.includeGroup("com.soywiz")
@@ -30,3 +33,4 @@ fun Project.configureKorlibsRepos() {
         }
     }
 }
+
