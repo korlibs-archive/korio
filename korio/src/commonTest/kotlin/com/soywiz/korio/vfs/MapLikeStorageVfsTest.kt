@@ -8,14 +8,25 @@ import kotlinx.coroutines.channels.*
 import kotlin.test.*
 
 class MapLikeStorageVfsTest {
+	// @TODO: Circumvents https://github.com/JetBrains/kotlin-native/issues/2864
+	class MySimpleStorage : SimpleStorage {
+		val map = LinkedHashMap<String, String>()
+		override suspend fun get(key: String): String? = map[key]
+		override suspend fun set(key: String, value: String) = run { map[key] = value }
+		override suspend fun remove(key: String): Unit = run { map.remove(key) }
+	}
+
 	@Test
 	fun name() = suspendTest {
-		val root = (object : SimpleStorage {
-			val map = LinkedHashMap<String, String>()
-			override suspend fun get(key: String): String? = map[key]
-			override suspend fun set(key: String, value: String) = run { map[key] = value }
-			override suspend fun remove(key: String): Unit = run { map.remove(key) }
-		}).toVfs()
+		val root = MySimpleStorage().toVfs()
+
+		// @BUG: Circumvents https://github.com/JetBrains/kotlin-native/issues/2864
+		//val root = (object : SimpleStorage {
+		//	val map = LinkedHashMap<String, String>()
+		//	override suspend fun get(key: String): String? = map[key]
+		//	override suspend fun set(key: String, value: String) = run { map[key] = value }
+		//	override suspend fun remove(key: String): Unit = run { map.remove(key) }
+		//}).toVfs()
 
 		assertEquals(listOf(), root.list().toList())
 		root["demo.txt"].writeBytes("hello".toByteArray())
