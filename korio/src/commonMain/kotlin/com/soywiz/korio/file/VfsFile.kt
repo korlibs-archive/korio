@@ -229,4 +229,6 @@ data class FinalVfsFile(val file: VfsFile) {
 	val path: String get() = file.path
 }
 
-suspend inline fun <R> VfsFile.useVfs(callback: suspend (VfsFile) -> R): R = vfs.use { callback(this@useVfs) }
+// @TODO: https://youtrack.jetbrains.com/issue/KT-31490
+//suspend inline fun <R> VfsFile.useVfs(callback: suspend (VfsFile) -> R): R = vfs.use { callback(this@useVfs) }
+suspend fun <R> VfsFile.useVfs(callback: suspend (VfsFile) -> R): R = vfs.use { callback(this@useVfs) }
