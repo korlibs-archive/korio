@@ -88,7 +88,7 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 			val addr = allocArray<sockaddr_in>(1)
 			addr.set(ip, port)
 			//val connected = platform.windows.connect(sockfd, addr as CValuesRef<sockaddr>?, sockaddr_in.size.convert())
-			val connected = platform.windows.connect(sockfd, addr.uncheckedCast(), sockaddr_in.size.convert())
+			val connected = platform.windows.connect(sockfd, addr.reinterpret(), sockaddr_in.size.convert())
 			checkErrors("connect")
 			endpoint = Endpoint(ip, port)
 			setSocketBlockingEnabled(false)
@@ -144,10 +144,11 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 
 	val availableBytes
 		get() = run {
-			val bytes_available = intArrayOf(0, 0)
-			platform.windows.ioctlsocket(sockfd, platform.windows.FIONREAD, bytes_available.refTo(0).uncheckedCast())
+			val bytes_available = uintArrayOf(0u, 0u)
+			//platform.windows.ioctlsocket(sockfd, platform.windows.FIONREAD, bytes_available.refTo(0).reinterpret())
+			platform.windows.ioctlsocket(sockfd, platform.windows.FIONREAD, bytes_available.refTo(0))
 			checkErrors("ioctlsocket")
-			bytes_available[0]
+			bytes_available[0].toInt()
 		}
 
 	//val connected: Boolean
