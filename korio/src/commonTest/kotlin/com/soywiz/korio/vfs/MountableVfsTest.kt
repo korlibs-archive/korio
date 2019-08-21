@@ -9,7 +9,7 @@ import kotlin.test.*
 
 class MountableVfsTest {
 	@Test
-	fun testMountable() = suspendTest {
+	fun testMountable() = suspendTestNoBrowser {
 		val root = MountableVfs(closeMounts = true) {
 			mount("/zip/demo2", resourcesVfs["hello.zip"].openAsZip())
 			mount("/zip", resourcesVfs["hello.zip"].openAsZip())

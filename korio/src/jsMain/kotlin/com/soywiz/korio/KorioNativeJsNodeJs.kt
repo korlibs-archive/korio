@@ -11,7 +11,11 @@ import kotlinx.coroutines.*
 import org.khronos.webgl.*
 import kotlin.coroutines.*
 
-internal external fun require(name: String): dynamic
+// @TODO: Try to prevent webpack to not get confused about this
+private external val require: dynamic
+//private external fun require(name: String): dynamic
+private val require_req = require
+internal fun require_node(name: String): dynamic = require_req(name)
 
 typealias NodeJsBuffer = Uint8Array
 
@@ -38,8 +42,8 @@ class HttpClientNodeJs : HttpClient() {
 		val deferred = CompletableDeferred<Response>(Job())
 		//println(url)
 
-		val http = require("http")
-		val jsurl = require("url")
+		val http = require_node("http")
+		val jsurl = require_node("url")
 		val info = jsurl.parse(url)
 		val reqHeaders = jsEmptyObj()
 
@@ -104,7 +108,7 @@ class HttpSeverNodeJs : HttpServer() {
 	private var context: CoroutineContext = EmptyCoroutineContext
 	private var handler: suspend (req: dynamic, res: dynamic) -> Unit = { req, res -> }
 
-	val http = require("http")
+	val http = require_node("http")
 	val server = http.createServer { req, res ->
 		launchImmediately(context) {
 			handler(req, res)
@@ -187,7 +191,7 @@ class HttpSeverNodeJs : HttpServer() {
 }
 
 class NodeJsAsyncClient(val coroutineContext: CoroutineContext) : AsyncClient {
-	private val net = require("net")
+	private val net = require_node("net")
 	private var connection: dynamic = null
 	private val input = AsyncByteArrayDeque()
 
@@ -250,7 +254,7 @@ class NodeJsAsyncServer : AsyncServer {
 
 
 class NodeJsLocalVfs : LocalVfs() {
-	val fs = require("fs")
+	val fs = require_node("fs")
 
 	interface FD
 
@@ -270,7 +274,7 @@ class NodeJsLocalVfs : LocalVfs() {
 	//}
 
 	override suspend fun exec(path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler): Int {
-		val process = require("child_process").spawn(cmdAndArgs.first(), cmdAndArgs.drop(1).toTypedArray(), jsObject(
+		val process = require_node("child_process").spawn(cmdAndArgs.first(), cmdAndArgs.drop(1).toTypedArray(), jsObject(
 			"cwd" to path,
 			"env" to env.toJsObject(),
 			"encoding" to "buffer",

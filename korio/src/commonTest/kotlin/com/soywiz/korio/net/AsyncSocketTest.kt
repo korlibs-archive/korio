@@ -9,9 +9,10 @@ import kotlin.test.*
 
 class AsyncSocketTest {
 	@Test
-	fun testClientAndServer() = suspendTest {
-		if (OS.isJs) return@suspendTest
-		if (OS.isWindows && OS.isNative) return@suspendTest
+	fun testClientAndServer() = suspendTestNoBrowser {
+		if (OS.isJsBrowser) return@suspendTestNoBrowser
+		if (OS.isJs) return@suspendTestNoBrowser
+		if (OS.isWindows && OS.isNative) return@suspendTestNoBrowser
 
 		var port = 0
 		val connected = CompletableDeferred<Unit>()

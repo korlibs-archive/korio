@@ -24,6 +24,10 @@ fun <T> asyncAsap(context: CoroutineContext, callback: suspend () -> T) = Corout
 
 expect fun asyncEntryPoint(callback: suspend () -> Unit)
 fun suspendTest(callback: suspend () -> Unit) = asyncEntryPoint(callback)
+fun suspendTestNoBrowser(callback: suspend () -> Unit): Unit {
+	if (OS.isJsBrowser) return
+	return asyncEntryPoint(callback)
+}
 
 private fun CoroutineScope._launch(start: CoroutineStart, callback: suspend () -> Unit): Job = launch(coroutineContext, start = start) {
 	try {

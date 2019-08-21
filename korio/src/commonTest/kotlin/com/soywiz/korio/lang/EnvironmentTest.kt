@@ -1,6 +1,6 @@
 package com.soywiz.korio.lang
 
-import kotlin.test.*
+import kotlin.test.Test
 
 class EnvironmentTest {
 	@Test

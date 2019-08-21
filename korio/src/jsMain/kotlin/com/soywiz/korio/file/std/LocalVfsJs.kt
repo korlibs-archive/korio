@@ -5,12 +5,12 @@ import com.soywiz.korio.file.*
 
 val tmpdir: String by lazy {
 	when {
-		isNodeJs -> require("os").tmpdir().unsafeCast<String>()
+		isNodeJs -> require_node("os").tmpdir().unsafeCast<String>()
 		else -> "/tmp"
 	}
 }
 
-private val absoluteCwd: String by lazy { if (isNodeJs) require("path").resolve(".") else "." }
+private val absoluteCwd: String by lazy { if (isNodeJs) require_node("path").resolve(".") else "." }
 
 actual val resourcesVfs: VfsFile by lazy { applicationVfs.jail() }
 actual val rootLocalVfs: VfsFile by lazy { localVfs(absoluteCwd) }

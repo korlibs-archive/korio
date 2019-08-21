@@ -12,7 +12,7 @@ class LocalVfsTest {
 	val temp by lazy { tempVfs }
 
 	@Test
-	fun name() = suspendTest {
+	fun name() = suspendTestNoBrowser {
 		val content = "HELLO WORLD!"
 		temp["korio.temp"].writeString(content)
 		temp["korio.temp2"].writeFile(temp["korio.temp"])
@@ -31,7 +31,7 @@ class LocalVfsTest {
 	}
 
 	@Test
-	fun execTest() = suspendTest {
+	fun execTest() = suspendTestNoBrowser {
 		when {
 			OS.isJsBrowserOrWorker -> Unit // Skip
 			OS.isNative -> Unit // Skip
@@ -40,7 +40,7 @@ class LocalVfsTest {
 	}
 
 	@Test
-	fun ensureParent() = suspendTest {
+	fun ensureParent() = suspendTestNoBrowser {
 		temp["korio.temp.folder/test.txt"].ensureParents().writeString("HELLO")
 		temp["korio.temp.folder/test.txt"].delete()
 		temp["korio.temp.folder"].delete()
@@ -51,7 +51,7 @@ class LocalVfsTest {
 	private val unexisting1 by lazy { local["__unexisting"] }
 
 	@Test
-	fun openModeRead() = suspendTest {
+	fun openModeRead() = suspendTestNoBrowser {
 		when {
 			OS.isJsBrowserOrWorker -> Unit // Ignore
 			else -> {
