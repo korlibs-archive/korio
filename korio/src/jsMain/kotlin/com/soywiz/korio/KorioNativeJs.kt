@@ -38,9 +38,10 @@ external val navigator: dynamic // browser
 
 //val isNodeJs by lazy { jsTypeOf(window) === "undefined" }
 
-val isNodeJs by lazy { js("(typeof process === 'object' && typeof require === 'function')").unsafeCast<Boolean>() }
 val isWeb by lazy { js("(typeof window === 'object')").unsafeCast<Boolean>() }
 val isWorker by lazy { js("(typeof importScripts === 'function')").unsafeCast<Boolean>() }
+val isNodeJs by lazy { js("((typeof process !== 'undefined') && process.release && (process.release.name.search(/node|io.js/) !== -1))").unsafeCast<Boolean>() }
+//val isNodeJs by lazy { !isWeb && !isWorker }
 val isShell get() = !isWeb && !isNodeJs && !isWorker
 
 fun HTMLCollection.toList(): List<Element?> = (0 until length).map { this[it] }
