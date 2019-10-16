@@ -109,16 +109,20 @@ fun String.substr(start: Int, length: Int): String {
 	return if (high >= low) this.substring(low, high) else ""
 }
 
-fun String.eachBuilder(transform: StringBuilder.(Char) -> Unit): String = buildString {
+inline fun String.eachBuilder(transform: StringBuilder.(Char) -> Unit): String = buildString {
+	@Suppress("ReplaceManualRangeWithIndicesCalls") // Performance reasons? Check that plain for doesn't allocate
 	for (n in 0 until this@eachBuilder.length) transform(this, this@eachBuilder[n])
 }
 
-fun String.transform(transform: (Char) -> String): String = buildString {
+inline fun String.transform(transform: (Char) -> String): String = buildString {
+	@Suppress("ReplaceManualRangeWithIndicesCalls") // Performance reasons? Check that plain for doesn't allocate
 	for (n in 0 until this@transform.length) append(transform(this@transform[n]))
 }
 
 fun String.parseInt(): Int = when {
 	this.startsWith("0x", ignoreCase = true) -> this.substring(2).toLong(16).toInt()
+	this.startsWith("0o", ignoreCase = true) -> this.substring(2).toLong(8).toInt()
+	this.startsWith("0b", ignoreCase = true) -> this.substring(2).toLong(2).toInt()
 	else -> this.toInt()
 }
 
