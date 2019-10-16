@@ -47,7 +47,11 @@ jobs:
         - ./gradlew -s -i assemble check lint testDebugUnitTest localPublishToBintrayIfRequiredOnTravisMasterNoPR
     - os: linux
       stage: publish
-      language: java
+      language: android
+      android:
+        components:
+          - build-tools-28.0.3
+          - android-28
       jdk: oraclejdk8
       env:
         KBUILD=publish
