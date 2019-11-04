@@ -2,9 +2,7 @@
     <img alt="Korio" src="https://raw.githubusercontent.com/korlibs/korlibs-logos/master/128/korio.png" />
 </p>
 
-<p align="center">
-    <h2>Korio</h2>
-</p>
+<h2 align="center">Korio</h2>
 
 <p align="center">
     Kotlin I/O : Streams + TCP Client/Server + VFS for Multiplatform Kotlin 1.3
