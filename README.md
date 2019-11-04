@@ -1,10 +1,33 @@
-## Korio: Kotlin cORoutines I/O : Streams + Async TCP Client/Server + Virtual File System for JVM, Kotlin-JS (Browser & Node.JS), JTransc (Browser & Node.JS)
+<p align="center">
+    <img alt="Korio" src="https://raw.githubusercontent.com/korlibs/korlibs-logos/master/128/korio.png" />
+</p>
 
-[![Build Status](https://travis-ci.org/korlibs/korio.svg?branch=master)](https://travis-ci.org/korlibs/korio)
-[![Maven Version](https://img.shields.io/github/tag/korlibs/korio.svg?style=flat&label=maven)](http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22korio%22)
-[![Gitter](https://img.shields.io/gitter/room/korlibs/korlibs.svg)](https://gitter.im/korlibs/Lobby)
+<p align="center">
+    <h2>Korio</h2>
+</p>
 
-![](https://raw.githubusercontent.com/korlibs/korlibs-logos/master/128/korio.png)
+<p align="center">
+    Kotlin I/O : Streams + TCP Client/Server + VFS for Multiplatform Kotlin 1.3
+</p>
+
+<!-- BADGES -->
+<p align="center">
+	<a href="https://travis-ci.org/korlibs/korio"><img alt="Build Status" src="https://travis-ci.org/korlibs/korio.svg?branch=master" /></a>
+	<a href="http://search.maven.org/#search%7Cga%7C1%7Ca%3A%22korio%22"><img alt="Maven Version" src="https://img.shields.io/github/tag/korlibs/korio.svg?style=flat&label=maven" /></a>
+	<a href="https://slack.soywiz.com/"><img alt="Slack" src="https://img.shields.io/badge/chat-on%20slack-green?style=flat&logo=slack" /></a>
+</p>
+<!-- /BADGES -->
+
+<!-- SUPPORT -->
+
+<h2 align="center">Support korio</h2>
+
+<p align="center">
+If you like korio, or want your company logo here, please consider <a href="https://github.com/sponsors/soywiz">becoming a sponsor ★</a>,<br />
+in addition to ensure the continuity of the project, you will get exclusive content.
+</p>
+
+<!-- /SUPPORT -->
 
 [All KOR libraries](https://github.com/korlibs/korlibs)
 
@@ -332,4 +355,3 @@ Features:
 * Android uses threads when required and simplifies and unifies resources/assets loading/listing
 * Node.JS uses the all asynchronous methods available and supports full korio
 * Browser allows reading "embedded" resource lists supported by jtransc + reading urls chunks/streaming with buffering in same domain or with CORs. Do not support raw client/server sockets.
-
