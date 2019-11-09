@@ -17,14 +17,11 @@
 <!-- /BADGES -->
 
 <!-- SUPPORT -->
-
 <h2 align="center">Support korio</h2>
-
 <p align="center">
 If you like korio, or want your company logo here, please consider <a href="https://github.com/sponsors/soywiz">becoming a sponsor ★</a>,<br />
 in addition to ensure the continuity of the project, you will get exclusive content.
 </p>
-
 <!-- /SUPPORT -->
 
 [All KOR libraries](https://github.com/korlibs/korlibs)
