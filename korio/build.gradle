@@ -13,7 +13,7 @@ dependencies {
 	add("iosArm32MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-iosarm32:$coroutinesVersion")
 	add("iosArm64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-iosarm64:$coroutinesVersion")
 	add("iosX64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-iosx64:$coroutinesVersion")
-	add("linuxX64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-linuxx64:$coroutinesVersion")
+	//add("linuxX64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-linuxx64:$coroutinesVersion")
 	add("mingwX64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-windowsx64:$coroutinesVersion")
 	add("macosX64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-macosx64:$coroutinesVersion")
 }
