@@ -16,12 +16,16 @@ dependencies {
 	add("iosArm64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-iosarm64:$coroutinesVersion")
 	add("iosX64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-iosx64:$coroutinesVersion")
 
-    add("watchosArm32MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-watchosarm32:$coroutinesVersion")
-    add("watchosArm64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-watchosarm64:$coroutinesVersion")
-    add("watchosX86MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-watchosx86:$coroutinesVersion")
+    if (korlibs.watchosEnabled) {
+        add("watchosArm32MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-watchosarm32:$coroutinesVersion")
+        add("watchosArm64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-watchosarm64:$coroutinesVersion")
+        add("watchosX86MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-watchosx86:$coroutinesVersion")
+    }
 
-    add("tvosArm64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-tvosarm64:$coroutinesVersion")
-    add("tvosX64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-tvosx64:$coroutinesVersion")
+    if (korlibs.tvosEnabled) {
+        add("tvosArm64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-tvosarm64:$coroutinesVersion")
+        add("tvosX64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-tvosx64:$coroutinesVersion")
+    }
 
     if (korlibs.linuxEnabled) {
         add("linuxX64MainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-linuxx64:$coroutinesVersion")
