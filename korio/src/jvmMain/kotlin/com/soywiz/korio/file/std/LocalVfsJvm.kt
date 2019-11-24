@@ -50,8 +50,8 @@ fun ClassLoader.tryGetURLs(): List<URL> = try {
 		else -> KDynamic { this@tryGetURLs["ucp"]["path"] } as List<URL>
 	}
 } catch (e: Throwable) {
-	System.err.println("Error trying to get URLs from classloader $this")
-	e.printStackTrace()
+	//System.err.println("Error trying to get URLs from classloader $this")
+	//e.printStackTrace()
 	listOf()
 }
 
