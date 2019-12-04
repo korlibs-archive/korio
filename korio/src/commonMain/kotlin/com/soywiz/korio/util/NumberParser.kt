@@ -3,7 +3,7 @@ package com.soywiz.korio.util
 import kotlin.math.*
 
 object NumberParser {
-	fun parseInt(str: String, start: Int, end: Int, radix: Int = 10): Int {
+	fun parseInt(str: String, start: Int = 0, end: Int = str.length, radix: Int = 10): Int {
 		var positive = true
 		var out = 0
 		loop@ for (n in start until end) {
@@ -14,7 +14,7 @@ object NumberParser {
 				val value = c.ctypeAsInt()
 				if (value < 0) break@loop
 				out *= radix
-				out += c - 'a' + 10
+				out += value
 			}
 		}
 		return if (positive) out else -out
