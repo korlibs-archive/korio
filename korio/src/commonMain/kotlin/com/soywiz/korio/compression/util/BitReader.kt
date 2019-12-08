@@ -82,7 +82,6 @@ open class BitReader(val s: AsyncInputStreamWithLength) : AsyncInputStreamWithLe
 		s.close()
 	}
 
-
 	suspend fun strz(): String = MemorySyncStreamToByteArray {
 		discardBits()
 		while (true) {

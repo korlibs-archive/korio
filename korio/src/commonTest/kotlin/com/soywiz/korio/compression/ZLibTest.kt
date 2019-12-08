@@ -114,4 +114,52 @@ class ZLibTest {
 	fun deflateData2b() {
 		assertEquals(345409182, CRC32.compute(data2.uncompress(ZLib { DeflatePortable })))
 	}
+
+    @Test
+    fun deflateDate3() {
+        val compressedBase64 = "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\n" +
+        "AAAAAAAAAIAbFlvzNI0=\n"
+        val compressed = compressedBase64.fromBase64IgnoreSpaces()
+
+        val uncompressed1 = compressed.uncompress(ZLib)
+        val uncompressed2 = compressed.uncompress(ZLib { DeflatePortable(it) })
+
+        assertTrue(uncompressed1.contentEquals(uncompressed2))
+    }
 }

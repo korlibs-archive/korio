@@ -60,41 +60,44 @@ open class DeflatePortable(val windowBits: Int) : CompressionMethod {
 				//println("uncompress[3]")
 				val tree: HuffmanTree
 				val dist: HuffmanTree
-				if (blockType == 1) {
-					tree = FIXED_TREE
-					dist = FIXED_DIST
-				} else {
-					val hlit = reader.readBits(5) + 257
-					val hdist = reader.readBits(5) + 1
-					val hclen = reader.readBits(4) + 4
-					for (i in 0 until hclen) codeLenCodeLen[HCLENPOS[i]] = reader.readBits(3)
-					//console.info(codeLenCodeLen);
-					val codeLen = tempTree.fromLengths(codeLenCodeLen)
-					val hlithdist = hlit + hdist
-					var n = 0
-					while (n < hlithdist) {
-						val value = reader.read(codeLen)
-						if (value !in 0..18) error("Invalid")
+                if (blockType == 1) {
+                    tree = FIXED_TREE
+                    dist = FIXED_DIST
+                }
+                else {
+                    val hlit = reader.readBits(5) + 257
+                    val hdist = reader.readBits(5) + 1
+                    val hclen = reader.readBits(4) + 4
+                    codeLenCodeLen.fill(0)
+                    for (i in 0 until hclen) codeLenCodeLen[HCLENPOS[i]] = reader.readBits(3)
+                    //console.info(codeLenCodeLen);
+                    val codeLen = tempTree.fromLengths(codeLenCodeLen)
+                    val hlithdist = hlit + hdist
+                    var n = 0
+                    lengths.fill(0)
+                    while (n < hlithdist) {
+                        val value = reader.read(codeLen)
+                        if (value !in 0..18) error("Invalid")
 
-						val len = when (value) {
-							16 -> reader.readBits(2) + 3
-							17 -> reader.readBits(3) + 3
-							18 -> reader.readBits(7) + 11
-							else -> 1
-						}
-						val vv = when (value) {
-							16 -> lengths[n - 1]
-							17 -> 0
-							18 -> 0
-							else -> value
-						}
+                        val len = when (value) {
+                            16 -> reader.readBits(2) + 3
+                            17 -> reader.readBits(3) + 3
+                            18 -> reader.readBits(7) + 11
+                            else -> 1
+                        }
+                        val vv = when (value) {
+                            16 -> lengths[n - 1]
+                            17 -> 0
+                            18 -> 0
+                            else -> value
+                        }
 
-						lengths.fill(vv, n, n + len)
-						n += len
-					}
-					tree = tempTree.fromLengths(lengths, 0, hlit)
-					dist = tempDist.fromLengths(lengths, hlit, hlithdist)
-				}
+                        lengths.fill(vv, n, n + len)
+                        n += len
+                    }
+                    tree = tempTree.fromLengths(lengths, 0, hlit)
+                    dist = tempDist.fromLengths(lengths, hlit, hlithdist)
+                }
 				while (true) {
 					reader.prepareBigChunkIfRequired()
 					val value = tree.read(reader)

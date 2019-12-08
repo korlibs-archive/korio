@@ -102,9 +102,13 @@ internal class HuffmanTree {
 
 			oldOffset = newOffset
 			oldCount = SIZE + oldCount / 2
-			if (oldCount >= 2 && oldCount % 2 != 0) error("This canonical code does not represent a Huffman code tree: $oldCount")
+			if (oldCount >= 2 && oldCount % 2 != 0) {
+                error("This canonical code does not represent a Huffman code tree: $oldCount")
+            }
 		}
-		if (oldCount != 2) error("This canonical code does not represent a Huffman code tree")
+		if (oldCount != 2) {
+            error("This canonical code does not represent a Huffman code tree")
+        }
 
 		this.root = allocNode(nodeOffset - 2, nodeOffset - 1)
 		this.ncodes = ncodes
