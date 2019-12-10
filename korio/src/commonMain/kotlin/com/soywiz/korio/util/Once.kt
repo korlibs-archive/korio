@@ -14,6 +14,17 @@ class Once {
 	}
 }
 
+class SyncOnce<T> {
+    var value: T? = null
+
+    operator fun invoke(callback: () -> T): T {
+        if (value == null) {
+            value = callback()
+        }
+        return value!!
+    }
+}
+
 class AsyncOnce<T> {
 	var promise: Deferred<T>? = null
 
