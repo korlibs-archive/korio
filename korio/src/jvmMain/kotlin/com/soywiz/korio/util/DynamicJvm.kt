@@ -9,6 +9,12 @@ import java.util.*
 import kotlin.collections.ArrayList
 
 object DynamicJvm {
+    fun getClass(name: String): Class<*>? = try {
+        Class.forName(name)
+    } catch (e: Throwable) {
+        null
+    }
+
 	@Suppress("UNCHECKED_CAST")
 	fun <T> createEmptyClass(clazz: Class<T>): T {
 		if (clazz == java.util.Set::class.java) return setOf<Any?>() as T
@@ -422,19 +428,51 @@ object DynamicJvm {
 		else -> element in toList(collection)
 	}
 
+    private fun getMethodForObjKey(obj: Any?, methodName: Any?, args: List<Any?>): Method? {
+        if (obj == null || methodName == null) return null
+        val clazz: Class<*> = if (obj is Class<*>) obj else obj::class.java
+        val clazzMethods = clazz.methods
+        //println("obj=$obj, clazz=$clazz, methodName=$methodName")
+        val method = clazzMethods.firstOrNull {
+            it.name == methodName
+                && it.parameterCount == args.size
+                && it.parameterTypes.withIndex().all {
+                    val argValue = args[it.index]
+                    val argType = argValue?.let { it::class.javaObjectType }
+                    (argValue == null) || it.value.kotlin.javaObjectType.isAssignableFrom(argType)
+                }
+            }
+            //?: clazzMethods.firstOrNull { it.name == methodName }
+            ?: return null
+        method.isAccessible = true
+        return method
+    }
+
 	suspend fun callAny(obj: Any?, key: Any?, args: List<Any?>): Any? {
-		if (obj == null || key == null) return null
-		val method = obj::class.java.methods.first { it.name == key }
-		method.isAccessible = true
-		val result = method.invokeSuspend(obj, args)
-		return result
+        val method = getMethodForObjKey(obj, key, args) ?: return null
+        return when {
+            Modifier.isStatic(method.modifiers) -> method.invokeSuspend(null, args)
+            else -> method.invokeSuspend(obj, args)
+        }
 	}
 
-	suspend fun callAny(callable: Any?, args: List<Any?>): Any? {
-		return callAny(callable, "invoke", args)
+	fun callAnySync(callable: Any?, args: List<Any?>): Any? {
+		return callAnySync(callable, "invoke", args)
 	}
 
-	fun length(subject: Any?): Int {
+    fun callAnySync(obj: Any?, key: Any?, args: List<Any?>): Any? {
+        val method = getMethodForObjKey(obj, key, args) ?: return null
+        return when {
+            Modifier.isStatic(method.modifiers) -> method.invoke(null, *args.toTypedArray())
+            else -> method.invoke(obj, *args.toTypedArray())
+        }
+    }
+
+    suspend fun callAny(callable: Any?, args: List<Any?>): Any? {
+        return callAny(callable, "invoke", args)
+    }
+
+    fun length(subject: Any?): Int {
 		if (subject == null) return 0
 		if (subject::class.java.isArray) return Array.getLength(subject)
 		if (subject is List<*>) return subject.size
@@ -444,6 +482,7 @@ object DynamicJvm {
 	}
 
 	interface Context {
+        fun getClass(name: String) = DynamicJvm.getClass(name)
 		operator fun Any?.get(key: Any?) = DynamicJvm.accessAnySync(this, key)
 		fun Any?.toDynamicString() = DynamicJvm.toString(this)
 		fun Any?.toDynamicBool() = DynamicJvm.toBool(this)
@@ -460,15 +499,18 @@ object DynamicJvm {
 			DynamicJvm.callAny(this, methodName, args.toList())
 
 		suspend fun Any?.dynamicCastTo(target: Class<*>) = DynamicJvm.dynamicCast(this, target)
+
+        fun Any?.dynamicCallSync(vararg args: Any?) = DynamicJvm.callAnySync(this, args.toList())
+        fun Any?.dynamicCallMethodSync(methodName: Any?, vararg args: Any?) =
+            DynamicJvm.callAnySync(this, methodName, args.toList())
 	}
 
 	val contextInstance: Context = object : Context {}
 
-	inline fun context(callback: Context.() -> Unit) {
-		contextInstance.callback()
-	}
+	inline fun <T> context(callback: Context.() -> T): T = contextInstance.callback()
+    inline operator fun <T> invoke(callback: Context.() -> T): T = contextInstance.callback()
 
-	fun <T> getTypedFields(sourceClass: Class<*>, source: Any?, clazz: Class<T>): List<T> {
+    fun <T> getTypedFields(sourceClass: Class<*>, source: Any?, clazz: Class<T>): List<T> {
 		val list = ArrayList<T>()
 		val expectStatic = source == null
 		sourceClass.allDeclaredFields.fastForEach { field ->
