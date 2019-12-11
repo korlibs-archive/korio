@@ -13,7 +13,7 @@ suspend fun Method.invokeSuspend(obj: Any?, args: List<Any?>): Any? {
 	val margs = java.util.ArrayList(args)
 	var deferred: CompletableDeferred<Any?>? = null
 
-	if (lastParam != null && lastParam.isAssignableFrom(Continuation::class.java)) {
+    if (lastParam != null && Continuation::class.java.isAssignableFrom(lastParam)) {
 		deferred = CompletableDeferred<Any?>(Job())
 		margs += deferred.toContinuation(cc)
 	}
