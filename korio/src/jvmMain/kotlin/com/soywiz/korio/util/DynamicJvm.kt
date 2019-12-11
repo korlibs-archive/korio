@@ -435,7 +435,7 @@ object DynamicJvm {
         //println("obj=$obj, clazz=$clazz, methodName=$methodName")
         val method = clazzMethods.firstOrNull {
             it.name == methodName
-                && it.parameterCount == args.size
+                && it.parameterTypes.size == args.size
                 && it.parameterTypes.withIndex().all {
                     val argValue = args[it.index]
                     val argType = argValue?.let { it::class.javaObjectType }
