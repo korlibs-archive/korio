@@ -18,6 +18,8 @@ object OS {
 
 	val isIos by lazy { rawNameLC.contains("ios") }
 	val isAndroid by lazy { platformNameLC.contains("android") }
+    val isWatchos by lazy { rawNameLC.contains("watchos") }
+    val isTvos by lazy { rawNameLC.contains("tvos") }
 
 	val isJs get() = rawPlatformName.endsWith("js")
 	val isNative get() = rawPlatformName == "native"
