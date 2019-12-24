@@ -32,10 +32,16 @@ Sublibraries:
 * [KORIO-AMAZON](https://github.com/korlibs/korio-amazon)
 * [KORIO-DB](https://github.com/korlibs/korio-db)
 
-Use with gradle (uploaded to maven central):
+Use with gradle:
 
 ```
-compile "com.soywiz:korio:$korVersion"
+repositories {
+  maven { url "https://dl.bintray.com/korlibs/korlibs/" }
+}
+
+dependencies {
+  compile "com.soywiz.korlibs.korio:korio:$korVersion"
+}
 ```
 
 This is a kotlin coroutine library that provides asynchronous non-blocking I/O and virtual filesystem operations
