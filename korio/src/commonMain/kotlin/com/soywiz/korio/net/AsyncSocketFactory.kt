@@ -47,7 +47,7 @@ interface AsyncClient : AsyncInputStream, AsyncOutputStream, AsyncCloseable {
 	}
 }
 
-interface AsyncServer {
+interface AsyncServer: AsyncCloseable {
 	val requestPort: Int
 	val host: String
 	val backlog: Int
