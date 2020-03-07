@@ -83,4 +83,8 @@ interface AsyncServer: AsyncCloseable {
 			}
 		}
 	}
+
+    // Provide a default implementation
+    override suspend fun close() {
+    }
 }

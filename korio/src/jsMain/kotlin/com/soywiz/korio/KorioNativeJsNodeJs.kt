@@ -250,6 +250,8 @@ class NodeJsAsyncServer : AsyncServer {
 
 	suspend fun init(port: Int, host: String, backlog: Int): AsyncServer = this.apply {
 	}
+
+    override suspend fun close() = Unit
 }
 
 
