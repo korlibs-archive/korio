@@ -2,6 +2,9 @@ name: CI
 
 on: [push]
 
+env:
+  DEFAULT_JVM_OPTS: -Xmx4g -Xms64m
+
 jobs:
   build-windows:
     runs-on: windows-latest
