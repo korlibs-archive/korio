@@ -10,11 +10,11 @@ buildscript {
     }
 
     dependencies {
-        classpath "com.soywiz.korlibs:easy-kotlin-mpp-gradle-plugin:0.6.2" // Kotlin 1.3.61: https://github.com/korlibs/easy-kotlin-mpp-gradle-plugin
+        classpath("com.soywiz.korlibs:easy-kotlin-mpp-gradle-plugin:0.7.1") // Kotlin 1.3.70: https://github.com/korlibs/easy-kotlin-mpp-gradle-plugin
     }
 }
 
-def buildExtraGradleFile = new File(rootDir, "build.extra.gradle")
+val buildExtraGradleFile = File(rootDir, "build.extra.gradle.kts")
 if (buildExtraGradleFile.exists()) {
-	apply from: buildExtraGradleFile
+    apply(from = buildExtraGradleFile)
 }

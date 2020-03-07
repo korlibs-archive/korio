@@ -294,7 +294,9 @@ object NativeAsyncSocketFactory : AsyncSocketFactory() {
 		override suspend fun accept(): AsyncClient {
 			return NativeAsyncClient(socket.accept())
 		}
-	}
+
+        override suspend fun close() = socket.close()
+    }
 
 	override suspend fun createClient(secure: Boolean): AsyncClient {
 		return NativeAsyncClient(NativeSocket())
