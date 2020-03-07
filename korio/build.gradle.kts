@@ -1,11 +1,18 @@
-apply plugin: com.soywiz.korlibs.KorlibsPlugin
+import com.soywiz.korlibs.korlibs
+
+apply<com.soywiz.korlibs.KorlibsPlugin>()
+
+val klockVersion: String by project
+val kdsVersion: String by project
+val kmemVersion: String by project
+val coroutinesVersion: String by project
 
 dependencies {
-	commonMainApi("com.soywiz.korlibs.klock:klock:$klockVersion")
-	commonMainApi("com.soywiz.korlibs.kds:kds:$kdsVersion")
-	commonMainApi("com.soywiz.korlibs.kmem:kmem:$kmemVersion")
+	add("commonMainApi", "com.soywiz.korlibs.klock:klock:$klockVersion")
+    add("commonMainApi", "com.soywiz.korlibs.kds:kds:$kdsVersion")
+    add("commonMainApi", "com.soywiz.korlibs.kmem:kmem:$kmemVersion")
 
-	commonMainApi "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
+    add("commonMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 
 	add("androidMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
 	add("commonMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
