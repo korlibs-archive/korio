@@ -26,7 +26,7 @@ in addition to ensure the continuity of the project, you will get exclusive cont
 
 [All KOR libraries](https://github.com/korlibs/korlibs)
 
-Sublibraries:
+Sublibraries (deprecated):
 
 * [KORIO-WEB](https://github.com/korlibs/korio-web)
 * [KORIO-AMAZON](https://github.com/korlibs/korio-amazon)
@@ -64,13 +64,13 @@ You can even create your own event loop implementation and hook it.
 
 Korio also provides some async primitives until they are officially available
 at a common place like kotlinx.coroutines, and will provide typealias + @Deprecated for the future migration
-when available. Hopefully when Kotlin 1.2 is released.
+when available.
 
 ### Serialization
 
-Embeded **Json**, **Xml** and **Yaml** parsers.
+Embedded **Json**, **Xml** and **Yaml** parsers.
 Can also write Json (with pretty print support) and Xml.
-Support Json to Object mapping with kotlin data classes suport.
+Support Json to Object mapping with kotlin data classes support.
 
 ### Streams
 
@@ -131,8 +131,8 @@ Korio supports cookies and sessions as extensions for its HttpServer.
 
 ### Korte integration
 
-Korio has a tightly integration with [Korte](https://github.com/korlibs/korte), an hybrid template engine
-compatible with both twig and liquid (jekyll) in a asynchronous fashion supporting asynchronous lazily
+Korio has a tight integration with [Korte](https://github.com/korlibs/korte), a hybrid template engine
+compatible with both twig and liquid (jekyll) in an asynchronous fashion supporting asynchronous lazy
 loading of data (executing suspend getters).
 Prepared to support chunked serving to reduce memory requirements per request.
 
@@ -177,7 +177,7 @@ for (file in zip.listRecursively()) { // Lazy non blocking recursive file listin
 
 ### Jails
 
-In order to increase security, Vfs engine provides a JailVfs that allows you to sandbox VFS operations inside an
+In order to increase security, Vfs engine provides a JailVfs that allows you to sandbox VFS operations inside a
 specific folder. So you can do the following:
 
 ```kotlin
@@ -203,7 +203,7 @@ assertEquals("ISO!", root["/iso/hello/world.txt"].readString())
 
 ### Memory Vfs
 
-Korio includes an inmemory vfs to create volatile vfs:
+Korio includes an in-memory vfs to create volatile vfs:
 
 ```kotlin
 val mem = MemoryVfs(mapOf(
@@ -227,7 +227,7 @@ Korio includes an open base NodeVfs to support node based vfs like in-memory vfs
 
 ### S3Vfs (Amazon S3 Vfs)
 
-In the korio-ext-amazon-s3 submodule, there is a Amazon S3 Client without external dependencies that is implemented as a VFS for convenience. 
+In the korio-ext-amazon-s3 submodule, there is an Amazon S3 Client without external dependencies that is implemented as a VFS for convenience. 
 
 ### PathInfo
 
@@ -235,13 +235,13 @@ Korio includes a PathInfo utility integrated with VfsFile in order to obtain pat
 
 ### Execution
 
-Korio includes includes a mechanism to execute commands inside a VfsFile. This allow you execute asynchronously commands
-in your local file system, but also allows to implement RPC mechanisms, that will work seamlessly. You can implement here
+Korio includes a mechanism to execute commands inside a VfsFile. This allows you to execute asynchronous commands
+in your local file system, but also allows to implement RPC mechanisms that will work seamlessly. You can implement here
 ssh or ftp commands as an example.
 
 ### Included Vfs
 
-There are several filesystems included and you can find examples of usage in the test folder:
+There are several filesystems included and you can find examples of their usage in the test folder:
 
 ```kotlin
 LocalVfs, UrlVfs, ZipVfs, IsoVfs, ResourcesVfs, JailVfs, MountableVfs, MemoryVfs, S3Vfs
@@ -354,5 +354,5 @@ Features:
 
 * JVM uses NIO and common runtime tools
 * Android uses threads when required and simplifies and unifies resources/assets loading/listing
-* Node.JS uses the all asynchronous methods available and supports full korio
+* Node.JS uses all asynchronous methods available and supports full korio
 * Browser allows reading "embedded" resource lists supported by jtransc + reading urls chunks/streaming with buffering in same domain or with CORs. Do not support raw client/server sockets.
