@@ -78,7 +78,11 @@ data class Xml(
 		when (type) {
 			Type.NODE -> {
 				if (allChildren.isEmpty()) {
-					line("<$name$attributesStr/>")
+                    line("<$name$attributesStr/>")
+                } else if (allChildren.size == 1 && allChildren[0].type == Type.TEXT) {
+                    inline("<$name$attributesStr>")
+                    inline(allChildren[0].content)
+                    line("</$name>")
 				} else {
 					line("<$name$attributesStr>")
 					indent {

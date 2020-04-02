@@ -56,4 +56,26 @@ class XmlTest {
 		)
 	}
 
+    @Test
+    fun testIndent() {
+        val xml1 = buildXml("name") {
+            text("SimpleName")
+        }
+        assertEquals("<name>SimpleName</name>\n", xml1.toOuterXmlIndented().toString())
+
+        val xml2 = buildXml("name") {
+            text("SimpleName")
+            text("ComplicatedName")
+        }
+        assertEquals("<name>\n\tSimpleName\n\tComplicatedName\n</name>\n", xml2.toOuterXmlIndented().toString())
+
+        val xml3 = buildXml("name", "number" to 1) {
+            comment("Some comment")
+            node("value", "number" to 2) {
+                text("SimpleName")
+            }
+        }
+        val result2 = "<name number=\"1\">\n\t<!--Some comment-->\n\t<value number=\"2\">SimpleName</value>\n</name>\n"
+        assertEquals(result2, xml3.toOuterXmlIndented().toString())
+    }
 }
