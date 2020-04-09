@@ -25,6 +25,7 @@ import kotlinx.cinterop.*
 import platform.posix.*
 import kotlin.native.concurrent.*
 import com.soywiz.korio.lang.Environment
+import com.soywiz.korio.process.posixExec
 
 val tmpdir: String by lazy { Environment["TMPDIR"] ?: Environment["TEMP"] ?: Environment["TMP"] ?: "/tmp" }
 
@@ -122,9 +123,7 @@ class LocalVfsNative : LocalVfs() {
 
 	override suspend fun exec(
 		path: String, cmdAndArgs: List<String>, env: Map<String, String>, handler: VfsProcessHandler
-	): Int = run {
-		TODO("LocalVfsNative.exec")
-	}
+	): Int = posixExec(path, cmdAndArgs, env, handler)
 
 	override suspend fun readRange(path: String, range: LongRange): ByteArray {
 		data class Info(val path: String, val range: LongRange)
