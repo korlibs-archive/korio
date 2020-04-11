@@ -2,66 +2,67 @@ package com.soywiz.korio.util.encoding
 
 import com.soywiz.kmem.*
 import com.soywiz.korio.lang.*
+import kotlin.native.concurrent.*
 
 object Base64 {
+    @SharedImmutable
 	private val TABLE = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789+/="
+    @SharedImmutable
 	private val DECODE = IntArray(0x100).apply {
 		for (n in 0..255) this[n] = -1
-		for (n in 0 until TABLE.length) {
-			this[TABLE[n].toInt()] = n
-		}
+		for (n in TABLE.indices) this[TABLE[n].toInt()] = n
 	}
 
 	fun decode(str: String): ByteArray {
-		val src = str.toByteArray(UTF8)
-		val dst = ByteArray(src.size)
-		return dst.copyOf(decode(src, dst))
+		val dst = ByteArray((str.length * 4) / 3 + 4)
+		return dst.copyOf(decodeInline(dst, str.length) { str[it].toInt() and 0xFF })
 	}
 
-	fun decode(src: ByteArray, dst: ByteArray): Int {
-		var m = 0
-		val srcu = src.asUByteArrayInt()
+	fun decode(src: ByteArray, dst: ByteArray): Int
+        = decodeInline(dst, src.size) { (src[it].toInt() and 0xFF) }
 
-		var n = 0
-		while (n < src.size) {
-			val d = DECODE[srcu[n]]
-			if (d < 0) {
-				n++
-				continue // skip character
-			}
-
-			val b0 = DECODE[srcu[n++]]
-			val b1 = DECODE[srcu[n++]]
-			val b2 = DECODE[srcu[n++]]
-			val b3 = DECODE[srcu[n++]]
-			dst[m++] = (b0 shl 2 or (b1 shr 4)).toByte()
-			if (b2 < 64) {
-				dst[m++] = (b1 shl 4 or (b2 shr 2)).toByte()
-				if (b3 < 64) {
-					dst[m++] = (b2 shl 6 or b3).toByte()
-				}
-			}
-		}
-		return m
-	}
+    private inline fun decodeInline(dst: ByteArray, size: Int, get: (n: Int) -> Int): Int {
+        var m = 0
+        var n = 0
+        while (n < size) {
+            val d = DECODE[get(n)]
+            if (d < 0) {
+                n++
+                continue // skip character
+            }
+            val b0 = DECODE[get(n++)]
+            val b1 = DECODE[get(n++)]
+            val b2 = DECODE[get(n++)]
+            val b3 = DECODE[get(n++)]
+            dst[m++] = (b0 shl 2 or (b1 shr 4)).toByte()
+            if (b2 < 64) {
+                dst[m++] = (b1 shl 4 or (b2 shr 2)).toByte()
+                if (b3 < 64) {
+                    dst[m++] = (b2 shl 6 or b3).toByte()
+                }
+            }
+        }
+        return m
+    }
 
 	fun encode(src: String, charset: Charset): String = encode(src.toByteArray(charset))
 
+    fun encode(src: ByteArray): String = encode(src, 0, src.size)
+
 	@Suppress("UNUSED_CHANGED_VALUE")
-	fun encode(src: ByteArray): String {
-		val out = StringBuilder((src.size * 4) / 3 + 4)
-		var ipos = 0
-		val extraBytes = src.size % 3
-		while (ipos < src.size - 2) {
+	fun encode(src: ByteArray, start: Int, size: Int): String {
+		val out = StringBuilder((size * 4) / 3 + 4)
+		var ipos = start
+        val iend = start + size
+		val extraBytes = size % 3
+		while (ipos < iend - 2) {
 			val num = src.readU24BE(ipos)
 			ipos += 3
-
 			out.append(TABLE[(num ushr 18) and 0x3F])
 			out.append(TABLE[(num ushr 12) and 0x3F])
 			out.append(TABLE[(num ushr 6) and 0x3F])
 			out.append(TABLE[(num ushr 0) and 0x3F])
 		}
-
 		if (extraBytes == 1) {
 			val num = src.readU8(ipos++)
 			out.append(TABLE[num ushr 2])
@@ -75,7 +76,6 @@ object Base64 {
 			out.append(TABLE[(tmp shl 2) and 0x3F])
 			out.append('=')
 		}
-
 		return out.toString()
 	}
 }

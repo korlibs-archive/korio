@@ -1,3 +1,4 @@
 package com.soywiz.korio.lang
 
-actual val UTF8: Charset by lazy { UTC8CharsetBase("UTF-8") }
+@SharedImmutable
+actual val UTF8: Charset = UTC8CharsetBase("UTF-8")
