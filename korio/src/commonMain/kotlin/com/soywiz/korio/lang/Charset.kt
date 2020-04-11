@@ -2,6 +2,7 @@ package com.soywiz.korio.lang
 
 import com.soywiz.kds.*
 import com.soywiz.kmem.*
+import kotlin.native.concurrent.SharedImmutable
 
 abstract class Charset(val name: String) {
 	abstract fun encode(out: ByteArrayBuilder, src: CharSequence, start: Int = 0, end: Int = src.length)
@@ -92,6 +93,7 @@ open class SingleByteCharset(name: String, val conv: String) : Charset(name) {
 
 object ISO_8859_1 : SingleByteCharset("ISO-8859-1", buildString { for (n in 0 until 256) append(n.toChar()) })
 
+@SharedImmutable
 expect val UTF8: Charset
 
 class UTF16Charset(val le: Boolean) : Charset("UTF-16-" + (if (le) "LE" else "BE")) {
@@ -118,8 +120,11 @@ object ASCII : Charset("ASCII") {
 	}
 }
 
+@SharedImmutable
 val LATIN1 = ISO_8859_1
+@SharedImmutable
 val UTF16_LE = UTF16Charset(le = true)
+@SharedImmutable
 val UTF16_BE = UTF16Charset(le = false)
 
 object Charsets {
