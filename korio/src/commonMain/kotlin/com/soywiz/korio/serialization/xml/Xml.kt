@@ -20,10 +20,17 @@ data class Xml(
 	val allNodeChildren get() = allChildren.filter { it.isNode }
 
 	companion object {
+        private const val NAME_RAW = "_raw_"
+        private const val NAME_TEXT = "_text_"
+        private const val NAME_CDATA = "_cdata_"
+        private const val NAME_COMMENT = "_comment_"
+
 		fun Tag(tagName: String, attributes: Map<String, Any?>, children: List<Xml>): Xml =
 			Xml(Xml.Type.NODE, tagName, attributes.filter { it.value != null }.map { it.key to it.value.toString() }.toMap(), children, "")
-		fun Text(text: String): Xml = Xml(Xml.Type.TEXT, "_text_", LinkedHashMap(), listOf(), text)
-		fun Comment(text: String): Xml = Xml(Xml.Type.COMMENT, "_comment_", LinkedHashMap(), listOf(), text)
+        fun Raw(text: String): Xml = Xml(Xml.Type.TEXT, NAME_RAW, LinkedHashMap(), listOf(), text)
+		fun Text(text: String): Xml = Xml(Xml.Type.TEXT, NAME_TEXT, LinkedHashMap(), listOf(), text)
+        fun CData(text: String): Xml = Xml(Xml.Type.TEXT, NAME_CDATA, LinkedHashMap(), listOf(), text)
+		fun Comment(text: String): Xml = Xml(Xml.Type.COMMENT, NAME_COMMENT, LinkedHashMap(), listOf(), text)
 
 		//operator fun invoke(@Language("xml") str: String): Xml = parse(str)
 
@@ -34,19 +41,19 @@ data class Xml(
 				data class Level(val children: List<Xml>, val close: Xml.Stream.Element.CloseTag?)
 
 				fun level(): Level {
-					var children = listOf<Xml>()
+					val children = arrayListOf<Xml>()
 
 					while (stream.hasNext()) {
 						val tag = stream.next()
 						when (tag) {
 							is Xml.Stream.Element.ProcessingInstructionTag -> Unit
-							is Xml.Stream.Element.CommentTag -> children += Xml.Comment(tag.text)
-							is Xml.Stream.Element.Text -> children += Xml.Text(tag.text)
-							is Xml.Stream.Element.OpenCloseTag -> children += Xml.Tag(tag.name, tag.attributes, listOf())
+							is Xml.Stream.Element.CommentTag -> children.add(Xml.Comment(tag.text))
+							is Xml.Stream.Element.Text -> children.add((if (tag.cdata) Xml.CData(tag.text) else Xml.Text(tag.text)))
+							is Xml.Stream.Element.OpenCloseTag -> children.add(Xml.Tag(tag.name, tag.attributes, listOf()))
 							is Xml.Stream.Element.OpenTag -> {
 								val out = level()
 								if (out.close?.name != tag.name) throw IllegalArgumentException("Expected ${tag.name} but was ${out.close?.name}")
-								children += Xml(Xml.Type.NODE, tag.name, tag.attributes, out.children, "")
+								children.add(Xml(Xml.Type.NODE, tag.name, tag.attributes, out.children, ""))
 							}
 							is Xml.Stream.Element.CloseTag -> return Level(children, tag)
 							else -> throw IllegalArgumentException("Unhandled $tag")
@@ -69,8 +76,8 @@ data class Xml(
 
 	val text: String
 		get() = when (type) {
-			Type.NODE -> allChildren.map { it.text }.joinToString("")
-			Type.TEXT -> content
+			Type.NODE -> allChildren.joinToString("") { it.text }
+            Type.TEXT -> content
 			Type.COMMENT -> ""
 		}
 
@@ -93,8 +100,7 @@ data class Xml(
 					line("</$name>")
 				}
 			}
-			Type.TEXT -> line(content)
-			Type.COMMENT -> line("<!--$content-->")
+            else -> line(outerXml)
 		}
 	}
 
@@ -110,15 +116,19 @@ data class Xml(
 					"<$name$attributesStr>$children</$name>"
 				}
 			}
-			Type.TEXT -> content
+			Type.TEXT -> when (name) {
+                NAME_TEXT -> Entities.encode(content)
+                NAME_CDATA -> "<![CDATA[$content]]>"
+                NAME_RAW -> content
+                else -> content
+            }
 			Type.COMMENT -> "<!--$content-->"
 		}
 
 	val innerXml: String
 		get() = when (type) {
 			Type.NODE -> this.allChildren.map(Xml::outerXml).joinToString("")
-			Type.TEXT -> content
-			Type.COMMENT -> "<!--$content-->"
+            else -> outerXml
 		}
 
 	operator fun get(name: String): Iterable<Xml> = children(name)
@@ -213,7 +223,7 @@ data class Xml(
 						while (!r.eof) {
 							val end = r.pos
 							if (r.tryExpect("]]>")) {
-								res = Element.Text(r.createRange(start, end).text)
+								res = Element.Text(r.createRange(start, end).text).also { it.cdata = true }
 								break
 							}
 							r.readChar()
@@ -286,7 +296,9 @@ data class Xml(
 			class OpenTag(val name: String, val attributes: Map<String, String>) : Element()
 			class CommentTag(val text: String) : Element()
 			class CloseTag(val name: String) : Element()
-			class Text(val text: String) : Element()
+			class Text(val text: String) : Element() {
+                var cdata: Boolean = false
+            }
 		}
 	}
 }

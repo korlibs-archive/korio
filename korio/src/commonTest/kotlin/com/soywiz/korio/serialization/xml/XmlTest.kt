@@ -78,4 +78,20 @@ class XmlTest {
         val result2 = "<name number=\"1\">\n\t<!--Some comment-->\n\t<value number=\"2\">SimpleName</value>\n</name>\n"
         assertEquals(result2, xml3.toOuterXmlIndented().toString())
     }
+
+    @Test
+    fun testOutputQuote() {
+        assertEquals("&lt;&amp;&gt;", buildXml("t") { text("<&>") }.innerXml)
+        assertEquals("<&>", buildXml("t") { raw("<&>") }.innerXml)
+        assertEquals("<![CDATA[<&>]]>", buildXml("t") { cdata("<&>") }.innerXml)
+        assertFails {
+            buildXml("t") { cdata("]]>") }.innerXml
+        }
+    }
+
+    @Test
+    fun testParseCData() {
+        assertEquals("<xml><![CDATA[<&>]]></xml>", Xml("<xml><![CDATA[<&>]]></xml>").outerXml)
+        assertEquals("<xml>&lt;&amp;&gt;</xml>", Xml("<xml>&lt;&amp;&gt;</xml>").outerXml)
+    }
 }
