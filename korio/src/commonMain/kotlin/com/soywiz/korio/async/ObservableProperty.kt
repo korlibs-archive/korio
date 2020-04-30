@@ -2,10 +2,10 @@ package com.soywiz.korio.async
 
 import com.soywiz.kds.iterators.fastForEach
 
-class ObservableProperty<T>(default: T) {
+class ObservableProperty<T>(initial: T) {
     private var observers = ArrayList<(T) -> Unit>()
 
-    var value: T = default; private set
+    var value: T = initial; private set
     val observerCount: Int get() = observers.size
     fun clear() = observers.clear()
 
