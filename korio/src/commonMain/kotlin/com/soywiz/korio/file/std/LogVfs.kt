@@ -6,6 +6,7 @@ import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 
 class LogVfs(val parent: VfsFile) : Vfs.Proxy() {
 	val log = arrayListOf<String>()
@@ -80,7 +81,12 @@ class LogVfs(val parent: VfsFile) : Vfs.Proxy() {
 		return super.list(path)
 	}
 
-	override suspend fun delete(path: String): Boolean {
+    override suspend fun listFlow(path: String): Flow<VfsFile> {
+        log += "listFlow($path)"
+        return super.listFlow(path)
+    }
+
+    override suspend fun delete(path: String): Boolean {
 		modifiedFiles += path
 		log += "delete($path)"
 		return super.delete(path)

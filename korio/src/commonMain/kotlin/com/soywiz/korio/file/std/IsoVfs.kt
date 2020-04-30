@@ -5,6 +5,7 @@ import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
+import kotlinx.coroutines.flow.*
 
 suspend fun IsoVfs(file: VfsFile): VfsFile =
 	ISO.openVfs(file.open(VfsOpenMode.READ), closeStream = true)
@@ -16,7 +17,7 @@ suspend fun VfsFile.openAsIso() = IsoVfs(this)
 suspend fun <R> AsyncStream.openAsIso(callback: suspend (VfsFile) -> R): R = openAsIso().useVfs(callback)
 suspend fun <R> VfsFile.openAsIso(callback: suspend (VfsFile) -> R): R = openAsIso().useVfs(callback)
 
-class IsoVfs(val iso: ISO.IsoFile, val closeStream: Boolean) : Vfs() {
+class IsoVfs(val iso: ISO.IsoFile, val closeStream: Boolean) : VfsV2() {
 	val vfs = this
 	val isoFile = iso
 
@@ -44,11 +45,11 @@ class IsoVfs(val iso: ISO.IsoFile, val closeStream: Boolean) : Vfs() {
 
 	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream = isoFile[path].open2(mode)
 
-	override suspend fun list(path: String) = produce<VfsFile> {
+	override suspend fun listFlow(path: String) = flow<VfsFile> {
 		val file = isoFile[path]
 		file.children.fastForEach { c ->
 			//yield(getVfsStat(c))
-			send(vfs[c.fullname])
+			emit(vfs[c.fullname])
 		}
 	}
 
