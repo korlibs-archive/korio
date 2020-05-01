@@ -117,8 +117,8 @@ internal suspend fun fileWrite(file: CPointer<FILE>, position: Long, data: ByteA
 }
 
 class LocalVfsNative : LocalVfsV2() {
-	val that = this
-	override val absolutePath: String = ""
+	val that get() = this
+	override val absolutePath: String get() = ""
 
 	fun resolve(path: String) = path
 

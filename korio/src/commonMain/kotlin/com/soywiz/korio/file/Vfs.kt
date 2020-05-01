@@ -15,14 +15,14 @@ import kotlin.math.*
 import kotlin.reflect.*
 
 abstract class Vfs : AsyncCloseable {
-	protected open val absolutePath: String = ""
+	protected open val absolutePath: String get() = ""
 
 	open fun getAbsolutePath(path: String) = absolutePath.pathInfo.lightCombine(path.pathInfo).fullPath
 
 	//val root = VfsFile(this, "")
 	val root get() = VfsFile(this, "")
 
-	open val supportedAttributeTypes = listOf<KClass<out Attribute>>()
+	open val supportedAttributeTypes: List<KClass<out Attribute> get() = emptyList<KClass<out Attribute>>()
 
 	operator fun get(path: String) = root[path]
 
