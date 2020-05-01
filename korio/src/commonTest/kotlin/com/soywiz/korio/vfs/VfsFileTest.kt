@@ -4,6 +4,8 @@ import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
 import com.soywiz.korio.file.std.*
 import com.soywiz.korio.lang.*
+import com.soywiz.korio.util.*
+import kotlinx.coroutines.flow.*
 import kotlin.test.*
 
 class VfsFileTest {
@@ -12,6 +14,20 @@ class VfsFileTest {
 		val file = MemoryVfs()["C:\\this\\is\\a\\test.txt"]
 		assertEquals("C:/this/is/a", file.parent.fullName)
 	}
+
+    @Test
+    fun testLocalRead() = suspendTestNoBrowser {
+        val processedFileNames = arrayListOf<String>()
+        println("************************************")
+        localCurrentDirVfs.listFlow().filter { it.baseName == "build.gradle.kts" }.collect {
+            if (it.isFile()) {
+                println("$it: ${it.readAll().size}")
+                processedFileNames += it.baseName
+            }
+        }
+        println("************************************")
+        assertEquals(listOf("build.gradle.kts"), processedFileNames)
+    }
 
 	@Test
 	fun memoryNonExists() = suspendTest {
