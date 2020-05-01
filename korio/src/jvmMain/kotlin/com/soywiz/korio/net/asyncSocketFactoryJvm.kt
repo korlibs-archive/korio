@@ -124,6 +124,10 @@ class JvmAsyncServer(override val requestPort: Int, override val host: String, o
 	}
 
     override suspend fun close() {
-        ssc.close()
+        try {
+            ssc.close()
+        }catch (e: Throwable) {
+            e.printStackTrace()
+        }
     }
 }

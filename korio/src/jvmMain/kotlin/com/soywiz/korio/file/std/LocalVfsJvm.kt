@@ -358,7 +358,7 @@ private class LocalVfsJvm : LocalVfsV2() {
 	}
 
     @OptIn(ExperimentalCoroutinesApi::class)
-    override suspend fun listFlow(path: String): Flow<VfsFile> = flow {
+    override suspend fun listFlow(path: String): kotlinx.coroutines.flow.Flow<VfsFile> = flow {
         for (it in (File(path).listFiles() ?: emptyArray<File>())) {
             emit(that.file("$path/${it.name}"))
         }

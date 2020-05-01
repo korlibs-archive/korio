@@ -14,6 +14,7 @@ private val mainDispatcher by lazy { newSingleThreadContext("mainDispatcher") }
 internal val workerContext by lazy { newSingleThreadContext("worker") }
 
 actual fun asyncEntryPoint(callback: suspend () -> Unit) =
+    //runBlocking { callback() }
 	runBlocking(mainDispatcher) { callback() }
 
 suspend fun <T> executeInWorkerJVM(callback: suspend () -> T): T = withContext(workerContext) { callback() }

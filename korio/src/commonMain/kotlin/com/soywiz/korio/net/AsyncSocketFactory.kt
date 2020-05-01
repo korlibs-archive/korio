@@ -6,6 +6,7 @@ import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 
 abstract class AsyncSocketFactory {
@@ -63,26 +64,14 @@ interface AsyncServer: AsyncCloseable {
 	suspend fun accept(): AsyncClient
 
 	suspend fun listen(handler: suspend (AsyncClient) -> Unit): Closeable {
-		val job = coroutineScope {
-			launchImmediately {
-				while (true) {
-					handler(accept())
-				}
-			}
-		}
+		val job = async(coroutineContext) { while (true) handler(accept()) }
 		return Closeable { job.cancel() }
 	}
 
-	suspend fun listen(): ReceiveChannel<AsyncClient> {
-		val ctx = coroutineContext
-		return CoroutineScope(ctx).produce {
-			launchImmediately(ctx) {
-				listen {
-					send(it)
-				}
-			}
-		}
-	}
+    @Deprecated("Use listenFlow instead", ReplaceWith("listenFlow().toChannel()", "com.soywiz.korio.async.toChannel"))
+	suspend fun listen(): ReceiveChannel<AsyncClient> = listenFlow().toChannel()
+
+    suspend fun listenFlow(): Flow<AsyncClient> = flow { while (true) emit(accept()) }
 
     // Provide a default implementation
     override suspend fun close() {
