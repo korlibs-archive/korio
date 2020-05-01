@@ -90,12 +90,7 @@ abstract class HttpClient protected constructor() {
 		}
 
 		if (config.simulateBrowser) {
-			if (actualHeaders["user-agent"] == null) {
-				actualHeaders = actualHeaders.withReplaceHeaders(
-					"Accept" to "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
-					"user-agent" to "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.81 Safari/537.36"
-				)
-			}
+            actualHeaders = combineHeadersForHost(actualHeaders, null)
 		}
 
 		val response =
@@ -145,6 +140,23 @@ abstract class HttpClient protected constructor() {
 		Json.parse(requestAsString(Http.Method.GET, url, config = config.copy(throwErrors = true)).content)
 
 	companion object {
+        val DEFAULT_USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.81 Safari/537.36"
+        val DEFAULT_ACCEPT = "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8"
+        val DEFAULT_LANGUAGE = "en-us"
+        val DEFAULT_ENCODING = "gzip, deflate"
+        val DEFAULT_CONNECTION = "Close"
+
+        fun combineHeadersForHost(headers: Http.Headers, host: String?): Http.Headers {
+            val out = Http.Headers(
+                "User-Agent" to DEFAULT_USER_AGENT,
+                "Accept" to DEFAULT_ACCEPT,
+                "Accept-Language" to DEFAULT_LANGUAGE,
+                "Accept-Encoding" to DEFAULT_ENCODING,
+                "Connection" to DEFAULT_CONNECTION
+            ).withReplaceHeaders(headers)
+            return if (host != null) out.withReplaceHeaders("Host" to host) else out
+        }
+
 		operator fun invoke() = defaultHttpFactory.createClient()
 	}
 }

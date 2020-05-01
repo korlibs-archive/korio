@@ -160,7 +160,10 @@ interface Http {
 		fun withReplaceHeaders(vararg newHeaders: Pair<String, String>): Headers =
 			withReplaceHeaders(newHeaders.toList())
 
-		fun containsAll(other: Http.Headers): Boolean = other.items.all { this.contains(it) }
+        fun withReplaceHeaders(newHeaders: Headers): Headers =
+            withReplaceHeaders(newHeaders.toList())
+
+        fun containsAll(other: Http.Headers): Boolean = other.items.all { this.contains(it) }
 
 		operator fun plus(that: Headers): Headers = withAppendedHeaders(this.items + that.items)
 
