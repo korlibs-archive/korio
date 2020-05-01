@@ -20,6 +20,7 @@ suspend fun RawSocketWebSocketClient(
     wskey: String? = "wskey",
     debug: Boolean = false
 ): WebSocketClient {
+    if (OS.isJsBrowserOrWorker) error("RawSocketWebSocketClient is not supported on JS browser. Use WebSocketClient instead")
     val uri = URL(url)
     val secure: Boolean = uri.isSecureScheme
     val host = uri.host ?: "127.0.0.1"
@@ -75,6 +76,10 @@ class RawSocketWebSocketClient(
     val origin: String?,
     val key: String
 ) : WebSocketClient(url.fullUrl, protocols, debug) {
+    init {
+        if (OS.isJsBrowserOrWorker) error("RawSocketWebSocketClient is not supported on JS browser. Use WebSocketClient instead")
+    }
+
     private var frameIsBinary = false
     val host = url.host ?: "127.0.0.1"
     val port = url.port
