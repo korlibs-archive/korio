@@ -357,13 +357,12 @@ private class LocalVfsJvm : LocalVfsV2() {
 		}
 	}
 
+    @OptIn(ExperimentalCoroutinesApi::class)
     override suspend fun listFlow(path: String): Flow<VfsFile> = flow {
-        executeIo {
-            for (it in (File(path).listFiles() ?: emptyArray<File>())) {
-                emit(that.file("$path/${it.name}"))
-            }
+        for (it in (File(path).listFiles() ?: emptyArray<File>())) {
+            emit(that.file("$path/${it.name}"))
         }
-    }
+    }.flowOn(IOContext)
 
 	override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean =
 		executeIo { resolveFile(path).mkdirs() }

@@ -113,7 +113,7 @@ abstract class Vfs : AsyncCloseable {
 
     @Deprecated("Use listFlow")
 	open suspend fun list(path: String): ReceiveChannel<VfsFile> = listOf<VfsFile>().toChannel()
-    open suspend fun listFlow(path: String): Flow<VfsFile> = this.list(path).toList().asFlow()
+    open suspend fun listFlow(path: String): Flow<VfsFile> = flow { emitAll(list(path)) }
 
 	open suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean = unsupported()
 	open suspend fun rmdir(path: String): Boolean = delete(path) // For compatibility
