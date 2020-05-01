@@ -10,6 +10,11 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 	companion object {
 		init {
 			init_sockets()
+            // @TODO: Is WSAStartup already called by init_sockets?
+            memScoped {
+                val wsaData = alloc<WSAData>()
+                WSAStartup(0x0202.convert(), wsaData.ptr)
+            }
 		}
 
 		operator fun invoke(): NativeSocket {
