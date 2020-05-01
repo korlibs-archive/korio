@@ -64,8 +64,6 @@ class JsWebSocketClient(url: String, protocols: List<String>?, val DEBUG: Boolea
 
 	override suspend fun send(message: ByteArray) {
 		if (DEBUG) println("[WS-SEND]: ${message.toList()}")
-		val bb = Int8Array(message.size)
-		for (n in message.indices) bb[n] = message[n]
-		jsws.send(bb)
+		jsws.send(message.toInt8Array())
 	}
 }
