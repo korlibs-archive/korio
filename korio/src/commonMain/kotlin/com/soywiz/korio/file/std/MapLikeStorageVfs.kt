@@ -10,11 +10,12 @@ import com.soywiz.korio.serialization.json.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.encoding.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import kotlin.math.*
 
 fun SimpleStorage.toVfs(): VfsFile = MapLikeStorageVfs(this).root
 
-class MapLikeStorageVfs(val storage: SimpleStorage) : Vfs() {
+class MapLikeStorageVfs(val storage: SimpleStorage) : VfsV2() {
 	private val files = StorageFiles(storage)
 	private var initialized = false
 
@@ -78,11 +79,11 @@ class MapLikeStorageVfs(val storage: SimpleStorage) : Vfs() {
 		return true
 	}
 
-	override suspend fun list(path: String): ReceiveChannel<VfsFile> {
+	override suspend fun listFlow(path: String): Flow<VfsFile> {
 		initOnce()
 		val npath = path.normalizePath()
 		val entry = files.getEntryInfo(npath) ?: throw IOException("Can't find '$path'")
-		return entry.children.map { VfsFile(this, it) }.toChannel()
+		return entry.children.map { VfsFile(this, it) }.asFlow()
 	}
 
 	override suspend fun open(path: String, mode: VfsOpenMode): AsyncStream {

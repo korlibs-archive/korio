@@ -23,6 +23,7 @@ object OS {
 
 	val isJs get() = rawPlatformName.endsWith("js")
 	val isNative get() = rawPlatformName == "native"
+    val isNativeDesktop get() = isNative && !isAndroid && !isIos && !isWatchos && !isTvos
 	val isJvm get() = rawPlatformName == "jvm"
 
 	val isJsShell get() = platformNameLC == "shell.js"

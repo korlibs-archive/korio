@@ -10,6 +10,7 @@ import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.checksum.*
 import com.soywiz.korio.util.encoding.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import kotlin.collections.*
 
 suspend fun ZipVfs(
@@ -21,7 +22,7 @@ suspend fun ZipVfs(
     //val s = zipFile.open(VfsOpenMode.READ)
     val zipFile = ZipFile(s, caseSensitive)
 
-    class Impl : Vfs() {
+    class Impl : VfsV2() {
         val vfs = this
 
         override suspend fun close() {
@@ -77,10 +78,10 @@ suspend fun ZipVfs(
             return zipFile.files[zipFile.normalizeName(path)].toStat(this@Impl[path])
         }
 
-        override suspend fun list(path: String): ReceiveChannel<VfsFile> = produce {
+        override suspend fun listFlow(path: String): Flow<VfsFile> = flow {
             for ((_, entry) in zipFile.filesPerFolder[zipFile.normalizeName(path)] ?: LinkedHashMap()) {
                 //yield(entry.toStat(this@Impl[entry.path]))
-                send(vfs[entry.path])
+                emit(vfs[entry.path])
             }
         }
 

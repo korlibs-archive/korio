@@ -6,6 +6,7 @@ import com.soywiz.korio.file.*
 import com.soywiz.korio.lang.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 
 open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
@@ -35,7 +36,7 @@ open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
 		return createNonExistsStat(path)
 	}
 
-	override suspend fun list(path: String): ReceiveChannel<VfsFile> = produce {
+	override suspend fun listFlow(path: String): Flow<VfsFile> = flow {
 		val emitted = LinkedHashSet<String>()
 		vfsList.fastForEach { vfs ->
 			val items = runIgnoringExceptions { vfs[path].list() } ?: return@fastForEach
@@ -44,7 +45,7 @@ open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
 				for (v in items) {
 					if (v.baseName !in emitted) {
 						emitted += v.baseName
-						send(file("$path/${v.baseName}"))
+						emit(file("$path/${v.baseName}"))
 					}
 				}
 			} catch (e: Throwable) {

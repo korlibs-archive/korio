@@ -15,6 +15,7 @@ import com.soywiz.korio.net.*
 import com.soywiz.korio.net.http.*
 import com.soywiz.korio.net.ws.*
 import com.soywiz.korio.stream.*
+import kotlinx.coroutines.flow.*
 import com.soywiz.korio.util.*
 import kotlin.collections.set
 import kotlin.reflect.*
@@ -115,7 +116,7 @@ internal suspend fun fileWrite(file: CPointer<FILE>, position: Long, data: ByteA
 	}
 }
 
-class LocalVfsNative : LocalVfs() {
+class LocalVfsNative : LocalVfsV2() {
 	val that = this
 	override val absolutePath: String = ""
 
@@ -230,7 +231,7 @@ class LocalVfsNative : LocalVfs() {
 		result
 	}
 
-	override suspend fun list(path: String) = produce {
+	override suspend fun listFlow(path: String) = flow {
 		val dir = opendir(resolve(path))
 		val out = ArrayList<VfsFile>()
 		if (dir != null) {
@@ -238,7 +239,7 @@ class LocalVfsNative : LocalVfs() {
 				while (true) {
 					val dent = readdir(dir) ?: break
 					val name = dent.pointed.d_name.toKString()
-					send(file(name))
+					emit(file(name))
 				}
 			} finally {
 				closedir(dir)

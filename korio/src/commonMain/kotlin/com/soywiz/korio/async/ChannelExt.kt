@@ -4,6 +4,7 @@ import com.soywiz.kmem.*
 import com.soywiz.korio.stream.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 import kotlin.experimental.*
 import kotlin.math.*
@@ -25,6 +26,8 @@ suspend fun <T> ReceiveChannel<T>.chunks(count: Int) = produce {
 }
 
 suspend fun <T> Iterable<T>.toChannel(): ReceiveChannel<T> = produce { for (v in this@toChannel) send(v) }
+
+suspend fun <T> Flow<T>.toChannel(): ReceiveChannel<T> = produce { this@toChannel.collect { send(it) }  }
 
 @UseExperimental(ExperimentalTypeInference::class)
 suspend fun <E> produce(capacity: Int = 0, @BuilderInference block: suspend ProducerScope<E>.() -> Unit): ReceiveChannel<E> =

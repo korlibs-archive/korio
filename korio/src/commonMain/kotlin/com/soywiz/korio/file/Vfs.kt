@@ -9,6 +9,7 @@ import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 import kotlin.math.*
 import kotlin.reflect.*
@@ -109,7 +110,11 @@ abstract class Vfs : AsyncCloseable {
 	open suspend fun setAttributes(path: String, attributes: List<Attribute>): Unit = Unit
 
 	open suspend fun stat(path: String): VfsStat = createNonExistsStat(path)
+
+    @Deprecated("Use listFlow")
 	open suspend fun list(path: String): ReceiveChannel<VfsFile> = listOf<VfsFile>().toChannel()
+    open suspend fun listFlow(path: String): Flow<VfsFile> = flow { emitAll(list(path)) }
+
 	open suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean = unsupported()
 	open suspend fun rmdir(path: String): Boolean = delete(path) // For compatibility
 	open suspend fun delete(path: String): Boolean = unsupported()
@@ -163,10 +168,14 @@ abstract class Vfs : AsyncCloseable {
 
 		override suspend fun setSize(path: String, size: Long): Unit = initOnce().access(path).setSize(size)
 		override suspend fun stat(path: String): VfsStat = initOnce().access(path).stat().copy(file = file(path))
-		override suspend fun list(path: String) =
-			produce<VfsFile> { initOnce(); for (it in access(path).list()) send(it.transform()) }
+		override suspend fun list(path: String) = listFlow(path).toChannel()
 
-		override suspend fun delete(path: String): Boolean = initOnce().access(path).delete()
+        override suspend fun listFlow(path: String): Flow<VfsFile> = flow {
+            initOnce()
+            access(path).listFlow().collect { emit(it.transform()) }
+        }
+
+        override suspend fun delete(path: String): Boolean = initOnce().access(path).delete()
 		override suspend fun setAttributes(path: String, attributes: List<Attribute>) =
 			initOnce().access(path).setAttributes(*attributes.toTypedArray())
 
@@ -208,6 +217,11 @@ abstract class Vfs : AsyncCloseable {
 	}
 
 	override fun toString(): String = this::class.portableSimpleName
+}
+
+abstract class VfsV2 : Vfs() {
+    final override suspend fun list(path: String): ReceiveChannel<VfsFile> = listFlow(path).toChannel()
+    override suspend fun listFlow(path: String): Flow<VfsFile> = emptyFlow()
 }
 
 enum class VfsOpenMode(

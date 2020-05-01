@@ -11,6 +11,7 @@ import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 
 data class VfsFile(
@@ -95,6 +96,7 @@ data class VfsFile(
 	suspend fun size(): Long = vfs.stat(this.path).size
 	suspend fun exists(): Boolean = runIgnoringExceptions { vfs.stat(this.path).exists } ?: false
 	suspend fun isDirectory(): Boolean = stat().isDirectory
+    suspend fun isFile(): Boolean = !stat().isDirectory
 	suspend fun setSize(size: Long): Unit = vfs.setSize(this.path, size)
 
 	suspend fun delete() = vfs.delete(this.path)
@@ -126,18 +128,24 @@ data class VfsFile(
 
 	suspend fun renameTo(dstPath: String) = vfs.rename(this.path, dstPath)
 
-	suspend fun list(): ReceiveChannel<VfsFile> = vfs.list(this.path)
+    @Deprecated("Use listFlow instead", ReplaceWith("listFlow().toChannel()", "com.soywiz.korio.async.toChannel"))
+	suspend fun list(): ReceiveChannel<VfsFile> = listFlow().toChannel()
+    suspend fun listFlow(): Flow<VfsFile> = vfs.listFlow(this.path)
 
-	suspend fun listRecursive(filter: (VfsFile) -> Boolean = { true }): ReceiveChannel<VfsFile> = produce {
-		for (file in list()) {
-			if (!filter(file)) continue
-			send(file)
-			val stat = file.stat()
-			if (stat.isDirectory) {
-				for (f in file.listRecursive()) send(f)
-			}
-		}
-	}
+    @Deprecated("Use listRecursiveFlow instead", ReplaceWith("listRecursiveFlow(filter).toChannel()", "com.soywiz.korio.async.toChannel"))
+	suspend fun listRecursive(filter: (VfsFile) -> Boolean = { true }): ReceiveChannel<VfsFile> = listRecursiveFlow(filter).toChannel()
+
+    suspend fun listRecursiveFlow(filter: (VfsFile) -> Boolean = { true }): Flow<VfsFile> = flow {
+        listFlow().collect { file ->
+            if (filter(file)) {
+                emit(file)
+                val stat = file.stat()
+                if (stat.isDirectory) {
+                    file.listRecursiveFlow().collect { emit(it) }
+                }
+            }
+        }
+    }
 
 	suspend fun exec(
 		cmdAndArgs: List<String>,

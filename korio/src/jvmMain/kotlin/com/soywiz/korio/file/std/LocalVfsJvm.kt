@@ -10,6 +10,7 @@ import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import java.io.*
 import java.io.FileNotFoundException
 import java.io.IOException
@@ -206,7 +207,7 @@ private class ResourcesVfsProviderJvm {
 //private val IOContext by lazy { newSingleThreadContext("IO") }
 private val IOContext by lazy { Dispatchers.Unconfined }
 
-private class LocalVfsJvm : LocalVfs() {
+private class LocalVfsJvm : LocalVfsV2() {
 	val that = this
 	override val absolutePath: String = ""
 
@@ -356,7 +357,12 @@ private class LocalVfsJvm : LocalVfs() {
 		}
 	}
 
-	override suspend fun list(path: String): ReceiveChannel<VfsFile> = executeIo { (File(path).listFiles() ?: arrayOf()).map { that.file("$path/${it.name}") } }.toChannel()
+    @OptIn(ExperimentalCoroutinesApi::class)
+    override suspend fun listFlow(path: String): Flow<VfsFile> = flow {
+        for (it in (File(path).listFiles() ?: emptyArray<File>())) {
+            emit(that.file("$path/${it.name}"))
+        }
+    }.flowOn(IOContext)
 
 	override suspend fun mkdir(path: String, attributes: List<Attribute>): Boolean =
 		executeIo { resolveFile(path).mkdirs() }

@@ -9,9 +9,10 @@ import com.soywiz.korio.lang.*
 import com.soywiz.korio.stream.*
 import kotlinx.coroutines.*
 import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 
-open class NodeVfs(val caseSensitive: Boolean = true) : Vfs() {
+open class NodeVfs(val caseSensitive: Boolean = true) : VfsV2() {
 	val events = Signal<FileEvent>()
 
 	open inner class Node(
@@ -132,10 +133,10 @@ open class NodeVfs(val caseSensitive: Boolean = true) : Vfs() {
 		}
 	}
 
-	override suspend fun list(path: String): ReceiveChannel<VfsFile> = produce {
+	override suspend fun listFlow(path: String): Flow<VfsFile> = flow {
 		val node = rootNode[path]
 		for ((name, _) in node.children) {
-			send(file("$path/$name"))
+			emit(file("$path/$name"))
 		}
 	}
 

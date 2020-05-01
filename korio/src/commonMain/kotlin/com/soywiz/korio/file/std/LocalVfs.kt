@@ -1,6 +1,9 @@
 package com.soywiz.korio.file.std
 
+import com.soywiz.korio.async.*
 import com.soywiz.korio.file.*
+import kotlinx.coroutines.channels.*
+import kotlinx.coroutines.flow.*
 
 abstract class LocalVfs : Vfs() {
 	companion object {
@@ -8,6 +11,11 @@ abstract class LocalVfs : Vfs() {
 	}
 
 	override fun toString(): String = "LocalVfs"
+}
+
+abstract class LocalVfsV2 : LocalVfs() {
+    final override suspend fun list(path: String): ReceiveChannel<VfsFile> = listFlow(path).toChannel()
+    override suspend fun listFlow(path: String): Flow<VfsFile> = emptyFlow()
 }
 
 var resourcesVfsDebug = false
