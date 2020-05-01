@@ -1,6 +1,7 @@
 package com.soywiz.korio.net.ws
 
 import com.soywiz.korio.async.*
+import com.soywiz.korio.util.*
 import org.khronos.webgl.*
 import org.w3c.dom.*
 
@@ -33,15 +34,14 @@ class JsWebSocketClient(url: String, protocols: List<String>?, val DEBUG: Boolea
 			val data = event.data
 			if (DEBUG) println("[WS-RECV]: $data :: stringListeners=${onStringMessage.listenerCount}, binaryListeners=${onBinaryMessage.listenerCount}, anyListeners=${onAnyMessage.listenerCount}")
 			if (data is String) {
-				val js = data
+				val js = data.unsafeCast<String>()
 				onStringMessage(js)
 				onAnyMessage(js)
 			} else {
-				val jb = data
-
-				//onBinaryMessage(jb)
-				//onAnyMessage(jb)
-				TODO("onBinaryMessage, onAnyMessage")
+				val jb = data.unsafeCast<ArrayBuffer>()
+                val ba = jb.toByteArray()
+				onBinaryMessage(ba)
+				onAnyMessage(ba)
 			}
 		})
 	}
