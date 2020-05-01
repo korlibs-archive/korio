@@ -16,7 +16,7 @@ class VfsFileTest {
 	}
 
     @Test
-    fun testLocalRead() = suspendTestNoBrowser {
+    fun testLocalRead() = suspendTest({ OS.isJvm }) {
         val processedFileNames = arrayListOf<String>()
         println("************************************")
         localCurrentDirVfs.listFlow().filter { it.baseName == "build.gradle.kts" }.collect {
