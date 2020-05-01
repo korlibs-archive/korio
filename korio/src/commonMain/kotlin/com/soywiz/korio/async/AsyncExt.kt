@@ -1,5 +1,6 @@
 package com.soywiz.korio.async
 
+import com.soywiz.klock.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.util.*
 import kotlinx.coroutines.*
@@ -23,10 +24,15 @@ fun <T> asyncImmediately(context: CoroutineContext, callback: suspend () -> T) =
 fun <T> asyncAsap(context: CoroutineContext, callback: suspend () -> T) = CoroutineScope(context).asyncAsap(callback)
 
 expect fun asyncEntryPoint(callback: suspend () -> Unit)
-fun suspendTest(callback: suspend () -> Unit) = asyncEntryPoint(callback)
-fun suspendTest(cond: () -> Boolean, callback: suspend () -> Unit) = asyncEntryPoint { if (cond()) callback() }
-fun suspendTestNoBrowser(callback: suspend () -> Unit) = suspendTest({ !OS.isJsBrowser }, callback)
-fun suspendTestNoJs(callback: suspend () -> Unit) = suspendTest({ !OS.isJs }, callback)
+
+val DEFAULT_SUSPEND_TEST_TIMEOUT = 20.seconds
+
+fun suspendTest(timeout: TimeSpan?, callback: suspend CoroutineScope.() -> Unit) = asyncEntryPoint { if (timeout != null) withTimeout(timeout) { callback() } else coroutineScope { callback() } }
+//fun suspendTest(timeout: TimeSpan?, callback: suspend CoroutineScope.() -> Unit) = asyncEntryPoint { coroutineScope { callback() } }
+fun suspendTest(callback: suspend CoroutineScope.() -> Unit) = suspendTest(DEFAULT_SUSPEND_TEST_TIMEOUT, callback)
+fun suspendTest(cond: () -> Boolean, timeout: TimeSpan? = DEFAULT_SUSPEND_TEST_TIMEOUT, callback: suspend CoroutineScope.() -> Unit) = suspendTest(timeout) { if (cond()) callback() }
+fun suspendTestNoBrowser(callback: suspend CoroutineScope.() -> Unit) = suspendTest({ !OS.isJsBrowser }, callback = callback)
+fun suspendTestNoJs(callback: suspend CoroutineScope.() -> Unit) = suspendTest({ !OS.isJs }, callback = callback)
 
 private fun CoroutineScope._launch(start: CoroutineStart, callback: suspend () -> Unit): Job = launch(coroutineContext, start = start) {
 	try {

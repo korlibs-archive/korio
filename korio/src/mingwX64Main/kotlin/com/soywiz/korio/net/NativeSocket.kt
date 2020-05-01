@@ -1,10 +1,13 @@
 package com.soywiz.korio.net
 
+import com.soywiz.korio.util.*
 import kotlinx.cinterop.*
 import kotlinx.coroutines.*
 import platform.posix.*
-import platform.windows.LPADDRINFOVar
-import platform.windows.addrinfo
+import platform.posix.AF_INET
+import platform.posix.SOCK_STREAM
+import platform.windows.*
+import platform.windows.WSAStartup
 
 class NativeSocket private constructor(internal val sockfd: SOCKET, private var endpoint: Endpoint) {
 	companion object {
@@ -28,7 +31,8 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 		fun checkErrors(name: String = "") {
 			val error = platform.windows.WSAGetLastError()
 			if (error != 0) {
-				error("WSA error($name): $error")
+                val errorStr = GetErrorAsString(error.convert())
+                error("WSA error($name): $error :: $errorStr")
 			}
 		}
 	}
@@ -38,14 +42,7 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 	}
 
 	class IP(val data: UByteArray) {
-		constructor(v0: Int, v1: Int, v2: Int, v3: Int) : this(
-			ubyteArrayOf(
-				v0.toUByte(),
-				v1.toUByte(),
-				v2.toUByte(),
-				v3.toUByte()
-			)
-		)
+        constructor(v0: Int, v1: Int, v2: Int, v3: Int) : this(ubyteArrayOf(v0.toUByte(), v1.toUByte(), v2.toUByte(), v3.toUByte()))
 
 		val v0 get() = data[0]
 		val v1 get() = data[1]
@@ -61,18 +58,15 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 				memScoped {
 					// gethostbyname unusable on windows
 					val addr = allocArray<LPADDRINFOVar>(1)
-					val res = platform.windows.getaddrinfo(host, null, null, addr)
+                    val hints = alloc<addrinfo>()
+                    hints.ai_family = AF_INET
+                    hints.ai_flags = AI_PASSIVE
+                    hints.ai_socktype = SOCK_STREAM
+					val res = getaddrinfo(host, null, hints.ptr, addr)
 					checkErrors("getaddrinfo")
 					val info = addr[0]!!.pointed
-					val inetaddr = info.ai_addr!!.pointed.sa_data
-					return IP(
-						ubyteArrayOf(
-							inetaddr[0].toUByte(),
-							inetaddr[1].toUByte(),
-							inetaddr[2].toUByte(),
-							inetaddr[3].toUByte()
-						)
-					)
+                    val ad = info.ai_addr!!.reinterpret<sockaddr_in>().pointed.sin_addr.S_un.S_un_b
+					return IP(ad.s_b1.toInt(), ad.s_b2.toInt(), ad.s_b3.toInt(), ad.s_b4.toInt())
 				}
 			}
 		}
@@ -80,9 +74,17 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 
 	fun CPointer<sockaddr_in>.set(ip: IP, port: Int) {
 		val addr = this
-		addr.pointed.sin_family = platform.windows.AF_INET.convert()
-		addr.pointed.sin_addr.S_un.S_addr = ip.value.toUInt()
-		addr.pointed.sin_port = swapBytes(port.toUShort())
+        addr.pointed.also { p ->
+            p.sin_family = platform.windows.AF_INET.convert()
+            //p.sin_addr.S_un.S_addr = ip.value.toUInt()
+            println("IP: $ip")
+            p.sin_addr.S_un.S_un_b.s_b1 = ip.v0
+            p.sin_addr.S_un.S_un_b.s_b2 = ip.v1
+            p.sin_addr.S_un.S_un_b.s_b3 = ip.v2
+            p.sin_addr.S_un.S_un_b.s_b4 = ip.v3
+            p.sin_port = swapBytes(port.toUShort())
+        }
+        //inet_pton(AF_INET.convert(), ip.str, )
 	}
 
 	val connected get() = _connected
@@ -110,6 +112,8 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 			val ip = IP.fromHost(host)
 			val addr = alloc<sockaddr_in>()
 			addr.ptr.set(ip, port)
+            println("Binding: $host")
+            checkErrors("pbind")
 			platform.posix.bind(sockfd, addr.ptr.reinterpret(), sockaddr_in.size.convert())
 			checkErrors("bind")
 			platform.posix.listen(sockfd, backlog)
@@ -126,24 +130,28 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 	}
 
 	fun tryAccept(): NativeSocket? {
-		memScoped {
+		return memScoped {
 			val addr = alloc<sockaddr>()
 			val socklen = alloc<platform.windows.socklen_tVar>()
 			socklen.value = sockaddr.size.convert()
 			val fd = platform.posix.accept(sockfd, addr.ptr, socklen.ptr)
-			checkErrors("accept")
-			if (fd.toInt() < 0) {
-				val errno = posix_errno()
-				//println("accept: fd=$fd, errno=$errno")
-				when (errno) {
-					EWOULDBLOCK -> return null
-					else -> error("Couldn't accept socket ($fd) errno=$errno")
-				}
-			}
-			//println("accept: fd=$fd")
-			return NativeSocket(fd, addr.ptr.reinterpret<sockaddr_in>().toEndpoint()).apply {
-				setSocketBlockingEnabled(false)
-			}
+            if (platform.windows.WSAGetLastError() == platform.windows.WSAEWOULDBLOCK) {
+                null
+            } else {
+                checkErrors("accept")
+                if (fd.toInt() < 0) {
+                    val errno = posix_errno()
+                    //println("accept: fd=$fd, errno=$errno")
+                    when (errno) {
+                        EWOULDBLOCK -> return null
+                        else -> error("Couldn't accept socket ($fd) errno=$errno")
+                    }
+                }
+                //println("accept: fd=$fd")
+                NativeSocket(fd, addr.ptr.reinterpret<sockaddr_in>().toEndpoint()).apply {
+                    setSocketBlockingEnabled(false)
+                }
+            }
 		}
 	}
 
@@ -234,9 +242,7 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 			addressLength.value = sockaddr_in.size.convert()
 			val result = platform.windows.getsockname(sockfd, localAddress.ptr.reinterpret(), addressLength.ptr)
 			checkErrors("getsockname")
-			if (result < 0) {
-				return Endpoint(IP(0, 0, 0, 0), 0)
-			}
+			if (result < 0) return Endpoint(IP(0, 0, 0, 0), 0)
 			val ip = localAddress.sin_addr.readValue()
 			val port = swapBytes(localAddress.sin_port)
 			//println("result: $result")
@@ -303,38 +309,21 @@ suspend fun NativeSocket.accept(): NativeSocket {
 
 object NativeAsyncSocketFactory : AsyncSocketFactory() {
 	class NativeAsyncClient(val socket: NativeSocket) : AsyncClient {
-		override suspend fun connect(host: String, port: Int) {
-			socket.connect(host, port)
-		}
-
+		override suspend fun connect(host: String, port: Int) = run { socket.connect(host, port) }
 		override val connected: Boolean get() = socket.connected
-
-		override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-			return socket.suspendRecvUpTo(buffer, offset, len)
-		}
-
-		override suspend fun write(buffer: ByteArray, offset: Int, len: Int) {
-			socket.suspendSend(buffer, offset, len)
-		}
-
-		override suspend fun close() {
-			socket.close()
-		}
+		override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int = socket.suspendRecvUpTo(buffer, offset, len)
+		override suspend fun write(buffer: ByteArray, offset: Int, len: Int) = socket.suspendSend(buffer, offset, len)
+		override suspend fun close() = socket.close()
 	}
 
 	class NativeAsyncServer(val socket: NativeSocket, override val requestPort: Int, override val backlog: Int) :
 		AsyncServer {
 		override val host: String get() = socket.getLocalEndpoint().ip.str
 		override val port: Int get() = socket.getLocalEndpoint().port
-
-		override suspend fun accept(): AsyncClient {
-			return NativeAsyncClient(socket.accept())
-		}
+		override suspend fun accept(): AsyncClient = NativeAsyncClient(socket.accept())
 	}
 
-	override suspend fun createClient(secure: Boolean): AsyncClient {
-		return NativeAsyncClient(NativeSocket())
-	}
+	override suspend fun createClient(secure: Boolean): AsyncClient = NativeAsyncClient(NativeSocket())
 
 	override suspend fun createServer(port: Int, host: String, backlog: Int, secure: Boolean): AsyncServer {
 		val socket = NativeSocket()
@@ -342,3 +331,4 @@ object NativeAsyncSocketFactory : AsyncSocketFactory() {
 		return NativeAsyncServer(socket, port, backlog)
 	}
 }
+
