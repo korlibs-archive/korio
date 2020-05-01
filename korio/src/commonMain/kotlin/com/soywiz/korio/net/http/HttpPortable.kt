@@ -16,18 +16,9 @@ internal object HttpPortable {
 				val secure = url.scheme == "https"
 				//println("HTTP CLIENT: host=${url.host}, port=${url.port}, secure=$secure")
 				val client = createTcpClient(url.host!!, url.port, secure)
-				val rheaders = headers + Http.Headers(
-					"Host" to url.host,
-					"User-Agent" to "Mozilla/5.0 Korio/1.0.0 (KHTML, like Gecko) Chrome/71.0 Safari/537.0",
-					"Accept-Language" to "en-us",
-					"Accept-Encoding" to "gzip, deflate",
-					"Connection" to "Close"
-				)
-				val rheaders2 = if (content != null) {
-					rheaders + Http.Headers(Http.Headers.ContentLength to content.getLength().toString())
-				} else {
-					rheaders
-				}
+
+				val rheaders = HttpClient.combineHeadersForHost(headers, url.host)
+				val rheaders2 = if (content != null) rheaders + Http.Headers(Http.Headers.ContentLength to content.getLength().toString()) else rheaders
 				client.writeString("$method ${url.pathWithQuery} HTTP/1.1\n")
 				for (header in rheaders2) {
 					client.writeString("${header.first}: ${header.second}\n")

@@ -6,6 +6,7 @@ import com.soywiz.korio.async.*
 import com.soywiz.korio.util.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
+import com.soywiz.korio.net.http.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.encoding.*
 import kotlinx.coroutines.*
@@ -107,7 +108,7 @@ class RawSocketWebSocketClient(
 			add("Connection: Upgrade")
 			add("Sec-WebSocket-Key: ${key.toByteArray().toBase64()}")
 			add("Origin: $origin")
-			add("User-Agent: Mozilla/5.0")
+			add("User-Agent: ${HttpClient.DEFAULT_USER_AGENT}")
 		}.joinToString("\r\n") + "\r\n\n").toByteArray())
 
 		// Read response
