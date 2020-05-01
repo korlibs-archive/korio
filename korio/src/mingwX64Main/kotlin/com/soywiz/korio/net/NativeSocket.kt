@@ -77,7 +77,7 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
         addr.pointed.also { p ->
             p.sin_family = platform.windows.AF_INET.convert()
             //p.sin_addr.S_un.S_addr = ip.value.toUInt()
-            println("IP: $ip")
+            //println("IP: $ip")
             p.sin_addr.S_un.S_un_b.s_b1 = ip.v0
             p.sin_addr.S_un.S_un_b.s_b2 = ip.v1
             p.sin_addr.S_un.S_un_b.s_b3 = ip.v2
@@ -112,7 +112,7 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 			val ip = IP.fromHost(host)
 			val addr = alloc<sockaddr_in>()
 			addr.ptr.set(ip, port)
-            println("Binding: $host")
+            //println("Binding: $host")
             checkErrors("pbind")
 			platform.posix.bind(sockfd, addr.ptr.reinterpret(), sockaddr_in.size.convert())
 			checkErrors("bind")
@@ -129,13 +129,15 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 		)
 	}
 
+    fun wouldBlock() = platform.windows.WSAGetLastError() == platform.windows.WSAEWOULDBLOCK
+
 	fun tryAccept(): NativeSocket? {
 		return memScoped {
 			val addr = alloc<sockaddr>()
 			val socklen = alloc<platform.windows.socklen_tVar>()
 			socklen.value = sockaddr.size.convert()
 			val fd = platform.posix.accept(sockfd, addr.ptr, socklen.ptr)
-            if (platform.windows.WSAGetLastError() == platform.windows.WSAEWOULDBLOCK) {
+            if (wouldBlock()) {
                 null
             } else {
                 checkErrors("accept")
@@ -178,9 +180,12 @@ class NativeSocket private constructor(internal val sockfd: SOCKET, private var 
 	private var _connected = false
 
 	fun recv(data: ByteArray, offset: Int = 0, count: Int = data.size - offset): Int {
-		val result = platform.windows.recv(sockfd, data.refTo(offset), count.convert(), 0).toInt()
-		checkErrors("recv")
-		return result
+        while (true) {
+            val result = platform.windows.recv(sockfd, data.refTo(offset), count.convert(), 0).toInt()
+            if (wouldBlock()) return 0
+            checkErrors("recv")
+            return result
+        }
 	}
 
 	fun recv(count: Int): ByteArray {
