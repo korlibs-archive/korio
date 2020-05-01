@@ -19,10 +19,13 @@ data class URL private constructor(
 	val user: String? get() = userInfo?.substringBefore(':')
 	val password: String? get() = userInfo?.substringAfter(':')
 	val isHierarchical get() = !isOpaque
+    val isSecureScheme get() = scheme == "https" || scheme == "wss" || scheme == "ftps"
 
 	val port: Int
 		get() = if (defaultPort == DEFAULT_PORT) {
 			when (scheme) {
+                "ftp" -> 21
+                "ftps" -> 990
 				"http", "ws" -> 80
 				"https", "wss" -> 443
 				else -> -1
@@ -92,10 +95,22 @@ data class URL private constructor(
 					val isHierarchical = r.tryLit("//") != null
 					val nonScheme = r.readRemaining()
 					val scheme = schemeColon.dropLast(1)
-					val (nonFragment, fragment) = nonScheme.split('#', limit = 2).run { first() to getOrNull(1) }
-					val (nonQuery, query) = nonFragment.split('?', limit = 2).run { first() to getOrNull(1) }
-					val (authority, path) = nonQuery.split('/', limit = 2).run { first() to getOrNull(1) }
-					val (host, userInfo) = authority.split('@', limit = 2).reversed().run { first() to getOrNull(1) }
+
+                    val nonFragment = nonScheme.substringBefore('#')
+                    val fragment = nonScheme.substringAfterOrNull('#')
+
+                    val nonQuery = nonFragment.substringBefore('?')
+                    val query = nonFragment.substringAfterOrNull('?')
+
+                    val authority = nonQuery.substringBefore('/')
+                    val path = nonQuery.substringAfterOrNull('/')
+
+                    val hostWithPort = authority.substringAfter('@')
+                    val userInfo = authority.substringBeforeOrNull('@')
+
+                    val host = hostWithPort.substringBefore(':')
+                    val port = hostWithPort.substringAfterOrNull(':')
+
 					URL(
 						opaque = !isHierarchical,
 						scheme = scheme,
@@ -103,12 +118,15 @@ data class URL private constructor(
 						host = host.takeIf { it.isNotEmpty() },
 						path = if (path != null) "/$path" else "",
 						query = query,
-						fragment = fragment
+						fragment = fragment,
+                        port = port?.toIntOrNull() ?: DEFAULT_PORT
 					)
 				}
 				else -> {
-					val (nonFragment, fragment) = url.split("#", limit = 2).run { first() to getOrNull(1) }
-					val (path, query) = nonFragment.split("?", limit = 2).run { first() to getOrNull(1) }
+                    val nonFragment = url.substringBefore('#')
+                    val fragment = url.substringAfterOrNull('#')
+                    val path = nonFragment.substringBefore('?')
+                    val query = nonFragment.substringAfterOrNull('?')
 					URL(
 						opaque = false,
 						scheme = null,

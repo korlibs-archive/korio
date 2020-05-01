@@ -135,4 +135,13 @@ class URLTest {
 	fun test() {
 		assertEquals("data:text/plain;base64,aGVsbG8td29ybGQ=", createBase64URLForData("hello-world".toByteArray(), "text/plain"))
 	}
+
+    @Test
+    fun testCustomWsPort() {
+        val uri = URL("ws://websocket.domain.com:8080")
+        assertEquals("ws", uri.scheme)
+        assertEquals(false, uri.isSecureScheme)
+        assertEquals("websocket.domain.com", uri.host)
+        assertEquals(8080, uri.port)
+    }
 }

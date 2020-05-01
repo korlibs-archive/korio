@@ -3,219 +3,204 @@ package com.soywiz.korio.net.ws
 import com.soywiz.klock.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
-import com.soywiz.korio.util.*
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
 import com.soywiz.korio.net.http.*
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.*
 import com.soywiz.korio.util.encoding.*
 import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.random.*
 
 suspend fun RawSocketWebSocketClient(
-	url: String,
-	protocols: List<String>?,
-	origin: String?,
-	wskey: String?,
-	debug: Boolean
+    url: String,
+    protocols: List<String>? = null,
+    origin: String? = null,
+    wskey: String? = "wskey",
+    debug: Boolean = false
 ): WebSocketClient {
-	val uri = URL(url)
-	val secure = when (uri.scheme) {
-		"ws" -> false
-		"wss" -> true
-		else -> error("Unknown ws protocol ${uri.scheme}")
-	}
-	val host = uri.host ?: "127.0.0.1"
-	val port = uri.defaultPort.takeIf { it != URL.DEFAULT_PORT } ?: if (secure) 443 else 80
-	val client = AsyncClient(host, port, secure = secure)
-
-	return RawSocketWebSocketClient(
-		coroutineContext,
-		client,
-		uri,
-		protocols,
-		debug,
-		origin,
-		wskey ?: "mykey"
-	).apply {
-		connect()
-	}
+    val uri = URL(url)
+    val secure: Boolean = uri.isSecureScheme
+    val host = uri.host ?: "127.0.0.1"
+    val port = uri.port
+    val client = AsyncClient(host, port, secure = secure)
+    return RawSocketWebSocketClient(coroutineContext, client, uri, protocols, debug, origin, wskey ?: "mykey").apply { connect() }
 }
 
 class WsFrame(val data: ByteArray, val type: WsOpcode, val isFinal: Boolean = true, val frameIsBinary: Boolean = true) {
-	fun toByteArray(): ByteArray = MemorySyncStreamToByteArray {
-		//Chrome: VM321:1 WebSocket connection to 'ws://localhost:8000/' failed: A server must not mask any frames that it sends to the client.
-		val isMasked =
-			false //true; // All clientes messages must be masked: http://tools.ietf.org/html/rfc6455#section-5.1
-		val mask = Random.nextBytes(4)
-		val sizeMask = (if (isMasked) 0x80 else 0x00)
+    fun toByteArray(): ByteArray = MemorySyncStreamToByteArray {
+        //Chrome: VM321:1 WebSocket connection to 'ws://localhost:8000/' failed: A server must not mask any frames that it sends to the client.
+        val isMasked =
+            false //true; // All clientes messages must be masked: http://tools.ietf.org/html/rfc6455#section-5.1
+        val mask = Random.nextBytes(4)
+        val sizeMask = (if (isMasked) 0x80 else 0x00)
 
-		write8(type.id or (if (isFinal) 0x80 else 0x00))
+        write8(type.id or (if (isFinal) 0x80 else 0x00))
 
-		when {
-			data.size < 126 -> write8(data.size or sizeMask)
-			data.size < 65536 -> {
-				write8(126 or sizeMask)
-				write16BE(data.size)
-			}
-			else -> {
-				write8(127 or sizeMask)
-				write32BE(0)
-				write32BE(data.size)
-			}
-		}
+        when {
+            data.size < 126 -> write8(data.size or sizeMask)
+            data.size < 65536 -> {
+                write8(126 or sizeMask)
+                write16BE(data.size)
+            }
+            else -> {
+                write8(127 or sizeMask)
+                write32BE(0)
+                write32BE(data.size)
+            }
+        }
 
-		if (isMasked) writeBytes(mask)
+        if (isMasked) writeBytes(mask)
 
-		writeBytes(if (isMasked) applyMask(data, mask) else data)
-	}
+        writeBytes(if (isMasked) applyMask(data, mask) else data)
+    }
 
-	companion object {
-		fun applyMask(payload: ByteArray, mask: ByteArray?): ByteArray {
-			if (mask == null) return payload
-			val maskedPayload = ByteArray(payload.size)
-			for (n in 0 until payload.size) maskedPayload[n] = (payload[n].toInt() xor mask[n % mask.size].toInt()).toByte()
-			return maskedPayload
-		}
-	}
+    companion object {
+        fun applyMask(payload: ByteArray, mask: ByteArray?): ByteArray {
+            if (mask == null) return payload
+            val maskedPayload = ByteArray(payload.size)
+            for (n in 0 until payload.size) maskedPayload[n] = (payload[n].toInt() xor mask[n % mask.size].toInt()).toByte()
+            return maskedPayload
+        }
+    }
 }
 
 class RawSocketWebSocketClient(
-	val coroutineContext: CoroutineContext,
-	val client: AsyncClient,
-	url: URL,
-	protocols: List<String>?,
-	debug: Boolean,
-	val origin: String?,
-	val key: String
+    val coroutineContext: CoroutineContext,
+    val client: AsyncClient,
+    url: URL,
+    protocols: List<String>?,
+    debug: Boolean,
+    val origin: String?,
+    val key: String
 ) : WebSocketClient(url.fullUrl, protocols, debug) {
-	private var frameIsBinary = false
-	val host = url.host ?: "127.0.0.1"
-	val port = url.port
+    private var frameIsBinary = false
+    val host = url.host ?: "127.0.0.1"
+    val port = url.port
 
-	internal suspend fun connect() {
-		client.writeBytes((buildList<String> {
-			add("GET $url HTTP/1.1")
-			add("Host: $host:$port")
-			add("Pragma: no-cache")
-			add("Cache-Control: no-cache")
-			add("Upgrade: websocket")
-			if (protocols != null) {
-				add("Sec-WebSocket-Protocol: ${protocols.joinToString(", ")}")
-			}
-			add("Sec-WebSocket-Version: 13")
-			add("Connection: Upgrade")
-			add("Sec-WebSocket-Key: ${key.toByteArray().toBase64()}")
-			add("Origin: $origin")
-			add("User-Agent: ${HttpClient.DEFAULT_USER_AGENT}")
-		}.joinToString("\r\n") + "\r\n\n").toByteArray())
+    internal suspend fun connect() {
+        client.writeBytes((buildList<String> {
+            add("GET $url HTTP/1.1")
+            add("Host: $host:$port")
+            add("Pragma: no-cache")
+            add("Cache-Control: no-cache")
+            add("Upgrade: websocket")
+            if (protocols != null) {
+                add("Sec-WebSocket-Protocol: ${protocols.joinToString(", ")}")
+            }
+            add("Sec-WebSocket-Version: 13")
+            add("Connection: Upgrade")
+            add("Sec-WebSocket-Key: ${key.toByteArray().toBase64()}")
+            add("Origin: $origin")
+            add("User-Agent: ${HttpClient.DEFAULT_USER_AGENT}")
+        }.joinToString("\r\n") + "\r\n\n").toByteArray())
 
-		// Read response
-		val headers = arrayListOf<String>()
-		while (true) {
-			val line = client.readLine().trimEnd()
-			if (line.isEmpty()) {
-				headers += line
-				break
-			}
-		}
+        // Read response
+        val headers = arrayListOf<String>()
+        while (true) {
+            val line = client.readLine().trimEnd()
+            if (line.isEmpty()) {
+                headers += line
+                break
+            }
+        }
 
-		coroutineScope {
-			launchImmediately {
-				onOpen(Unit)
-				try {
-					loop@ while (!closed) {
-						val frame = readWsFrame()
-						val payload = if (frame.frameIsBinary) frame.data else frame.data.toString(UTF8)
-						when (frame.type) {
-							WsOpcode.Close -> {
-								break@loop
-							}
-							WsOpcode.Ping -> {
-								sendWsFrame(WsFrame(frame.data, WsOpcode.Pong))
-							}
-							WsOpcode.Pong -> {
-								lastPong = DateTime.now()
-							}
-							else -> {
-								when (payload) {
-									is String -> onStringMessage(payload)
-									is ByteArray -> onBinaryMessage(payload)
-								}
-								onAnyMessage(payload)
-							}
-						}
-					}
-				} catch (e: Throwable) {
-					onError(e)
-				}
-				onClose(Unit)
-			}
-		}
-	}
+        coroutineScope {
+            launchImmediately {
+                onOpen(Unit)
+                try {
+                    loop@ while (!closed) {
+                        val frame = readWsFrame()
+                        val payload = if (frame.frameIsBinary) frame.data else frame.data.toString(UTF8)
+                        when (frame.type) {
+                            WsOpcode.Close -> {
+                                break@loop
+                            }
+                            WsOpcode.Ping -> {
+                                sendWsFrame(WsFrame(frame.data, WsOpcode.Pong))
+                            }
+                            WsOpcode.Pong -> {
+                                lastPong = DateTime.now()
+                            }
+                            else -> {
+                                when (payload) {
+                                    is String -> onStringMessage(payload)
+                                    is ByteArray -> onBinaryMessage(payload)
+                                }
+                                onAnyMessage(payload)
+                            }
+                        }
+                    }
+                } catch (e: Throwable) {
+                    onError(e)
+                }
+                onClose(Unit)
+            }
+        }
+    }
 
-	private var lastPong: DateTime? = null
+    private var lastPong: DateTime? = null
 
-	var closed = false
+    var closed = false
 
-	override fun close(code: Int, reason: String) {
-		closed = true
-		launchImmediately(coroutineContext) {
-			sendWsFrame(WsFrame(byteArrayOf(), WsOpcode.Close))
-		}
-	}
+    override fun close(code: Int, reason: String) {
+        closed = true
+        launchImmediately(coroutineContext) {
+            sendWsFrame(WsFrame(byteArrayOf(), WsOpcode.Close))
+        }
+    }
 
-	override suspend fun send(message: String) {
-		sendWsFrame(WsFrame(message.toByteArray(UTF8), WsOpcode.Text))
-	}
+    override suspend fun send(message: String) {
+        sendWsFrame(WsFrame(message.toByteArray(UTF8), WsOpcode.Text))
+    }
 
-	override suspend fun send(message: ByteArray) {
-		sendWsFrame(WsFrame(message, WsOpcode.Binary))
-	}
+    override suspend fun send(message: ByteArray) {
+        sendWsFrame(WsFrame(message, WsOpcode.Binary))
+    }
 
-	suspend fun readWsFrame(): WsFrame {
-		val b0 = client.readU8()
-		val b1 = client.readU8()
+    suspend fun readWsFrame(): WsFrame {
+        val b0 = client.readU8()
+        val b1 = client.readU8()
 
-		val isFinal = b0.extract(7)
-		val opcode = WsOpcode(b0.extract(0, 4))
-		val frameIsBinary = when (opcode) {
-			WsOpcode.Text -> false
-			WsOpcode.Binary -> true
-			else -> frameIsBinary
-		}
+        val isFinal = b0.extract(7)
+        val opcode = WsOpcode(b0.extract(0, 4))
+        val frameIsBinary = when (opcode) {
+            WsOpcode.Text -> false
+            WsOpcode.Binary -> true
+            else -> frameIsBinary
+        }
 
-		val partialLength = b1.extract(0, 7)
-		val isMasked = b1.extract(7)
+        val partialLength = b1.extract(0, 7)
+        val isMasked = b1.extract(7)
 
-		val length = when (partialLength) {
-			126 -> client.readU16BE()
-			127 -> {
-				val tmp = client.readS32BE()
-				if(tmp != 0) error("message too long")
-				client.readS32BE()
-			}
-			else -> partialLength
-		}
-		val mask = if (isMasked) client.readBytesExact(4) else null
-		val unmaskedData = client.readBytesExact(length)
-		val finalData = WsFrame.applyMask(unmaskedData, mask)
-		return WsFrame(finalData, opcode, isFinal, frameIsBinary)
-	}
+        val length = when (partialLength) {
+            126 -> client.readU16BE()
+            127 -> {
+                val tmp = client.readS32BE()
+                if (tmp != 0) error("message too long")
+                client.readS32BE()
+            }
+            else -> partialLength
+        }
+        val mask = if (isMasked) client.readBytesExact(4) else null
+        val unmaskedData = client.readBytesExact(length)
+        val finalData = WsFrame.applyMask(unmaskedData, mask)
+        return WsFrame(finalData, opcode, isFinal, frameIsBinary)
+    }
 
-	suspend fun sendWsFrame(frame: WsFrame) {
-		client.writeBytes(frame.toByteArray())
-	}
+    suspend fun sendWsFrame(frame: WsFrame) {
+        client.writeBytes(frame.toByteArray())
+    }
 }
 
 inline class WsOpcode(val id: Int) {
-	companion object {
-		val Continuation = WsOpcode(0x00)
-		val Text = WsOpcode(0x01)
-		val Binary = WsOpcode(0x02)
-		val Close = WsOpcode(0x08)
-		val Ping = WsOpcode(0x09)
-		val Pong = WsOpcode(0x0A)
-	}
+    companion object {
+        val Continuation = WsOpcode(0x00)
+        val Text = WsOpcode(0x01)
+        val Binary = WsOpcode(0x02)
+        val Close = WsOpcode(0x08)
+        val Ping = WsOpcode(0x09)
+        val Pong = WsOpcode(0x0A)
+    }
 }
