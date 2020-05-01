@@ -22,7 +22,7 @@ abstract class Vfs : AsyncCloseable {
 	//val root = VfsFile(this, "")
 	val root get() = VfsFile(this, "")
 
-	open val supportedAttributeTypes: List<KClass<out Attribute> get() = emptyList<KClass<out Attribute>>()
+	open val supportedAttributeTypes: List<KClass<out Attribute>> get() = emptyList<KClass<out Attribute>>()
 
 	operator fun get(path: String) = root[path]
 
