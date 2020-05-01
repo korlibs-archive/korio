@@ -221,17 +221,16 @@ class FakeHttpClient(val redirect: HttpClient? = null) : HttpClient() {
 		}
 
 		fun ok(content: String) = response(content, code = 200)
+        fun ok(content: ByteArray) = response(content, code = 200)
 		fun notFound(content: String = "404 - Not Found") = response(content, code = 404)
 		fun internalServerError(content: String = "500 - Internal Server Error") = response(content, code = 500)
 
-		internal fun buildResponse(): HttpClient.Response {
-			return HttpClient.Response(
-				responseCode,
-				HttpStatusMessage(responseCode),
-				responseHeaders,
-				responseContent.openAsync()
-			)
-		}
+		internal fun buildResponse() = HttpClient.Response(
+            responseCode,
+            HttpStatusMessage(responseCode),
+            responseHeaders,
+            responseContent.openAsync()
+        )
 	}
 
 	data class Rule(
