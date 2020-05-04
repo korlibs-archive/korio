@@ -1,5 +1,5 @@
 package com.soywiz.korio.experimental
 
 @Retention(value = AnnotationRetention.BINARY)
-@Experimental(level = Experimental.Level.ERROR)
+@RequiresOptIn(level = RequiresOptIn.Level.WARNING)
 public annotation class KorioExperimentalApi
