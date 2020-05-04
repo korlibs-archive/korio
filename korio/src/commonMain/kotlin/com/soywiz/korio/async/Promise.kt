@@ -25,22 +25,21 @@ expect fun <T> Promise(coroutineContext: CoroutineContext = EmptyCoroutineContex
 suspend fun <T> SPromise(executor: (resolve: (T) -> Unit, reject: (Throwable) -> Unit) -> Unit): Promise<T> = Promise(coroutineContext, executor)
 
 internal class DeferredPromise<T>(
-    internal val completableDeferred: CompletableDeferred<T>,
-    val coroutineContext: CoroutineContext = EmptyCoroutineContext
+    val deferred: Deferred<T>,
+    val coroutineContext: CoroutineContext
 ) : Promise<T> {
-    val deferred: Deferred<T> get() = completableDeferred
     override fun <S> then(onFulfilled: ((T) -> S)?, onRejected: ((Throwable) -> S)?): Promise<S> {
         val chainedPromise = DeferredPromise(CompletableDeferred<S>(), coroutineContext)
 
         launchImmediately(coroutineContext) {
             var result: S? = null
             try {
-                result = onFulfilled?.invoke(completableDeferred.await())
+                result = onFulfilled?.invoke(deferred.await())
             } catch (e: Throwable) {
                 result = onRejected?.invoke(e)
             }
             if (result != null) {
-                chainedPromise.completableDeferred.complete(result)
+                (chainedPromise.deferred as CompletableDeferred<S>).complete(result)
             }
         }
 
@@ -48,8 +47,22 @@ internal class DeferredPromise<T>(
     }
 }
 
-fun <T> CompletableDeferred<T>.toPromise(coroutineContext: CoroutineContext = EmptyCoroutineContext): Promise<T> = DeferredPromise(this, coroutineContext)
-suspend fun <T> CompletableDeferred<T>.toPromise(): Promise<T> = toPromise(coroutineContext)
+fun <T> Deferred<T>.toPromise(coroutineContext: CoroutineContext): Promise<T> = DeferredPromise(this, coroutineContext)
+suspend fun <T> Deferred<T>.toPromise(): Promise<T> = toPromise(coroutineContext)
+
+fun Job.toPromise(coroutineContext: CoroutineContext): Promise<Unit> {
+    val deferred = CompletableDeferred<Unit>()
+    this.invokeOnCompletion {
+        if (it != null) {
+            deferred.completeExceptionally(it)
+        } else {
+            deferred.complete(Unit)
+        }
+    }
+    return deferred.toPromise(coroutineContext)
+}
+
+suspend fun Job.toPromise(): Promise<Unit> = toPromise(coroutineContext)
 
 fun <T> Promise<T>.toDeferred(): Deferred<T> {
     val out = CompletableDeferred<T>()

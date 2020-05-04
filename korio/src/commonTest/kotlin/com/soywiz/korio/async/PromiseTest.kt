@@ -9,9 +9,11 @@ class PromiseTest {
     @Test
     fun test() = suspendTest {
         val startTime = DateTime.now()
-        delayPromise(200).await()
+        delayPromise(100).await()
+        delayPromiseJob(100).await()
+        delayPromiseDeferred(100).await()
         val endTime = DateTime.now()
-        assertTrue(endTime - startTime >= 200.milliseconds)
+        assertTrue(endTime - startTime >= 300.milliseconds)
     }
 
     fun delayPromise(timeMs: Int): Promise<Unit> = Promise<Unit> { resolve, reject ->
@@ -24,4 +26,12 @@ class PromiseTest {
             }
         }
     }
+
+    fun delayPromiseJob(timeMs: Int): Promise<Unit> = launchImmediately(EmptyCoroutineContext) {
+        delay(timeMs.toLong())
+    }.toPromise(EmptyCoroutineContext)
+
+    fun delayPromiseDeferred(timeMs: Int): Promise<Unit> = asyncImmediately(EmptyCoroutineContext) {
+        delay(timeMs.toLong())
+    }.toPromise(EmptyCoroutineContext)
 }
