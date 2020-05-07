@@ -21,18 +21,8 @@ data class URL private constructor(
 	val isHierarchical get() = !isOpaque
     val isSecureScheme get() = scheme == "https" || scheme == "wss" || scheme == "ftps"
 
-	val port: Int
-		get() = if (defaultPort == DEFAULT_PORT) {
-			when (scheme) {
-                "ftp" -> 21
-                "ftps" -> 990
-				"http", "ws" -> 80
-				"https", "wss" -> 443
-				else -> -1
-			}
-		} else {
-			defaultPort
-		}
+    val defaultSchemePort: Int get() = defaultPortForScheme(scheme)
+	val port: Int get() = (if (defaultPort == DEFAULT_PORT) defaultSchemePort else defaultPort)
 
 	val fullUrl: String by lazy { toUrlString().toString() }
 
@@ -53,6 +43,7 @@ data class URL private constructor(
 		}
 		if (userInfo != null) out.append("$userInfo@")
 		if (host != null) out.append(host)
+        if (port != DEFAULT_PORT && port != defaultSchemePort) out.append(':').append(port)
 		out.append(path)
 		if (query != null) out.append("?$query")
 		if (fragment != null) out.append("#$fragment")
@@ -73,6 +64,14 @@ data class URL private constructor(
 
 	companion object {
 		val DEFAULT_PORT = 0
+
+        fun defaultPortForScheme(scheme: String?): Int = when (scheme) {
+            "ftp" -> 21
+            "ftps" -> 990
+            "http", "ws" -> 80
+            "https", "wss" -> 443
+            else -> -1
+        }
 
 		operator fun invoke(
 			scheme: String?,
