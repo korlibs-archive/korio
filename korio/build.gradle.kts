@@ -14,7 +14,7 @@ dependencies {
 
     add("commonMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 
-    if (korlibs.androidEnabled) {
+    if (korlibs.hasAndroid) {
         add("androidMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
     }
 	add("commonMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core-common:$coroutinesVersion")
