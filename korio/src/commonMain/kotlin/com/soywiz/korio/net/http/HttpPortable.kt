@@ -9,6 +9,15 @@ import kotlin.coroutines.*
 import kotlin.math.*
 
 internal object HttpPortable {
+    internal fun computeHeader(method: Http.Method, url: URL, rheaders2: Http.Headers): String = buildString {
+        val EOL = "\r\n"
+        append("$method ${url.pathWithQuery} HTTP/1.1$EOL")
+        for (header in rheaders2) {
+            append("${header.first}: ${header.second}$EOL")
+        }
+        append(EOL)
+    }
+
 	fun createClient(): HttpClient {
 		return object : HttpClient() {
 			override suspend fun requestInternal(method: Http.Method, url: String, headers: Http.Headers, content: AsyncStream?): Response {
@@ -17,13 +26,9 @@ internal object HttpPortable {
 				//println("HTTP CLIENT: host=${url.host}, port=${url.port}, secure=$secure")
 				val client = createTcpClient(url.host!!, url.port, secure)
 
-				val rheaders = HttpClient.combineHeadersForHost(headers, url.host)
+				val rheaders = combineHeadersForHost(headers, url.host)
 				val rheaders2 = if (content != null) rheaders + Http.Headers(Http.Headers.ContentLength to content.getLength().toString()) else rheaders
-				client.writeString("$method ${url.pathWithQuery} HTTP/1.1\n")
-				for (header in rheaders2) {
-					client.writeString("${header.first}: ${header.second}\n")
-				}
-				client.writeString("\n")
+                client.writeString(computeHeader(method, url, rheaders2))
 				content?.copyTo(client)
 
 				//println("SENT RESPONSE")
