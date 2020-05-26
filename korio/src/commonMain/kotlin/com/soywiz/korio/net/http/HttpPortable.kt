@@ -27,7 +27,10 @@ internal object HttpPortable {
 				val client = createTcpClient(url.host!!, url.port, secure)
 
 				val rheaders = combineHeadersForHost(headers, url.host)
-				val rheaders2 = if (content != null) rheaders + Http.Headers(Http.Headers.ContentLength to content.getLength().toString()) else rheaders
+				val rheaders2 = if (content != null)
+                    rheaders.withReplaceHeaders(Http.Headers(Http.Headers.ContentLength to content.getLength().toString()))
+                else
+                    rheaders
                 client.writeString(computeHeader(method, url, rheaders2))
 				content?.copyTo(client)
 
