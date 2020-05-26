@@ -165,7 +165,7 @@ interface Http {
 
         fun containsAll(other: Http.Headers): Boolean = other.items.all { this.contains(it) }
 
-		operator fun plus(that: Headers): Headers = withAppendedHeaders(this.items + that.items)
+		operator fun plus(that: Headers): Headers = withAppendedHeaders(that.items)
 
 		override fun toString(): String = "Headers(${toListGrouped().joinToString(", ")})"
 
