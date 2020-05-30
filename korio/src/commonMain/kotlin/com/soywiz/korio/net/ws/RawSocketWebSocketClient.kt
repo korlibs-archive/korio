@@ -70,23 +70,23 @@ class WsFrame(val data: ByteArray, val type: WsOpcode, val isFinal: Boolean = tr
 class RawSocketWebSocketClient(
     val coroutineContext: CoroutineContext,
     val client: AsyncClient,
-    url: URL,
+    urlUrl: URL,
     protocols: List<String>?,
     debug: Boolean,
     val origin: String?,
     val key: String
-) : WebSocketClient(url.fullUrl, protocols, debug) {
+) : WebSocketClient(urlUrl.fullUrl, protocols, debug) {
     init {
         if (OS.isJsBrowserOrWorker) error("RawSocketWebSocketClient is not supported on JS browser. Use WebSocketClient instead")
     }
 
     private var frameIsBinary = false
-    val host = url.host ?: "127.0.0.1"
-    val port = url.port
+    val host = urlUrl.host ?: "127.0.0.1"
+    val port = urlUrl.port
 
     internal suspend fun connect() {
         client.writeBytes((buildList<String> {
-            add("GET $url HTTP/1.1")
+            add("GET ${urlUrl.path} HTTP/1.1")
             add("Host: $host:$port")
             add("Pragma: no-cache")
             add("Cache-Control: no-cache")
@@ -97,9 +97,11 @@ class RawSocketWebSocketClient(
             add("Sec-WebSocket-Version: 13")
             add("Connection: Upgrade")
             add("Sec-WebSocket-Key: ${key.toByteArray().toBase64()}")
-            add("Origin: $origin")
+            if (origin != null) {
+                add("Origin: $origin")
+            }
             add("User-Agent: ${HttpClient.DEFAULT_USER_AGENT}")
-        }.joinToString("\r\n") + "\r\n\n").toByteArray())
+        }.joinToString("\r\n") + "\r\n\r\n").toByteArray())
 
         // Read response
         val headers = arrayListOf<String>()
@@ -111,37 +113,35 @@ class RawSocketWebSocketClient(
             }
         }
 
-        coroutineScope {
-            launchImmediately {
-                onOpen(Unit)
-                try {
-                    loop@ while (!closed) {
-                        val frame = readWsFrame()
-                        val payload = if (frame.frameIsBinary) frame.data else frame.data.toString(UTF8)
-                        when (frame.type) {
-                            WsOpcode.Close -> {
-                                break@loop
+        launchImmediately(coroutineContext) {
+            onOpen(Unit)
+            try {
+                loop@ while (!closed) {
+                    val frame = readWsFrame()
+                    val payload = if (frame.frameIsBinary) frame.data else frame.data.toString(UTF8)
+                    when (frame.type) {
+                        WsOpcode.Close -> {
+                            break@loop
+                        }
+                        WsOpcode.Ping -> {
+                            sendWsFrame(WsFrame(frame.data, WsOpcode.Pong))
+                        }
+                        WsOpcode.Pong -> {
+                            lastPong = DateTime.now()
+                        }
+                        else -> {
+                            when (payload) {
+                                is String -> onStringMessage(payload)
+                                is ByteArray -> onBinaryMessage(payload)
                             }
-                            WsOpcode.Ping -> {
-                                sendWsFrame(WsFrame(frame.data, WsOpcode.Pong))
-                            }
-                            WsOpcode.Pong -> {
-                                lastPong = DateTime.now()
-                            }
-                            else -> {
-                                when (payload) {
-                                    is String -> onStringMessage(payload)
-                                    is ByteArray -> onBinaryMessage(payload)
-                                }
-                                onAnyMessage(payload)
-                            }
+                            onAnyMessage(payload)
                         }
                     }
-                } catch (e: Throwable) {
-                    onError(e)
                 }
-                onClose(Unit)
+            } catch (e: Throwable) {
+                onError(e)
             }
+            onClose(Unit)
         }
     }
 
