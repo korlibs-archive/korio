@@ -18,15 +18,13 @@ suspend fun RawSocketWebSocketClient(
     protocols: List<String>? = null,
     origin: String? = null,
     wskey: String? = "wskey",
-    debug: Boolean = false
+    debug: Boolean = false,
+    connect: Boolean = true
 ): WebSocketClient {
     if (OS.isJsBrowserOrWorker) error("RawSocketWebSocketClient is not supported on JS browser. Use WebSocketClient instead")
     val uri = URL(url)
     val secure: Boolean = uri.isSecureScheme
-    val host = uri.host ?: "127.0.0.1"
-    val port = uri.port
-    val client = AsyncClient(host, port, secure = secure)
-    return RawSocketWebSocketClient(coroutineContext, client, uri, protocols, debug, origin, wskey ?: "mykey").apply { connect() }
+    return RawSocketWebSocketClient(coroutineContext, AsyncClient.create(secure = secure), uri, protocols, debug, origin, wskey ?: "mykey").also { if (connect) it.connect() }
 }
 
 class WsFrame(val data: ByteArray, val type: WsOpcode, val isFinal: Boolean = true, val frameIsBinary: Boolean = true) {
@@ -76,16 +74,12 @@ class RawSocketWebSocketClient(
     val origin: String?,
     val key: String
 ) : WebSocketClient(urlUrl.fullUrl, protocols, debug) {
-    init {
-        if (OS.isJsBrowserOrWorker) error("RawSocketWebSocketClient is not supported on JS browser. Use WebSocketClient instead")
-    }
-
     private var frameIsBinary = false
     val host = urlUrl.host ?: "127.0.0.1"
     val port = urlUrl.port
 
-    internal suspend fun connect() {
-        client.writeBytes((buildList<String> {
+    internal fun buildHeader(): String {
+        return (buildList<String> {
             add("GET ${urlUrl.path} HTTP/1.1")
             add("Host: $host:$port")
             add("Pragma: no-cache")
@@ -101,7 +95,14 @@ class RawSocketWebSocketClient(
                 add("Origin: $origin")
             }
             add("User-Agent: ${HttpClient.DEFAULT_USER_AGENT}")
-        }.joinToString("\r\n") + "\r\n\r\n").toByteArray())
+        }.joinToString("\r\n") + "\r\n\r\n")
+    }
+
+    internal suspend fun connect() {
+        if (OS.isJsBrowserOrWorker) error("RawSocketWebSocketClient is not supported on JS browser. Use WebSocketClient instead")
+
+        client.connect(host, port)
+        client.writeBytes(buildHeader().toByteArray())
 
         // Read response
         val headers = arrayListOf<String>()
@@ -118,7 +119,7 @@ class RawSocketWebSocketClient(
             try {
                 loop@ while (!closed) {
                     val frame = readWsFrame()
-                    val payload = if (frame.frameIsBinary) frame.data else frame.data.toString(UTF8)
+                    val payload: Any = if (frame.frameIsBinary) frame.data else frame.data.toString(UTF8)
                     when (frame.type) {
                         WsOpcode.Close -> {
                             break@loop
