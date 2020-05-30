@@ -70,7 +70,7 @@ class WsFrame(val data: ByteArray, val type: WsOpcode, val isFinal: Boolean = tr
 class RawSocketWebSocketClient(
     val coroutineContext: CoroutineContext,
     val client: AsyncClient,
-    urlUrl: URL,
+    val urlUrl: URL,
     protocols: List<String>?,
     debug: Boolean,
     val origin: String?,
