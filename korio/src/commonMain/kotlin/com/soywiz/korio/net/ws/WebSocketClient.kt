@@ -2,6 +2,7 @@ package com.soywiz.korio.net.ws
 
 import com.soywiz.korio.async.*
 import com.soywiz.korio.lang.*
+import com.soywiz.korio.net.http.Http
 
 abstract class WebSocketClient protected constructor(val url: String, val protocols: List<String>?, DEBUG: Boolean) {
 	val onOpen = Signal<Unit>()
@@ -25,7 +26,8 @@ expect suspend fun WebSocketClient(
 	protocols: List<String>? = null,
 	origin: String? = null,
 	wskey: String? = "wskey",
-	debug: Boolean = false
+	debug: Boolean = false,
+    headers: Http.Headers = Http.Headers()
 ): WebSocketClient
 
 class WebSocketException(message: String) : IOException(message)

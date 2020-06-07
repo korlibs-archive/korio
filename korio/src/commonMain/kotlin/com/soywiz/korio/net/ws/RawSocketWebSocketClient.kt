@@ -19,12 +19,13 @@ suspend fun RawSocketWebSocketClient(
     origin: String? = null,
     wskey: String? = "wskey",
     debug: Boolean = false,
-    connect: Boolean = true
+    connect: Boolean = true,
+    headers: Http.Headers = Http.Headers()
 ): WebSocketClient {
     if (OS.isJsBrowserOrWorker) error("RawSocketWebSocketClient is not supported on JS browser. Use WebSocketClient instead")
     val uri = URL(url)
     val secure: Boolean = uri.isSecureScheme
-    return RawSocketWebSocketClient(coroutineContext, AsyncClient.create(secure = secure), uri, protocols, debug, origin, wskey ?: "mykey").also { if (connect) it.connect() }
+    return RawSocketWebSocketClient(coroutineContext, AsyncClient.create(secure = secure), uri, protocols, debug, origin, wskey ?: "mykey", headers).also { if (connect) it.connect() }
 }
 
 class WsFrame(val data: ByteArray, val type: WsOpcode, val isFinal: Boolean = true, val frameIsBinary: Boolean = true) {
@@ -72,29 +73,36 @@ class RawSocketWebSocketClient(
     protocols: List<String>?,
     debug: Boolean,
     val origin: String?,
-    val key: String
+    val key: String,
+    val headers: Http.Headers = Http.Headers()
 ) : WebSocketClient(urlUrl.fullUrl, protocols, debug) {
     private var frameIsBinary = false
     val host = urlUrl.host ?: "127.0.0.1"
     val port = urlUrl.port
 
     internal fun buildHeader(): String {
+        val baseHeaders = Http.Headers.build {
+            put("Host", "$host:$port")
+            put("Pragma", "no-cache")
+            put("Cache-Control", "no-cache")
+            put("Upgrade", "websocket")
+            if (protocols != null) {
+                put("Sec-WebSocket-Protocol", protocols.joinToString(", "))
+            }
+            put("Sec-WebSocket-Version", "13")
+            put("Connection", "Upgrade")
+            put("Sec-WebSocket-Key", key.toByteArray().toBase64())
+            if (origin != null) {
+                put("Origin", origin)
+            }
+            put("User-Agent", HttpClient.DEFAULT_USER_AGENT)
+        }
+        val computedHeaders = baseHeaders.withReplaceHeaders(headers)
         return (buildList<String> {
             add("GET ${urlUrl.pathWithQuery} HTTP/1.1")
-            add("Host: $host:$port")
-            add("Pragma: no-cache")
-            add("Cache-Control: no-cache")
-            add("Upgrade: websocket")
-            if (protocols != null) {
-                add("Sec-WebSocket-Protocol: ${protocols.joinToString(", ")}")
+            for (item in computedHeaders) {
+                add("${item.first}: ${item.second}")
             }
-            add("Sec-WebSocket-Version: 13")
-            add("Connection: Upgrade")
-            add("Sec-WebSocket-Key: ${key.toByteArray().toBase64()}")
-            if (origin != null) {
-                add("Origin: $origin")
-            }
-            add("User-Agent: ${HttpClient.DEFAULT_USER_AGENT}")
         }.joinToString("\r\n") + "\r\n\r\n")
     }
 

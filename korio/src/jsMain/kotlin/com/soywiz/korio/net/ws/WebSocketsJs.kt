@@ -1,6 +1,7 @@
 package com.soywiz.korio.net.ws
 
 import com.soywiz.korio.async.*
+import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.util.*
 import org.khronos.webgl.*
 import org.w3c.dom.*
@@ -10,11 +11,15 @@ actual suspend fun WebSocketClient(
 	protocols: List<String>?,
 	origin: String?,
 	wskey: String?,
-	debug: Boolean
-): WebSocketClient = JsWebSocketClient(url, protocols, DEBUG = debug).apply { init() }
+	debug: Boolean,
+    headers: Http.Headers
+): WebSocketClient = JsWebSocketClient(url, protocols, DEBUG = debug, headers = headers).apply { init() }
 
-class JsWebSocketClient(url: String, protocols: List<String>?, val DEBUG: Boolean) :
-	WebSocketClient(url, protocols, true) {
+class JsWebSocketClient(
+    url: String, protocols: List<String>?, val DEBUG: Boolean,
+    val headers: Http.Headers // @NOTE: WebSocket on JS doesn't allow to set headers, so this will be ignored
+) : WebSocketClient(url, protocols, true) {
+
 	val jsws = if (protocols != null) {
 		WebSocket(url, arrayOf(*protocols.toTypedArray()))
 	} else {

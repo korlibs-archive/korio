@@ -169,7 +169,15 @@ interface Http {
 
 		override fun toString(): String = "Headers(${toListGrouped().joinToString(", ")})"
 
-		companion object {
+        class Builder {
+            private val items = arrayListOf<Pair<String, String>>()
+            fun put(key: String, value: String) = run { items += key to value }
+            fun build() = Headers(items)
+        }
+
+        companion object {
+            fun build(block: Builder.() -> Unit): Headers = Builder().apply(block).build()
+
 			fun fromListMap(map: Map<String?, List<String>>): Headers {
 				return Headers(map.flatMap { pair -> if (pair.key == null) listOf() else pair.value.map { value -> pair.key!! to value } })
 			}
