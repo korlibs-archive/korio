@@ -6,9 +6,21 @@ import kotlin.test.*
 class RawRawSocketWebSocketClient {
     @Test
     fun test() = suspendTestNoJs {
-        val ws = RawSocketWebSocketClient("ws://127.0.0.1:8081/", connect = false) as RawSocketWebSocketClient
         assertEquals(
-            "GET / HTTP/1.1\r\n" +
+            "GET / HTTP/1.1",
+            (RawSocketWebSocketClient(
+                "ws://127.0.0.1:8081/",
+                connect = false
+            ) as RawSocketWebSocketClient).buildHeader().split("\r\n").first()
+        )
+    }
+
+    @Test
+    fun test2() = suspendTestNoJs {
+        val ws =
+            RawSocketWebSocketClient("ws://127.0.0.1:8081/path?id=someId", connect = false) as RawSocketWebSocketClient
+        assertEquals(
+            "GET /path?id=someId HTTP/1.1\r\n" +
                 "Host: 127.0.0.1:8081\r\n" +
                 "Pragma: no-cache\r\n" +
                 "Cache-Control: no-cache\r\n" +
@@ -20,6 +32,5 @@ class RawRawSocketWebSocketClient {
                 "\r\n",
             ws.buildHeader()
         )
-
     }
 }

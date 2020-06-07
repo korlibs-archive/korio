@@ -80,7 +80,7 @@ class RawSocketWebSocketClient(
 
     internal fun buildHeader(): String {
         return (buildList<String> {
-            add("GET ${urlUrl.path} HTTP/1.1")
+            add("GET ${urlUrl.pathWithQuery} HTTP/1.1")
             add("Host: $host:$port")
             add("Pragma: no-cache")
             add("Cache-Control: no-cache")
