@@ -9,7 +9,6 @@ import com.soywiz.korio.net.http.*
 import com.soywiz.korio.stream.*
 import com.soywiz.korio.util.*
 import com.soywiz.korio.util.encoding.*
-import kotlinx.coroutines.*
 import kotlin.coroutines.*
 import kotlin.random.*
 
@@ -20,21 +19,19 @@ suspend fun RawSocketWebSocketClient(
     wskey: String? = "wskey",
     debug: Boolean = false,
     connect: Boolean = true,
-    headers: Http.Headers = Http.Headers()
+    headers: Http.Headers = Http.Headers(),
+    masked: Boolean = true
 ): WebSocketClient {
     if (OS.isJsBrowserOrWorker) error("RawSocketWebSocketClient is not supported on JS browser. Use WebSocketClient instead")
     val uri = URL(url)
     val secure: Boolean = uri.isSecureScheme
-    return RawSocketWebSocketClient(coroutineContext, AsyncClient.create(secure = secure), uri, protocols, debug, origin, wskey ?: "mykey", headers).also { if (connect) it.connect() }
+    return RawSocketWebSocketClient(coroutineContext, AsyncClient.create(secure = secure), uri, protocols, debug, origin, wskey ?: "mykey", headers, masked).also { if (connect) it.connect() }
 }
 
-class WsFrame(val data: ByteArray, val type: WsOpcode, val isFinal: Boolean = true, val frameIsBinary: Boolean = true) {
+open class WsFrame(val data: ByteArray, val type: WsOpcode, val isFinal: Boolean = true, val frameIsBinary: Boolean = true, val masked: Boolean = true) {
     fun toByteArray(): ByteArray = MemorySyncStreamToByteArray {
-        //Chrome: VM321:1 WebSocket connection to 'ws://localhost:8000/' failed: A server must not mask any frames that it sends to the client.
-        val isMasked =
-            false //true; // All clientes messages must be masked: http://tools.ietf.org/html/rfc6455#section-5.1
         val mask = Random.nextBytes(4)
-        val sizeMask = (if (isMasked) 0x80 else 0x00)
+        val sizeMask = (if (masked) 0x80 else 0x00)
 
         write8(type.id or (if (isFinal) 0x80 else 0x00))
 
@@ -51,9 +48,9 @@ class WsFrame(val data: ByteArray, val type: WsOpcode, val isFinal: Boolean = tr
             }
         }
 
-        if (isMasked) writeBytes(mask)
+        if (masked) writeBytes(mask)
 
-        writeBytes(if (isMasked) applyMask(data, mask) else data)
+        writeBytes(if (masked) applyMask(data, mask) else data)
     }
 
     companion object {
@@ -74,7 +71,8 @@ class RawSocketWebSocketClient(
     debug: Boolean,
     val origin: String?,
     val key: String,
-    val headers: Http.Headers = Http.Headers()
+    val headers: Http.Headers = Http.Headers(),
+    val masked: Boolean = true
 ) : WebSocketClient(urlUrl.fullUrl, protocols, debug) {
     private var frameIsBinary = false
     val host = urlUrl.host ?: "127.0.0.1"
@@ -123,6 +121,7 @@ class RawSocketWebSocketClient(
         }
 
         launchImmediately(coroutineContext) {
+            delay(1.milliseconds)
             onOpen(Unit)
             try {
                 loop@ while (!closed) {
@@ -133,7 +132,7 @@ class RawSocketWebSocketClient(
                             break@loop
                         }
                         WsOpcode.Ping -> {
-                            sendWsFrame(WsFrame(frame.data, WsOpcode.Pong))
+                            sendWsFrame(WsFrame(frame.data, WsOpcode.Pong, masked = masked))
                         }
                         WsOpcode.Pong -> {
                             lastPong = DateTime.now()
@@ -161,16 +160,16 @@ class RawSocketWebSocketClient(
     override fun close(code: Int, reason: String) {
         closed = true
         launchImmediately(coroutineContext) {
-            sendWsFrame(WsFrame(byteArrayOf(), WsOpcode.Close))
+            sendWsFrame(WsFrame("$code $reason".toByteArray(UTF8), WsOpcode.Close, masked = masked))
         }
     }
 
     override suspend fun send(message: String) {
-        sendWsFrame(WsFrame(message.toByteArray(UTF8), WsOpcode.Text))
+        sendWsFrame(WsFrame(message.toByteArray(UTF8), WsOpcode.Text, masked = masked))
     }
 
     override suspend fun send(message: ByteArray) {
-        sendWsFrame(WsFrame(message, WsOpcode.Binary))
+        sendWsFrame(WsFrame(message, WsOpcode.Binary, masked = masked))
     }
 
     suspend fun readWsFrame(): WsFrame {
@@ -200,10 +199,14 @@ class RawSocketWebSocketClient(
         val mask = if (isMasked) client.readBytesExact(4) else null
         val unmaskedData = client.readBytesExact(length)
         val finalData = WsFrame.applyMask(unmaskedData, mask)
-        return WsFrame(finalData, opcode, isFinal, frameIsBinary)
+        //Chrome: VM321:1 WebSocket connection to 'ws://localhost:8000/' failed: A server must not mask any frames that it sends to the client.
+        //val isMasked = false //true; // All clientes messages must be masked: http://tools.ietf.org/html/rfc6455#section-5.1
+        return WsFrame(finalData, opcode, isFinal, frameIsBinary, masked) // masked should be false (since received from server)
+        //return WsFrame(finalData, opcode, isFinal, frameIsBinary, false)
     }
 
     suspend fun sendWsFrame(frame: WsFrame) {
+        // masked should be true (since sent from the client)
         client.writeBytes(frame.toByteArray())
     }
 }

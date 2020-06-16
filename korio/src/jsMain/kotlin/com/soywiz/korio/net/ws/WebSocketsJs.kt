@@ -12,7 +12,8 @@ actual suspend fun WebSocketClient(
 	origin: String?,
 	wskey: String?,
 	debug: Boolean,
-    headers: Http.Headers
+    headers: Http.Headers,
+    dummy: Boolean
 ): WebSocketClient = JsWebSocketClient(url, protocols, DEBUG = debug, headers = headers).apply { init() }
 
 class JsWebSocketClient(
