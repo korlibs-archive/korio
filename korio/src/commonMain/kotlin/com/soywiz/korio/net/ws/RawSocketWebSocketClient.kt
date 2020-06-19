@@ -3,6 +3,7 @@ package com.soywiz.korio.net.ws
 import com.soywiz.klock.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.async.*
+import com.soywiz.korio.experimental.KorioInternal
 import com.soywiz.korio.lang.*
 import com.soywiz.korio.net.*
 import com.soywiz.korio.net.http.*
@@ -25,12 +26,11 @@ suspend fun RawSocketWebSocketClient(
     if (OS.isJsBrowserOrWorker) error("RawSocketWebSocketClient is not supported on JS browser. Use WebSocketClient instead")
     val uri = URL(url)
     val secure: Boolean = uri.isSecureScheme
-    return RawSocketWebSocketClient(coroutineContext, AsyncClient.create(secure = secure), uri, protocols, debug, origin, wskey ?: "mykey", headers, masked).also { if (connect) it.connect() }
+    return RawSocketWebSocketClient(coroutineContext, AsyncClient.create(secure = secure), uri, protocols, debug, origin, wskey ?: "mykey", headers, masked).also { if (connect) it.internalConnect() }
 }
 
 open class WsFrame(val data: ByteArray, val type: WsOpcode, val isFinal: Boolean = true, val frameIsBinary: Boolean = true, val masked: Boolean = true) {
-    fun toByteArray(): ByteArray = MemorySyncStreamToByteArray {
-        val mask = Random.nextBytes(4)
+    fun toByteArray(random: Random = Random): ByteArray = MemorySyncStreamToByteArray {
         val sizeMask = (if (masked) 0x80 else 0x00)
 
         write8(type.id or (if (isFinal) 0x80 else 0x00))
@@ -48,9 +48,13 @@ open class WsFrame(val data: ByteArray, val type: WsOpcode, val isFinal: Boolean
             }
         }
 
-        if (masked) writeBytes(mask)
-
-        writeBytes(if (masked) applyMask(data, mask) else data)
+        if (masked) {
+            val mask = Random.nextBytes(4)
+            writeBytes(mask)
+            writeBytes(applyMask(data, mask))
+        } else {
+            writeBytes(data)
+        }
     }
 
     companion object {
@@ -67,12 +71,13 @@ class RawSocketWebSocketClient(
     val coroutineContext: CoroutineContext,
     val client: AsyncClient,
     val urlUrl: URL,
-    protocols: List<String>?,
-    debug: Boolean,
-    val origin: String?,
-    val key: String,
+    protocols: List<String>? = null,
+    debug: Boolean = false,
+    val origin: String? = null,
+    val key: String = "mykey",
     val headers: Http.Headers = Http.Headers(),
-    val masked: Boolean = true
+    val masked: Boolean = true,
+    val random: Random = Random
 ) : WebSocketClient(urlUrl.fullUrl, protocols, debug) {
     private var frameIsBinary = false
     val host = urlUrl.host ?: "127.0.0.1"
@@ -104,7 +109,8 @@ class RawSocketWebSocketClient(
         }.joinToString("\r\n") + "\r\n\r\n")
     }
 
-    internal suspend fun connect() {
+    @KorioInternal
+    suspend fun internalConnect() {
         if (OS.isJsBrowserOrWorker) error("RawSocketWebSocketClient is not supported on JS browser. Use WebSocketClient instead")
 
         client.connect(host, port)
@@ -122,35 +128,40 @@ class RawSocketWebSocketClient(
 
         launchImmediately(coroutineContext) {
             delay(1.milliseconds)
-            onOpen(Unit)
-            try {
-                loop@ while (!closed) {
-                    val frame = readWsFrame()
-                    val payload: Any = if (frame.frameIsBinary) frame.data else frame.data.toString(UTF8)
-                    when (frame.type) {
-                        WsOpcode.Close -> {
-                            break@loop
+            internalReadPackets()
+        }
+    }
+
+    @KorioInternal
+    suspend fun internalReadPackets() {
+        onOpen(Unit)
+        try {
+            loop@ while (!closed) {
+                val frame = readWsFrame()
+                val payload: Any = if (frame.frameIsBinary) frame.data else frame.data.toString(UTF8)
+                when (frame.type) {
+                    WsOpcode.Close -> {
+                        break@loop
+                    }
+                    WsOpcode.Ping -> {
+                        sendWsFrame(WsFrame(frame.data, WsOpcode.Pong, masked = masked))
+                    }
+                    WsOpcode.Pong -> {
+                        lastPong = DateTime.now()
+                    }
+                    else -> {
+                        when (payload) {
+                            is String -> onStringMessage(payload)
+                            is ByteArray -> onBinaryMessage(payload)
                         }
-                        WsOpcode.Ping -> {
-                            sendWsFrame(WsFrame(frame.data, WsOpcode.Pong, masked = masked))
-                        }
-                        WsOpcode.Pong -> {
-                            lastPong = DateTime.now()
-                        }
-                        else -> {
-                            when (payload) {
-                                is String -> onStringMessage(payload)
-                                is ByteArray -> onBinaryMessage(payload)
-                            }
-                            onAnyMessage(payload)
-                        }
+                        onAnyMessage(payload)
                     }
                 }
-            } catch (e: Throwable) {
-                onError(e)
             }
-            onClose(Unit)
+        } catch (e: Throwable) {
+            onError(e)
         }
+        onClose(Unit)
     }
 
     private var lastPong: DateTime? = null
@@ -160,7 +171,10 @@ class RawSocketWebSocketClient(
     override fun close(code: Int, reason: String) {
         closed = true
         launchImmediately(coroutineContext) {
-            sendWsFrame(WsFrame("$code $reason".toByteArray(UTF8), WsOpcode.Close, masked = masked))
+            sendWsFrame(WsFrame(MemorySyncStreamToByteArray {
+                write16BE(code)
+                writeString(reason)
+            }, WsOpcode.Close, masked = masked))
         }
     }
 
@@ -172,42 +186,46 @@ class RawSocketWebSocketClient(
         sendWsFrame(WsFrame(message, WsOpcode.Binary, masked = masked))
     }
 
-    suspend fun readWsFrame(): WsFrame {
-        val b0 = client.readU8()
-        val b1 = client.readU8()
+    companion object {
+        suspend fun readWsFrame(s: AsyncInputStream, lastFrameIsBinary: Boolean): WsFrame {
+            val b0 = s.readU8()
+            val b1 = s.readU8()
 
-        val isFinal = b0.extract(7)
-        val opcode = WsOpcode(b0.extract(0, 4))
-        val frameIsBinary = when (opcode) {
-            WsOpcode.Text -> false
-            WsOpcode.Binary -> true
-            else -> frameIsBinary
-        }
-
-        val partialLength = b1.extract(0, 7)
-        val isMasked = b1.extract(7)
-
-        val length = when (partialLength) {
-            126 -> client.readU16BE()
-            127 -> {
-                val tmp = client.readS32BE()
-                if (tmp != 0) error("message too long")
-                client.readS32BE()
+            val isFinal = b0.extract(7)
+            val opcode = WsOpcode(b0.extract(0, 4))
+            val frameIsBinary = when (opcode) {
+                WsOpcode.Text -> false
+                WsOpcode.Binary -> true
+                else -> lastFrameIsBinary
             }
-            else -> partialLength
+
+            val partialLength = b1.extract(0, 7)
+            val isMasked = b1.extract(7)
+
+            val length = when (partialLength) {
+                126 -> s.readU16BE()
+                127 -> {
+                    val hi = s.readS32BE()
+                    if (hi != 0) error("message too long > 2**32")
+                    s.readS32BE()
+                }
+                else -> partialLength
+            }
+            val mask = if (isMasked) s.readBytesExact(4) else null
+            val unmaskedData = s.readBytesExact(length)
+            val finalData = WsFrame.applyMask(unmaskedData, mask)
+            return WsFrame(finalData, opcode, isFinal, frameIsBinary, isMasked)
         }
-        val mask = if (isMasked) client.readBytesExact(4) else null
-        val unmaskedData = client.readBytesExact(length)
-        val finalData = WsFrame.applyMask(unmaskedData, mask)
-        //Chrome: VM321:1 WebSocket connection to 'ws://localhost:8000/' failed: A server must not mask any frames that it sends to the client.
-        //val isMasked = false //true; // All clientes messages must be masked: http://tools.ietf.org/html/rfc6455#section-5.1
-        return WsFrame(finalData, opcode, isFinal, frameIsBinary, masked) // masked should be false (since received from server)
-        //return WsFrame(finalData, opcode, isFinal, frameIsBinary, false)
+
     }
 
-    suspend fun sendWsFrame(frame: WsFrame) {
+    suspend fun readWsFrame(): WsFrame {
+        return Companion.readWsFrame(client, frameIsBinary)
+    }
+
+    suspend fun sendWsFrame(frame: WsFrame, random: Random = this.random) {
         // masked should be true (since sent from the client)
-        client.writeBytes(frame.toByteArray())
+        client.writeBytes(frame.toByteArray(random))
     }
 }
 

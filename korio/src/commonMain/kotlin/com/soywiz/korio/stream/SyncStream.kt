@@ -145,6 +145,29 @@ fun FillSyncStream(fillByte: Int = 0, length: Long = Long.MAX_VALUE) =
 
 fun MemorySyncStream(data: ByteArray = EMPTY_BYTE_ARRAY) = MemorySyncStreamBase(ByteArrayBuilder(data)).toSyncStream()
 fun MemorySyncStream(data: ByteArrayBuilder) = MemorySyncStreamBase(data).toSyncStream()
+
+class DequeSyncStreamBase(val deque: ByteArrayDeque = ByteArrayDeque()) : SyncStreamBase() {
+    override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
+        //if (position != deque.read) error("Invalid DequeSyncStreamBase.position for reading $position != ${deque.read}")
+        return deque.read(buffer, offset, len)
+    }
+
+    override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
+        //if (position != deque.written) error("Invalid DequeSyncStreamBase.position for writting $position != ${deque.written}")
+        deque.write(buffer, offset, len)
+    }
+
+    override var length: Long
+        get() = deque.availableRead.toLong()
+        set(value) {}
+
+    override fun close() {
+        deque.clear()
+    }
+}
+
+fun DequeSyncStream() = DequeSyncStreamBase().toSyncStream()
+
 inline fun MemorySyncStreamToByteArray(initialCapacity: Int = 4096, callback: SyncStream.() -> Unit): ByteArray {
 	val buffer = ByteArrayBuilder(initialCapacity)
 	val s = MemorySyncStream(buffer)

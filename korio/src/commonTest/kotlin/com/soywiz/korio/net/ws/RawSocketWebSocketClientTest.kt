@@ -1,8 +1,13 @@
 package com.soywiz.korio.net.ws
 
-import com.soywiz.korio.async.*
+import com.soywiz.korio.async.suspendTestNoJs
+import com.soywiz.korio.lang.toByteArray
+import com.soywiz.korio.net.FakeAsyncClient
+import com.soywiz.korio.net.URL
 import com.soywiz.korio.net.http.Http
-import kotlin.test.*
+import com.soywiz.korio.stream.*
+import kotlin.test.Test
+import kotlin.test.assertEquals
 
 class RawRawSocketWebSocketClient {
     @Test
@@ -54,5 +59,23 @@ class RawRawSocketWebSocketClient {
                 "\r\n",
             ws.buildHeader()
         )
+    }
+
+    @Test
+    fun testClose() = suspendTestNoJs {
+        val log = arrayListOf<String>()
+        val client = FakeAsyncClient()
+        client.serverToClient.writeBytes(WsFrame("hello".toByteArray(), WsOpcode.Text, masked = false).toByteArray())
+        val ws = RawSocketWebSocketClient(coroutineContext, client, URL("ws://127.0.0.1:8081/"))
+        ws.onOpen { log += "open" }
+        ws.onClose { log += "close" }
+        ws.onStringMessage { log += "'$it'" }
+        ws.internalReadPackets()
+        ws.close()
+        val frame = RawSocketWebSocketClient.readWsFrame(client.clientToServer.toAsync(), false)
+        val message = frame.data.openSync()
+        assertEquals("open,'hello',close", log.joinToString(","))
+        assertEquals(1000, message.readU16BE())
+        assertEquals("OK", message.readString(2))
     }
 }
