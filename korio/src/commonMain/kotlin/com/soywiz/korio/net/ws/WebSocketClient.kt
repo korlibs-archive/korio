@@ -7,11 +7,13 @@ import com.soywiz.korio.net.http.Http
 abstract class WebSocketClient protected constructor(val url: String, val protocols: List<String>?, debug: Boolean) {
 	val onOpen = Signal<Unit>()
 	val onError = Signal<Throwable>()
-	val onClose = Signal<Unit>()
+	val onClose = Signal<CloseInfo>()
 
 	val onBinaryMessage = Signal<ByteArray>()
 	val onStringMessage = Signal<String>()
 	val onAnyMessage = Signal<Any>()
+
+    data class CloseInfo(val code: Int, val message: String?, val wasClean: Boolean)
 
     object CloseReasons {
         val NORMAL = 1000
