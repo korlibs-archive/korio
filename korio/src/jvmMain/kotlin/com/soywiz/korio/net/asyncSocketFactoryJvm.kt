@@ -16,14 +16,13 @@ import kotlin.coroutines.*
 internal actual val asyncSocketFactory: AsyncSocketFactory by lazy {
 	object : AsyncSocketFactory() {
 		override suspend fun createClient(secure: Boolean): AsyncClient = JvmAsyncClient(secure = secure)
-		override suspend fun createServer(port: Int, host: String, backlog: Int, secure: Boolean): AsyncServer =
-            JvmAsyncServer(port, host, backlog, secure = secure).apply { init() }
+		override suspend fun createServer(port: Int, host: String, backlog: Int, secure: Boolean): AsyncServer = JvmAsyncServer(port, host, backlog, secure = secure).apply { init() }
 	}
 }
 
-//private val newPool by lazy { Executors.newFixedThreadPool(1) }
-//private val group by lazy { AsynchronousChannelGroup.withThreadPool(newPool) }
-
+@PublishedApi
+internal val socketDispatcher get() = Dispatchers.IO
+private suspend inline fun <T> doIo(crossinline block: () -> T): T = withContext(socketDispatcher) { block() }
 
 class JvmAsyncClient(private var socket: Socket? = null, val secure: Boolean = false) : AsyncClient {
     private val readQueue = AsyncThread()
@@ -32,37 +31,27 @@ class JvmAsyncClient(private var socket: Socket? = null, val secure: Boolean = f
     private var socketIs: InputStream? = null
     private var socketOs: OutputStream? = null
 
-    //suspend override fun connect(host: String, port: Int): Unit = suspendCoroutineEL { c ->
-    override suspend fun connect(host: String, port: Int) {
-        withContext(Dispatchers.IO) {
-            socket = if (secure) SSLSocketFactory.getDefault().createSocket(host, port) else Socket(host, port)
-            socketIs = socket?.getInputStream()
-            socketOs = socket?.getOutputStream()
-        }
+    init {
+        setStreams()
+    }
+
+    private fun setStreams() {
+        socketIs = socket?.getInputStream()
+        socketOs = socket?.getOutputStream()
+    }
+
+    override suspend fun connect(host: String, port: Int): Unit = doIo {
+        socket = if (secure) SSLSocketFactory.getDefault().createSocket(host, port) else Socket(host, port)
+        setStreams()
     }
 
     override val connected: Boolean get() = socket?.isConnected ?: false
 
-    override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int = readQueue { _read(buffer, offset, len) }
-    //suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = _read(buffer, offset, len)
-
-    override suspend fun write(buffer: ByteArray, offset: Int, len: Int): Unit = writeQueue {
-        _write(buffer, offset, len)
-    }
-
-    //suspend private fun _read(buffer: ByteArray, offset: Int, len: Int): Int = suspendCoroutineEL { c ->
-    private suspend fun _read(buffer: ByteArray, offset: Int, len: Int): Int = withContext(Dispatchers.IO) {
-        socketIs?.read(buffer, offset, len) ?: 0
-    }
-
-    private suspend fun _write(buffer: ByteArray, offset: Int, len: Int): Unit {
-        withContext(Dispatchers.IO) {
-            socketOs?.write(buffer, offset, len)
-        }
-    }
+    override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int = readQueue { doIo { socketIs?.read(buffer, offset, len) ?: -1 } }
+    override suspend fun write(buffer: ByteArray, offset: Int, len: Int): Unit = writeQueue { doIo { socketOs?.write(buffer, offset, len) }.let { Unit } }
 
     override suspend fun close() {
-        withContext(Dispatchers.IO) {
+        doIo {
             socket?.close()
             socketIs?.close()
             socketOs?.close()
@@ -73,133 +62,14 @@ class JvmAsyncClient(private var socket: Socket? = null, val secure: Boolean = f
     }
 }
 
-
-class JvmAsyncClientAsynchronousSocketChannel(private var sc: AsynchronousSocketChannel? = null) : AsyncClient {
-	private val readQueue = AsyncThread()
-	private val writeQueue = AsyncThread()
-
-    //suspend override fun connect(host: String, port: Int): Unit = suspendCoroutineEL { c ->
-	override suspend fun connect(host: String, port: Int): Unit = suspendCancellableCoroutine { c ->
-		sc?.close()
-		sc = AsynchronousSocketChannel.open(
-			AsynchronousChannelGroup.withThreadPool(EventLoopExecutorService(c.context))
-		)
-		sc?.connect(InetSocketAddress(host, port), this, object : CompletionHandler<Void, AsyncClient> {
-			override fun completed(result: Void?, attachment: AsyncClient): Unit = run { c.resume(Unit) }
-			override fun failed(exc: Throwable, attachment: AsyncClient): Unit = run { c.resumeWithException(exc) }
-		})
-	}
-
-	override val connected: Boolean get() = sc?.isOpen ?: false
-
-	override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int = readQueue { _read(buffer, offset, len) }
-	//suspend override fun read(buffer: ByteArray, offset: Int, len: Int): Int = _read(buffer, offset, len)
-
-	override suspend fun write(buffer: ByteArray, offset: Int, len: Int): Unit = writeQueue {
-		_write(buffer, offset, len)
-	}
-
-	//suspend private fun _read(buffer: ByteArray, offset: Int, len: Int): Int = suspendCoroutineEL { c ->
-	private suspend fun _read(buffer: ByteArray, offset: Int, len: Int): Int = suspendCancellableCoroutine { c ->
-		if (sc == null) throw IOException("Not connected")
-		val bb = ByteBuffer.wrap(buffer, offset, len)
-		sc!!.read(bb, this, object : CompletionHandler<Int, AsyncClient> {
-			override fun completed(result: Int, attachment: AsyncClient): Unit = c.resume(result)
-			override fun failed(exc: Throwable, attachment: AsyncClient): Unit = c.resumeWithException(exc)
-		})
-	}
-
-	private suspend fun _write(buffer: ByteArray, offset: Int, len: Int): Unit {
-		_writeBufferFull(ByteBuffer.wrap(buffer, offset, len))
-	}
-
-	private suspend fun _writeBufferFull(bb: ByteBuffer) {
-		while (bb.hasRemaining()) {
-			_writeBufferPartial(bb)
-		}
-	}
-
-
-	private suspend fun _writeBufferPartial(bb: ByteBuffer): Int = suspendCancellableCoroutine { c ->
-		if (sc == null) {
-			throw IOException("Not connected")
-		}
-		AsyncClient.Stats.writeCountStart.incrementAndGet()
-		sc!!.write(bb, this, object : CompletionHandler<Int, AsyncClient> {
-			override fun completed(result: Int, attachment: AsyncClient) {
-				AsyncClient.Stats.writeCountEnd.incrementAndGet()
-				c.resume(result)
-			}
-
-			override fun failed(exc: Throwable, attachment: AsyncClient) {
-				//println("write failed")
-				AsyncClient.Stats.writeCountError.incrementAndGet()
-				c.resumeWithException(exc)
-			}
-		})
-	}
-
-	override suspend fun close() {
-		sc?.close()
-		sc = null
-	}
-}
-
-class JvmAsyncServer(override val requestPort: Int, override val host: String, override val backlog: Int = -1, val secure: Boolean = false) :
-    AsyncServer {
+class JvmAsyncServer(
+    override val requestPort: Int,
+    override val host: String,
+    override val backlog: Int = -1,
+    val secure: Boolean = false
+) : AsyncServer {
     val ssc = if (secure) SSLServerSocketFactory.getDefault().createServerSocket() else ServerSocket()
-
-    suspend fun init(): Unit {
-        withContext(Dispatchers.IO) {
-            ssc.bind(InetSocketAddress(host, requestPort), backlog)
-        }
-    }
-
+    suspend fun init() = doIo { ssc.bind(InetSocketAddress(host, requestPort), backlog) }
     override val port: Int get() = (ssc.localSocketAddress as? InetSocketAddress)?.port ?: -1
-
-    override suspend fun accept(): AsyncClient {
-        return withContext(Dispatchers.IO) {
-            JvmAsyncClient(ssc.accept())
-        }
-    }
-}
-
-class JvmAsyncServerSocketChannel(override val requestPort: Int, override val host: String, override val backlog: Int = -1) :
-	AsyncServer {
-	val ssc = AsynchronousServerSocketChannel.open()
-
-	suspend fun init(): Unit {
-		ssc.bind(InetSocketAddress(host, requestPort), backlog)
-		for (n in 0 until 100) {
-			if (ssc.isOpen) break
-			delay(50)
-		}
-	}
-
-	override val port: Int get() = (ssc.localAddress as? InetSocketAddress)?.port ?: -1
-
-	override suspend fun accept(): AsyncClient = suspendCoroutine { c ->
-		val ctx = c.context
-
-		ssc.accept(Unit, object : CompletionHandler<AsynchronousSocketChannel, Unit> {
-			override fun completed(result: AsynchronousSocketChannel, attachment: Unit) {
-				launchImmediately(ctx) {
-					c.resume(JvmAsyncClientAsynchronousSocketChannel(result))
-				}
-			}
-
-			override fun failed(exc: Throwable, attachment: Unit) = run {
-				exc.printStackTrace()
-				c.resumeWithException(exc)
-			}
-		})
-	}
-
-    override suspend fun close() {
-        try {
-            ssc.close()
-        }catch (e: Throwable) {
-            e.printStackTrace()
-        }
-    }
+    override suspend fun accept(): AsyncClient = JvmAsyncClient(doIo { ssc.accept() })
 }
