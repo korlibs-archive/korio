@@ -6,6 +6,7 @@ import com.soywiz.korio.net.FakeAsyncClient
 import com.soywiz.korio.net.URL
 import com.soywiz.korio.net.http.Http
 import com.soywiz.korio.stream.*
+import com.soywiz.korio.util.encoding.hex
 import kotlin.test.Test
 import kotlin.test.assertEquals
 
@@ -72,10 +73,48 @@ class RawRawSocketWebSocketClient {
         ws.onStringMessage { log += "'$it'" }
         ws.internalReadPackets()
         ws.close()
-        val frame = RawSocketWebSocketClient.readWsFrame(client.clientToServer.toAsync(), false)
+        val frame = RawSocketWebSocketClient.readWsFrame(client.clientToServer.toAsync())
         val message = frame.data.openSync()
         assertEquals("open,'hello',close", log.joinToString(","))
         assertEquals(1000, message.readU16BE())
         assertEquals("OK", message.readString(2))
+    }
+
+    @Test
+    fun testContinuation() = suspendTestNoJs {
+        val log = arrayListOf<String>()
+        val client = FakeAsyncClient()
+        val a = "あ"
+        val aData = a.toByteArray()
+        client.serverToClient.writeBytes(WsFrame(aData.sliceArray(0..0), WsOpcode.Text, isFinal = false, masked = false).toByteArray())
+        client.serverToClient.writeBytes(WsFrame(aData.sliceArray(1 until aData.size), WsOpcode.Continuation, isFinal = true, masked = false).toByteArray())
+        val ws = RawSocketWebSocketClient(coroutineContext, client, URL("ws://127.0.0.1:8081/"))
+        ws.onOpen { log += "open" }
+        ws.onClose { log += "close" }
+        ws.onBinaryMessage { log += "#${it.hex}#" }
+        ws.onStringMessage { log += "'$it'" }
+        ws.onAnyMessage.add { log += "[$it]" }
+        ws.internalReadPackets()
+        ws.close()
+        assertEquals("open,'あ',[あ],close", log.joinToString(","))
+    }
+
+    @Test
+    fun testServerCloseResponse() = suspendTestNoJs {
+        val log = arrayListOf<String>()
+        val client = FakeAsyncClient()
+        client.serverToClient.writeBytes(WsFrame(MemorySyncStreamToByteArray {
+            write16BE(WebSocketClient.CloseReasons.PROTOCOL_ERROR)
+            writeString("testing!")
+        }, WsOpcode.Close, isFinal = true, masked = false).toByteArray())
+        val ws = RawSocketWebSocketClient(coroutineContext, client, URL("ws://127.0.0.1:8081/"))
+        ws.onOpen { log += "open" }
+        ws.onClose { log += "close[${it.code},${it.message}]" }
+        ws.onBinaryMessage { log += "#${it.hex}#" }
+        ws.onStringMessage { log += "'$it'" }
+        ws.onAnyMessage.add { log += "[$it]" }
+        ws.internalReadPackets()
+        ws.close()
+        assertEquals("open,close[1002,testing!]", log.joinToString(","))
     }
 }

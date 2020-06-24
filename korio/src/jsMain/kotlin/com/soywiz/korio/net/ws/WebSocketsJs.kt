@@ -30,10 +30,7 @@ class JsWebSocketClient(
 		this.addEventListener("open", { onOpen(Unit) })
 		this.addEventListener("close", { e ->
 			val event = e as CloseEvent
-			var code = event.code.toInt()
-			var reason = event.reason
-			var wasClean = event.wasClean
-			onClose(Unit)
+			onClose(CloseInfo(event.code.toInt(), event.reason, event.wasClean))
 		})
 		this.addEventListener("message", { e ->
 			val event = e as MessageEvent
