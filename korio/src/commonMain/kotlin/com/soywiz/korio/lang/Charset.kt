@@ -80,23 +80,24 @@ open class UTC8CharsetBase(name: String) : Charset(name) {
 		var i = start
 		while (i < end) {
 			val c = src[i].toInt() and 0xFF
-			when (c shr 4) {
-				in 0..7 -> {
-					// 0xxxxxxx
-					out.appendCodePoint(c)
-					i += 1
-				}
-				in 12..13 -> {
-					// 110x xxxx   10xx xxxx
-					out.appendCodePoint((c and 0x1F shl 6 or (src[i + 1].toInt() and 0x3F)))
-					i += 2
-				}
-				14 -> {
-					// 1110 xxxx  10xx xxxx  10xx xxxx
-					out.appendCodePoint((c and 0x0F shl 12 or (src[i + 1].toInt() and 0x3F shl 6) or (src[i + 2].toInt() and 0x3F)))
-					i += 3
-				}
-                15 -> {
+
+            when (c shr 4) {
+                in 0b0000..0b0111 -> {
+                    // 0xxxxxxx
+                    out.appendCodePoint(c)
+                    i += 1
+                }
+                in 0b1100..0b1101 -> {
+                    // 110x xxxx   10xx xxxx
+                    out.appendCodePoint((c and 0x1F shl 6 or (src[i + 1].toInt() and 0x3F)))
+                    i += 2
+                }
+                0b1110 -> {
+                    // 1110 xxxx  10xx xxxx  10xx xxxx
+                    out.appendCodePoint((c and 0x0F shl 12 or (src[i + 1].toInt() and 0x3F shl 6) or (src[i + 2].toInt() and 0x3F)))
+                    i += 3
+                }
+                0b1111 -> {
                     // 1111 0xxx 10xx xxxx  10xx xxxx  10xx xxxx
                     out.appendCodePoint(0
                         .insert(src[i + 0].toInt().extract(0, 3), 18, 3)
@@ -107,10 +108,12 @@ open class UTC8CharsetBase(name: String) : Charset(name) {
                     i += 4
 
                 }
-				else -> {
-                    TODO("${c shr 4}")
-				}
-			}
+                else -> {
+                    out.append('?')
+                    i += 1
+                    //TODO("${c shr 4}")
+                }
+            }
 		}
 	}
 }
