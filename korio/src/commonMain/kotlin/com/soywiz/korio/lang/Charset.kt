@@ -109,7 +109,7 @@ open class UTC8CharsetBase(name: String) : Charset(name) {
 
                 }
                 else -> {
-                    out.append('?')
+                    out.append('\uFFFD')
                     i += 1
                     //TODO("${c shr 4}")
                 }

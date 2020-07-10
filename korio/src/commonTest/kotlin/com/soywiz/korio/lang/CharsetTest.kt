@@ -25,7 +25,7 @@ class CharsetTest {
     fun testDecode() {
         val text = byteArrayOf(-87, 32, 50, 48, 48, 57, 32, 45, 32, 50, 48, 49)
         assertEquals(
-            "? 2009 - 201",
+            "\uFFFD 2009 - 201",
             text.toString(UTF8)
         )
     }
