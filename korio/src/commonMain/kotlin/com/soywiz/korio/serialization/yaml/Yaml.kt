@@ -101,7 +101,17 @@ object Yaml {
 							if (map == null) map = LinkedHashMap()
 							if (s.read().str != ":") invalidOp
 							if (TRACE) println("${levelStr}MAP[$key]...")
-							val value = read(s, level + 1)
+                            val value = if (s.peek() is Token.ID) {
+                                var str = ""
+                                while (s.hasMore) {
+                                    val tok = s.read()
+                                    if (tok is Token.LINE) break
+                                    str += tok.str
+                                }
+                                str
+                            } else {
+                                read(s, level + 1)
+                            }
 							map[key] = value
 							if (TRACE) println("${levelStr}MAP[$key]: $value")
 						}
@@ -114,6 +124,10 @@ object Yaml {
 
 		return list ?: map
 	}
+
+    fun tokenize(str: String): List<Token> {
+        return StrReader(str).tokenize()
+    }
 
 	fun StrReader.tokenize(): List<Token> {
 		val out = arrayListOf<Token>()
