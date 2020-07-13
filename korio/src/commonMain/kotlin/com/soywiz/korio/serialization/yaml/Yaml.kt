@@ -134,7 +134,7 @@ object Yaml {
         return StrReader(str).tokenize()
     }
 
-	fun StrReader.tokenize(): List<Token> {
+	private fun StrReader.tokenize(): List<Token> {
 		val out = arrayListOf<Token>()
 
 		val s = this
@@ -145,16 +145,16 @@ object Yaml {
 			}
 		}
 
-		val indents = Deque<Int>()
+		val indents = ArrayList<Int>()
 		linestart@ while (hasMore) {
 			// Line start
 			flush()
 			val indentStr = readWhile(Char::isWhitespace).replace("\t", "     ")
 			val indent = indentStr.length
-			if (indents.isEmpty() || indent > indents.last!!) {
+			if (indents.isEmpty() || indent > indents.last()) {
 				indents += indent
 			} else {
-				while (indents.isNotEmpty() && indent < indents.last!!) indents.removeLast()
+				while (indents.isNotEmpty() && indent < indents.last()) indents.removeAt(indents.size - 1)
 				if (indents.isEmpty()) invalidOp
 			}
 			val indentLevel = indents.size - 1
@@ -200,5 +200,5 @@ object Yaml {
 		data class SYMBOL(override val str: String) : Token
 	}
 
-	fun StrReader.readUntilLineEnd() = this.readUntil { it == '\n' }
+	private fun StrReader.readUntilLineEnd() = this.readUntil { it == '\n' }
 }
