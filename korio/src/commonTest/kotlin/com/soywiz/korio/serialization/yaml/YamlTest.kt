@@ -167,7 +167,7 @@ class YamlTest {
         permalink: /lorem-ipsum/
         title: "Lorem Ipsum"
         feature_image: "/images/2019/lorem_ipsum.jpg"
-        tags: [lorem_ipsum]
+        tags: [lorem,lorem-ipsum]
         date: 2019-10-07 00:00:00 
         """.trimIndent()
         //println(Yaml.tokenize(yamlStr))
@@ -179,7 +179,7 @@ class YamlTest {
                 "permalink" to "/lorem-ipsum/",
                 "title" to "Lorem Ipsum",
                 "feature_image" to "/images/2019/lorem_ipsum.jpg",
-                "tags" to listOf("lorem_ipsum"),
+                "tags" to listOf("lorem", "lorem-ipsum"),
                 "date" to "2019-10-07 00:00:00"
             ),
             Yaml.decode(yamlStr)

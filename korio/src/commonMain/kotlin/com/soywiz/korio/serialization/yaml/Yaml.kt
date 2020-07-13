@@ -34,6 +34,8 @@ object Yaml {
 
 	//const val TRACE = true
 	const val TRACE = false
+    private val EMPTY_SET = setOf<String>()
+    private val SET_COMMA_END_ARRAY = setOf(",", "]")
 
 	private fun read(s: ListReader<Token>, level: Int): Any? = s.run {
 		var list: ArrayList<Any?>? = null
@@ -78,15 +80,13 @@ object Yaml {
 						if (s.read().str != "[") invalidOp
 						val olist = arrayListOf<Any?>()
 						array@ while (s.peek().str != "]") {
-							olist += read(s, level + 1)
-							val p = s.peek().str
-							when (p) {
-								"," -> {
-									s.read(); continue@array
-								}
-								"]" -> break@array
-								else -> invalidOp("Unexpected '$p'")
-							}
+                            olist += readOrString(s, level, SET_COMMA_END_ARRAY)
+                            val p = s.peek().str
+                            when (p) {
+                                "," -> { s.read(); continue@array }
+                                "]" -> break@array
+                                else -> invalidOp("Unexpected '$p'")
+                            }
 						}
 						if (s.read().str != "]") invalidOp
 						return olist
@@ -101,20 +101,7 @@ object Yaml {
 							if (map == null) map = LinkedHashMap()
 							if (s.read().str != ":") invalidOp
 							if (TRACE) println("${levelStr}MAP[$key]...")
-
-                            val value = if (s.peek() is Token.ID) {
-                                var str = ""
-                                while (s.hasMore) {
-                                    val tok = s.peek()
-                                    if (tok is Token.LINE) {
-                                        break
-                                    }
-                                    str += s.read().str
-                                }
-                                parseStr(str)
-                            } else {
-                                read(s, level + 1)
-                            }
+                            val value = readOrString(s, level, EMPTY_SET)
 							map[key] = value
 							if (TRACE) println("${levelStr}MAP[$key]: $value")
 						}
@@ -127,6 +114,21 @@ object Yaml {
 
 		return list ?: map
 	}
+
+    fun readOrString(s: ListReader<Token>, level: Int, delimiters: Set<String>): Any? {
+        return if (s.peek() is Token.ID) {
+            var str = ""
+            str@while (s.hasMore) {
+                val p = s.peek()
+                if (p is Token.LINE) break@str
+                if (p.str in delimiters) break@str
+                str += s.read().str
+            }
+            parseStr(str)
+        } else {
+            read(s, level + 1)
+        }
+    }
 
     fun tokenize(str: String): List<Token> {
         return StrReader(str).tokenize()
