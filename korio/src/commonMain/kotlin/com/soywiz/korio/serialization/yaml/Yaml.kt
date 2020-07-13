@@ -105,9 +105,11 @@ object Yaml {
                             val value = if (s.peek() is Token.ID) {
                                 var str = ""
                                 while (s.hasMore) {
-                                    val tok = s.read()
-                                    if (tok is Token.LINE) break
-                                    str += tok.str
+                                    val tok = s.peek()
+                                    if (tok is Token.LINE) {
+                                        break
+                                    }
+                                    str += s.read().str
                                 }
                                 parseStr(str)
                             } else {
