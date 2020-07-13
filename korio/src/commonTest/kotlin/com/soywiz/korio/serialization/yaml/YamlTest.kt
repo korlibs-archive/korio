@@ -162,6 +162,8 @@ class YamlTest {
     fun testChunk() {
         val yamlStr = """
         layout: post
+        layout2: null
+        demo: false
         permalink: /lorem-ipsum/
         title: "Lorem Ipsum"
         feature_image: "/images/2019/lorem_ipsum.jpg"
@@ -172,6 +174,8 @@ class YamlTest {
         assertEquals(
             mapOf(
                 "layout" to "post",
+                "layout2" to null,
+                "demo" to false,
                 "permalink" to "/lorem-ipsum/",
                 "title" to "Lorem Ipsum",
                 "feature_image" to "/images/2019/lorem_ipsum.jpg",

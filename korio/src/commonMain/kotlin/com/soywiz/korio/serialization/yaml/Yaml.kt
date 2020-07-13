@@ -101,7 +101,8 @@ object Yaml {
 							if (map == null) map = LinkedHashMap()
 							if (s.read().str != ":") invalidOp
 							if (TRACE) println("${levelStr}MAP[$key]...")
-                            val value = if (s.peek() is Token.ID) {
+
+                            val value = if (s.peek() is Token.ID && s.list.getOrNull(s.position + 1) !is Token.LINE) {
                                 var str = ""
                                 while (s.hasMore) {
                                     val tok = s.read()
