@@ -102,14 +102,14 @@ object Yaml {
 							if (s.read().str != ":") invalidOp
 							if (TRACE) println("${levelStr}MAP[$key]...")
 
-                            val value = if (s.peek() is Token.ID && s.list.getOrNull(s.position + 1) !is Token.LINE) {
+                            val value = if (s.peek() is Token.ID) {
                                 var str = ""
                                 while (s.hasMore) {
                                     val tok = s.read()
                                     if (tok is Token.LINE) break
                                     str += tok.str
                                 }
-                                str
+                                parseStr(str)
                             } else {
                                 read(s, level + 1)
                             }
