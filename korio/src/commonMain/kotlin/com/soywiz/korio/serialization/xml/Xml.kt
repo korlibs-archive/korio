@@ -112,7 +112,8 @@ data class Xml(
 				if (allChildren.isEmpty()) {
 					"<$name$attributesStr/>"
 				} else {
-					val children = this.allChildren.map(Xml::outerXml).joinToString("")
+					//val children = this.allChildren.map(Xml::outerXml).joinToString("")
+                    val children = this.allChildren.map { it.outerXml }.joinToString("")
 					"<$name$attributesStr>$children</$name>"
 				}
 			}
@@ -127,7 +128,8 @@ data class Xml(
 
 	val innerXml: String
 		get() = when (type) {
-			Type.NODE -> this.allChildren.map(Xml::outerXml).joinToString("")
+			//Type.NODE -> this.allChildren.map(Xml::outerXml).joinToString("") // @TODO: Regression on Kotlin 1.4
+            Type.NODE -> this.allChildren.map { it.outerXml }.joinToString("")
             else -> outerXml
 		}
 
