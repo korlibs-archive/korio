@@ -18,9 +18,15 @@ data class VfsFile(
 	val vfs: Vfs,
 	val path: String
 ) : VfsNamed(path.pathInfo), AsyncInputOpenable, Extra by Extra.Mixin() {
-	val parent: VfsFile get() = VfsFile(vfs, folder)
+    fun relativePathTo(relative: VfsFile): String? {
+        if (relative.vfs != this.vfs) return null
+        return this.pathInfo.relativePathTo(relative.pathInfo)
+    }
+
+    val parent: VfsFile get() = VfsFile(vfs, folder)
 	val root: VfsFile get() = vfs.root
 	val absolutePath: String get() = vfs.getAbsolutePath(this.path)
+    val absolutePathInfo: PathInfo get() = PathInfo(absolutePath)
 
 	operator fun get(path: String): VfsFile =
 		VfsFile(vfs, this.path.pathInfo.combine(path.pathInfo).fullPath)
@@ -46,7 +52,7 @@ data class VfsFile(
 
 	suspend fun writeFile(file: VfsFile, vararg attributes: Vfs.Attribute): Long = file.copyTo(this, *attributes)
 
-	suspend fun listNames(): List<String> = list().toList().map { it.baseName }
+	suspend fun listNames(): List<String> = listSimple().map { it.baseName }
 
 	suspend fun copyTo(target: AsyncOutputStream) = this.openUse { this.copyTo(target) }
 	suspend fun copyTo(target: VfsFile, vararg attributes: Vfs.Attribute): Long = this.openInputStream().use { target.writeStream(this, *attributes) }
@@ -95,6 +101,7 @@ data class VfsFile(
 	suspend fun touch(time: DateTime, atime: DateTime = time): Unit = vfs.touch(this.path, time, atime)
 	suspend fun size(): Long = vfs.stat(this.path).size
 	suspend fun exists(): Boolean = runIgnoringExceptions { vfs.stat(this.path).exists } ?: false
+    suspend fun takeIfExists() = takeIf { it.exists() }
 	suspend fun isDirectory(): Boolean = stat().isDirectory
     suspend fun isFile(): Boolean = !stat().isDirectory
 	suspend fun setSize(size: Long): Unit = vfs.setSize(this.path, size)
@@ -130,18 +137,31 @@ data class VfsFile(
 
     @Deprecated("Use listFlow instead", ReplaceWith("listFlow().toChannel()", "com.soywiz.korio.async.toChannel"))
 	suspend fun list(): ReceiveChannel<VfsFile> = listFlow().toChannel()
+	suspend fun listSimple(): List<VfsFile> = vfs.listSimple(this.path)
     suspend fun listFlow(): Flow<VfsFile> = vfs.listFlow(this.path)
 
     @Deprecated("Use listRecursiveFlow instead", ReplaceWith("listRecursiveFlow(filter).toChannel()", "com.soywiz.korio.async.toChannel"))
 	suspend fun listRecursive(filter: (VfsFile) -> Boolean = { true }): ReceiveChannel<VfsFile> = listRecursiveFlow(filter).toChannel()
 
-    suspend fun listRecursiveFlow(filter: (VfsFile) -> Boolean = { true }): Flow<VfsFile> = flow {
+	suspend fun listRecursiveSimple(filter: (VfsFile) -> Boolean = { true }): List<VfsFile> = ArrayList<VfsFile>().apply {
+		for (file in listSimple()) {
+			if (filter(file)) {
+				add(file)
+				val stat = file.stat()
+				if (stat.isDirectory) {
+					addAll(file.listRecursiveSimple(filter))
+				}
+			}
+		}
+	}
+
+	suspend fun listRecursiveFlow(filter: (VfsFile) -> Boolean = { true }): Flow<VfsFile> = flow {
         listFlow().collect { file ->
             if (filter(file)) {
                 emit(file)
                 val stat = file.stat()
                 if (stat.isDirectory) {
-                    file.listRecursiveFlow().collect { emit(it) }
+                    file.listRecursiveFlow(filter).collect { emit(it) }
                 }
             }
         }

@@ -29,4 +29,13 @@ class CharsetTest {
             text.toString(UTF8)
         )
     }
+
+    @Test
+    fun testSample() {
+        val text = (0 until 255).map { it.toChar() }.joinToString("")
+        assertEquals(
+            text,
+            text.toByteArray(UTF8).toString(UTF8)
+        )
+    }
 }

@@ -13,6 +13,8 @@ data class Xml(
 	val allChildren: List<Xml>,
 	val content: String
 ) {
+    fun withExtraChild(node: Xml) = copy(allChildren = allChildren + node)
+
 	val attributesLC = attributes.toCaseInsensitiveMap()
 	val nameLC: String = name.toLowerCase().trim()
 	val descendants: Iterable<Xml> get() = allChildren.flatMap { it.descendants + it }
@@ -81,7 +83,9 @@ data class Xml(
 			Type.COMMENT -> ""
 		}
 
-	fun toOuterXmlIndented(indenter: Indenter = Indenter()): Indenter = indenter.apply {
+    fun toOuterXmlIndentedString(indenter: Indenter = Indenter()): String = toOuterXmlIndented(indenter).toString()
+
+    fun toOuterXmlIndented(indenter: Indenter = Indenter()): Indenter = indenter.apply {
 		when (type) {
 			Type.NODE -> {
 				if (allChildren.isEmpty()) {
@@ -112,8 +116,9 @@ data class Xml(
 				if (allChildren.isEmpty()) {
 					"<$name$attributesStr/>"
 				} else {
+					// @TODO: Kotlin 1.4-M3 regression: https://youtrack.jetbrains.com/issue/KT-40338
 					//val children = this.allChildren.map(Xml::outerXml).joinToString("")
-                    val children = this.allChildren.map { it.outerXml }.joinToString("")
+					val children = this.allChildren.map { it.outerXml }.joinToString("")
 					"<$name$attributesStr>$children</$name>"
 				}
 			}
@@ -128,8 +133,9 @@ data class Xml(
 
 	val innerXml: String
 		get() = when (type) {
-			//Type.NODE -> this.allChildren.map(Xml::outerXml).joinToString("") // @TODO: Regression on Kotlin 1.4
-            Type.NODE -> this.allChildren.map { it.outerXml }.joinToString("")
+			// @TODO: Kotlin 1.4-M3 regression: https://youtrack.jetbrains.com/issue/KT-40338
+			//Type.NODE -> this.allChildren.map(Xml::outerXml).joinToString("")
+			Type.NODE -> this.allChildren.map { it.outerXml }.joinToString("")
             else -> outerXml
 		}
 
@@ -151,10 +157,20 @@ data class Xml(
 	fun double(name: String, defaultValue: Double = 0.0): Double =
 		this.attributesLC[name]?.toDoubleOrNull() ?: defaultValue
 
-	fun float(name: String, defaultValue: Float = 0f): Float = this.attributesLC[name]?.toFloatOrNull() ?: defaultValue
+    fun boolean(name: String, defaultValue: Boolean = false): Boolean = booleanOrNull(name) ?: defaultValue
+
+    fun booleanOrNull(name: String): Boolean? =
+        when (str(name).toLowerCase()) {
+            "true", "1" -> true
+            "false", "0" -> false
+            else -> null
+        }
+
+    fun float(name: String, defaultValue: Float = 0f): Float = this.attributesLC[name]?.toFloatOrNull() ?: defaultValue
 	fun int(name: String, defaultValue: Int = 0): Int = this.attributesLC[name]?.toIntOrNull() ?: defaultValue
 	fun long(name: String, defaultValue: Long = 0): Long = this.attributesLC[name]?.toLongOrNull() ?: defaultValue
 	fun str(name: String, defaultValue: String = ""): String = this.attributesLC[name] ?: defaultValue
+    fun uint(name: String, defaultValue: UInt = 0u): UInt = this.attributesLC[name]?.toUIntOrNull() ?: defaultValue
 
 	fun doubleNull(name: String): Double? = this.attributesLC[name]?.toDoubleOrNull()
 	fun floatNull(name: String): Float? = this.attributesLC[name]?.toFloatOrNull()

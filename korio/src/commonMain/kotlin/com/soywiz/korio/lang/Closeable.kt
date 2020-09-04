@@ -1,9 +1,18 @@
 package com.soywiz.korio.lang
 
+import com.soywiz.kds.iterators.*
 import kotlinx.coroutines.*
+
+// @TODO: Merge [Closeable], [Disposable] and [Cancellable]
 
 interface Disposable {
 	fun dispose()
+
+    companion object {
+        operator fun invoke(callback: () -> Unit) = object : Disposable {
+            override fun dispose() = callback()
+        }
+    }
 }
 
 interface Closeable {
@@ -44,19 +53,20 @@ inline fun <TCloseable : Closeable, T : Any> TCloseable.use(callback: (TCloseabl
 	}
 }
 
-interface Cancellable {
-	fun cancel(e: Throwable = CancellationException("")): Unit
+fun interface Cancellable {
+	fun cancel(e: Throwable): Unit
 
 	interface Listener {
 		fun onCancel(handler: (Throwable) -> Unit): Unit
 	}
 
 	companion object {
-		operator fun invoke(callback: (Throwable) -> Unit) = object : Cancellable {
-			override fun cancel(e: Throwable) = callback(e)
-		}
+		operator fun invoke(callback: (Throwable) -> Unit) = Cancellable { e -> callback(e) }
+        operator fun invoke(cancellables: List<Cancellable>) = Cancellable { e -> cancellables.fastForEach { it.cancel(e) } }
 	}
 }
+
+fun Cancellable.cancel() = cancel(CancellationException(""))
 
 fun Iterable<Cancellable>.cancel(e: Throwable = CancellationException("")): Unit =
 	run { for (c in this) c.cancel(e) }
@@ -67,5 +77,6 @@ fun Iterable<Closeable>.close() = run { for (c in this) c.close() }
 fun Iterable<Closeable>.closeable() = Closeable { this.close() }
 
 fun Closeable.cancellable() = Cancellable { this.close() }
+fun Closeable.disposable() = Disposable { this.close() }
 fun Cancellable.closeable(e: () -> Throwable = { CancellationException("") }) =
 	Closeable { this.cancel(e()) }
