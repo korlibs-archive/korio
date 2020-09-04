@@ -14,7 +14,7 @@ import kotlin.coroutines.*
 // @TODO: Try to prevent webpack to not get confused about this
 private external val require: dynamic
 //private external fun require(name: String): dynamic
-private val require_req = require
+private val require_req: dynamic by lazy { require }
 internal fun require_node(name: String): dynamic = require_req(name)
 
 typealias NodeJsBuffer = Uint8Array
