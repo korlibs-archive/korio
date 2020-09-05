@@ -23,7 +23,7 @@ class PromiseJsTest {
         assertEquals(true, endTime - startTime >= 100.milliseconds)
     }
 
-    fun delay(ms: Int): Promise<Unit> = Promise { resolve, reject -> global.setTimeout({ resolve(Unit) }, ms) }
+    fun delay(ms: Int): Promise<Unit> = Promise { resolve, reject -> _global.setTimeout({ resolve(Unit) }, ms) }
 }
 
 typealias JsPromise<T> = kotlin.js.Promise<T>

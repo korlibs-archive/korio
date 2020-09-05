@@ -31,8 +31,11 @@ abstract external class GlobalScope : EventTarget, WindowOrWorkerGlobalScope, Gl
 	fun cancelAnimationFrame(handle: Int): Unit
 }
 
-val globalDynamic: dynamic = js("(typeof global !== 'undefined') ? global : self")
-val global: GlobalScope  = globalDynamic
+// @TODO: Fails because tries to get "global" later
+//val global: GlobalScope  = globalDynamic
+val globalDynamic: dynamic = js("((typeof global !== 'undefined') ? global : self)")
+val _global: GlobalScope  = globalDynamic
+
 external val process: dynamic // node.js
 external val navigator: dynamic // browser
 

@@ -18,7 +18,7 @@ fun PathInfo.relativePathTo(relative: PathInfo): String? {
     val outputParts = arrayListOf<String>()
     val commonCount = count { it < maxNumParts && thisParts[it] == relativeParts[it] }
     while (relativeParts.size > commonCount) {
-        relativeParts.removeLast()
+        relativeParts.removeAt(relativeParts.lastIndex)
         outputParts += ".."
     }
     outputParts += thisParts.slice(commonCount until thisParts.size)

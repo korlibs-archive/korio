@@ -53,7 +53,9 @@ inline fun <TCloseable : Closeable, T : Any> TCloseable.use(callback: (TCloseabl
 	}
 }
 
-fun interface Cancellable {
+// @TODO: Fails on :korio:compileKotlinJsLegacy: e: \korlibs\korio\korio\src\commonMain\kotlin\com\soywiz\korio\lang\Closeable.kt: (56, 1): The feature "functional interface conversion" is only available since language version 1.4
+//fun interface Cancellable {
+interface Cancellable {
 	fun cancel(e: Throwable): Unit
 
 	interface Listener {
@@ -61,7 +63,12 @@ fun interface Cancellable {
 	}
 
 	companion object {
-		operator fun invoke(callback: (Throwable) -> Unit) = Cancellable { e -> callback(e) }
+		//operator fun invoke(callback: (Throwable) -> Unit) = Cancellable { e -> callback(e) }
+        //operator fun invoke(cancellables: List<Cancellable>) = Cancellable { e -> cancellables.fastForEach { it.cancel(e) } }
+
+        operator fun invoke(callback: (Throwable) -> Unit) = object : Cancellable {
+            override fun cancel(e: Throwable) = callback(e)
+        }
         operator fun invoke(cancellables: List<Cancellable>) = Cancellable { e -> cancellables.fastForEach { it.cancel(e) } }
 	}
 }
