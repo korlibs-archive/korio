@@ -55,8 +55,9 @@ class LogVfs(val parent: VfsFile) : Vfs.Proxy() {
 	}
 
 	override suspend fun readRange(path: String, range: LongRange): ByteArray {
-		log += "readRange($path, $range)"
-		return super.readRange(path, range)
+        @Suppress("RemoveToStringInStringTemplate", "ReplaceRangeStartEndInclusiveWithFirstLast") // @TODO: Bug in Kotlin.JS
+        log += "readRange($path, ${range.start.toString()}..${range.endInclusive.toString()})"
+        return super.readRange(path, range)
 	}
 
 	override suspend fun put(path: String, content: AsyncInputStream, attributes: List<Attribute>): Long {

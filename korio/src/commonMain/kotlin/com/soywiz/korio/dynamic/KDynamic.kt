@@ -9,9 +9,9 @@ internal expect object DynamicInternal {
 	fun invoke(instance: Any?, key: String, args: Array<out Any?>): Any?
 }
 
-private fun String.toIntSafe(radix: Int = 10) = this.toIntOrNull(radix)
-private fun String.toDoubleSafe() = this.toDoubleOrNull()
-private fun String.toLongSafe(radix: Int = 10) = this.toLongOrNull(radix)
+private fun String.toIntSafe(radix: Int = 10): Int? = this.toIntOrNull(radix)
+private fun String.toDoubleSafe(): Double? = this.toDoubleOrNull()
+private fun String.toLongSafe(radix: Int = 10): Long? = this.toLongOrNull(radix)
 
 open class KDynamic {
 	companion object : KDynamic() {
@@ -50,13 +50,23 @@ open class KDynamic {
 	val Any?.list: List<Any?> get() = if (this == null) listOf() else if (this is List<*>) this else if (this is Iterable<*>) this.toList() else listOf(this)
 	val Any?.keys: List<Any?> get() = if (this is Map<*, *>) keys.toList() else listOf()
 
-	fun Any?.toNumber(): Number = when (this) {
-		null -> 0
-		is Boolean -> if (this) 1 else 0
-		is Number -> this
-		is String -> this.toIntSafe() ?: this.toDoubleSafe() ?: 0
-		else -> 0
-	}
+	fun Any?.toNumber(): Number {
+        when (this) {
+            null -> return 0
+            is Boolean -> return if (this) 1 else 0
+            is Number -> return this
+            // :korio:compileKotlinJsLegacy e: /home/runner/work/korio/korio/korio/src/commonMain/kotlin/com/soywiz/korio/dynamic/KDynamic.kt: (57, 16): Type mismatch: inferred type is Any? but Number? was expected
+            //is String -> this.toIntSafe() ?: this.toDoubleSafe() ?: 0
+            is String -> {
+                val i = this.toIntSafe()
+                if (i != null) return i
+                val d = this.toDoubleSafe()
+                if (d != null) return d
+                return 0
+            }
+            else -> return 0
+        }
+    }
 
 	fun Any?.toBool(): Boolean = when (this) {
 		is Boolean -> this
