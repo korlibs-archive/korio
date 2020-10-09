@@ -15,7 +15,7 @@ import org.w3c.dom.*
 import org.w3c.dom.events.*
 import org.w3c.performance.*
 import org.w3c.xhr.*
-import kotlin.browser.*
+import kotlinx.browser.*
 import kotlin.collections.set
 import kotlin.coroutines.*
 
@@ -31,11 +31,8 @@ abstract external class GlobalScope : EventTarget, WindowOrWorkerGlobalScope, Gl
 	fun cancelAnimationFrame(handle: Int): Unit
 }
 
-// @TODO: Fails because tries to get "global" later
-//val global: GlobalScope  = globalDynamic
-val globalDynamic: dynamic = js("((typeof global !== 'undefined') ? global : self)")
-val _global: GlobalScope  = globalDynamic
-
+val globalDynamic: dynamic = js("(typeof global !== 'undefined') ? global : self")
+val global: GlobalScope  = globalDynamic
 external val process: dynamic // node.js
 external val navigator: dynamic // browser
 

@@ -8,6 +8,7 @@ import com.soywiz.korio.stream.*
 import kotlinx.coroutines.channels.*
 import kotlinx.coroutines.flow.*
 
+@Suppress("RemoveToStringInStringTemplate")
 class LogVfs(val parent: VfsFile) : Vfs.Proxy() {
 	val log = arrayListOf<String>()
 	val logstr get() = log.toString()
@@ -55,9 +56,8 @@ class LogVfs(val parent: VfsFile) : Vfs.Proxy() {
 	}
 
 	override suspend fun readRange(path: String, range: LongRange): ByteArray {
-        @Suppress("RemoveToStringInStringTemplate", "ReplaceRangeStartEndInclusiveWithFirstLast") // @TODO: Bug in Kotlin.JS
-        log += "readRange($path, ${range.start.toString()}..${range.endInclusive.toString()})"
-        return super.readRange(path, range)
+		log += "readRange($path, ${range.first.toString()}..${range.last.toString()})"
+		return super.readRange(path, range)
 	}
 
 	override suspend fun put(path: String, content: AsyncInputStream, attributes: List<Attribute>): Long {
@@ -68,18 +68,13 @@ class LogVfs(val parent: VfsFile) : Vfs.Proxy() {
 
 	override suspend fun setSize(path: String, size: Long) {
 		modifiedFiles += path
-		log += "setSize($path, $size)"
+		log += "setSize($path, ${size.toString()})"
 		super.setSize(path, size)
 	}
 
 	override suspend fun stat(path: String): VfsStat {
 		log += "stat($path)"
 		return super.stat(path)
-	}
-
-	override suspend fun list(path: String): ReceiveChannel<VfsFile> {
-		log += "list($path)"
-		return super.list(path)
 	}
 
 	override suspend fun listSimple(path: String): List<VfsFile> {
