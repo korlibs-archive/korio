@@ -11,8 +11,13 @@ dependencies {
 	add("commonMainApi", "com.soywiz.korlibs.klock:klock:$klockVersion")
     add("commonMainApi", "com.soywiz.korlibs.kds:kds:$kdsVersion")
     add("commonMainApi", "com.soywiz.korlibs.kmem:kmem:$kmemVersion")
-
     add("commonMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
+
+    afterEvaluate {
+        if (configurations.findByName("androidMainApi") != null) {
+            add("androidMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion")
+        }
+    }
 
     /*
     if (korlibs.hasAndroid) {
