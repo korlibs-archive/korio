@@ -6,6 +6,8 @@ import com.soywiz.korio.lang.*
 import kotlinx.coroutines.flow.*
 
 open class MergedVfs(vfsList: List<VfsFile> = listOf()) : Vfs.Proxy() {
+    constructor(vararg vfsList: VfsFile) : this(vfsList.toList())
+
 	private val vfsList = ArrayList(vfsList)
 
 	operator fun plusAssign(other: VfsFile) {
