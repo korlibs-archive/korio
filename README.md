@@ -12,7 +12,7 @@
 <p align="center">
 	<a href="https://github.com/korlibs/korio/actions"><img alt="Build Status" src="https://github.com/korlibs/korio/workflows/CI/badge.svg" /></a>
 	<a href="https://bintray.com/korlibs/korlibs/korio"><img alt="Maven Version" src="https://img.shields.io/bintray/v/korlibs/korlibs/korio.svg?style=flat&label=maven" /></a>
-	<a href="https://slack.soywiz.com/"><img alt="Slack" src="https://img.shields.io/badge/chat-on%20slack-green?style=flat&logo=slack" /></a>
+	<a href="https://discord.korge.org/"><img alt="Discord" src="https://img.shields.io/badge/chat-on%20discord-green?style=flat&logo=discord" /></a>
 </p>
 <!-- /BADGES -->
 
