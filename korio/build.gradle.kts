@@ -6,6 +6,7 @@ val klockVersion: String by project
 val kdsVersion: String by project
 val kmemVersion: String by project
 val kryptoVersion: String by project
+val kloggerVersion: String by project
 val coroutinesVersion: String by project
 
 dependencies {
@@ -13,6 +14,7 @@ dependencies {
     add("commonMainApi", "com.soywiz.korlibs.kds:kds:$kdsVersion")
     add("commonMainApi", "com.soywiz.korlibs.kmem:kmem:$kmemVersion")
     add("commonMainApi", "com.soywiz.korlibs.krypto:krypto:$kryptoVersion")
+    add("commonMainApi", "com.soywiz.korlibs.klogger:klogger:$kloggerVersion")
     add("commonMainApi", "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion")
 
     afterEvaluate {
