@@ -10,16 +10,18 @@ import kotlinx.coroutines.flow.*
 import kotlin.coroutines.*
 
 abstract class AsyncSocketFactory {
-	abstract suspend fun createClient(secure: Boolean = false): AsyncClient
-	abstract suspend fun createServer(port: Int, host: String = "127.0.0.1", backlog: Int = 511, secure: Boolean = false): AsyncServer
+    open suspend fun createClient(secure: Boolean = false): AsyncClient = TODO()
+	open suspend fun createServer(port: Int, host: String = "127.0.0.1", backlog: Int = 511, secure: Boolean = false): AsyncServer = TODO()
 }
 
 internal expect val asyncSocketFactory: AsyncSocketFactory
 
+suspend fun AsyncSocketFactory.createClient(host: String, port: Int, secure: Boolean = false): AsyncClient = createClient(secure).apply { connect(host, port) }
+
 suspend fun createTcpClient(secure: Boolean = false): AsyncClient = asyncSocketFactory.createClient(secure)
 suspend fun createTcpServer(port: Int = AsyncServer.ANY_PORT, host: String = "127.0.0.1", backlog: Int = 511, secure: Boolean = false): AsyncServer = asyncSocketFactory.createServer(port, host, backlog, secure)
 
-suspend fun createTcpClient(host: String, port: Int, secure: Boolean = false): AsyncClient = asyncSocketFactory.createClient(secure).apply { connect(host, port) }
+suspend fun createTcpClient(host: String, port: Int, secure: Boolean = false): AsyncClient = asyncSocketFactory.createClient(host, port, secure)
 
 interface AsyncClient : AsyncInputStream, AsyncOutputStream, AsyncCloseable {
 	suspend fun connect(host: String, port: Int)
@@ -58,6 +60,9 @@ class FakeAsyncClient(
         connected = true
     }
     override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int = serverToClient.read(buffer, offset, len)
+    // @TODO: BUG: Required override because of Bug
+    override suspend fun read(): Int = serverToClient.read()
+
     override suspend fun write(buffer: ByteArray, offset: Int, len: Int) = clientToServer.write(buffer, offset, len)
     override suspend fun close() {
         onClose(Unit)

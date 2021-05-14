@@ -4,11 +4,18 @@ import com.soywiz.kds.*
 import com.soywiz.kmem.*
 import com.soywiz.korio.internal.*
 import com.soywiz.korio.lang.*
-import kotlin.math.*
+
+interface MarkableSyncInputStream : SyncInputStream {
+    fun mark(readlimit: Int)
+    fun reset()
+}
 
 interface SyncInputStream : OptionalCloseable {
 	fun read(buffer: ByteArray, offset: Int = 0, len: Int = buffer.size - offset): Int
 	fun read(): Int = smallBytesPool.alloc { if (read(it, 0, 1) > 0) it[0].unsigned else -1 }
+    fun skip(count: Int) {
+        read(ByteArray(count))
+    }
 }
 
 interface SyncOutputStream : OptionalCloseable {
@@ -35,7 +42,9 @@ interface SyncRAOutputStream {
 }
 
 open class SyncStreamBase : Closeable, SyncRAInputStream, SyncRAOutputStream, SyncLengthStream {
+    open val separateReadWrite: Boolean get() = false
 	val smallTemp = ByteArray(16)
+    open val seekable get() = true
 	fun read(position: Long): Int = if (read(position, smallTemp, 0, 1) >= 1) smallTemp[0].toInt() and 0xFF else -1
 	override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int = unsupported()
 	override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int): Unit = unsupported()
@@ -43,24 +52,85 @@ open class SyncStreamBase : Closeable, SyncRAInputStream, SyncRAOutputStream, Sy
 	override fun close() = Unit
 }
 
-class SyncStream(val base: SyncStreamBase, override var position: Long = 0L) : Extra by Extra.Mixin(), Closeable, SyncInputStream, SyncPositionStream, SyncOutputStream, SyncLengthStream {
+open class MarkableSyncStream(val inp: SyncInputStream) : MarkableSyncInputStream {
+    private var markTemp = ByteArrayDeque(8)
+    private var markLimit = 0
+    private var doReset = false
+
+    override fun mark(readlimit: Int) {
+        markTemp.clear()
+        markLimit = readlimit
+    }
+
+    override fun reset() {
+        doReset = true
+    }
+
+    override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+        if (doReset) {
+            return markTemp.read(buffer, offset, len).also {
+                if (markTemp.availableRead <= 0) {
+                    doReset = false
+                }
+            }
+        }
+        val out = inp.read(buffer, offset, len)
+        if (markLimit > 0) {
+            val markRead = kotlin.math.min(markLimit, out)
+            markLimit -= markRead
+            markTemp.write(buffer, offset, markRead)
+        }
+        return out
+    }
+}
+
+fun SyncInputStream.markable(): MarkableSyncInputStream = MarkableSyncStream(this)
+
+class SyncStream constructor(
+    val base: SyncStreamBase,
+    position: Long = 0L
+) : Extra by Extra.Mixin(), Closeable, SyncInputStream, SyncPositionStream, SyncOutputStream, SyncLengthStream, MarkableSyncInputStream {
 	private val smallTemp = base.smallTemp
+    private val separateReadWrite = base.separateReadWrite
+
+    var positionRead: Long = position
+        set(value) {
+            if (separateReadWrite) field = value else position = value
+            //println("SET positionRead=$value")
+        }
+        get() = if (separateReadWrite) field else position
+
+    var positionWrite: Long = position
+        set(value) {
+            if (separateReadWrite) field = value else position = value
+        }
+        get() = if (separateReadWrite) field else position
+
+    override var position: Long = position
+        set(value) = if (separateReadWrite) positionRead = value else field = value
+        get() = if (separateReadWrite) positionRead else field
 
 	override fun read(buffer: ByteArray, offset: Int, len: Int): Int {
-		val read = base.read(position, buffer, offset, len)
-		position += read
+        //println("read.positionRead[$this]=$positionRead")
+		val read = base.read(positionRead, buffer, offset, len)
+        positionRead += read
+        //println("/read.positionRead[$this]=$positionRead")
 		return read
 	}
 
-	override fun read(): Int {
+    override fun skip(count: Int) {
+        positionRead += count
+    }
+
+    override fun read(): Int {
 		val size = read(smallTemp, 0, 1)
 		if (size <= 0) return -1
 		return smallTemp[0].unsigned
 	}
 
 	override fun write(buffer: ByteArray, offset: Int, len: Int): Unit {
-		base.write(position, buffer, offset, len)
-		position += len
+		base.write(positionWrite, buffer, offset, len)
+        positionWrite += len
 	}
 
 	override fun write(byte: Int) {
@@ -72,9 +142,12 @@ class SyncStream(val base: SyncStreamBase, override var position: Long = 0L) : E
 		set(value) = run { base.length = value }
 		get() = base.length
 
-	val available: Long get() = length - position
+    val availableRead: Long get() = length - positionRead
+    val availableWrite: Long get() = length - positionWrite
 
-	override fun flush() {
+    val available: Long get() = availableRead
+
+    override fun flush() {
 		base.flush()
 	}
 
@@ -82,7 +155,18 @@ class SyncStream(val base: SyncStreamBase, override var position: Long = 0L) : E
 
 	fun clone() = SyncStream(base, position)
 
-	override fun toString(): String = "SyncStream($base, $position)"
+    var markPos = 0L
+
+    override fun mark(readlimit: Int) {
+        if (!base.seekable) unsupported()
+        markPos = positionRead
+    }
+
+    override fun reset() {
+        positionRead = markPos
+    }
+
+    override fun toString(): String = "SyncStream($base, $position)"
 }
 
 inline fun <T> SyncStream.keepPosition(callback: () -> T): T {
@@ -96,7 +180,8 @@ inline fun <T> SyncStream.keepPosition(callback: () -> T): T {
 
 class SliceSyncStreamBase(internal val base: SyncStreamBase, internal val baseStart: Long, internal val baseEnd: Long) :
 	SyncStreamBase() {
-	internal val baseLength: Long = baseEnd - baseStart
+    override val separateReadWrite: Boolean get() = base.separateReadWrite
+    internal val baseLength: Long = baseEnd - baseStart
 
 	override var length: Long
 		set(value) = throw UnsupportedOperationException()
@@ -147,18 +232,24 @@ fun MemorySyncStream(data: ByteArray = EMPTY_BYTE_ARRAY) = MemorySyncStreamBase(
 fun MemorySyncStream(data: ByteArrayBuilder) = MemorySyncStreamBase(data).toSyncStream()
 
 class DequeSyncStreamBase(val deque: ByteArrayDeque = ByteArrayDeque()) : SyncStreamBase() {
+    override val separateReadWrite: Boolean get() = true
+    override val seekable get() = false
+
     override fun read(position: Long, buffer: ByteArray, offset: Int, len: Int): Int {
-        //if (position != deque.read) error("Invalid DequeSyncStreamBase.position for reading $position != ${deque.read}")
-        return deque.read(buffer, offset, len)
+        //println("DequeSyncStreamBase.READ: position=$position, offset=$offset, len=$len")
+        if (position != deque.read) error("Invalid DequeSyncStreamBase.position for reading $position != ${deque.read}")
+        return deque.read(buffer, offset, len).also {
+            //println("  --> $it")
+        }
     }
 
     override fun write(position: Long, buffer: ByteArray, offset: Int, len: Int) {
-        //if (position != deque.written) error("Invalid DequeSyncStreamBase.position for writting $position != ${deque.written}")
+        if (position != deque.written) error("Invalid DequeSyncStreamBase.position for writting $position != ${deque.written}")
         deque.write(buffer, offset, len)
     }
 
     override var length: Long
-        get() = deque.availableRead.toLong()
+        get() = deque.written
         set(value) {}
 
     override fun close() {
