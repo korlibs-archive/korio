@@ -38,6 +38,13 @@ interface AsyncOutputStream : AsyncBaseStream {
 	//suspend fun write(byte: Int)
 }
 
+open class DummyAsyncOutputStream : AsyncOutputStream {
+    companion object : DummyAsyncOutputStream()
+    override suspend fun write(buffer: ByteArray, offset: Int, len: Int) = Unit
+    override suspend fun write(byte: Int) = Unit
+    override suspend fun close() = Unit
+}
+
 interface AsyncGetPositionStream : AsyncBaseStream {
 	suspend fun getPosition(): Long = throw UnsupportedOperationException()
 }
@@ -99,7 +106,8 @@ interface AsyncRAOutputStream {
 fun AsyncBaseStream.toAsyncStream(): AsyncStream {
 	val input = this as? AsyncInputStream
 	val output = this as? AsyncOutputStream
-	val rlen = this as? AsyncLengthStream
+    val rlenSet = this as? AsyncLengthStream
+	val rlenGet = this as? AsyncGetLengthStream
 	val closeable = this
 
 	return object : AsyncStreamBase() {
@@ -125,15 +133,17 @@ fun AsyncBaseStream.toAsyncStream(): AsyncStream {
 
 		private fun checkPosition(position: Long) {
 			if (position != expectedPosition) {
-				throw UnsupportedOperationException("Seeking not supported!")
+				throw SeekNotSupportedException()
 			}
 		}
 
-		override suspend fun setLength(value: Long) = rlen?.setLength(value) ?: throw UnsupportedOperationException()
-		override suspend fun getLength(): Long = rlen?.getLength() ?: throw UnsupportedOperationException()
+		override suspend fun setLength(value: Long) = rlenSet?.setLength(value) ?: throw UnsupportedOperationException()
+		override suspend fun getLength(): Long = rlenGet?.getLength() ?: throw UnsupportedOperationException()
 		override suspend fun close() = closeable.close()
 	}.toAsyncStream()
 }
+
+open class SeekNotSupportedException(message: String = "Seeking not supported!") : UnsupportedOperationException(message)
 
 open class AsyncStreamBase : AsyncCloseable, AsyncRAInputStream, AsyncRAOutputStream, AsyncLengthStream {
 	//var refCount = 0
@@ -641,7 +651,7 @@ suspend inline fun AsyncInputStream.consume(autoclose: Boolean = true, temp: Byt
     }
 }
 
-suspend fun AsyncInputStream.copyTo(target: AsyncOutputStream, chunkSize: Int = 0x10000): Long {
+suspend fun AsyncInputStream.copyTo(target: AsyncOutputStream, chunkSize: Int = 256 * 1024): Long {
 	// Optimization to reduce suspensions
 	if (this is AsyncStream && base is MemoryAsyncStreamBase) {
 		target.write(base.data.data, position.toInt(), base.ilength - position.toInt())
@@ -649,7 +659,8 @@ suspend fun AsyncInputStream.copyTo(target: AsyncOutputStream, chunkSize: Int = 
 	}
 
     var totalCount = 0L
-    consume(autoclose = false, temp = ByteArray(chunkSize)) { data, offset, size ->
+    this.consume(autoclose = false, temp = ByteArray(chunkSize)) { data, offset, size ->
+        //println("write. offset=$offset, size=$size")
         target.write(data, offset, size)
         totalCount += size
     }
@@ -800,25 +811,41 @@ class MemoryAsyncStreamBase(var data: com.soywiz.kmem.ByteArrayBuilder) : AsyncS
 	override fun toString(): String = "MemoryAsyncStreamBase(${data.size})"
 }
 
-suspend fun asyncStreamWriter(bufferSize: Int = 1024, process: suspend (out: AsyncOutputStream) -> Unit): AsyncInputStream {
+suspend fun asyncStreamWriter(bufferSize: Int = 32 * 1024, process: suspend (out: AsyncOutputStream) -> Unit): AsyncInputStream {
 	val deque = AsyncByteArrayDeque(bufferSize)
+    //var lastError: Throwable? = null
 
 	val job = launchImmediately(coroutineContext) {
 		try {
-			process(object : AsyncOutputStream {
-				override suspend fun write(buffer: ByteArray, offset: Int, len: Int) = deque.write(buffer, offset, len)
-				override suspend fun write(byte: Int) = deque.write(byte)
-				override suspend fun close() = deque.close()
-			})
+            process(object : AsyncOutputStream {
+                override suspend fun write(buffer: ByteArray, offset: Int, len: Int) = deque.write(buffer, offset, len)
+                override suspend fun write(byte: Int) = deque.write(byte)
+                override suspend fun close() = deque.close()
+            })
+        } catch (e: Throwable) {
+            //lastError = e
+            e.printStackTrace()
 		} finally {
 			deque.close()
 		}
 	}
 
 	return object : AsyncInputStream {
-		override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int = deque.read(buffer, offset, len)
-		override suspend fun read(): Int = deque.read()
-		override suspend fun close() = job.cancel()
+        private fun checkException() {
+            //if (lastError != null) throw RuntimeException("Error in asyncStreamWriter", lastError!!)
+        }
+
+		override suspend fun read(buffer: ByteArray, offset: Int, len: Int): Int {
+            checkException()
+            return deque.read(buffer, offset, len)
+        }
+		override suspend fun read(): Int {
+            checkException()
+            return deque.read()
+        }
+		override suspend fun close() {
+            job.cancel()
+        }
 	}
 }
 
